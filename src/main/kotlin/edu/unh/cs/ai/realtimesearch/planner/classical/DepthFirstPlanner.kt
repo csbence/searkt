@@ -54,7 +54,7 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
 
         // root will have null action. So as long as the parent action
         // is not null, we can take it's parent and assume all is good
-        while (node.parent!!.successorSet.action != null) {
+        while (node.parent?.successorSet?.action != null) {
 
             if (state != node.successorSet.successorState)
                 return true
