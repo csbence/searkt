@@ -10,5 +10,5 @@ interface Domain {
     fun isGoal(state: State): Boolean
 }
 
-data class SuccesorSet(val successorState: State, val action: Action, val cost: Double)
+data class SuccesorSet(val successorState: State, val action: Action?, val cost: Double)
 
