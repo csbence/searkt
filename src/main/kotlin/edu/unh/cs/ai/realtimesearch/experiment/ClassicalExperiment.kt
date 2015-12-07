@@ -2,11 +2,8 @@ package edu.unh.cs.ai.realtimesearch.experiment
 
 import org.slf4j.LoggerFactory
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
-class RTSExperiment : Experiment {
-    private val logger = LoggerFactory.getLogger("RTSExperiment")
+class ClassicalExperiment : Experiment{
+    private val logger = LoggerFactory.getLogger("ClassicalExperiment")
 
     override fun run() {
         throw UnsupportedOperationException()
