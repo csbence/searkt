@@ -52,9 +52,9 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
     private fun visitedBefore(state: State, leave: Node): Boolean {
         var node = leave
 
-        // root will have null action. So as long as the parent action
-        // is not null, we can take it's parent and assume all is good
-        while (node.parent?.successorSet?.action != null) {
+        // root will have null action. So as long as the parent
+        // is not null, we can take it's action and assume all is good
+        while (node.parent != null) {
 
             if (state != node.successorSet.successorState)
                 return true
@@ -76,9 +76,9 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         val actions: MutableList<Action> = arrayListOf()
 
         var node = leave
-        // root will have null action. So as long as the parent action
-        // is not null, we can take it's parent and assume all is good
-        while (node.parent!!.successorSet.action != null) {
+        // root will have null action. So as long as the parent
+        // is not null, we can take it's action and assume all is good
+        while (node.parent != null) {
             actions.add(node.successorSet.action!!)
             node = node.parent!! // TODO: is the world going up in flames again?
         }

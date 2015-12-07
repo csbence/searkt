@@ -7,5 +7,8 @@ import edu.unh.cs.ai.realtimesearch.domain.State
  * @author Bence Cserna (bence@cserna.net)
  */
 interface RealTimePlanner : Planner {
-    fun selectAction(state: State): Action
+    // TODO: argument handling
+
+
+
 }
