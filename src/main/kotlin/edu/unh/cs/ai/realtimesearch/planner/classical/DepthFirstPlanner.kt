@@ -19,24 +19,24 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         // init class members
         // (in case we planned with this planner before)
         openList.clear()
-        var cur_node = Node(null, SuccessorSet(state, null, 0.0))
+        var currentNode = Node(null, SuccessorSet(state, null, 0.0))
 
         // main loop
-        while (! domain.isGoal(cur_node.successorSet.successorState)) {
+        while (! domain.isGoal(currentNode.successorSet.successorState)) {
 
             // expand (only those not visited yet)
-            for (successor in domain.succesors(cur_node.successorSet.successorState)) {
-                if (! visitedBefore(successor.successorState, cur_node)) {
+            for (successor in domain.succesors(currentNode.successorSet.successorState)) {
+                if (! visitedBefore(successor.successorState, currentNode)) {
                     generatedNodes.inc()
-                    openList.add(Node(cur_node, successor))
+                    openList.add(Node(currentNode, successor))
                 }
             }
 
             // check next node
-            cur_node = openList.pop() // TODO Probably going to make the world explode..
+            currentNode = openList.pop() // TODO Probably going to make the world explode..
         }
 
-        return getActions(cur_node)
+        return getActions(currentNode)
     }
 
     /**
