@@ -3,12 +3,12 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.domain.Action
 import edu.unh.cs.ai.realtimesearch.domain.Domain
 import edu.unh.cs.ai.realtimesearch.domain.State
-import edu.unh.cs.ai.realtimesearch.domain.SuccesorSet
+import edu.unh.cs.ai.realtimesearch.domain.SuccessorSet
 import edu.unh.cs.ai.realtimesearch.planner.Planner
 import java.util.*
 
 class DepthFirstPlanner(val domain: Domain) : Planner {
-    data class Node(val parent: Node?, val successorSet: SuccesorSet)
+    data class Node(val parent: Node?, val successorSet: SuccessorSet)
 
     private var generatedNodes = 0
     private val openList: Deque<Node> = linkedListOf()
@@ -19,7 +19,7 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         // init class members
         // (in case we planned with this planner before)
         openList.clear()
-        var cur_node = Node(null, SuccesorSet(state, null, 0.0))
+        var cur_node = Node(null, SuccessorSet(state, null, 0.0))
 
         // main loop
         while (! domain.isGoal(cur_node.successorSet.successorState)) {
