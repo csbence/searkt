@@ -3,12 +3,22 @@ package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
 import edu.unh.cs.ai.realtimesearch.domain.State
 import java.util.*
 
-class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: ArrayList<VacuumWorldState.Location>) : State {
+class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: List<VacuumWorldState.Location>) : State {
 
     /**
-     * A grid location, defined by its x and y coordinate
+     * This represents a grid location, defined by its x and y coordinate.
+     *
+     * @param x: x index of the location
+     * @param y: y index of the location
      */
     data class Location(val x: Int, val y: Int) {
+
+        /**
+         * Adds two locations together the intuitive way (x+x, y+y).
+         *
+         * @param other: the other location
+         * @return the addition of this and other location
+         */
         operator fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
     }
 

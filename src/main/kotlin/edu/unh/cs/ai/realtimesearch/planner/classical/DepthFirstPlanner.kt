@@ -26,7 +26,7 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         while (!domain.isGoal(currentNode.successorBundle.successorState)) {
 
             // expand (only those not visited yet)
-            for (successor in domain.succesors(currentNode.successorBundle.successorState)) {
+            for (successor in domain.successors(currentNode.successorBundle.successorState)) {
                 if (!visitedBefore(successor.successorState, currentNode)) {
                     generatedNodes.inc()
                     openList.add(Node(currentNode, successor))

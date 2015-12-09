@@ -5,75 +5,67 @@ import edu.unh.cs.ai.realtimesearch.domain.State
 import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
 import java.util.*
 
-class VacuumWorld(val width: Int, val height: Int, val blockedCells: ArrayList<VacuumWorldState.Location>) : Domain {
+class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>) : Domain {
 
     /**
      * @brief Domain interface
      */
-    override fun succesors(state: State): List<SuccessorBundle> {
+    override fun successors(state: State): List<SuccessorBundle> {
         if (state is VacuumWorldState) {
 
             // to return
             val successors: MutableList<SuccessorBundle> = arrayListOf()
 
-            val x = state.agentLocation.x
-            val y = state.agentLocation.y
-
             VacuumWorldAction.values.forEach {
-                if (isLegalAction(state, it))
-                    successors.add(SuccessorBundle(
-                            VacuumWorldState(state.agentLocation + it.getRelativeLocation(), ArrayList(state.dirtyCells)),
-                            it,
-                            1.0 // all actions have cost of 1
-                    ))
-            }
+                val newLocation = state.agentLocation + it.getRelativeLocation()
 
+                // add the legal movement actions
+                if (it != VacuumWorldAction.VACUUM) {
+                    if (isLegalLocation(newLocation)) {
+
+                        successors.add(SuccessorBundle(
+                                VacuumWorldState(newLocation, ArrayList(state.dirtyCells)),
+                                it,
+                                1.0 )) // all actions have cost of 1
+
+                    }
+                } else if (newLocation in state.dirtyCells) { // add legit vacuum action
+
+                    successors.add(SuccessorBundle(
+                            VacuumWorldState(newLocation, state.dirtyCells.filter { it == newLocation }),
+                            it,
+                            1.0 ))
+                }
+            }
             return successors
         }
 
-        // TODO: this proper way of dealing with this shit
-        throw Throwable("VacuumWorld cannot handle any state other than actual VacuumWorldStates")
+        throw RuntimeException("Wrong state type provided to VacuumWorld")
     }
 
     /**
-     * @brief returns whether action is legal in state
+     * Returns whether location within boundaries and not a blocked cell.
      *
-     * @param state the state in which the action would take place
-     * @param action the action that we are applying to state
-     *
-     * @return true if action is allowed in state
+     * @param location the location to test
+     * @return true if location is legal
      */
-    private fun isLegalAction(state: VacuumWorldState, action: VacuumWorldAction): Boolean {
-        val newLocation = state.agentLocation + action.getRelativeLocation()
-
-        // illegal if new location is out of boundaries
-        if (newLocation.x < 0 || newLocation.y < 0 || newLocation.x >= width || newLocation.y >= height)
-            return false;
-
-        // if vacuum return whether agent is on dirty cell
-        if (action == VacuumWorldAction.VACUUM) {
-            return newLocation in state.dirtyCells
-        }
-
-        return true // action passed all tests
-    }
-
-    private fun freeCell(x: Int, y: Int): Boolean {
-        return VacuumWorldState.Location(x, y) in blockedCells
+    fun isLegalLocation(location: VacuumWorldState.Location): Boolean {
+        return (location.x < 0 || location.y < 0 || location.x >= width || location.y >= height) &&
+                location !in blockedCells
     }
 
     /**
-     * @TODO
+     * @TODO: document & implement
      */
     override fun heuristic(state: State): Double = .0
 
     /**
-     * @TODO
+     * @TODO: document & implement
      */
     override fun distance(state: State): Double = .0
 
     /**
-     * @brief A state in vacuumworld is a goal state if there are no more dirty cells
+     * A state in vacuumworld is a goal state if there are no more dirty cells
      *
      * @param state: the state that is being checked on
      *

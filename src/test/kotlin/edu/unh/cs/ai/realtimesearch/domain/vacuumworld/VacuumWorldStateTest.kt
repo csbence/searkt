@@ -1,5 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
-
+import edu.unh.cs.ai.realtimesearch.domain.vacuumworld.VacuumWorldState
 import org.junit.Test
 
 class VacuumWorldStateTest {
@@ -12,6 +11,7 @@ class VacuumWorldStateTest {
         val l4 = VacuumWorldState.Location(3, 10)
         val l5 = VacuumWorldState.Location(100, 234522)
 
+        assert(true)
         assert(l1 + l2 == VacuumWorldState.Location(l1.x + l2.x, l1.y+l2.y))
         assert(l2 + l2 == VacuumWorldState.Location(l2.x + l2.x, l2.y+l2.y))
         assert(l1 + l3 == VacuumWorldState.Location(l1.x + l3.x, l1.y+l3.y))
@@ -21,4 +21,5 @@ class VacuumWorldStateTest {
         assert(l5 + l2 == VacuumWorldState.Location(l5.x + l2.x, l5.y+l2.y))
         assert(l2 + l5 == VacuumWorldState.Location(l2.x + l5.x, l2.y+l5.y))
     }
+
 }
