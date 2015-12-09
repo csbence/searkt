@@ -9,8 +9,9 @@ class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCe
      * A grid location, defined by its x and y coordinate
      */
     data class Location(val x: Int, val y: Int) {
-        fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
+        operator fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
     }
+
 
 }
 
