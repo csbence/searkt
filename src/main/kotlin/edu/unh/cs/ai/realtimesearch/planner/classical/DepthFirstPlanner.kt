@@ -3,12 +3,12 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.domain.Action
 import edu.unh.cs.ai.realtimesearch.domain.Domain
 import edu.unh.cs.ai.realtimesearch.domain.State
-import edu.unh.cs.ai.realtimesearch.domain.SuccessorSet
+import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.planner.Planner
 import java.util.*
 
 class DepthFirstPlanner(val domain: Domain) : Planner {
-    data class Node(val parent: Node?, val successorSet: SuccessorSet)
+    data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
 
     private var generatedNodes = 0
     private val openList: Deque<Node> = linkedListOf()
@@ -19,21 +19,22 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         // init class members
         // (in case we planned with this planner before)
         openList.clear()
-        var currentNode = Node(null, SuccessorSet(state, null, 0.0))
+        generatedNodes = 0
 
         // main loop
-        while (! domain.isGoal(currentNode.successorSet.successorState)) {
+        var currentNode = Node(null, SuccessorBundle(state, null, 0.0))
+        while (!domain.isGoal(currentNode.successorBundle.successorState)) {
 
             // expand (only those not visited yet)
-            for (successor in domain.succesors(currentNode.successorSet.successorState)) {
-                if (! visitedBefore(successor.successorState, currentNode)) {
+            for (successor in domain.succesors(currentNode.successorBundle.successorState)) {
+                if (!visitedBefore(successor.successorState, currentNode)) {
                     generatedNodes.inc()
                     openList.add(Node(currentNode, successor))
                 }
             }
 
             // check next node
-            currentNode = openList.pop() // TODO Probably going to make the world explode..
+            currentNode = openList.pop()
         }
 
         return getActions(currentNode)
@@ -50,19 +51,19 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
      * @return true if state has been visited before
      */
     private fun visitedBefore(state: State, leave: Node): Boolean {
-        var node = leave
+        var node: Node? = leave
 
         // root will have null action. So as long as the parent
         // is not null, we can take it's action and assume all is good
-        while (node.parent != null) {
+        while (node != null) {
 
-            if (state != node.successorSet.successorState)
+            if (state != node.successorBundle.successorState)
                 return true
 
-            node = node.parent!! // TODO: is the world going up in flames again?
+            node = node.parent
         }
 
-        return false;
+        return false
     }
 
     /**
@@ -75,12 +76,12 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
     private fun getActions(leave: Node): List<Action> {
         val actions: MutableList<Action> = arrayListOf()
 
-        var node = leave
+        var node: Node? = leave
         // root will have null action. So as long as the parent
         // is not null, we can take it's action and assume all is good
-        while (node.parent != null) {
-            actions.add(node.successorSet.action!!)
-            node = node.parent!! // TODO: is the world going up in flames again?
+        while (node != null) {
+            actions.add(node.successorBundle.action!!)
+            node = node.parent!!
         }
 
         return actions.reversed() // we are adding actions in wrong order, to return the reverser
