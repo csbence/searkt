@@ -12,19 +12,16 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      */
     override fun successors(state: State): List<SuccessorBundle> {
         if (state is VacuumWorldState) {
-            print("Creating successors for " + state.toString() + "\n")
 
             // to return
             val successors: MutableList<SuccessorBundle> = arrayListOf()
 
             VacuumWorldAction.values.forEach {
                 val newLocation = state.agentLocation + it.getRelativeLocation()
-                print("Action " + it.toString() + " leads to location "  + newLocation.toString() + "... ")
 
                 // add the legal movement actions
                 if (it != VacuumWorldAction.VACUUM) {
                     if (isLegalLocation(newLocation)) {
-                        print("Which is legal")
                         successors.add(SuccessorBundle(
                                 VacuumWorldState(newLocation, ArrayList(state.dirtyCells)),
                                 it,
@@ -32,15 +29,11 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
 
                     }
                 } else if (newLocation in state.dirtyCells) { // add legit vacuum action
-                    print("Which is legal")
                     successors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                             it,
                             1.0 ))
-                } else {
-                    print("Which is illegal")
                 }
-                print("\n")
             }
             return successors
         }

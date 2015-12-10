@@ -3,9 +3,11 @@
 
 ## Roadmap
 
-* Implement VacuumWorld
-* Write classical experiment class
-* Write a basic main, where DFS is tested in vacuumworld
+* Implement BFS, Greedy & A*
+    * Create ClosedList searcher
+    * Create BFS of of that
+    * Create Heuristic searchers
+    * Create Uniform, Greedy & A* of of that
 * Figure out what else is necessary for basic extension to:
     - Other domains
     - Other search algorithms
@@ -15,6 +17,14 @@
     - aWA*
     - Sliding Puzzle
 
+## TODO
+
+* Figure out experiment framework
+    * How to store/write results
+    * What parameters are interesting
+    * How to print/log paths (if any?)
+* Figure out how to do the logging >> conventions
+
 ## Conventions
 
 * iAmGoodVariable
@@ -22,7 +32,8 @@
 * iAmGoodFunction()
 * Braces open on same line
 * No abbreviations
+* Use Javadoc everywhere, but mind the verbosity
 
 ## Questions
-
-1. Markdown in intellij -- how?
+ 
+* How to configure logging

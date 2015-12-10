@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory
  * An experiment meant for classical search, such as depth first search.
  *
  * @param agent is the agent that is involved in the experiment
+ * @param world is the world to test the agent in
+ * @param initState is the initial state of the world
  */
 class ClassicalExperiment(val agent: ClassicalAgent, val world: Domain, val initState: State) : Experiment {
     private val logger = LoggerFactory.getLogger("ClassicalExperiment")
@@ -20,9 +22,6 @@ class ClassicalExperiment(val agent: ClassicalAgent, val world: Domain, val init
 
         plan.forEach {
             logger.info("Action " + it.toString())
-            print(it.toString())
         }
     }
-
-
 }
