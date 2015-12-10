@@ -7,13 +7,26 @@ import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import java.util.*
 
-class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
+/**
+ * The famous depth first planner.
+ *
+ * @param domain is the domain to plan in
+ */
+class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
     data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
 
     private var generatedNodes = 0
     private val openList: Deque<Node> = linkedListOf()
 
-    /** Classic planner interface */
+    /**
+     * Returns a plan (list of actions) by iteratively expanding nodes from the
+     * open list and adding expansions from those nodes.
+     * Only those nodes that have not been visited yet in the current path are added.
+     *
+     * Interface of ClassicalPlanner
+     * @param state is the
+     * @return a list of actions, defining the plan
+     */
     override fun plan(state: State): List<Action> {
 
         // init class members
@@ -25,17 +38,11 @@ class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
         var currentNode = Node(null, SuccessorBundle(state, null, 0.0))
         while (!domain.isGoal(currentNode.successorBundle.successorState)) {
 
-            print("Popped " + currentNode.toString() + "\n")
-
             // expand (only those not visited yet)
             for (successor in domain.successors(currentNode.successorBundle.successorState)) {
-                print("Expanding to " + successor.successorState.toString() + "...")
                 if (!visitedBefore(successor.successorState, currentNode)) {
-                    print("Added to open list\n")
                     generatedNodes.inc()
                     openList.push(Node(currentNode, successor))
-                } else {
-                    print("Already visited\n")
                 }
             }
 
@@ -92,6 +99,5 @@ class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
 
         return actions.reversed() // we are adding actions in wrong order, to return the reverser
     }
-
 }
 
