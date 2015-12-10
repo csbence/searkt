@@ -14,7 +14,7 @@ appender("STDOUT", ConsoleAppender) {
 
 appender("FILE", FileAppender) {
     // make use of the USER_HOME variable
-    println "Setting [file] property to [${USER_HOME}/myApp.log]"
+    println "Setting [file] property to [${USER_HOME}/RTS.log]"
     file = "${USER_HOME}/RTS.log"
     encoder(PatternLayoutEncoder) {
         pattern = "%msg%n"
