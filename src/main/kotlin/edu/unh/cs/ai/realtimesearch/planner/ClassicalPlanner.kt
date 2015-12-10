@@ -17,7 +17,8 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
 
     // TODO: proper logging here
     // private val logger = LoggerFactory.getLogger("ClassicalPlanner")
-    private var generatedNodes = 0
+    var generatedNodes = 0
+    var expandedNodes = 0
 
     data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
 
@@ -61,16 +62,18 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
 
         // get ready / reset for plan
         generatedNodes = 0
+        expandedNodes = 0
         initiatePlan()
 
         // main loop
         var currentNode = Node(null, SuccessorBundle(state, null, 0.0))
         while (!domain.isGoal(currentNode.successorBundle.successorState)) {
+            expandedNodes += 1
 
             // expand (only those not visited yet)
             for (successor in domain.successors(currentNode.successorBundle.successorState)) {
                 if (!visitedBefore(successor.successorState, currentNode)) {
-                    generatedNodes.inc()
+                    generatedNodes += 1
 
                     // generate the node with correct cost
                     val nodeCost = successor.cost + currentNode.successorBundle.cost

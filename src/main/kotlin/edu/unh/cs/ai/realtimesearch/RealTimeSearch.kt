@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.domain.vacuumworld.VacuumWorldState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.planner.classical.DepthFirstPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.BreadthFirstPlanner
+import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.GreedyBestFirstPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.UniformPlanner
 
@@ -22,11 +23,13 @@ fun main(args: Array<String>) {
     val depthAgent = ClassicalAgent(DepthFirstPlanner(world))
     val uniformAgent = ClassicalAgent(UniformPlanner(world))
     val greedyAgent = ClassicalAgent(GreedyBestFirstPlanner(world))
+    val aStarAgent = ClassicalAgent(AStarPlanner(world))
 
     val breathExperiment = ClassicalExperiment(breathAgent, world, state)
     val depthExperiment = ClassicalExperiment(depthAgent, world, state)
     val uniformExperiment = ClassicalExperiment(uniformAgent, world, state)
     val greedyExperiment = ClassicalExperiment(greedyAgent, world, state)
+    val aStarExperiment = ClassicalExperiment(aStarAgent, world, state)
 
     // run experiment
     print("Breadth first:\n")
@@ -37,5 +40,7 @@ fun main(args: Array<String>) {
     uniformExperiment.run()
     print("GreedyBestFirst:\n")
     greedyExperiment.run()
+    print("A*\n")
+    aStarExperiment.run()
 
 }

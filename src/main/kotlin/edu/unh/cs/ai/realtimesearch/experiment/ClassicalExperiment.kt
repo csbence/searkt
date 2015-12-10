@@ -20,8 +20,13 @@ class ClassicalExperiment(val agent: ClassicalAgent, val world: Domain, val init
     override fun run() {
         plan = agent.plan(initState)
 
+        var actions = ""
         plan.forEach {
-            logger.info("Action " + it.toString())
+            actions += it.toString() + " "
         }
+
+        logger.info("Path: " + actions + "\nAfter " +
+                agent.planner.expandedNodes + " expanded and " +
+                agent.planner.generatedNodes + " generated nodes")
     }
 }
