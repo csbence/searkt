@@ -13,8 +13,8 @@ fun main(args: Array<String>) {
     // parameters / settings
 
     // init
-    val world = VacuumWorld(10, 10, emptyList())
-    val state = VacuumWorldState(VacuumWorldState.Location(0,0), listOf(VacuumWorldState.Location(0,2), VacuumWorldState.Location(0,0), VacuumWorldState.Location(3,0)))
+    val world = VacuumWorld(3, 3, emptyList())
+    val state = VacuumWorldState(VacuumWorldState.Location(0,0), listOf(VacuumWorldState.Location(1,0), VacuumWorldState.Location(2,0)))
     val agent = ClassicalAgent(DepthFirstPlanner(world))
 
     val experiment = ClassicalExperiment(agent, world, state)
