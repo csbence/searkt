@@ -30,6 +30,5 @@ class VacuumWorldTest {
     @Test
     fun legalLocationTest() {
         // TODO: make islegalLocation private to package
-        assert(false)
     }
 }

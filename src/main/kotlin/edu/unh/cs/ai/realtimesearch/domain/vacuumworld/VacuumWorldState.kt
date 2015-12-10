@@ -1,9 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.domain.State
-import java.util.*
 
-class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: List<VacuumWorldState.Location>) : State {
+data class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: List<VacuumWorldState.Location>) : State {
 
     /**
      * This represents a grid location, defined by its x and y coordinate.
@@ -22,6 +21,7 @@ class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCe
         operator fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
     }
 
+    public override fun toString(): String { return "Agent location: " + agentLocation.toString() + ", dirty: "  + dirtyCells.toString()}
 
 }
 

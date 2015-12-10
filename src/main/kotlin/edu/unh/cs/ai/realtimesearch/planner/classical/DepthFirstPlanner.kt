@@ -4,17 +4,17 @@ import edu.unh.cs.ai.realtimesearch.domain.Action
 import edu.unh.cs.ai.realtimesearch.domain.Domain
 import edu.unh.cs.ai.realtimesearch.domain.State
 import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.planner.Planner
+import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import java.util.*
 
-class DepthFirstPlanner(val domain: Domain) : Planner {
+class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
     data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
 
     private var generatedNodes = 0
     private val openList: Deque<Node> = linkedListOf()
 
     /** Classic planner interface */
-    fun plan(state: State): List<Action> {
+    override fun plan(state: State): List<Action> {
 
         // init class members
         // (in case we planned with this planner before)
@@ -25,11 +25,17 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         var currentNode = Node(null, SuccessorBundle(state, null, 0.0))
         while (!domain.isGoal(currentNode.successorBundle.successorState)) {
 
+            print("Popped " + currentNode.toString() + "\n")
+
             // expand (only those not visited yet)
             for (successor in domain.successors(currentNode.successorBundle.successorState)) {
+                print("Expanding to " + successor.successorState.toString() + "...")
                 if (!visitedBefore(successor.successorState, currentNode)) {
+                    print("Added to open list\n")
                     generatedNodes.inc()
                     openList.add(Node(currentNode, successor))
+                } else {
+                    print("Already visited\n")
                 }
             }
 
@@ -57,7 +63,7 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
         // is not null, we can take it's action and assume all is good
         while (node != null) {
 
-            if (state != node.successorBundle.successorState)
+            if (state == node.successorBundle.successorState)
                 return true
 
             node = node.parent
@@ -76,10 +82,10 @@ class DepthFirstPlanner(val domain: Domain) : Planner {
     private fun getActions(leave: Node): List<Action> {
         val actions: MutableList<Action> = arrayListOf()
 
-        var node: Node? = leave
+        var node = leave
         // root will have null action. So as long as the parent
         // is not null, we can take it's action and assume all is good
-        while (node != null) {
+        while (node.parent != null) {
             actions.add(node.successorBundle.action!!)
             node = node.parent!!
         }

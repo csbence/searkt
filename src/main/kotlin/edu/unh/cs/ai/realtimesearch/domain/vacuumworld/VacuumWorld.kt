@@ -8,21 +8,23 @@ import java.util.*
 class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>) : Domain {
 
     /**
-     * @brief Domain interface
+     * Part fo the Domain interface.
      */
     override fun successors(state: State): List<SuccessorBundle> {
         if (state is VacuumWorldState) {
+            print("Creating successors for " + state.toString() + "\n")
 
             // to return
             val successors: MutableList<SuccessorBundle> = arrayListOf()
 
             VacuumWorldAction.values.forEach {
                 val newLocation = state.agentLocation + it.getRelativeLocation()
+                print("Action " + it.toString() + " leads to location "  + newLocation.toString() + "... ")
 
                 // add the legal movement actions
                 if (it != VacuumWorldAction.VACUUM) {
                     if (isLegalLocation(newLocation)) {
-
+                        print("Which is legal")
                         successors.add(SuccessorBundle(
                                 VacuumWorldState(newLocation, ArrayList(state.dirtyCells)),
                                 it,
@@ -30,17 +32,20 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
 
                     }
                 } else if (newLocation in state.dirtyCells) { // add legit vacuum action
-
+                    print("Which is legal")
                     successors.add(SuccessorBundle(
-                            VacuumWorldState(newLocation, state.dirtyCells.filter { it == newLocation }),
+                            VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                             it,
                             1.0 ))
+                } else {
+                    print("Which is illegal")
                 }
+                print("\n")
             }
             return successors
         }
 
-        throw RuntimeException("Wrong state type provided to VacuumWorld")
+        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
     }
 
     /**
@@ -50,8 +55,8 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @return true if location is legal
      */
     fun isLegalLocation(location: VacuumWorldState.Location): Boolean {
-        return (location.x < 0 || location.y < 0 || location.x >= width || location.y >= height) &&
-                location !in blockedCells
+        return location.x >= 0 && location.y >= 0 && location.x < width &&
+                location.y < height && location !in blockedCells
     }
 
     /**
@@ -65,10 +70,10 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     override fun distance(state: State): Double = .0
 
     /**
-     * A state in vacuumworld is a goal state if there are no more dirty cells
+     * Returns whether the current state is a goal state.
+     * Returns true if no dirtycells are present in the state.
      *
      * @param state: the state that is being checked on
-     *
      * @return whether the state is a goal state
      */
     override fun isGoal(state: State): Boolean {
@@ -76,9 +81,8 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
             return state.dirtyCells.isEmpty()
         }
 
-        throw Throwable("VacuumWorld cannot handle any state other than actual VacuumWorldStates")
+        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
     }
-
 
 }
 
