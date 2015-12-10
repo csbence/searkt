@@ -53,9 +53,14 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     }
 
     /**
-     * @TODO: document & implement
+     * Returns a heuristic for a vacuum world state: the amount of dirty cells left
+     *
+     * @param state is the state to provide a heuristic for
+     * @return the # of dirty cells
      */
-    override fun heuristic(state: State): Double = .0
+    override fun heuristic(state: State) =
+            if (state is VacuumWorldState) state.dirtyCells.size.toDouble()
+            else throw RuntimeException("VacuumWorld expects VacuumWorldState")
 
     /**
      * @TODO: document & implement
