@@ -5,16 +5,29 @@ import edu.unh.cs.ai.realtimesearch.domain.Domain
 import edu.unh.cs.ai.realtimesearch.domain.State
 import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
+import org.slf4j.LoggerFactory
 import java.util.*
 
 class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
     data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
 
+    private val logger = LoggerFactory.getLogger("DepthFirstPlanner")
     private var generatedNodes = 0
     private val openList: Deque<Node> = linkedListOf()
 
+    fun removeMe() {
+        logger.error("Error error error. This is how you add a param: {}", 4)
+        logger.warn("Warn!")
+        logger.info("Info info")
+        logger.debug("This is a debug message !")
+        logger.trace("trace")
+    }
+
+
     /** Classic planner interface */
     override fun plan(state: State): List<Action> {
+        removeMe()
+        return emptyList()
 
         // init class members
         // (in case we planned with this planner before)
