@@ -71,7 +71,10 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
             for (successor in domain.successors(currentNode.successorBundle.successorState)) {
                 if (!visitedBefore(successor.successorState, currentNode)) {
                     generatedNodes.inc()
-                    generateNode(Node(currentNode, successor))
+
+                    // generate the node with correct cost
+                    val nodeCost = successor.cost + currentNode.successorBundle.cost
+                    generateNode(Node(currentNode, successor.copy(cost = nodeCost)))
                 }
             }
 
