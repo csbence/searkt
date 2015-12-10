@@ -82,8 +82,6 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
         return getActions(currentNode)
     }
 
-
-
     /**
      * @brief Returns the actions necessary to get to node
      *

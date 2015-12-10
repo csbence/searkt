@@ -1,0 +1,30 @@
+package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist
+
+import edu.unh.cs.ai.realtimesearch.domain.Domain
+import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
+import java.util.*
+
+class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
+
+    private val openList: Deque<Node> = linkedListOf()
+
+    /** ClassicalPlanner interface **/
+
+    /**
+     * Clears open list
+     */
+    override protected fun initiatePlan() {
+        openList.clear();
+        super.initiatePlan()
+    }
+
+    /**
+     * Adds the node to back of openlist
+     */
+    protected override fun generateNode(node: Node) { openList.add(node) }
+
+    /**
+     * Gets node from front of openlist
+     */
+    override fun popFromOpenList(): Node = openList.pop()
+}
