@@ -21,7 +21,10 @@ class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
     /**
      * Adds the node to back of openlist
      */
-    protected override fun generateNode(node: Node) { openList.add(node) }
+    protected override fun generateNode(node: Node) {
+        openList.add(node)
+        super.generateNode(node)
+    }
 
     /**
      * Gets node from front of openlist
