@@ -33,7 +33,7 @@ class DepthFirstPlanner(val domain: Domain) : ClassicalPlanner {
                 if (!visitedBefore(successor.successorState, currentNode)) {
                     print("Added to open list\n")
                     generatedNodes.inc()
-                    openList.add(Node(currentNode, successor))
+                    openList.push(Node(currentNode, successor))
                 } else {
                     print("Already visited\n")
                 }
