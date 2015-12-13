@@ -23,7 +23,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                 if (it != VacuumWorldAction.VACUUM) {
                     if (isLegalLocation(newLocation)) {
                         successors.add(SuccessorBundle(
-                                VacuumWorldState(newLocation, ArrayList(state.dirtyCells)),
+                                VacuumWorldState(newLocation, state.dirtyCells),
                                 it,
                                 1.0 )) // all actions have cost of 1
 

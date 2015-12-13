@@ -17,8 +17,17 @@ fun main(args: Array<String>) {
     // parameters / settings
 
     // init
-    val world = VacuumWorld(3, 3, emptyList())
-    val state = VacuumWorldState(VacuumWorldState.Location(0,0), listOf(VacuumWorldState.Location(1,0), VacuumWorldState.Location(2,0)))
+
+    val world = VacuumWorld(7, 7, arrayListOf(
+            VacuumWorldState.Location(2,2),
+            VacuumWorldState.Location(2,3),
+            VacuumWorldState.Location(5,3),
+            VacuumWorldState.Location(4,1)
+    ))
+    val state = VacuumWorldState(VacuumWorldState.Location(0,0), listOf(
+            VacuumWorldState.Location(3,6),
+            VacuumWorldState.Location(1,4)
+    ))
     val breathAgent = ClassicalAgent(BreadthFirstPlanner(world))
     val depthAgent = ClassicalAgent(DepthFirstPlanner(world))
     val uniformAgent = ClassicalAgent(UniformPlanner(world))
