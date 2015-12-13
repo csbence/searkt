@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch.planner
 import edu.unh.cs.ai.realtimesearch.domain.Action
 import edu.unh.cs.ai.realtimesearch.domain.Domain
 import edu.unh.cs.ai.realtimesearch.domain.State
-import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
 
 /**
  * The abstract class for classical planners. Assume fully observable, deterministic nature.
@@ -20,7 +19,8 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
     var generatedNodes = 0
     var expandedNodes = 0
 
-    data class Node(val parent: Node?, val successorBundle: SuccessorBundle)
+    data class Node(val parent: Node?, val state: State,
+                    val action: Action?, val cost: Double)
 
     /** Interface3 functions **/
 
@@ -66,18 +66,19 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
         initiatePlan()
 
         // main loop
-        var currentNode = Node(null, SuccessorBundle(state, null, 0.0))
-        while (!domain.isGoal(currentNode.successorBundle.successorState)) {
+        var currentNode = Node(null, state, null, 0.0)
+        while (!domain.isGoal(currentNode.state)) {
             expandedNodes += 1
 
             // expand (only those not visited yet)
-            for (successor in domain.successors(currentNode.successorBundle.successorState)) {
+            for (successor in domain.successors(currentNode.state)) {
                 if (!visitedBefore(successor.successorState, currentNode)) {
                     generatedNodes += 1
 
                     // generate the node with correct cost
-                    val nodeCost = successor.cost + currentNode.successorBundle.cost
-                    generateNode(Node(currentNode, successor.copy(cost = nodeCost)))
+                    val nodeCost = successor.cost + currentNode.cost
+                    generateNode(Node(currentNode, successor.successorState,
+                                 successor.action, nodeCost))
                 }
             }
 
@@ -102,7 +103,7 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
         // root will have null action. So as long as the parent
         // is not null, we can take it's action and assume all is good
         while (node.parent != null) {
-            actions.add(node.successorBundle.action!!)
+            actions.add(node.action!!)
             node = node.parent!!
         }
 

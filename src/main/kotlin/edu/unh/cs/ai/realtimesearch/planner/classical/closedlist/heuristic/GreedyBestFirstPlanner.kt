@@ -22,8 +22,8 @@ class GreedyBestFirstPlanner (domain: Domain) : ClassicalHeuristicPlanner(domain
     public class GreedyBestFirstNodeComparator(val domain: Domain) : Comparator<Node> {
         override fun compare(n1: Node?, n2: Node?): Int {
             if (n1 != null && n2 != null)
-                return (domain.heuristic(n1.successorBundle.successorState) -
-                        domain.heuristic(n2.successorBundle.successorState)).toInt()
+                return (domain.heuristic(n1.state) -
+                        domain.heuristic(n2.state)).toInt()
             else throw RuntimeException("Cannot insert null into closed list")
         }
     }

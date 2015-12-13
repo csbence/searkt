@@ -21,7 +21,7 @@ class UniformPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
     public class UniformNodeComparator : Comparator<Node> {
         override fun compare(n1: Node?, n2: Node?): Int {
             if (n1 != null && n2 != null)
-                return (n1.successorBundle.cost - n2.successorBundle.cost).toInt()
+                return (n1.cost - n2.cost).toInt()
              else throw RuntimeException("Cannot insert null into closed list")
         }
     }

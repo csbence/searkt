@@ -32,7 +32,7 @@ abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
     /**
      * Adds the state of the node to the closedlist
      */
-    protected override fun generateNode(node: Node) { closedList.add(node.successorBundle.successorState) }
+    protected override fun generateNode(node: Node) { closedList.add(node.state) }
 
     /**
      * Returns whether a state has been visited before

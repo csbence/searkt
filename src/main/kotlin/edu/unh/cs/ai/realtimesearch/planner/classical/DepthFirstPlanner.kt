@@ -50,7 +50,7 @@ class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
         // is not null, we can take it's action and assume all is good
         while (node != null) {
 
-            if (state == node.successorBundle.successorState)
+            if (state == node.state)
                 return true
 
             node = node.parent

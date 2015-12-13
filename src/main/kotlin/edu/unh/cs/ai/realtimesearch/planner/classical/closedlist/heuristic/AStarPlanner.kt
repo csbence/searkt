@@ -20,8 +20,8 @@ class AStarPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
         override fun compare(n1: Node?, n2: Node?): Int {
             if (n1 != null && n2 != null)
                 return (
-                        (domain.heuristic(n1.successorBundle.successorState) + n1.successorBundle.cost) -
-                        (domain.heuristic(n2.successorBundle.successorState) + n2.successorBundle.cost)
+                        (domain.heuristic(n1.state) + n1.cost) -
+                        (domain.heuristic(n2.state) + n2.cost)
                                 ).toInt()
             else throw RuntimeException("Cannot insert null into closed list")
         }
