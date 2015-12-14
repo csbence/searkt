@@ -1,6 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist
 
-import edu.unh.cs.ai.realtimesearch.domain.Domain
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
 import java.util.*
 

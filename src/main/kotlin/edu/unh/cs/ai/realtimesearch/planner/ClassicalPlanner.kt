@@ -1,8 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
-import edu.unh.cs.ai.realtimesearch.domain.Action
-import edu.unh.cs.ai.realtimesearch.domain.Domain
-import edu.unh.cs.ai.realtimesearch.domain.State
+import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 
 /**
  * The abstract class for classical planners. Assume fully observable, deterministic nature.

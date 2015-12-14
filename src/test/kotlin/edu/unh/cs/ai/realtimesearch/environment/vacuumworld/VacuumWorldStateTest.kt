@@ -1,4 +1,4 @@
-import edu.unh.cs.ai.realtimesearch.domain.vacuumworld.VacuumWorldState
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.junit.Test
 
 class VacuumWorldStateTest {

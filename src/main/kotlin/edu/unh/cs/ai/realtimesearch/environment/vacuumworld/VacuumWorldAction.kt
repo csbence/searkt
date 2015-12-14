@@ -1,6 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
-import edu.unh.cs.ai.realtimesearch.domain.Action
+import edu.unh.cs.ai.realtimesearch.environment.Action
 
 /**
  * This is An action in the vacuumworld is simply an enum:

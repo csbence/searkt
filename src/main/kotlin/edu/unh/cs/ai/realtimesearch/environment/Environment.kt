@@ -1,0 +1,27 @@
+package edu.unh.cs.ai.realtimesearch.environment
+
+/**
+ * An environment of the experiments. In contrast to domains, which are used
+ * to model transitions only, an environment is stateful
+ */
+interface Environment {
+
+    /**
+     * Performs a step according to action a and current (maintained state)
+     * @param action is the action taken
+     */
+    public fun step(action: Action)
+
+    /**
+     * Returns current state
+     * @return the current state of the environment
+     */
+    public fun getState(): State
+
+    /**
+     * Returns whether world has been solved
+     *
+     * @return true if goal has been reached
+     */
+    public fun isGoal(): Boolean
+}

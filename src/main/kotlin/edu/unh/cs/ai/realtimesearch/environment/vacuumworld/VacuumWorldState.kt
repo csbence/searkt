@@ -1,7 +1,11 @@
-package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
-import edu.unh.cs.ai.realtimesearch.domain.State
+import edu.unh.cs.ai.realtimesearch.environment.State
 
+/**
+ * A state in the vacuumworld is simply the current location of the agent,
+ * and the location of all dirty cells. The blocked cells are global.
+ */
 data class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: List<VacuumWorldState.Location>) : State {
 
     /**

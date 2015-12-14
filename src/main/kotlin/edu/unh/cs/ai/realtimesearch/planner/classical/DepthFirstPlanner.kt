@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical
 
-import edu.unh.cs.ai.realtimesearch.domain.Domain
-import edu.unh.cs.ai.realtimesearch.domain.State
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import java.util.*
 

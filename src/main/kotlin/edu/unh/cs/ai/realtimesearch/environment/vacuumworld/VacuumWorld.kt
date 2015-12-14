@@ -1,10 +1,14 @@
-package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
-import edu.unh.cs.ai.realtimesearch.domain.Domain
-import edu.unh.cs.ai.realtimesearch.domain.State
-import edu.unh.cs.ai.realtimesearch.domain.SuccessorBundle
-import java.util.*
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
+/**
+ * The vacuumworld is a problem where the agent, a vacuumcleaner, is supposed to clean
+ * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
+ * the four directions, or to vacuum.
+ */
 class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>) : Domain {
 
     /**

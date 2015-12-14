@@ -1,8 +1,8 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
-import edu.unh.cs.ai.realtimesearch.domain.vacuumworld.VacuumWorld
-import edu.unh.cs.ai.realtimesearch.domain.vacuumworld.VacuumWorldState
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.planner.classical.DepthFirstPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.BreadthFirstPlanner
@@ -34,11 +34,11 @@ fun main(args: Array<String>) {
     val greedyAgent = ClassicalAgent(GreedyBestFirstPlanner(world))
     val aStarAgent = ClassicalAgent(AStarPlanner(world))
 
-    val breathExperiment = ClassicalExperiment(breathAgent, world, state)
-    val depthExperiment = ClassicalExperiment(depthAgent, world, state)
-    val uniformExperiment = ClassicalExperiment(uniformAgent, world, state)
-    val greedyExperiment = ClassicalExperiment(greedyAgent, world, state)
-    val aStarExperiment = ClassicalExperiment(aStarAgent, world, state)
+    val breathExperiment = ClassicalExperiment(breathAgent, state)
+    val depthExperiment = ClassicalExperiment(depthAgent, state)
+    val uniformExperiment = ClassicalExperiment(uniformAgent, state)
+    val greedyExperiment = ClassicalExperiment(greedyAgent, state)
+    val aStarExperiment = ClassicalExperiment(aStarAgent, state)
 
     // run experiment
     print("Breadth first:\n")

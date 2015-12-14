@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.domain.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import org.junit.Test
 import kotlin.test.assertFalse

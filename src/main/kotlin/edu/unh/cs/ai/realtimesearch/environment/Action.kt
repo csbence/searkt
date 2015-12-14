@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.domain
+package edu.unh.cs.ai.realtimesearch.environment
 
 /**
  * @author Bence Cserna (bence@cserna.net)
