@@ -19,17 +19,21 @@ class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
     /**
      * Clears open list
      */
-    override fun initiatePlan() { openList.clear() }
+    override fun initiatePlan() {
+        openList.clear()
+    }
 
     /**
      * Adds node to front of openlist
      */
-    override fun generateNode(node: Node) { openList.push(node) }
+    override fun generateNode(node: Node) {
+        openList.push(node)
+    }
 
     /**
      * Return node in front of openlist
      */
-    override fun popFromOpenList() =  openList.pop()
+    override fun popFromOpenList() = openList.pop()
 
     /**
      * @brief Checks whether a state has been visited before in current path

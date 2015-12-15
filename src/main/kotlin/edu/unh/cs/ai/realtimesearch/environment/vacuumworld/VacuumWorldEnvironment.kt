@@ -41,7 +41,7 @@ class VacuumWorldEnvironment(private val domainDynamics: VacuumWorld, private va
      * @return true if currentState is goal
      */
     override fun isGoal(): Boolean {
-        val goal =  domainDynamics.isGoal(currentState)
+        val goal = domainDynamics.isGoal(currentState)
 
         logger.trace("State $currentState is ${if (goal) "" else "not"} a goal")
 

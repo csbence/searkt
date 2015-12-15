@@ -25,7 +25,9 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
     /**
      * Resets all variables in the planner. Called before a new planning task
      */
-    open protected fun initiatePlan() { generatedNodes = 0 }
+    open protected fun initiatePlan() {
+        generatedNodes = 0
+    }
 
     /**
      * Checks whether a state has been visited before from current node.
@@ -76,7 +78,7 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
      * @return the next node of interest
      */
     public fun expandNode(node: Node): Node {
-       expandedNodes += 1
+        expandedNodes += 1
 
         // expand (only those not visited yet)
         for (successor in domain.successors(node.state)) {
@@ -86,7 +88,7 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
                 // generate the node with correct cost
                 val nodeCost = successor.cost + node.cost
                 generateNode(Node(node, successor.state,
-                             successor.action, nodeCost))
+                        successor.action, nodeCost))
             }
         }
 

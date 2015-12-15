@@ -19,7 +19,7 @@ class ClassicalExperiment(val agent: ClassicalAgent, val initState: State) : Exp
         plan = agent.plan(initState)
 
         var actions = ""
-       plan.forEach { actions += it.toString() + " " }
+        plan.forEach { actions += it.toString() + " " }
 
         logger.info("Path: " + actions + "\nAfter " +
                 agent.planner.expandedNodes + " expanded and " +

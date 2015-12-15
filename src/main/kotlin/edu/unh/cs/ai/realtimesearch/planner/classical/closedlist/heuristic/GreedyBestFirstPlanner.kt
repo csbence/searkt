@@ -10,7 +10,7 @@ import java.util.*
  * Instantiates as a classical heuristic planner whose comparator sorts on h value
  * @param domain is the domain to plan in
  */
-class GreedyBestFirstPlanner (domain: Domain) : ClassicalHeuristicPlanner(domain,
+class GreedyBestFirstPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
         PriorityQueue(GreedyBestFirstPlanner.GreedyBestFirstNodeComparator(domain))) {
 
     /**

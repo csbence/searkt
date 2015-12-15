@@ -30,7 +30,8 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private var rootState: State? = null
 
     // current mode, either doing dijkstra updates or AStar search
-    enum class Mode {NEW_SEARCH, ASTAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL}
+    enum class Mode {NEW_SEARCH, ASTAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
+
     private var mode = Mode.NEW_SEARCH
 
     /**
@@ -53,7 +54,8 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         // 2) We are currently executing a plan and have time to search more
         // in 2) we could either be doing dijkstra or more searching
 
-        if (executingPlan.isEmpty()) { // 1): no current plan
+        if (executingPlan.isEmpty()) {
+            // 1): no current plan
             logger.info("Currently no plan, executing AStar")
 
             // emergency: we need to have at least a clean search if not done with dijkstra
@@ -71,10 +73,12 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                 rootState = endState
             }
 
-        } else { // 2) We are executing a plan. We either need to do Dijkstra or more searching
+        } else {
+            // 2) We are executing a plan. We either need to do Dijkstra or more searching
             when (mode) {
                 Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker)
-                Mode.ASTAR, Mode.NEW_SEARCH -> { // if we find a goal while executing, simply extend the plan
+                Mode.ASTAR, Mode.NEW_SEARCH -> {
+                    // if we find a goal while executing, simply extend the plan
                     val endState = AStar(terminationChecker)
                     if (mode == Mode.FOUND_GOAL) executingPlan.addAll(extractPlan(endState))
                 }
@@ -111,7 +115,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         setMode(Mode.ASTAR)
 
         var state = openList.remove()
-        while(!terminationChecker.reachedTermination() && !domain.isGoal(state))
+        while (!terminationChecker.reachedTermination() && !domain.isGoal(state))
             state = expandNode(state)
 
         logger.info("Done with AStar")
@@ -130,7 +134,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         logger.info("Doing Dijkstra")
 
         // set all g(s) for s in closedList to infinite
-        if (mode == Mode.NEW_DIJKSTRA) closedList.forEach { heuristicTable.put(it, Double.MAX_VALUE)}
+        if (mode == Mode.NEW_DIJKSTRA) closedList.forEach { heuristicTable.put(it, Double.MAX_VALUE) }
 
         // no need to setup dijkstra again next round
         setMode(Mode.DIJKSTRA)
@@ -151,7 +155,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                         + heuristicTable[predecessor.state])
 
                 if (predecessor.state in closedList &&
-                        heuristicTable[predecessor.state]!! > (heuristicTable[state]!! + predecessor.cost))  {
+                        heuristicTable[predecessor.state]!! > (heuristicTable[state]!! + predecessor.cost)) {
                     heuristicTable[predecessor.state] = heuristicTable[state]!! + predecessor.cost
                     logger.trace("Updated to " + heuristicTable[predecessor.state])
 
@@ -178,7 +182,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         for (successor in domain.successors(state)) {
             logger.trace("Considering successor " + successor)
 
-            if (costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY}) >
+            if (costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY }) >
                     (costTable[state]!! + successor.cost)) {
 
                 costTable[successor.state] = costTable[state]!! + successor.cost
@@ -228,16 +232,14 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      * TODO: will this round -0.4 to 0? That would be bad
      */
     private class LLS_LRT_AStarStateComparator(val domain: Domain,
-                                              val heuristicTable: MutableMap<State, Double>,
-                                              val costTable: MutableMap<State, Double>) : Comparator<State> {
+                                               val heuristicTable: MutableMap<State, Double>,
+                                               val costTable: MutableMap<State, Double>) : Comparator<State> {
         override fun compare(s1: State?, s2: State?): Int {
             if (s1 != null && s2 != null) {
 
-                return ((heuristicTable.getOrPut(s1, { domain.heuristic(s1)}) + costTable.getOrPut(s1, { Double.POSITIVE_INFINITY})) -
-                        (heuristicTable.getOrPut(s2, { domain.heuristic(s2)}) + costTable.getOrPut(s2, { Double.POSITIVE_INFINITY}))).toInt()
-            }
-
-            else throw RuntimeException("Cannot insert null into closed list")
+                return ((heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) + costTable.getOrPut(s1, { Double.POSITIVE_INFINITY })) -
+                        (heuristicTable.getOrPut(s2, { domain.heuristic(s2) }) + costTable.getOrPut(s2, { Double.POSITIVE_INFINITY }))).toInt()
+            } else throw RuntimeException("Cannot insert null into closed list")
         }
     }
 
@@ -252,11 +254,9 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         override fun compare(s1: State?, s2: State?): Int {
             if (s1 != null && s2 != null) {
 
-                return (heuristicTable.getOrPut(s1, { domain.heuristic(s1)}) -
-                        heuristicTable.getOrPut(s2, { domain.heuristic(s2)})).toInt()
-            }
-
-            else throw RuntimeException("Cannot insert null into closed list")
+                return (heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) -
+                        heuristicTable.getOrPut(s2, { domain.heuristic(s2) })).toInt()
+            } else throw RuntimeException("Cannot insert null into closed list")
         }
     }
 

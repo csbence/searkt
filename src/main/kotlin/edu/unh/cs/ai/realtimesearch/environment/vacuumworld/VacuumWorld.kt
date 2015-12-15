@@ -32,14 +32,15 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                         successors.add(SuccessorBundle(
                                 VacuumWorldState(newLocation, state.dirtyCells),
                                 it,
-                                1.0 )) // all actions have cost of 1
+                                1.0)) // all actions have cost of 1
 
                     }
-                } else if (newLocation in state.dirtyCells) { // add legit vacuum action
+                } else if (newLocation in state.dirtyCells) {
+                    // add legit vacuum action
                     successors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                             it,
-                            1.0 ))
+                            1.0))
                 }
             }
 
@@ -65,14 +66,15 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                         predecessors.add(SuccessorBundle(
                                 VacuumWorldState(newLocation, state.dirtyCells),
                                 it,
-                                1.0 )) // all actions have cost of 1
+                                1.0)) // all actions have cost of 1
 
                     }
-                } else if (newLocation !in state.dirtyCells) { // no dirty means might have beend irty
+                } else if (newLocation !in state.dirtyCells) {
+                    // no dirty means might have beend irty
                     predecessors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells + newLocation),
                             it,
-                            1.0 ))
+                            1.0))
                 }
             }
 
@@ -80,7 +82,9 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
             return predecessors
         }
 
-        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")    }
+        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
+    }
+
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *

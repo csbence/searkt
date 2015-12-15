@@ -14,7 +14,9 @@ class CallsTerminationChecker(val callLimit: Int) : TerminationChecker {
     /**
      * Resets # calls
      */
-    override fun init() { calls = 0 }
+    override fun init() {
+        calls = 0
+    }
 
     /**
      * Returns true if more than callLimit calls have been made

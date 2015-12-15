@@ -14,7 +14,9 @@ class TimeTerminationChecker(val timeLimit: Double) : TerminationChecker {
     /**
      * Sets start time to now
      */
-    override fun init() { startTime = System.currentTimeMillis() }
+    override fun init() {
+        startTime = System.currentTimeMillis()
+    }
 
     /**
      * Checks whether the allowed time has passed since init

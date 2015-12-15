@@ -28,8 +28,8 @@ class AStarPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
             if (n1 != null && n2 != null)
                 return (
                         (domain.heuristic(n1.state) + n1.cost) -
-                        (domain.heuristic(n2.state) + n2.cost)
-                                ).toInt()
+                                (domain.heuristic(n2.state) + n2.cost)
+                        ).toInt()
             else throw RuntimeException("Cannot insert null into closed list")
         }
     }

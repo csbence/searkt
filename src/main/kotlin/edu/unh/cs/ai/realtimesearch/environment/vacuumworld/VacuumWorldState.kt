@@ -27,7 +27,9 @@ data class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val di
         operator fun minus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x - other.x, y - other.y)
     }
 
-    public override fun toString(): String { return "Agent location: " + agentLocation.toString() + ", dirty: "  + dirtyCells.toString()}
+    public override fun toString(): String {
+        return "Agent location: " + agentLocation.toString() + ", dirty: " + dirtyCells.toString()
+    }
 
 }
 

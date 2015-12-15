@@ -13,7 +13,7 @@ import java.util.*
  * @param domain: is the domain to be planned in
  * @param openList is the list used for deciding which nodes to expand upon
  */
-open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>):
+open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
         ClosedListPlanner(domain) {
 
     /**
