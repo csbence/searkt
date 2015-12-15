@@ -22,3 +22,4 @@ appender("FILE", FileAppender) {
 }
 
 root(INFO, ["STDOUT"])
+

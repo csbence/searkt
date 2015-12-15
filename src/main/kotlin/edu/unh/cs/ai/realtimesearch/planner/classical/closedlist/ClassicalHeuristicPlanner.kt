@@ -10,7 +10,7 @@ import java.util.*
  *
  * Contains a priority open queue, whose comparator is set by the constructor
  */
-abstract class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
+open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
         ClosedListPlanner(domain) {
 
 

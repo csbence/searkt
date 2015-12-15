@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import org.slf4j.LoggerFactory
 
 /**
  * The vacuumworld is a problem where the agent, a vacuumcleaner, is supposed to clean
@@ -11,8 +12,10 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
  */
 class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>) : Domain {
 
+    private val logger = LoggerFactory.getLogger("VacuumWorld")
+
     /**
-     * Part fo the Domain interface.
+     * Part of the Domain interface.
      */
     override fun successors(state: State): List<SuccessorBundle> {
         if (state is VacuumWorldState) {
@@ -39,12 +42,45 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                             1.0 ))
                 }
             }
+
+            logger.trace("State " + state.toString() + " produces successors: " + successors.forEach { it.toString() })
             return successors
         }
 
         throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
     }
 
+    override fun predecessors(state: State): List<SuccessorBundle> {
+        if (state is VacuumWorldState) {
+
+            // to return
+            val predecessors: MutableList<SuccessorBundle> = arrayListOf()
+
+            VacuumWorldAction.values.forEach {
+                val newLocation = state.agentLocation - it.getRelativeLocation()
+
+                // add the legal movement actions
+                if (it != VacuumWorldAction.VACUUM) {
+                    if (isLegalLocation(newLocation)) {
+                        predecessors.add(SuccessorBundle(
+                                VacuumWorldState(newLocation, state.dirtyCells),
+                                it,
+                                1.0 )) // all actions have cost of 1
+
+                    }
+                } else if (newLocation !in state.dirtyCells) { // no dirty means might have beend irty
+                    predecessors.add(SuccessorBundle(
+                            VacuumWorldState(newLocation, state.dirtyCells + newLocation),
+                            it,
+                            1.0 ))
+                }
+            }
+
+            logger.trace("State " + state.toString() + " produces predecessors: " + predecessors.forEach { it.toString() })
+            return predecessors
+        }
+
+        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")    }
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *
@@ -85,6 +121,5 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
 
         throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
     }
-
 }
 

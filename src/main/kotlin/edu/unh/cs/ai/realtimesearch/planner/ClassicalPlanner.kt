@@ -59,44 +59,49 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
      * @return a list of action compromising the plan
      */
     fun plan(state: State): List<Action> {
-
         // get ready / reset for plan
-        generatedNodes = 0
-        expandedNodes = 0
-        initiatePlan()
+        reset()
 
         // main loop
         var currentNode = Node(null, state, null, 0.0)
         while (!domain.isGoal(currentNode.state)) {
-            expandedNodes += 1
-
-            // expand (only those not visited yet)
-            for (successor in domain.successors(currentNode.state)) {
-                if (!visitedBefore(successor.successorState, currentNode)) {
-                    generatedNodes += 1
-
-                    // generate the node with correct cost
-                    val nodeCost = successor.cost + currentNode.cost
-                    generateNode(Node(currentNode, successor.successorState,
-                                 successor.action, nodeCost))
-                }
-            }
-
-            // check next node
-            currentNode = popFromOpenList()
+            currentNode = expandNode(currentNode)
         }
 
-        return getActions(currentNode)
+        return extractPlan(currentNode)
+    }
+
+    /**
+     * Expands single node and generates the sucessor nodes
+     *
+     * @param node is the node to expand
+     * @return the next node of interest
+     */
+    public fun expandNode(node: Node): Node {
+       expandedNodes += 1
+
+        // expand (only those not visited yet)
+        for (successor in domain.successors(node.state)) {
+            if (!visitedBefore(successor.state, node)) {
+                generatedNodes += 1
+
+                // generate the node with correct cost
+                val nodeCost = successor.cost + node.cost
+                generateNode(Node(node, successor.state,
+                             successor.action, nodeCost))
+            }
+        }
+
+        return popFromOpenList()
     }
 
     /**
      * @brief Returns the actions necessary to get to node
      *
      * @param leave the current end of the path
-     *
      * @return list of actions to get to leave
      */
-    private fun getActions(leave: Node): List<Action> {
+    protected fun extractPlan(leave: Node): List<Action> {
         val actions: MutableList<Action> = arrayListOf()
 
         var node = leave
@@ -108,5 +113,15 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
         }
 
         return actions.reversed() // we are adding actions in wrong order, to return the reverser
+    }
+
+    /**
+     * Forcefully resets the planner to initial state, with no prior search
+     * history or generated node.
+     */
+    public fun reset() {
+        generatedNodes = 0
+        expandedNodes = 0
+        initiatePlan()
     }
 }

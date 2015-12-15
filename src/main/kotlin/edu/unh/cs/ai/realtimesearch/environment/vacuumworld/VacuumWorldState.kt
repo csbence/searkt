@@ -23,6 +23,8 @@ data class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val di
          * @return the addition of this and other location
          */
         operator fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
+
+        operator fun minus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x - other.x, y - other.y)
     }
 
     public override fun toString(): String { return "Agent location: " + agentLocation.toString() + ", dirty: "  + dirtyCells.toString()}

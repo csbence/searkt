@@ -2,7 +2,6 @@
 
 ## Roadmap
 
-* Implement RTS experiment, termination checkers and agent
 * Implement other algorithms & other domains
     - RTS
     - aWA*
