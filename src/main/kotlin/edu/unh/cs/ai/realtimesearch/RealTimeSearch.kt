@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
     val vacuumEnvironment = VacuumWorldEnvironment(world, state)
     //val terminalCondition = TimeTerminationChecker(10.0)
     //val terminalCondition = FakeTerminationChecker()
-    val terminalCondition = CallsTerminationChecker(20)
+    val terminalCondition = CallsTerminationChecker(25)
 
     val breathAgent = ClassicalAgent(BreadthFirstPlanner(world))
     val uniformAgent = ClassicalAgent(UniformPlanner(world))
