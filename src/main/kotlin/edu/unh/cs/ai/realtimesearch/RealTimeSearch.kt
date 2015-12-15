@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.BreadthFirstPla
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.GreedyBestFirstPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.UniformPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realTime.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 
 /**
  * @author Bence Cserna (bence@cserna.net)
