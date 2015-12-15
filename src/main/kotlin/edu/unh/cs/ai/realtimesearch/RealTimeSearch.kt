@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.BreadthFirstPla
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.GreedyBestFirstPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.UniformPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realTime.LSS_LRT_AStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realTime.LssLrtaStarPlanner
 
 /**
  * @author Bence Cserna (bence@cserna.net)
@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
     val uniformAgent = ClassicalAgent(UniformPlanner(world))
     val greedyAgent = ClassicalAgent(GreedyBestFirstPlanner(world))
     val aStarAgent = ClassicalAgent(AStarPlanner(world))
-    val lssRTAAgent = RTSAgent(LSS_LRT_AStarPlanner(world))
+    val lssRTAAgent = RTSAgent(LssLrtaStarPlanner(world))
 
     val breathExperiment = ClassicalExperiment(breathAgent, state)
     val uniformExperiment = ClassicalExperiment(uniformAgent, state)

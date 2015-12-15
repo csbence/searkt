@@ -13,7 +13,7 @@ import java.util.*
  *
  * @param
  */
-class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
+class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private val logger = LoggerFactory.getLogger("LLS_LRT")
 
     // cached h and g values
