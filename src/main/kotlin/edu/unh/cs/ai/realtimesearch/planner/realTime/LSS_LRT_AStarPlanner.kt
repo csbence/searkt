@@ -99,9 +99,6 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         if (mode == Mode.NEW_SEARCH) {
             logger.info("New Search...")
 
-            generatedNodes = 0
-            expandedNodes = 0
-
             costTable.clear()
             openList.clear()
             closedList.clear()
@@ -140,7 +137,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering to heuristic only
         var tempOpenList = openList.toArrayList()
-        openList = PriorityQueue(GreedyLLS_LRT_AStarStateComparator(heuristicTable))
+        openList = PriorityQueue(GreedyLLS_LRT_AStarStateComparator(domain, heuristicTable))
         openList.addAll(tempOpenList)
 
         // update all g(s) in closedList, starting from frontiers in openList
@@ -230,14 +227,14 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      *
      * TODO: will this round -0.4 to 0? That would be bad
      */
-    public class LLS_LRT_AStarStateComparator(val domain: Domain,
+    private class LLS_LRT_AStarStateComparator(val domain: Domain,
                                               val heuristicTable: MutableMap<State, Double>,
                                               val costTable: MutableMap<State, Double>) : Comparator<State> {
         override fun compare(s1: State?, s2: State?): Int {
             if (s1 != null && s2 != null) {
 
                 return ((heuristicTable.getOrPut(s1, { domain.heuristic(s1)}) + costTable.getOrPut(s1, { Double.POSITIVE_INFINITY})) -
-                        (heuristicTable.getOrPut(s2, { domain.heuristic(s1)}) + costTable.getOrPut(s1, { Double.POSITIVE_INFINITY}))).toInt()
+                        (heuristicTable.getOrPut(s2, { domain.heuristic(s2)}) + costTable.getOrPut(s2, { Double.POSITIVE_INFINITY}))).toInt()
             }
 
             else throw RuntimeException("Cannot insert null into closed list")
@@ -251,12 +248,12 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      *
      * TODO: will this round -0.4 to 0? That would be bad
      */
-    public class GreedyLLS_LRT_AStarStateComparator(val heuristicTable: MutableMap<State, Double>) : Comparator<State> {
+    private class GreedyLLS_LRT_AStarStateComparator(val domain: Domain, val heuristicTable: MutableMap<State, Double>) : Comparator<State> {
         override fun compare(s1: State?, s2: State?): Int {
             if (s1 != null && s2 != null) {
 
-                return (heuristicTable.getOrPut(s1, { Double.POSITIVE_INFINITY}) -
-                        heuristicTable.getOrPut(s2, { Double.POSITIVE_INFINITY})).toInt()
+                return (heuristicTable.getOrPut(s1, { domain.heuristic(s1)}) -
+                        heuristicTable.getOrPut(s2, { domain.heuristic(s2)})).toInt()
             }
 
             else throw RuntimeException("Cannot insert null into closed list")

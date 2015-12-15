@@ -3,7 +3,6 @@
 ## Roadmap
 
 * Implement other algorithms & other domains
-    - RTS
     - aWA*
     - Sliding Puzzle
 * Develop a meaningful experiment runner environment, with various input and proper results
@@ -11,7 +10,7 @@
     - For multiple experiments, do we want different initial states, and if yes, where do we instantiate those?
     - How do we make terminationChecker more general, what type of info do we give it during tests?
     - Reconsider environment/domain structure, how do we generalize over them best?
-    
+
 ## TODO
 
 * Figure out experiment framework
