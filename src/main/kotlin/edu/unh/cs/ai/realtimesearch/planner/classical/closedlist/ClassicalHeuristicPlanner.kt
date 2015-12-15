@@ -13,10 +13,8 @@ import java.util.*
  * @param domain: is the domain to be planned in
  * @param openList is the list used for deciding which nodes to expand upon
  */
-open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
+open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>):
         ClosedListPlanner(domain) {
-
-
 
     /**
      * Clears open list
@@ -27,7 +25,7 @@ open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue
     }
 
     /**
-     * Adds the node to back of openlist
+     * Adds the node to back of openList
      */
     protected override fun generateNode(node: Node) {
         openList.add(node)
@@ -35,7 +33,7 @@ open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue
     }
 
     /**
-     * Gets node from front of openlist
+     * Gets node from front of openList
      */
     override fun popFromOpenList(): Node = openList.remove()
 }

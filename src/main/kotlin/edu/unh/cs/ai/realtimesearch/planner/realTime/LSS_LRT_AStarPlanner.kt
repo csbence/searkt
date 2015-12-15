@@ -8,11 +8,15 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 
+/**
+ * Local Search Space Learning Real Time Search A*, a type of RTS planner
+ *
+ * @param
+ */
 class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
     private val logger = LoggerFactory.getLogger("LLS_LRT")
 
-    // results/logging
     private var generatedNodes = 0
     private var expandedNodes = 0
 
@@ -29,12 +33,17 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private var executingPlan: Queue<Action> = linkedListOf()
     private var rootState: State? = null
 
-    // current mode, either doing dijkstra updates or astar search
+    // current mode, either doing dijkstra updates or AStar search
     enum class Mode {NEW_SEARCH, ASTAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL}
     private var mode = Mode.NEW_SEARCH
 
     /**
-     * TODO: document
+     * Selects a action given current state. LSS-LRTAStar will plan to a specific frontier, and continue
+     * to plan from there. This planning abides a termination criteria, meaning that it plans under constraints
+     *
+     * @param state is the current state
+     * @param terminationChecker is the constraint
+     * @return a current action
      */
     override fun selectAction(state: State, terminationChecker: TerminationChecker): Action {
         // only first ever call in an experiment will require this
@@ -67,25 +76,26 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         } else { // 2) We are executing a plan
             when (mode) {
-                Mode.NEW_DIJKSTRA -> Dijkstra(terminationChecker)
-                Mode.DIJKSTRA -> Dijkstra(terminationChecker)
-                Mode.ASTAR -> AStar(terminationChecker)
-                Mode.NEW_SEARCH -> AStar(terminationChecker)
+                Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker)
+                Mode.ASTAR, Mode.NEW_SEARCH -> {
+                    val state = AStar(terminationChecker)
+                    if (mode == Mode.FOUND_GOAL) executingPlan.addAll(extractPlan(state))
+                }
                 Mode.FOUND_GOAL -> logger.info("In mode found goal")
             }
         }
 
         val action = executingPlan.remove()
-        logger.info("Returning action $action and ${executingPlan.size} actions left")
+        logger.info("Returning action $action with ${executingPlan.size} actions left")
 
         return action
     }
 
 
     /**
-     * Runs AStar until termination and returns the path to the head of openlist
+     * Runs AStar until termination and returns the path to the head of openList
      *
-     * @param terminationChecker defines the termination criterium
+     * @param terminationChecker defines the termination criteria
      */
     private fun AStar(terminationChecker: TerminationChecker): State {
         // reset stuff for new search
