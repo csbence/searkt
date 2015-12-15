@@ -11,7 +11,8 @@ import java.util.*
 /**
  * Local Search Space Learning Real Time Search A*, a type of RTS planner
  *
- * @param
+ * TODO: define own node or move node out of classic planner
+ * @param domain is the domain we are planning in
  */
 class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private val logger = LoggerFactory.getLogger("LLS_LRT")
