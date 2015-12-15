@@ -65,7 +65,8 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             val endState = AStar(terminationChecker)
             executingPlan = extractPlan(endState)
 
-            logger.info("Got a new plan, up to state $endState of plan $executingPlan")
+            logger.info("Got a new plan, up to state $endState " +
+                    ", h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}")
 
             // next is doing dijkstra, unless we found the goal, and setup new root state
             if (mode != Mode.FOUND_GOAL) {
@@ -87,7 +88,7 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         }
 
         val action = executingPlan.remove()
-        logger.info("Returning action $action with ${executingPlan.size} actions left")
+        logger.info("Returning action $action with plan $executingPlan left")
 
         return action
     }
@@ -149,7 +150,7 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             val state = openList.remove()
             closedList.remove(state)
 
-            logger.debug("Checking for predecessors of " + state + " (h value: " + heuristicTable[state] + ")") // TODO: trace
+            logger.trace("Checking for predecessors of " + state + " (h value: " + heuristicTable[state] + ")")
             for (predecessor in domain.predecessors(state)) {
                 logger.trace("Considering predecessor " + predecessor.state + " with heuristic value "
                         + heuristicTable[predecessor.state])
@@ -175,12 +176,13 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     }
 
     private fun expandNode(state: State): State {
-        logger.debug("Expanding state " + state)
+        logger.debug("Expanding state " + state + ", " +
+                "h(${heuristicTable[state]}) & g(${costTable[state]})")
         closedList.add(state)
 
-        expandedNodes.inc()
+        expandedNodes += 1
         for (successor in domain.successors(state)) {
-            logger.trace("Considering successor " + successor)
+            logger.trace("Considering successor $successor")
 
             if (costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY }) >
                     (costTable[state]!! + successor.cost)) {
@@ -189,7 +191,7 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
                 treePointers.put(successor.state, Pair(state, successor.action!!))
 
-                generatedNodes.inc()
+                generatedNodes += 1
                 if (!openList.contains(successor.state))
                     openList.add(successor.state)
             } else
