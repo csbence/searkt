@@ -14,8 +14,6 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  */
 abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
 
-    // TODO: proper logging here
-    // private val logger = LoggerFactory.getLogger("ClassicalPlanner")
     var generatedNodes = 0
     var expandedNodes = 0
 

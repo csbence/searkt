@@ -15,8 +15,6 @@ import java.util.*
  */
 abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
 
-    // TODO: proper logging here
-    // private val logger = LoggerFactory.getLogger("ClosedListPlanner")
     private val closedList: HashSet<State> = hashSetOf()
 
     /** Interface of ClassicalPlanner **/
@@ -43,6 +41,5 @@ abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
      * @return whether state has been seen before
      */
     protected override fun visitedBefore(state: State, leave: Node) = state in closedList
-
 
 }

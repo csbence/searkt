@@ -12,8 +12,6 @@ import java.util.*
  */
 class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
 
-    // TODO: proper logging here
-    // private val logger = LoggerFactory.getLogger("DepthFirstPlanner")
     private val openList: Deque<Node> = linkedListOf()
 
     /** ClassicalPlanner interface **/

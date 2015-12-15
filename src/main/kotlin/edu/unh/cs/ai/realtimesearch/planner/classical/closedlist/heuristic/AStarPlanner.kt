@@ -4,6 +4,13 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.ClassicalHeuristicPlanner
 import java.util.*
 
+/**
+ * A*, expands nodes according to their f value
+ *
+ * Will create a classical heuristic planner with f value comparator
+ *
+ * @param domain is the domain to plan in
+ */
 class AStarPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
         PriorityQueue(AStarPlanner.AStarNodeComparator(domain))) {
 

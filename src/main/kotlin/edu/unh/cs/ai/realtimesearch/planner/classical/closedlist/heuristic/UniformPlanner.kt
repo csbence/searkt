@@ -6,6 +6,9 @@ import java.util.*
 
 /**
  * The uniform planner's heuristic is purely the cost of current node
+ *
+ * Instantiates as a classical heuristic planner whose comparator sorts on g value
+ * @param domain is the domain to plan in
  */
 class UniformPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
         PriorityQueue(UniformPlanner.UniformNodeComparator())) {

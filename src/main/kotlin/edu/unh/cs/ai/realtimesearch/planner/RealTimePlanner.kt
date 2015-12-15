@@ -11,6 +11,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
  * A planner for real time search environments, where a constraint is placed
  * on the the amount of time allowed to plan. A RTS planner requires to return
  * a action within a certain time limit
+ *
+ * @param domain: The domain to plan in
  */
 abstract class RealTimePlanner(protected val domain: Domain) : Planner {
 
@@ -19,7 +21,7 @@ abstract class RealTimePlanner(protected val domain: Domain) : Planner {
      *
      * @param state is the state to pick an action for
      * @param terminationChecker provides the termination criteria
-     * @return an action
+     * @return an action for current state
      */
     abstract fun selectAction(state: State, terminationChecker: TerminationChecker): Action
 }

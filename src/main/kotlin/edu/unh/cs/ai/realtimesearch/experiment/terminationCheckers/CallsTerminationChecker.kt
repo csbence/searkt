@@ -4,6 +4,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 
 /**
  * Terminates after X amount of calls
+ *
+ * @param callLimit is the amount of calls allowed
  */
 class CallsTerminationChecker(val callLimit: Int) : TerminationChecker {
 
@@ -12,16 +14,11 @@ class CallsTerminationChecker(val callLimit: Int) : TerminationChecker {
     /**
      * Resets # calls
      */
-    override fun init() {
-        calls = 0
-    }
+    override fun init() { calls = 0 }
 
     /**
      * Returns true if more than callLimit calls have been made
      * Increments calls
      */
-    override fun reachedTermination(): Boolean {
-        calls += 1
-        return calls >= callLimit
-    }
+    override fun reachedTermination() = calls++ >= callLimit
 }

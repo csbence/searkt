@@ -4,11 +4,14 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
 import java.util.*
 
+/**
+ * Breadth first planner. Will expand nodes according to first in first out
+ *
+ * @param domain: The domain to plan in
+ */
 class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
 
     private val openList: Deque<Node> = linkedListOf()
-
-    /** ClassicalPlanner interface **/
 
     /**
      * Clears open list
@@ -20,6 +23,8 @@ class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
 
     /**
      * Adds the node to back of openlist
+     *
+     * @param node is the node that is generated
      */
     protected override fun generateNode(node: Node) {
         openList.add(node)
@@ -28,6 +33,7 @@ class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
 
     /**
      * Gets node from front of openlist
+     * @return first on the openlist (first in first out)
      */
     override fun popFromOpenList(): Node = openList.pop()
 }

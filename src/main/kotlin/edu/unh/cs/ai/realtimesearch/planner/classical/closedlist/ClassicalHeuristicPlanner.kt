@@ -9,12 +9,14 @@ import java.util.*
  * Abstract class for classical heuristic planners
  *
  * Contains a priority open queue, whose comparator is set by the constructor
+ *
+ * @param domain: is the domain to be planned in
+ * @param openList is the list used for deciding which nodes to expand upon
  */
 open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
         ClosedListPlanner(domain) {
 
 
-    /** ClassicalPlanner interface **/
 
     /**
      * Clears open list

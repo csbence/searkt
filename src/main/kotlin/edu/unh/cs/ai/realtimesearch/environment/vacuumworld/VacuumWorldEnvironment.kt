@@ -8,10 +8,10 @@ import org.slf4j.LoggerFactory
 /**
  * The vacuumworld environment. Contains the domain and a current state
  *
- * @param simulator is the vacuumworld domain
+ * @param domainDynamics is the vacuumworld domain
  * @param currentState is the initial state
  */
-class VacuumWorldEnvironment(private val simulator: VacuumWorld, private var currentState: State) : Environment {
+class VacuumWorldEnvironment(private val domainDynamics: VacuumWorld, private var currentState: State) : Environment {
     private val logger = LoggerFactory.getLogger("VacuumWorldEnvironment")
 
     /**
@@ -21,7 +21,7 @@ class VacuumWorldEnvironment(private val simulator: VacuumWorld, private var cur
      */
     override fun step(action: Action) {
         // contains successor per possible action
-        val successorBundles = simulator.successors(currentState)
+        val successorBundles = domainDynamics.successors(currentState)
 
         // get the state from the successors by filtering on action
         currentState = successorBundles.first { it.action == action }.state
@@ -41,10 +41,9 @@ class VacuumWorldEnvironment(private val simulator: VacuumWorld, private var cur
      * @return true if currentState is goal
      */
     override fun isGoal(): Boolean {
-        val goal =  simulator.isGoal(currentState)
+        val goal =  domainDynamics.isGoal(currentState)
 
-        val word = if (goal) "" else "not"
-        logger.trace("State " + currentState.toString() + " is " + word + " a goal")
+        logger.trace("State $currentState is ${if (goal) "" else "not"} a goal")
 
         return goal
     }

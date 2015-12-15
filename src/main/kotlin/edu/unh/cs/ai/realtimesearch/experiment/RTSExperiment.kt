@@ -26,14 +26,12 @@ class RTSExperiment(val agent: RTSAgent, val world: Environment, val termination
         logger.warn("Starting experiment")
 
         while (!world.isGoal()) {
-            terminationChecker.init()
 
+            terminationChecker.init()
             val state = world.getState()
             val action = agent.selectAction(world.getState(), terminationChecker);
 
-            logger.warn("Agent return action " + action.toString() + " for state " + state.toString())
-            // TODO: assert termination is okay somehow?
-
+            logger.warn("Agent return action $action for state $state")
             world.step(action)
         }
 
