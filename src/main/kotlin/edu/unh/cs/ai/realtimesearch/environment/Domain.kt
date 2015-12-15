@@ -14,5 +14,5 @@ interface Domain {
     public fun isGoal(state: State): Boolean
 }
 
-data class SuccessorBundle(val state: State, val action: Action?, val cost: Double)
+data class SuccessorBundle(val state: State, val action: Action?, val actionCost: Double)
 

@@ -86,7 +86,7 @@ abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
                 generatedNodes += 1
 
                 // generate the node with correct cost
-                val nodeCost = successor.cost + node.cost
+                val nodeCost = successor.actionCost + node.cost
                 generateNode(Node(node, successor.state,
                         successor.action, nodeCost))
             }

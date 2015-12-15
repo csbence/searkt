@@ -156,8 +156,8 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                         + heuristicTable[predecessor.state])
 
                 if (predecessor.state in closedList &&
-                        heuristicTable[predecessor.state]!! > (heuristicTable[state]!! + predecessor.cost)) {
-                    heuristicTable[predecessor.state] = heuristicTable[state]!! + predecessor.cost
+                        heuristicTable[predecessor.state]!! > (heuristicTable[state]!! + predecessor.actionCost)) {
+                    heuristicTable[predecessor.state] = heuristicTable[state]!! + predecessor.actionCost
                     logger.trace("Updated to " + heuristicTable[predecessor.state])
 
                     if (!openList.contains(predecessor.state))
@@ -185,9 +185,9 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             logger.trace("Considering successor $successor")
 
             if (costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY }) >
-                    (costTable[state]!! + successor.cost)) {
+                    (costTable[state]!! + successor.actionCost)) {
 
-                costTable[successor.state] = costTable[state]!! + successor.cost
+                costTable[successor.state] = costTable[state]!! + successor.actionCost
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
                 treePointers.put(successor.state, Pair(state, successor.action!!))
 
@@ -196,7 +196,7 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                     openList.add(successor.state)
             } else
                 logger.trace("Did not add, because it's cost is " + costTable[successor.state] +
-                        " compared to cost of predecessor ( " + costTable[state] + "), and action cost " + successor.cost)
+                        " compared to cost of predecessor ( " + costTable[state] + "), and action cost " + successor.actionCost)
         }
 
         return openList.remove()
