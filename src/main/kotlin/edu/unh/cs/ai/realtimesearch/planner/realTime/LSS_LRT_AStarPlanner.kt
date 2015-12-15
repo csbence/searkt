@@ -14,11 +14,7 @@ import java.util.*
  * @param
  */
 class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
-
     private val logger = LoggerFactory.getLogger("LLS_LRT")
-
-    private var generatedNodes = 0
-    private var expandedNodes = 0
 
     // cached h and g values
     private val heuristicTable: MutableMap<State, Double> = hashMapOf()
@@ -63,23 +59,24 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             // emergency: we need to have at least a clean search if not done with dijkstra
             if (mode == Mode.DIJKSTRA) setMode(Mode.NEW_SEARCH)
 
-            // get plan and store new root
+            // generate new plan
             val endState = AStar(terminationChecker)
             executingPlan = extractPlan(endState)
 
             logger.info("Got a new plan, up to state $endState of plan $executingPlan")
 
+            // next is doing dijkstra, unless we found the goal, and setup new root state
             if (mode != Mode.FOUND_GOAL) {
                 setMode(Mode.NEW_DIJKSTRA)
                 rootState = endState
             }
 
-        } else { // 2) We are executing a plan
+        } else { // 2) We are executing a plan. We either need to do Dijkstra or more searching
             when (mode) {
                 Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker)
-                Mode.ASTAR, Mode.NEW_SEARCH -> {
-                    val state = AStar(terminationChecker)
-                    if (mode == Mode.FOUND_GOAL) executingPlan.addAll(extractPlan(state))
+                Mode.ASTAR, Mode.NEW_SEARCH -> { // if we find a goal while executing, simply extend the plan
+                    val endState = AStar(terminationChecker)
+                    if (mode == Mode.FOUND_GOAL) executingPlan.addAll(extractPlan(endState))
                 }
                 Mode.FOUND_GOAL -> logger.info("In mode found goal")
             }
@@ -113,10 +110,10 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             costTable.put(rootState!!, 0.0)
         }
 
+        // We do not need to setup for a new search after this
         setMode(Mode.ASTAR)
 
         var state = openList.remove()
-
         while(!terminationChecker.reachedTermination() && !domain.isGoal(state))
             state = expandNode(state)
 
@@ -127,11 +124,18 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         return state
     }
 
-    private fun Dijkstra(terminationChecker: TerminationChecker): Boolean {
+    /**
+     * Performs Dijkstra updates until runs out of resources or done
+     *
+     * @param terminationChecker, constraint of our resource
+     */
+    private fun Dijkstra(terminationChecker: TerminationChecker) {
         logger.info("Doing Dijkstra")
 
-        if (mode == Mode.NEW_DIJKSTRA)
-            closedList.forEach { heuristicTable.put(it, Double.MAX_VALUE)}
+        // set all g(s) for s in closedList to infinite
+        if (mode == Mode.NEW_DIJKSTRA) closedList.forEach { heuristicTable.put(it, Double.MAX_VALUE)}
+
+        // no need to setup dijkstra again next round
         setMode(Mode.DIJKSTRA)
 
         // change openList ordering to heuristic only
@@ -139,6 +143,7 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         openList = PriorityQueue(GreedyLLS_LRT_AStarStateComparator(heuristicTable))
         openList.addAll(tempOpenList)
 
+        // update all g(s) in closedList, starting from frontiers in openList
         while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
             val state = openList.remove()
             closedList.remove(state)
@@ -156,8 +161,6 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                     if (!openList.contains(predecessor.state))
                         openList.add(predecessor.state)
                 }
-
-
             }
         }
 
@@ -166,10 +169,8 @@ class LSS_LRT_AStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         openList = PriorityQueue(LLS_LRT_AStarStateComparator(domain, heuristicTable, costTable))
         openList.addAll(tempOpenList)
 
-        val done = closedList.isEmpty()
-        if (done) setMode(Mode.NEW_SEARCH)
-
-        return done
+        // update mode if done
+        if (closedList.isEmpty()) setMode(Mode.NEW_SEARCH)
     }
 
     private fun expandNode(state: State): State {

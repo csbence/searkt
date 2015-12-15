@@ -25,16 +25,24 @@ fun main(args: Array<String>) {
 
     // init
 
-    val world = VacuumWorld(6, 6, arrayListOf( ))
+    val world = VacuumWorld(8, 8, arrayListOf(
+            VacuumWorldState.Location(5,2),
+            VacuumWorldState.Location(3,6),
+            VacuumWorldState.Location(4,4),
+            VacuumWorldState.Location(7,4),
+            VacuumWorldState.Location(1,1),
+            VacuumWorldState.Location(2,3)
+    ))
 
     val state = VacuumWorldState(VacuumWorldState.Location(0,1), listOf(
             VacuumWorldState.Location(1,2),
+            VacuumWorldState.Location(3,4),
+            VacuumWorldState.Location(6,5),
+            VacuumWorldState.Location(2,5),
             VacuumWorldState.Location(2,4),
-            VacuumWorldState.Location(2,0),
-            VacuumWorldState.Location(2,3),
-            VacuumWorldState.Location(0,4),
-            VacuumWorldState.Location(3,5),
-            VacuumWorldState.Location(5,0)
+            VacuumWorldState.Location(3,7),
+            VacuumWorldState.Location(5,0),
+            VacuumWorldState.Location(0,4)
     ))
 
     val vacuumEnvironment = VacuumWorldEnvironment(world, state)

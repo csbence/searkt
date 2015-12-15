@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import org.slf4j.LoggerFactory
 
@@ -23,6 +24,8 @@ class RTSExperiment(val agent: RTSAgent, val world: Environment, val termination
      * Runs the experiment
      */
     override fun run() {
+        val actions: MutableList<Action> = arrayListOf()
+
         logger.warn("Starting experiment")
 
         while (!world.isGoal()) {
@@ -32,9 +35,13 @@ class RTSExperiment(val agent: RTSAgent, val world: Environment, val termination
             val action = agent.selectAction(world.getState(), terminationChecker);
 
             logger.warn("Agent return action $action for state $state")
+
+            actions.add(action)
             world.step(action)
         }
 
-        // TODO: store results (which?)
+        logger.info("Path: " + actions + "\nAfter " +
+                agent.planner.expandedNodes + " expanded and " +
+                agent.planner.generatedNodes + " generated nodes")
     }
 }

@@ -14,8 +14,8 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  */
 abstract class ClassicalPlanner(protected val domain: Domain) : Planner {
 
-    var generatedNodes = 0
-    var expandedNodes = 0
+    public var generatedNodes = 0
+    public var expandedNodes = 0
 
     data class Node(val parent: Node?, val state: State,
                     val action: Action?, val cost: Double)

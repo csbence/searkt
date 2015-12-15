@@ -16,6 +16,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
  */
 abstract class RealTimePlanner(protected val domain: Domain) : Planner {
 
+    public var generatedNodes = 0
+    public var expandedNodes = 0
+
     /**
      * Returns an action while abiding the termination checker's criteria.
      *
