@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import org.slf4j.LoggerFactory
 
 /**
- * The vacuumworld is a problem where the agent, a vacuumcleaner, is supposed to clean
+ * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
  * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
  * the four directions, or to vacuum.
  */
@@ -38,13 +38,14 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                 } else if (newLocation in state.dirtyCells) {
                     // add legit vacuum action
                     successors.add(SuccessorBundle(
-                            VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
+                            // TODO: inefficient?
+                            VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }.toSet()),
                             it,
                             1.0))
                 }
             }
 
-            logger.trace("State " + state.toString() + " produces successors: " + successors.forEach { it.toString() })
+            logger.trace("State $state produces successors: $successors")
             return successors
         }
 
@@ -70,7 +71,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
 
                     }
                 } else if (newLocation !in state.dirtyCells) {
-                    // no dirty means might have beend irty
+                    // no dirty means might have been dirty
                     predecessors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells + newLocation),
                             it,
@@ -78,7 +79,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                 }
             }
 
-            logger.trace("State " + state.toString() + " produces predecessors: " + predecessors.forEach { it.toString() })
+            logger.trace("State $state produces predecessors: $predecessors")
             return predecessors
         }
 
@@ -113,7 +114,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
 
     /**
      * Returns whether the current state is a goal state.
-     * Returns true if no dirtycells are present in the state.
+     * Returns true if no dirty cells are present in the state.
      *
      * @param state: the state that is being checked on
      * @return whether the state is a goal state
@@ -124,6 +125,27 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         }
 
         throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
+    }
+
+
+    override fun print(state: State): String {
+        if (state is VacuumWorldState) {
+            var description = ""
+            for (h in 1..height) {
+                for (w in 1..width) {
+                    when (VacuumWorldState.Location(w, h)) {
+                        state.agentLocation -> description += "@ "
+                        in blockedCells -> description += "# "
+                        in state.dirtyCells -> description += "$ "
+                    }
+                }
+                description += "\n"
+            }
+
+            return description
+        }
+
+        throw RuntimeException("VacuumWorld only accepts VacuumWorldStates")
     }
 }
 
