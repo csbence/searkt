@@ -26,18 +26,17 @@ class RTSExperiment(val agent: RTSAgent, val world: Environment, val termination
     override fun run() {
         val actions: MutableList<Action> = arrayListOf()
 
-        logger.warn("Starting experiment")
+        logger.warn("Starting experiment from state ${world.getState()}")
 
         while (!world.isGoal()) {
 
             terminationChecker.init()
-            val state = world.getState()
             val action = agent.selectAction(world.getState(), terminationChecker);
-
-            logger.warn("Agent return action $action for state $state")
 
             actions.add(action)
             world.step(action)
+
+            logger.warn("Agent return action $action to state ${world.getState()}")
         }
 
         logger.info("Path: " + actions + "\nAfter " +

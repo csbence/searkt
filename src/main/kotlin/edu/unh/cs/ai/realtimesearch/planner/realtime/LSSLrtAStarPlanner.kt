@@ -14,7 +14,7 @@ import java.util.*
  * TODO: define own node or move node out of classic planner
  * @param domain is the domain we are planning in
  */
-class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
+class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private val logger = LoggerFactory.getLogger("LLS_LRT")
 
     // cached h and g values
@@ -151,10 +151,9 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             val state = openList.remove()
             closedList.remove(state)
 
-            logger.trace("Checking for predecessors of " + state + " (h value: " + heuristicTable[state] + ")")
+            logger.debug("Checking for predecessors of $state (h value: ${heuristicTable[state]})")
             for (predecessor in domain.predecessors(state)) {
-                logger.trace("Considering predecessor " + predecessor.state + " with heuristic value "
-                        + heuristicTable[predecessor.state])
+                logger.trace("Considering predecessor ${predecessor.state} with heuristic value ${heuristicTable[predecessor.state]}")
 
                 if (predecessor.state in closedList &&
                         heuristicTable[predecessor.state]!! > (heuristicTable[state]!! + predecessor.actionCost)) {
@@ -183,7 +182,7 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         expandedNodes += 1
         for (successor in domain.successors(state)) {
-            logger.trace("Considering successor $successor")
+            logger.trace("Considering successor ${successor.state}")
 
             if (costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY }) >
                     (costTable[state]!! + successor.actionCost)) {
@@ -256,9 +255,11 @@ class LssLrtaStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private class GreedyLLS_LRT_AStarStateComparator(val domain: Domain, val heuristicTable: MutableMap<State, Double>) : Comparator<State> {
         override fun compare(s1: State?, s2: State?): Int {
             if (s1 != null && s2 != null) {
-
-                return (heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) -
+                val heuristicDifference = (heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) -
                         heuristicTable.getOrPut(s2, { domain.heuristic(s2) })).toInt()
+
+                return if (heuristicDifference != 0) heuristicDifference.toInt() else (heuristicTable[s1]!! - heuristicTable[s2]!!).toInt()
+
             } else throw RuntimeException("Cannot insert null into closed list")
         }
     }
