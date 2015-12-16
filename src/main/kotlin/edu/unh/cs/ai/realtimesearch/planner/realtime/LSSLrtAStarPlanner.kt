@@ -28,7 +28,10 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
     // default search lists
     private val closedList: HashSet<State> = hashSetOf()
-    private var openList = PriorityQueue(LLS_LRT_AStarStateComparator(domain, heuristicTable, costTable))
+    //private var openList = PriorityQueue(LLS_LRT_AStarStateComparator(domain, heuristicTable, costTable))
+    private var openList = PriorityQueue<State>(compareBy{
+        heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.MAX_VALUE})
+    })
 
     // current plan in execution
     private var executingPlan: Queue<Action> = linkedListOf()
@@ -206,7 +209,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering to heuristic only
         var tempOpenList = openList.toArrayList()
-        openList = PriorityQueue(GreedyLLS_LRT_AStarStateComparator(domain, heuristicTable))
+        openList = PriorityQueue<State>(compareBy { heuristicTable.getOrPut(it, {domain.heuristic(it)}) })
         openList.addAll(tempOpenList)
 
         // update all g(s) in closedList, starting from frontiers in openList
@@ -238,7 +241,9 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering back to f value
         tempOpenList = openList.toArrayList()
-        openList = PriorityQueue(LLS_LRT_AStarStateComparator(domain, heuristicTable, costTable))
+        openList = PriorityQueue<State>(compareBy{
+            heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.MAX_VALUE})
+        })
         openList.addAll(tempOpenList)
 
         // update mode if done
@@ -312,40 +317,4 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         mode = newMode
         logger.info("Setting mode to " + mode)
     }
-
-    /**
-     * Uses the heuristic and cost tables in LLS_LRTA_AStar planner to calculate
-     * the heuristic and g values.
-     *
-     * As according to the algorithm:
-     * If no heuristic is found, it returns the domains heuristic.
-     * If no g value is found, it sets it to infinity.
-     */
-    private class LLS_LRT_AStarStateComparator(val domain: Domain,
-                                               val heuristicTable: MutableMap<State, Double>,
-                                               val costTable: MutableMap<State, Double>) : Comparator<State> {
-        override fun compare(s1: State?, s2: State?): Int {
-            if (s1 != null && s2 != null) {
-
-                return ((heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) + costTable.getOrPut(s1, { Double.POSITIVE_INFINITY })) -
-                        (heuristicTable.getOrPut(s2, { domain.heuristic(s2) }) + costTable.getOrPut(s2, { Double.POSITIVE_INFINITY }))).toInt()
-            } else throw RuntimeException("Cannot insert null into closed list")
-        }
-    }
-
-    /**
-     * When doing Dijkstra updates, the open list states are popped according only to their heuristic value.
-     * This comparator does just that: fetches the heuristic from table, and if not found, uses the domain specified
-     * heuristic and uses that to sort.
-     */
-    private class GreedyLLS_LRT_AStarStateComparator(val domain: Domain, val heuristicTable: MutableMap<State, Double>) : Comparator<State> {
-        override fun compare(s1: State?, s2: State?): Int {
-            if (s1 != null && s2 != null) {
-
-                return (heuristicTable.getOrPut(s1, { domain.heuristic(s1) }) - heuristicTable.getOrPut(s2, { domain.heuristic(s2) })).toInt()
-
-            } else throw RuntimeException("Cannot insert null into closed list")
-        }
-    }
-
 }
