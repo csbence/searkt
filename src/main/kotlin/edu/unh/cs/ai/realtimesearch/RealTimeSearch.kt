@@ -54,7 +54,7 @@ fun main(args: Array<String>) {
 }
 
 fun writeResultsToFile(name: String, results: List<ExperimentResult>) {
-    val writer = PrintWriter("Results-$name-${Random().nextInt()}.csv", "UTF-8")
+    val writer = PrintWriter("results/Results-$name-${Random().nextInt()}.csv", "UTF-8")
     results.forEach {
         writer.println("${it.expandedNodes}, ${it.generatedNodes}, ${it.timeInMillis}, ${it.actions.size}")
     }
