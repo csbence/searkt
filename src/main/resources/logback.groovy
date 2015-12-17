@@ -7,7 +7,7 @@ def USER_HOME = System.getProperty("user.home")
 
 appender("STDOUT", ConsoleAppender) {
     encoder(PatternLayoutEncoder) {
-        pattern = "%d{HH:mm:ss.SSS} %5level %logger{1} - %msg%n"
+        pattern = "%d{HH:mm:ss.SSS} %5level %logger{0} - %msg%n"
     }
 }
 
