@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
+import kotlin.util.measureTimeMillis
 
 /**
  * An experiments meant for classical search, such as depth first search.
@@ -29,19 +30,24 @@ class ClassicalExperiment(val agent: ClassicalAgent,
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var plan: List<Action> = emptyList()
 
-    override fun run() {
-        for (run in 1..runs) {
+    override fun run(): List<ExperimentResult> {
+        val results: MutableList<ExperimentResult> = arrayListOf()
 
+        for (run in 1..runs) {
             // do experiment on state, either given or randomly created
             val state = initState?.copy() ?: domain.randomState()
             logger.warn("Starting experiment run $run with state $state on agent $agent")
 
-            plan = agent.plan(state)
+            val timeInMillis = measureTimeMillis { plan = agent.plan(state) }
 
             // log results
             logger.warn("Path: $plan\nAfter ${agent.planner.expandedNodes} expanded " +
                     "and ${agent.planner.generatedNodes} generated nodes")
+
+            results.add(ExperimentResult(agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, plan))
         }
+
+        return results
 
     }
 }

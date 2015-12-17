@@ -39,9 +39,9 @@ fun main(args: Array<String>) {
 
     // run experiment
     print("A*\n")
-    aStarExperiment.run()
+    val results = aStarExperiment.run()
     //print("LSS RTA*\n")
-    //lssRTAExperiment.run()
+//    val lssResults = lssRTAExperiment.run()
     //lssRTAExperiment.run()
 
     //for (i in 1..5) {
