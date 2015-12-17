@@ -20,7 +20,7 @@ import java.util.*
  */
 class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
-    private val logger = LoggerFactory.getLogger("LLS_LRT")
+    private val logger = LoggerFactory.getLogger(RealTimePlanner::class.java)
 
     // cached h and g values
     private val heuristicTable: MutableMap<State, Double> = hashMapOf()

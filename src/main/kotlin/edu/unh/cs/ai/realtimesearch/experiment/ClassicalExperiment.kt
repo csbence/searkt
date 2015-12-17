@@ -26,7 +26,7 @@ class ClassicalExperiment(val agent: ClassicalAgent,
                           val initState: State? = null,
                           runs: Int = 1) : Experiment(runs) {
 
-    private val logger = LoggerFactory.getLogger("ClassicalExperiment")
+    private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var plan: List<Action> = emptyList()
 
     override fun run() {

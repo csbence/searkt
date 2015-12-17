@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.anytime
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import org.slf4j.LoggerFactory
 import java.lang.Math.min
 import java.util.*
 
@@ -10,6 +11,8 @@ import java.util.*
  * @author Bence Cserna (bence@cserna.net)
  */
 class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
+
+    private val logger = LoggerFactory.getLogger(AnytimeReparingAStar::class.java)
 
     private val openList: Queue<State> = PriorityQueue(compareBy { inflatedFValue(it) })
     private val closedList: MutableMap<State, Node> = hashMapOf()

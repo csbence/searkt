@@ -28,7 +28,7 @@ class RTSExperiment(val agent: RTSAgent,
                     val terminationChecker: TerminationChecker,
                     runs: Int = 1) : Experiment(runs) {
 
-    private val logger = LoggerFactory.getLogger("RTSExperiment")
+    private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 
     /**
      * Runs the experiment
