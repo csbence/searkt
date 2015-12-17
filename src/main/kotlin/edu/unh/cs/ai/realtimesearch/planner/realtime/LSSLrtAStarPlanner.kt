@@ -20,7 +20,7 @@ import java.util.*
  */
 class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
-    private val logger = LoggerFactory.getLogger(RealTimePlanner::class.java)
+    private val logger = LoggerFactory.getLogger(LSSLRTAStarPlanner::class.java)
 
     // cached h and g values
     private val heuristicTable: MutableMap<State, Double> = hashMapOf()
@@ -104,6 +104,9 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             val endState = generateExecutionPlan(terminationChecker)
             executingPlan = extractPlan(endState)
 
+            logger.info("Got a new plan, up to state $endState " +
+                    ", h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}")
+
             if (domain.isGoal(endState)) {
                 setMode(Mode.FOUND_GOAL)
             } else {
@@ -159,9 +162,6 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         // generate new plan
         val endState = AStar(terminationChecker)
 
-        logger.info("Got a new plan, up to state $endState " +
-                ", h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}")
-
         return endState
     }
 
@@ -194,9 +194,6 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             state = expandNode(state)
 
         logger.info("Done with AStar")
-
-        if (domain.isGoal(state)) setMode(Mode.FOUND_GOAL)
-
         return state
     }
 
