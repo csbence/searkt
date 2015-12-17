@@ -8,14 +8,20 @@ import org.slf4j.LoggerFactory
 /**
  * @author Bence Cserna (bence@cserna.net)
  *
- * An RTS experiment repeatedly queries the agent for an action by some constraint (allowed time for example).
- * After each selected action, the experiment then applies this action to its environment.
+ * An RTS experiment repeatedly queries the agent
+ * for an action by some constraint (allowed time for example).
+ * After each selected action, the experiment then applies this action
+ * to its environment.
  *
- * It's currently assuming fully observable environments.
+ * The states are given by the environment, the world. When creating the world
+ * it might be possible to determine what the initial state is.
+ *
+ * NOTE: assumes the same domain is used to create both the agent as the world
  *
  * @param agent is a RTS agent that will supply the actions
  * @param world is the environment
  * @param terminationChecker controls the constraint put upon the agent
+ * @param runs is the amount of runs you want the experiment to do
  */
 class RTSExperiment(val agent: RTSAgent,
                     val world: Environment,
