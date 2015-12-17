@@ -32,8 +32,8 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<State>(compareBy{
-        heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY})
+    private var openList = PriorityQueue<State>(compareBy {
+        heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
     })
 
     // current plan in execution
@@ -228,7 +228,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering to heuristic only
         var tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<State>(compareBy { heuristicTable.getOrPut(it, {domain.heuristic(it)}) })
+        openList = PriorityQueue<State>(compareBy { heuristicTable.getOrPut(it, { domain.heuristic(it) }) })
         openList.addAll(tempOpenList)
 
         // update all g(s) in closedList, starting from frontiers in openList
@@ -260,8 +260,8 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering back to f value
         tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<State>(compareBy{
-            heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY})
+        openList = PriorityQueue<State>(compareBy {
+            heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
         })
         openList.addAll(tempOpenList)
 
