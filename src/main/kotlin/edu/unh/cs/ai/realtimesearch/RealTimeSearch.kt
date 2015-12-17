@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
     val aStarAgent = ClassicalAgent(AStarPlanner(world))
     //val lssRTAAgent = RTSAgent(LSSLRTAStarPlanner(world))
 
-    val aStarExperiment = ClassicalExperiment(aStarAgent, world, state, 10)
+    val aStarExperiment = ClassicalExperiment(aStarAgent, world, null, 10)
     //val lssRTAExperiment = RTSExperiment(lssRTAAgent, vacuumEnvironment, terminalCondition)
     //val randomLssRTAExperiment = RTSExperiment(lssRTAAgent, randomVacuumEnvironment, terminalCondition)
 

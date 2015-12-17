@@ -159,8 +159,13 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     override fun randomState(): State {
         val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width, height))
 
-        while (dirtyCells.size < initialAmountDirty)
-            dirtyCells.add(randomLocation(width, height))
+        // generate random locations until enough
+        // do not add those that would be in blocked cells
+        while (dirtyCells.size < initialAmountDirty) {
+            val randomLocation = randomLocation(width, height)
+            if (randomLocation !in blockedCells)
+                dirtyCells.add(randomLocation)
+        }
 
         val randomState = VacuumWorldState(randomLocation(width, height), dirtyCells)
         logger.debug("Returning random state $randomState")
