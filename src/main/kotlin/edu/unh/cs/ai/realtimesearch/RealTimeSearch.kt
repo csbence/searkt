@@ -5,8 +5,11 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
+import java.io.PrintWriter
+import java.util.*
 
 /**
  * @author Bence Cserna (bence@cserna.net)
@@ -40,6 +43,7 @@ fun main(args: Array<String>) {
     // run experiment
     print("A*\n")
     val results = aStarExperiment.run()
+    writeResultsToFile("AStar", results)
     //print("LSS RTA*\n")
 //    val lssResults = lssRTAExperiment.run()
     //lssRTAExperiment.run()
@@ -47,4 +51,12 @@ fun main(args: Array<String>) {
     //for (i in 1..5) {
     //randomLssRTAExperiment.run()
     //}
+}
+
+fun writeResultsToFile(name: String, results: List<ExperimentResult>) {
+    val writer = PrintWriter("Results-$name-${Random().nextInt()}.csv", "UTF-8")
+    results.forEach {
+        writer.println("${it.expandedNodes}, ${it.generatedNodes}, ${it.timeInMillis}, ${it.actions.size}")
+    }
+    writer.close()
 }
