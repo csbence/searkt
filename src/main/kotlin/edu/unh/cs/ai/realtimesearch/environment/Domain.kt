@@ -13,6 +13,7 @@ interface Domain {
     public fun distance(state: State): Double
     public fun isGoal(state: State): Boolean
     public fun print(state: State): String
+    public fun randomState(): State
 }
 
 data class SuccessorBundle(val state: State, val action: Action?, val actionCost: Double)

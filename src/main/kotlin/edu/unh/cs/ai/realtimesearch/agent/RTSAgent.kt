@@ -19,7 +19,12 @@ class RTSAgent(val planner: RealTimePlanner) {
      * @param terminationChecker is the object that returns whether the agent should terminate
      * @return an action, given current state and termination check
      */
-    public fun selectAction(state: State, terminationChecker: TerminationChecker): Action {
-        return planner.selectAction(state, terminationChecker)
-    }
+    public fun selectAction(state: State, terminationChecker: TerminationChecker) = planner.selectAction(state, terminationChecker)
+
+    /**
+     * Resets the agent for a new run. This function is called whenever a new run starts. This should prepare
+     * the agent for a new experiment, clearing out any experience or data from previous searches. This function
+     * is necessary for the agent to understand that the next selectAction is unrelated to previous action selection.
+     */
+    public fun reset() = planner.reset()
 }

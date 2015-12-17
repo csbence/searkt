@@ -4,13 +4,17 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
  * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
  * the four directions, or to vacuum.
+ *
+ * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>) : Domain {
+class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>,
+                  val initialAmountDirty: Int = 1) : Domain {
 
     private val logger = LoggerFactory.getLogger("VacuumWorld")
 
@@ -146,6 +150,32 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         }
 
         throw RuntimeException("VacuumWorld only accepts VacuumWorldStates")
+    }
+
+    /**
+     * Creates a state with a random initial location for the agent and
+     * initialAmountDirty number of random dirty cells
+     */
+    override fun randomState(): State {
+        val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width,height))
+
+        while (dirtyCells.size < initialAmountDirty)
+            dirtyCells.add(randomLocation(width, height))
+
+        val randomState = VacuumWorldState(randomLocation(width, height), dirtyCells)
+        logger.debug("Returning random state $randomState")
+
+        return randomState
+    }
+
+    /**
+     * Returns a random location within width and height
+     */
+    private fun randomLocation(width: Int, height: Int): VacuumWorldState.Location {
+        return VacuumWorldState.Location(
+                ThreadLocalRandom.current().nextInt(0, width),
+                ThreadLocalRandom.current().nextInt(0, height)
+        )
     }
 }
 

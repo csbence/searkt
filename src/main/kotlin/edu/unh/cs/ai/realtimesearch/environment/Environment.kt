@@ -24,4 +24,10 @@ interface Environment {
      * @return true if goal has been reached
      */
     public fun isGoal(): Boolean
+
+    /**
+     * Resets the environment for a new experiment. Any data or changes
+     * made during steps are to be cleared and reset to initial.
+     */
+    public fun reset()
 }

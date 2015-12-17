@@ -19,6 +19,7 @@ import java.util.*
  * This loop continue until the goal has been found
  */
 class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
+
     private val logger = LoggerFactory.getLogger("LLS_LRT")
 
     // cached h and g values
@@ -28,9 +29,11 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
     // default search lists
     private val closedList: HashSet<State> = hashSetOf()
-    //private var openList = PriorityQueue(LLS_LRT_AStarStateComparator(domain, heuristicTable, costTable))
+
+    // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
+    // The cost values are initialized to infinity
     private var openList = PriorityQueue<State>(compareBy{
-        heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.MAX_VALUE})
+        heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY})
     })
 
     // current plan in execution
@@ -51,6 +54,16 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private var mode = Mode.INIT
 
     /**
+     * Prepares LSS for a completely unrelated new search. Sets mode to init
+     * When a new action is selected, all members that persist during selection action phase are cleared
+     */
+    override public fun reset() {
+        mode = Mode.INIT
+        super.reset()
+    }
+
+
+    /**
      * Selects a action given current state.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will
@@ -66,6 +79,13 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     override fun selectAction(state: State, terminationChecker: TerminationChecker): Action {
         // Initiate for the first search
         if (mode == Mode.INIT) {
+
+            // clear members that persist during action selection
+            heuristicTable.clear()
+            treePointers.clear()
+            executingPlan = linkedListOf()
+
+            // Ready to start new search!
             rootState = state
             mode = Mode.NEW_SEARCH
         }
@@ -168,7 +188,6 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             setMode(Mode.ASTAR)
         }
 
-
         // actual core steps of A*, building the tree
         var state = openList.remove()
         while (!terminationChecker.reachedTermination() && !domain.isGoal(state))
@@ -242,7 +261,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         // change openList ordering back to f value
         tempOpenList = openList.toArrayList()
         openList = PriorityQueue<State>(compareBy{
-            heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.MAX_VALUE})
+            heuristicTable.getOrPut(it, { domain.heuristic(it)}) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY})
         })
         openList.addAll(tempOpenList)
 

@@ -16,12 +16,13 @@ class ClassicalExperiment(val agent: ClassicalAgent, val initState: State) : Exp
     private var plan: List<Action> = emptyList()
 
     override fun run() {
+        logger.warn("Starting experiment with state $initState on agent $agent")
         plan = agent.plan(initState)
 
         var actions = ""
         plan.forEach { actions += it.toString() + " " }
 
-        logger.info("Path: " + actions + "\nAfter " +
+        logger.warn("Path: " + actions + "\nAfter " +
                 agent.planner.expandedNodes + " expanded and " +
                 agent.planner.generatedNodes + " generated nodes")
     }

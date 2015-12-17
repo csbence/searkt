@@ -61,7 +61,7 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
             // Decrease inflation factor
 
             // move states from inconsistent to open
-            openList.addAll(inconsistentNodes)
+            //openList.addAll(inconsistentNodes)
             inconsistentNodes.clear()
 
             // Update all priorities in the open list

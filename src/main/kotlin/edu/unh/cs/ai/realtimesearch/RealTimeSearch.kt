@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
 
     // init
     val world = VacuumWorld(3, 3, arrayListOf(
-    ))
+    ), 2)
 
     val state = VacuumWorldState(VacuumWorldState.Location(0, 0), setOf(
             VacuumWorldState.Location(2, 0),
@@ -30,6 +30,8 @@ fun main(args: Array<String>) {
     ))
 
     val vacuumEnvironment = VacuumWorldEnvironment(world, state)
+    val randomVacuumEnvironment = VacuumWorldEnvironment(world)
+
     //val terminalCondition = TimeTerminationChecker(10.0)
     //val terminalCondition = FakeTerminationChecker()
     val terminalCondition = CallsTerminationChecker(10)
@@ -45,6 +47,7 @@ fun main(args: Array<String>) {
     val greedyExperiment = ClassicalExperiment(greedyAgent, state)
     val aStarExperiment = ClassicalExperiment(aStarAgent, state)
     val lssRTAExperiment = RTSExperiment(lssRTAAgent, vacuumEnvironment, terminalCondition)
+    val randomLssRTAExperiment = RTSExperiment(lssRTAAgent, randomVacuumEnvironment, terminalCondition)
 
     // run experiment
     print("Breadth first:\n")
@@ -59,4 +62,9 @@ fun main(args: Array<String>) {
     aStarExperiment.run()
     print("LSS RTA*\n")
     lssRTAExperiment.run()
+    lssRTAExperiment.run()
+
+    for (i in 1..5) {
+        randomLssRTAExperiment.run()
+    }
 }

@@ -2,49 +2,51 @@ package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
 
 /**
- * The vacuumworld environment. Contains the domain and a current state
+ * The VacuumWorld environment. Contains the domain and a current state
  *
- * @param domainDynamics is the vacuumworld domain
- * @param currentState is the initial state
+ * @param domain is the VacuumWorld domain
+ * @param initialState is the initial state. Will use random states if not provided
  */
-class VacuumWorldEnvironment(private val domainDynamics: VacuumWorld, private var currentState: State) : Environment {
+class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initialState: VacuumWorldState? = null) : Environment {
+
     private val logger = LoggerFactory.getLogger("VacuumWorldEnvironment")
+    private var currentState: VacuumWorldState = initialState?: domain.randomState() as VacuumWorldState
 
     /**
      * Applies the action to the environment
-     *
-     * @param action to apply
      */
     override fun step(action: Action) {
         // contains successor per possible action
-        val successorBundles = domainDynamics.successors(currentState)
+        val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action
-        currentState = successorBundles.first { it.action == action }.state
+        currentState = successorBundles.first { it.action == action }.state as VacuumWorldState
         logger.trace("Action " + action.toString() + " leads to state " + currentState.toString())
     }
 
     /**
      * Returns current state of the world
-     *
-     * @return current state
      */
     override fun getState() = currentState
 
     /**
      * Returns whether current state is the goal
-     *
-     * @return true if currentState is goal
      */
     override fun isGoal(): Boolean {
-        val goal = domainDynamics.isGoal(currentState)
+        val goal = domain.isGoal(currentState)
 
         logger.trace("State $currentState is ${if (goal) "" else "not"} a goal")
 
         return goal
+    }
+
+    /**
+     * Resets the current state to either initial (if given at construction), or a random state
+     */
+    override fun reset() {
+        currentState = initialState ?: domain.randomState() as VacuumWorldState
     }
 }
