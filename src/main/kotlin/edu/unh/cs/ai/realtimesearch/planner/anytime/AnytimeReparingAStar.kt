@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.anytime
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import java.lang.Math.min
 import java.util.*
 
 /**
@@ -10,12 +11,10 @@ import java.util.*
  */
 class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
 
-    private val openList: Queue<State> = PriorityQueue(compareBy {
-        val node = closedList[it]!!
-        node.cost + inflationFactor * node.heuristic
-    })
+    private val openList: Queue<State> = PriorityQueue(compareBy { inflatedFValue(it) })
     private val closedList: MutableMap<State, Node> = hashMapOf()
-    private val inconsistentNodes: MutableList<Node> = arrayListOf()
+    private val inconsistentStates: MutableList<State> = arrayListOf()
+    private val goal: State? = null
 
     public var generatedNodes = 0
     public var expandedNodes = 0
@@ -26,8 +25,7 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
         // This is analogue to Likhachev's CLOSED list
         val localClosedList: MutableSet<State> = hashSetOf()
 
-        // TODO while loop
-        while (true) {
+        while (goalCost() > inflatedFValue(openList.element())) {
             val currentState = openList.poll() ?: return // Return if the frontier is empty
             val currentNode = closedList[currentState]!!
 
@@ -41,7 +39,7 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
                     closedList[it.state] = updatedSuccessorNode
 
                     if (localClosedList.contains(it.state)) {
-                        inconsistentNodes.add(updatedSuccessorNode)
+                        inconsistentStates.add(it.state)
                     } else {
                         openList.add(it.state)
                     }
@@ -56,23 +54,44 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
         improvePath()
 
         // calculate e
+        assert(inconsistentStates.isEmpty())
+        updateInflationFactor()
 
         while (inflationFactor > 1) {
-            // Decrease inflation factor
+            // 08 Decrease inflation factor ?
 
-            // move states from inconsistent to open
-            //openList.addAll(inconsistentNodes)
-            inconsistentNodes.clear()
-
-            // Update all priorities in the open list
-
-            // Clear closed
+            // 09 Move states from inconsistent to open
+            // 10 Update all priorities in the open list
+            openList.addAll(inconsistentStates)
+            inconsistentStates.clear()
+            closedList.clear()
 
             improvePath()
-
-            // calculate e
-
+            updateInflationFactor()
         }
+    }
+
+    private fun updateInflationFactor() {
+        val minimalInconsistentState = inconsistentStates.minBy { fValue(it) }
+        val minimalInconsistentFValue = if (minimalInconsistentState != null) fValue(minimalInconsistentState) else Double.POSITIVE_INFINITY
+        val minimalOpenStateFValue = fValue(openList.element())
+
+        inflationFactor = goalCost() / min(minimalInconsistentFValue, minimalOpenStateFValue)
+    }
+
+    private fun fValue(state: State): Double {
+        val node = closedList[state]!!
+        return node.cost + node.heuristic
+    }
+
+    private fun inflatedFValue(state: State): Double {
+        val node = closedList[state]!!
+        return node.cost + inflationFactor * node.heuristic
+    }
+
+    private fun goalCost(): Double {
+        goal ?: return Double.POSITIVE_INFINITY
+        return closedList[goal]!!.cost
     }
 
 }
