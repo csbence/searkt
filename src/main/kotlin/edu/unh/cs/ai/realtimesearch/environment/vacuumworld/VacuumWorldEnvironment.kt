@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  */
 class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initialState: VacuumWorldState? = null) : Environment {
 
-    private val logger = LoggerFactory.getLogger("VacuumWorldEnvironment")
+    private val logger = LoggerFactory.getLogger(VacuumWorldEnvironment::class.java)
     private var currentState: State = initialState ?: domain.randomState()
 
     /**

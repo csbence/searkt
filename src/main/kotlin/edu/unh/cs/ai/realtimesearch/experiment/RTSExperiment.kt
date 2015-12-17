@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import org.slf4j.LoggerFactory
+import kotlin.util.measureTimeMillis
 
 /**
  * @author Bence Cserna (bence@cserna.net)
@@ -28,33 +29,42 @@ class RTSExperiment(val agent: RTSAgent,
                     val terminationChecker: TerminationChecker,
                     runs: Int = 1) : Experiment(runs) {
 
-    private val logger = LoggerFactory.getLogger("RTSExperiment")
+    private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 
     /**
      * Runs the experiment
      */
-    override fun run() {
-        val actions: MutableList<Action> = arrayListOf()
+    override fun run(): List<ExperimentResult> {
+        val results: MutableList<ExperimentResult> = arrayListOf()
 
+        for (run in 1..runs) {
+            val actions: MutableList<Action> = arrayListOf()
 
-        // init for this run
-        agent.reset()
-        world.reset()
+            // init for this run
+            agent.reset()
+            world.reset()
 
-        logger.warn("Starting experiment from state ${world.getState()}")
-        while (!world.isGoal()) {
+            logger.warn("Starting experiment from state ${world.getState()}")
+            val timeInMillis = measureTimeMillis {
+                while (!world.isGoal()) {
 
-            terminationChecker.init()
-            val action = agent.selectAction(world.getState(), terminationChecker);
+                    terminationChecker.init()
+                    val action = agent.selectAction(world.getState(), terminationChecker);
 
-            actions.add(action)
-            world.step(action)
+                    actions.add(action)
+                    world.step(action)
 
-            logger.info("Agent return action $action to state ${world.getState()}")
+                    logger.info("Agent return action $action to state ${world.getState()}")
+                }
+            }
+
+            logger.warn("Path: " + actions + "\nAfter " +
+                    agent.planner.expandedNodes + " expanded and " +
+                    agent.planner.generatedNodes + " generated nodes")
+
+            results.add(ExperimentResult(agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }
 
-        logger.warn("Path: " + actions + "\nAfter " +
-                agent.planner.expandedNodes + " expanded and " +
-                agent.planner.generatedNodes + " generated nodes")
+        return results
     }
 }
