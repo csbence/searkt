@@ -35,6 +35,8 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private var openList = PriorityQueue<State>(compareBy {
         heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
     })
+    // for fast lookup we maintain a set in parallel
+    private val openSet = hashSetOf<State>()
 
     // current plan in execution
     private var executingPlan: Queue<Action> = linkedListOf()
@@ -178,10 +180,10 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             logger.info("New Search...")
 
             costTable.clear()
-            openList.clear()
+            clearOpenList()
             closedList.clear()
 
-            openList.add(rootState)
+            addToOpenList(rootState!!)
             costTable.put(rootState!!, 0.0)
 
             // We do not need to setup for a new search after this
@@ -189,7 +191,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         }
 
         // actual core steps of A*, building the tree
-        var state = openList.remove()
+        var state = popOpenList()
         while (!terminationChecker.reachedTermination() && !domain.isGoal(state))
             state = expandNode(state)
 
@@ -230,7 +232,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // update all g(s) in closedList, starting from frontiers in openList
         while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
-            val state = openList.remove()
+            val state = popOpenList()
             closedList.remove(state)
 
             val currentHeuristicValue = heuristicTable[state]!!
@@ -249,8 +251,8 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
                     heuristicTable[it.state] = currentHeuristicValue + it.actionCost
                     logger.trace("Updated to " + heuristicTable[it.state])
 
-                    if (!openList.contains(it.state))
-                        openList.add(it.state)
+                    if (!inOpenList(it.state))
+                        addToOpenList(it.state)
                 }
             }
         }
@@ -294,15 +296,14 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
 
-                if (!openList.contains(successor.state))
-                    openList.add(successor.state)
-
+                if (!inOpenList(successor.state))
+                    addToOpenList(successor.state)
             } else
                 logger.trace("Did not add, because it's cost is " + costTable[successor.state] +
                         " compared to cost of predecessor ( " + costTable[state] + "), and action cost " + successor.actionCost)
         }
 
-        return openList.remove()
+        return popOpenList()
     }
 
     /**
@@ -332,5 +333,23 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private fun setMode(newMode: Mode) {
         mode = newMode
         logger.info("Setting mode to " + mode)
+    }
+
+    private fun clearOpenList() {
+        openList.clear()
+        openSet.clear()
+    }
+
+    private fun inOpenList(state: State) = openSet.contains(state)
+
+    private fun popOpenList(): State {
+        val state = openList.remove()
+        openSet.remove(state)
+        return state
+    }
+
+    private fun addToOpenList(state: State) {
+        openList.add(state)
+        openSet.add(state)
     }
 }
