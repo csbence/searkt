@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory
 class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initialState: VacuumWorldState? = null) : Environment {
 
     private val logger = LoggerFactory.getLogger("VacuumWorldEnvironment")
-    private var currentState: VacuumWorldState = initialState?: domain.randomState() as VacuumWorldState
+    private var currentState: State = initialState ?: domain.randomState()
 
     /**
      * Applies the action to the environment
@@ -47,6 +48,6 @@ class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initia
      * Resets the current state to either initial (if given at construction), or a random state
      */
     override fun reset() {
-        currentState = initialState ?: domain.randomState() as VacuumWorldState
+        currentState = initialState?.copy() ?: domain.randomState()
     }
 }

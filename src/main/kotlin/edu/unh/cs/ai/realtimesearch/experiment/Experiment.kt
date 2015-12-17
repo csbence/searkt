@@ -3,9 +3,9 @@ package edu.unh.cs.ai.realtimesearch.experiment
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-interface Experiment {
+abstract class Experiment(val runs: Int) {
     /**
      * Runs the experiment
      */
-    fun run()
+    abstract fun run()
 }

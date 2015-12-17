@@ -157,7 +157,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * initialAmountDirty number of random dirty cells
      */
     override fun randomState(): State {
-        val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width,height))
+        val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width, height))
 
         while (dirtyCells.size < initialAmountDirty)
             dirtyCells.add(randomLocation(width, height))

@@ -9,6 +9,11 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 data class VacuumWorldState(val agentLocation: VacuumWorldState.Location, val dirtyCells: Set<VacuumWorldState.Location>) : State {
 
     /**
+     * Copy simply calls the data class implemented copy
+     */
+    override fun copy() = copy(agentLocation, dirtyCells)
+
+    /**
      * This represents a grid location, defined by its x and y coordinate.
      *
      * @param x: x index of the location

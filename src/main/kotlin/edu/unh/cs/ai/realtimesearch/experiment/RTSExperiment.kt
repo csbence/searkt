@@ -17,7 +17,11 @@ import org.slf4j.LoggerFactory
  * @param world is the environment
  * @param terminationChecker controls the constraint put upon the agent
  */
-class RTSExperiment(val agent: RTSAgent, val world: Environment, val terminationChecker: TerminationChecker) : Experiment {
+class RTSExperiment(val agent: RTSAgent,
+                    val world: Environment,
+                    val terminationChecker: TerminationChecker,
+                    runs: Int = 1) : Experiment(runs) {
+
     private val logger = LoggerFactory.getLogger("RTSExperiment")
 
     /**
