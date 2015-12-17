@@ -132,6 +132,13 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     }
 
 
+    /**
+     * Simply prints the block grid.
+     *
+     * @ == agent
+     * # == blocked
+     * $ == dirty
+     */
     override fun print(state: State): String {
         if (state is VacuumWorldState) {
             var description = ""
