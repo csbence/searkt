@@ -1,38 +1,37 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class SlidingTilePuzzle : Domain {
-    override fun successors(state: State): List<SuccessorBundle> {
+class SlidingTilePuzzle : Domain<SlidingTilePuzzleState> {
+    override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle> {
         throw UnsupportedOperationException()
     }
 
-    override fun predecessors(state: State): List<SuccessorBundle> {
+    override fun predecessors(state: SlidingTilePuzzleState): List<SuccessorBundle> {
         throw UnsupportedOperationException()
     }
 
-    override fun heuristic(state: State): Double {
+    override fun heuristic(state: SlidingTilePuzzleState): Double {
         throw UnsupportedOperationException()
     }
 
-    override fun distance(state: State): Double {
+    override fun distance(state: SlidingTilePuzzleState): Double {
         throw UnsupportedOperationException()
     }
 
-    override fun isGoal(state: State): Boolean {
+    override fun isGoal(state: SlidingTilePuzzleState): Boolean {
         throw UnsupportedOperationException()
     }
 
-    override fun print(state: State): String {
+    override fun print(state: SlidingTilePuzzleState): String {
         throw UnsupportedOperationException()
     }
 
-    override fun randomState(): State {
+    override fun randomState(): SlidingTilePuzzleState {
         throw UnsupportedOperationException()
     }
 
