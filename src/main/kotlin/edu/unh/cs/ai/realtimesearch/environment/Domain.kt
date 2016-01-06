@@ -6,14 +6,14 @@ package edu.unh.cs.ai.realtimesearch.environment
  * A domain is a problem setting that defines, given a state, all possible successor states with their
  * accompanied action and cost
  */
-interface Domain<T : State> {
-    public fun successors(state: T): List<SuccessorBundle>
-    public fun predecessors(state: T): List<SuccessorBundle>
-    public fun heuristic(state: T): Double
-    public fun distance(state: T): Double
-    public fun isGoal(state: T): Boolean
-    public fun print(state: T): String
-    public fun randomState(): T
+interface Domain {
+    public fun successors(state: State): List<SuccessorBundle>
+    public fun predecessors(state: State): List<SuccessorBundle>
+    public fun heuristic(state: State): Double
+    public fun distance(state: State): Double
+    public fun isGoal(state: State): Boolean
+    public fun print(state: State): String
+    public fun randomState(): State
 }
 
 data class SuccessorBundle(val state: State, val action: Action?, val actionCost: Double)
