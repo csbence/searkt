@@ -39,7 +39,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     private val openSet = hashSetOf<State>()
 
     // current plan in execution
-    private var executingPlan: Queue<Action> = linkedListOf()
+    private var executingPlan: Queue<Action> = ArrayDeque()
     private var rootState: State? = null
 
     /**
@@ -85,7 +85,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             // clear members that persist during action selection
             heuristicTable.clear()
             treePointers.clear()
-            executingPlan = linkedListOf()
+            executingPlan = ArrayDeque()
 
             // Ready to start new search!
             rootState = state
@@ -312,7 +312,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      * Given a state, this function returns the path according to the tree pointers
      */
     private fun extractPlan(state: State): Queue<Action> {
-        val actions: Deque<Action> = linkedListOf()
+        val actions: Deque<Action> = ArrayDeque()
 
         // first step
         var stateActionPair: Pair<State, Action> = treePointers[state]!!
