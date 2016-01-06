@@ -8,15 +8,15 @@ import java.util.*
  */
 object VacuumWorldIO {
 
-    fun parserFromStream(input: InputStream): VacuumWorldInstance {
+    fun parseFromStream(input: InputStream): VacuumWorldInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
         val columnCount: Int
 
         try {
-            rowCount = inputScanner.nextLine().toInt()
             columnCount = inputScanner.nextLine().toInt()
+            rowCount = inputScanner.nextLine().toInt()
         } catch (e: NoSuchElementException) {
             throw InvalidVacuumWorldException("VacuumWorld's first or second line is missing.", e)
         } catch (e: NumberFormatException) {
@@ -32,7 +32,7 @@ object VacuumWorldIO {
                 val line = inputScanner.nextLine()
 
                 for (x in 0..columnCount - 1) {
-                    when (line[y]) {
+                    when (line[x]) {
                         '#' -> blockedCells.add(VacuumWorldState.Location(x, y))
                         '*' -> dirtyCells.add(VacuumWorldState.Location(x, y))
                         '@' -> startLocation = VacuumWorldState.Location(x, y)
@@ -44,7 +44,7 @@ object VacuumWorldIO {
         }
 
         if (startLocation == null) {
-            throw InvalidVacuumWorldException("Unknown start location")
+            throw InvalidVacuumWorldException("Unknown start location. Start location has was not defined.")
         }
 
         val vacuumWorld = edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld(columnCount, rowCount, blockedCells)
