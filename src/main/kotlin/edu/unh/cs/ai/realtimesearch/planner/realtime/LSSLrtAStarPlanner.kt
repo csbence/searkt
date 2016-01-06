@@ -51,7 +51,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      *
      * This ensures that those initiation steps are not taken if we are continuing from a previous run
      */
-    enum class Mode {INIT, NEW_SEARCH, ASTAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
+    enum class Mode {INIT, NEW_SEARCH, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
 
     private var mode = Mode.INIT
 
@@ -121,7 +121,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             when (mode) {
                 Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker) // a
 
-                Mode.ASTAR, Mode.NEW_SEARCH -> {
+                Mode.A_STAR, Mode.NEW_SEARCH -> {
                     // b
                     val endState = AStar(terminationChecker)
 
@@ -187,7 +187,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
             costTable.put(rootState!!, 0.0)
 
             // We do not need to setup for a new search after this
-            setMode(Mode.ASTAR)
+            setMode(Mode.A_STAR)
         }
 
         // actual core steps of A*, building the tree
@@ -287,20 +287,22 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValue = costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY })
-            if (successorGValue > (currentGValue + successor.actionCost)) {
+            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            if (successorGValue > successorGValueFromCurrent) {
                 generatedNodes += 1
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
-                costTable[successor.state] = currentGValue + successor.actionCost
+                costTable[successor.state] = successorGValueFromCurrent
                 treePointers.put(successor.state, Pair(state, successor.action!!))
 
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
 
                 if (!inOpenList(successor.state))
                     addToOpenList(successor.state)
-            } else
+            } else {
                 logger.trace("Did not add, because it's cost is " + costTable[successor.state] +
                         " compared to cost of predecessor ( " + costTable[state] + "), and action cost " + successor.actionCost)
+            }
         }
 
         return popOpenList()
