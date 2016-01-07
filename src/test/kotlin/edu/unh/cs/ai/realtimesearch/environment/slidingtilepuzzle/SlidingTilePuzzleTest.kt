@@ -60,14 +60,14 @@ class SlidingTilePuzzleTest {
         assertTrue { heuristic == 8.0 }
     }
 
-    private fun tiles(size: Int, init: Array<Array<Char>>.() -> Unit): Array<Array<Char>> {
-        val tiles = Array(size, { emptyArray<Char>() })
+    private fun tiles(size: Int, init: Array<ByteArray>.() -> Unit): Array<ByteArray> {
+        val tiles = Array(size, { ByteArray(0) })
         tiles.init()
         return tiles
     }
 
-    private fun Array<Array<Char>>.row(vararg args: Int) {
+    private fun Array<ByteArray>.row(vararg args: Int) {
         val index = indexOfFirst { it.isEmpty() }
-        this[index] = args.map { it.toChar() }.toTypedArray()
+        this[index] = args.map { it.toByte() }.toByteArray()
     }
 }
