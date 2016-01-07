@@ -18,7 +18,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  *
  * @author Bence Cserna (bence@cserna.net)
  */
-class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: Array<Array<Char>>, val heuristic: Double) : State {
+class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: Array<ByteArray>, val heuristic: Double) : State {
     override fun copy(): State {
         throw UnsupportedOperationException()
     }
@@ -40,10 +40,10 @@ class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, 
     }
 }
 
-operator fun Array<Array<Char>>.get(location: SlidingTilePuzzleState.Location): Char {
+operator fun Array<ByteArray>.get(location: SlidingTilePuzzleState.Location): Byte {
     return this[location.x][location.y]
 }
 
-operator fun Array<Array<Char>>.set(location: SlidingTilePuzzleState.Location, value: Char) {
+operator fun Array<ByteArray>.set(location: SlidingTilePuzzleState.Location, value: Byte) {
     this[location.x][location.y] = value
 }
