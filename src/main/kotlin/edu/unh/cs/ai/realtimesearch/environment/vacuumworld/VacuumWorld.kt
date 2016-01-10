@@ -17,77 +17,68 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                   val initialAmountDirty: Int = 1) : Domain {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
+    public inline fun <R> State.cast(f: (VacuumWorldState) -> R): R = f(this as VacuumWorldState)
 
     /**
      * Part of the Domain interface.
      */
-    override fun successors(state: State): List<SuccessorBundle> {
-        if (state is VacuumWorldState) {
+    override fun successors(state: State): List<SuccessorBundle> = state.cast { state ->
+        // to return
+        val successors: MutableList<SuccessorBundle> = arrayListOf()
 
-            // to return
-            val successors: MutableList<SuccessorBundle> = arrayListOf()
+        VacuumWorldAction.values.forEach {
+            val newLocation = state.agentLocation + it.getRelativeLocation()
 
-            VacuumWorldAction.values.forEach {
-                val newLocation = state.agentLocation + it.getRelativeLocation()
-
-                // add the legal movement actions
-                if (it != VacuumWorldAction.VACUUM) {
-                    if (isLegalLocation(newLocation)) {
-                        successors.add(SuccessorBundle(
-                                VacuumWorldState(newLocation, state.dirtyCells),
-                                it,
-                                1.0)) // all actions have cost of 1
-
-                    }
-                } else if (newLocation in state.dirtyCells) {
-                    // add legit vacuum action
+            // add the legal movement actions
+            if (it != VacuumWorldAction.VACUUM) {
+                if (isLegalLocation(newLocation)) {
                     successors.add(SuccessorBundle(
-                            // TODO: inefficient?
-                            VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }.toSet()),
+                            VacuumWorldState(newLocation, state.dirtyCells),
                             it,
-                            1.0))
-                }
-            }
+                            1.0)) // all actions have cost of 1
 
-            logger.trace("State $state produces successors: $successors")
-            return successors
+                }
+            } else if (newLocation in state.dirtyCells) {
+                // add legit vacuum action
+                successors.add(SuccessorBundle(
+                        // TODO: inefficient?
+                        VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }.toSet()),
+                        it,
+                        1.0))
+            }
         }
 
-        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
+        logger.trace("State $state produces successors: $successors")
+        return successors
     }
 
-    override fun predecessors(state: State): List<SuccessorBundle> {
-        if (state is VacuumWorldState) {
+    override fun predecessors(state: State): List<SuccessorBundle> = state.cast { state ->
+        // to return
+        val predecessors: MutableList<SuccessorBundle> = arrayListOf()
 
-            // to return
-            val predecessors: MutableList<SuccessorBundle> = arrayListOf()
+        VacuumWorldAction.values.forEach {
+            val newLocation = state.agentLocation - it.getRelativeLocation()
 
-            VacuumWorldAction.values.forEach {
-                val newLocation = state.agentLocation - it.getRelativeLocation()
-
-                // add the legal movement actions
-                if (it != VacuumWorldAction.VACUUM) {
-                    if (isLegalLocation(newLocation)) {
-                        predecessors.add(SuccessorBundle(
-                                VacuumWorldState(newLocation, state.dirtyCells),
-                                it,
-                                1.0)) // all actions have cost of 1
-
-                    }
-                } else if (newLocation !in state.dirtyCells) {
-                    // no dirty means might have been dirty
+            // add the legal movement actions
+            if (it != VacuumWorldAction.VACUUM) {
+                if (isLegalLocation(newLocation)) {
                     predecessors.add(SuccessorBundle(
-                            VacuumWorldState(newLocation, state.dirtyCells + newLocation),
+                            VacuumWorldState(newLocation, state.dirtyCells),
                             it,
-                            1.0))
-                }
-            }
+                            1.0)) // all actions have cost of 1
 
-            logger.trace("State $state produces predecessors: $predecessors")
-            return predecessors
+                }
+            } else if (newLocation !in state.dirtyCells) {
+                // no dirty means might have been dirty
+                predecessors.add(SuccessorBundle(
+                        VacuumWorldState(newLocation, state.dirtyCells + newLocation),
+                        it,
+                        1.0))
+            }
         }
 
-        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
+        logger.trace("State $state produces predecessors: $predecessors")
+        return predecessors
     }
 
     /**
@@ -107,14 +98,14 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @param state is the state to provide a heuristic for
      * @return the # of dirty cells
      */
-    override fun heuristic(state: State) =
-            if (state is VacuumWorldState) state.dirtyCells.size.toDouble()
-            else throw RuntimeException("VacuumWorld expects VacuumWorldState")
+    override fun heuristic(state: State) = state.cast {
+        it.dirtyCells.size.toDouble()
+    }
 
     /**
-     * @TODO: document & implement
+     * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: State): Double = .0
+    override fun distance(state: State) = heuristic(state)
 
     /**
      * Returns whether the current state is a goal state.
@@ -123,14 +114,9 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @param state: the state that is being checked on
      * @return whether the state is a goal state
      */
-    override fun isGoal(state: State): Boolean {
-        if (state is VacuumWorldState) {
-            return state.dirtyCells.isEmpty()
-        }
-
-        throw RuntimeException("VacuumWorld only handles VacuumWorldStates")
+    override fun isGoal(state: State): Boolean = state.cast { state ->
+        return state.dirtyCells.isEmpty()
     }
-
 
     /**
      * Simply prints the block grid.
@@ -139,24 +125,22 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * # == blocked
      * $ == dirty
      */
-    override fun print(state: State): String {
-        if (state is VacuumWorldState) {
-            var description = ""
-            for (h in 1..height) {
-                for (w in 1..width) {
-                    when (VacuumWorldState.Location(w, h)) {
-                        state.agentLocation -> description += "@ "
-                        in blockedCells -> description += "# "
-                        in state.dirtyCells -> description += "$ "
-                    }
+    override fun print(state: State): String = state.cast { state ->
+        val description = StringBuilder()
+        for (h in 1..height) {
+            for (w in 1..width) {
+                val charCell = when (VacuumWorldState.Location(w, h)) {
+                    state.agentLocation -> '@'
+                    in blockedCells -> '#'
+                    in state.dirtyCells -> '*'
+                    else -> '_'
                 }
-                description += "\n"
+                description.append(charCell)
             }
-
-            return description
+            description.append("\n")
         }
 
-        throw RuntimeException("VacuumWorld only accepts VacuumWorldStates")
+        return description.toString()
     }
 
     /**
