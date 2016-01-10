@@ -103,9 +103,9 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     }
 
     /**
-     * @TODO: document & implement
+     * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: State): Double = .0
+    override fun distance(state: State) = heuristic(state)
 
     /**
      * Returns whether the current state is a goal state.
