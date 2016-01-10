@@ -20,7 +20,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  */
 class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: Array<ByteArray>, val heuristic: Double) : State {
     override fun copy(): State {
-        throw UnsupportedOperationException()
+        return SlidingTilePuzzleState(zeroLocation.copy(), copyTiles(), heuristic)
     }
 
     fun copyTiles() = Array(tiles.size, { tiles[it].copyOf() })

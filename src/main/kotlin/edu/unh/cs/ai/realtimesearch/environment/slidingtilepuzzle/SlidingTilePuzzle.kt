@@ -12,9 +12,12 @@ class SlidingTilePuzzle(val size: Int) : Domain {
     override fun successors(state: State): List<SuccessorBundle> = state.cast {
         val successorBundles: MutableList<SuccessorBundle> = arrayListOf()
 
-        SlidingTilePuzzleAction.values.forEach { action ->
-            successorState(it, action.getRelativeLocation()).let { newState ->
-                successorBundles.add(SuccessorBundle(newState!!, action, 1.0))
+        for (action in SlidingTilePuzzleAction.values) {
+            val successorState = successorState(it, action.getRelativeLocation())
+
+            if (successorState != null) {
+                successorBundles.add(SuccessorBundle(successorState, action, 1.0))
+
             }
         }
 

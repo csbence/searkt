@@ -2,26 +2,35 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.State
+import org.slf4j.LoggerFactory
 
 /**
- * @author Bence Cserna (bence@cserna.net)
+ * The SlidingTilePuzzle environment. Contains the domain and a current state.
  */
-class SlidingTilePuzzleEnvironment : Environment {
+class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, private val initialState: SlidingTilePuzzleState) : Environment {
+
+    private val logger = LoggerFactory.getLogger(SlidingTilePuzzleEnvironment::class.java)
+    private var currentState = initialState
+
     override fun step(action: Action) {
-        throw UnsupportedOperationException()
+        val successorBundles = domain.successors(currentState)
+
+        // get the state from the successors by filtering on action
+        currentState = successorBundles.first { it.action == action }.state as SlidingTilePuzzleState
+        logger.trace("Action " + action.toString() + " leads to state " + currentState.toString())
     }
 
-    override fun getState(): State {
-        throw UnsupportedOperationException()
-    }
+    override fun getState() = currentState
 
     override fun isGoal(): Boolean {
-        throw UnsupportedOperationException()
+        val goal = domain.isGoal(currentState)
+        logger.trace("State $currentState is ${if (goal) "" else "not"} a goal")
+
+        return goal
     }
 
     override fun reset() {
-        throw UnsupportedOperationException()
+        currentState = initialState
     }
 
 }
