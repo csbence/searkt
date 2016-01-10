@@ -64,7 +64,6 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         super.reset()
     }
 
-
     /**
      * Selects a action given current state.
      *
