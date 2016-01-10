@@ -118,22 +118,29 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         return state.dirtyCells.isEmpty()
     }
 
-
+    /**
+     * Simply prints the block grid.
+     *
+     * @ == agent
+     * # == blocked
+     * $ == dirty
+     */
     override fun print(state: State): String = state.cast { state ->
-        var description = ""
+        val description = StringBuilder()
         for (h in 1..height) {
             for (w in 1..width) {
-                when (VacuumWorldState.Location(w, h)) {
-                    state.agentLocation -> description += "@ "
-                    in blockedCells -> description += "# "
-                    in state.dirtyCells -> description += "$ "
+                val charCell = when (VacuumWorldState.Location(w, h)) {
+                    state.agentLocation -> '@'
+                    in blockedCells -> '#'
+                    in state.dirtyCells -> '*'
+                    else -> '_'
                 }
+                description.append(charCell)
             }
-            description += "\n"
+            description.append("\n")
         }
 
-        return description
-
+        return description.toString()
     }
 
     /**

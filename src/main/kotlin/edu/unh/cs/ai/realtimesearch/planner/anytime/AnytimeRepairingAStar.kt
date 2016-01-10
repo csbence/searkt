@@ -10,14 +10,14 @@ import java.util.*
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
+class AnytimeRepairingAStar(val domain: Domain, var inflationFactor: Double) {
 
-    private val logger = LoggerFactory.getLogger(AnytimeReparingAStar::class.java)
+    private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)
 
     private val openList: Queue<State> = PriorityQueue(compareBy { inflatedFValue(it) })
     private val closedList: MutableMap<State, Node> = hashMapOf()
     private val inconsistentStates: MutableList<State> = arrayListOf()
-    private val goal: State? = null
+    private var goal: State? = null
 
     public var generatedNodes = 0
     public var expandedNodes = 0
@@ -41,6 +41,10 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
                     val updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost)
                     closedList[it.state] = updatedSuccessorNode
 
+                    if (domain.isGoal(it.state)) {
+                        goal = it.state
+                    }
+
                     if (localClosedList.contains(it.state)) {
                         inconsistentStates.add(it.state)
                     } else {
@@ -51,7 +55,7 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
         }
     }
 
-    private fun solve(startState: State) {
+    public fun solve(startState: State) {
         closedList[startState] = Node(state = startState, heuristic = domain.heuristic(startState))
         openList.add(startState)
         improvePath()
@@ -62,6 +66,7 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
 
         while (inflationFactor > 1) {
             // 08 Decrease inflation factor ?
+            inflationFactor /= 1.2
 
             // 09 Move states from inconsistent to open
             // 10 Update all priorities in the open list
@@ -94,7 +99,6 @@ class AnytimeReparingAStar(val domain: Domain, var inflationFactor: Double) {
 
     private fun goalCost(): Double {
         goal ?: return Double.POSITIVE_INFINITY
-        return closedList[goal]!!.cost
+        return closedList[goal!!]!!.cost
     }
-
 }

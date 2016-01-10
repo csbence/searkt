@@ -44,7 +44,7 @@ class RTSExperiment(val agent: RTSAgent,
             agent.reset()
             world.reset()
 
-            logger.warn("Starting experiment from state ${world.getState()}")
+            logger.warn("Starting experiment $run from state ${world.getState()}")
             val timeInMillis = measureTimeMillis {
                 while (!world.isGoal()) {
 
