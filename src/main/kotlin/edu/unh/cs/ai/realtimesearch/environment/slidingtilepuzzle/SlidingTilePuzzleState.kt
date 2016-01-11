@@ -41,9 +41,9 @@ class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, 
 }
 
 operator fun Array<ByteArray>.get(location: SlidingTilePuzzleState.Location): Byte {
-    return this[location.x][location.y]
+    return this[location.y][location.x]
 }
 
 operator fun Array<ByteArray>.set(location: SlidingTilePuzzleState.Location, value: Byte) {
-    this[location.x][location.y] = value
+    this[location.y][location.x] = value
 }
