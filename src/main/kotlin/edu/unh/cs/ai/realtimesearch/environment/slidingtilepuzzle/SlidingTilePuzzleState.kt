@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.State
+import java.lang.Integer.rotateLeft
 
 /**
  * State of a sliding tile puzzle.
@@ -18,7 +19,20 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  *
  * @author Bence Cserna (bence@cserna.net)
  */
-class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: Array<ByteArray>, val heuristic: Double) : State {
+data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: Array<ByteArray>, val heuristic: Double) : State {
+    private val hashCode: Int = calculateHashCode()
+
+    private fun calculateHashCode(): Int {
+        var hashCode: Int = 0
+        for (column in tiles) {
+            for (tile in column) {
+                hashCode = rotateLeft(hashCode, 1) xor tile.toInt()
+            }
+        }
+
+        return hashCode xor zeroLocation.hashCode()
+    }
+
     override fun copy(): State {
         return SlidingTilePuzzleState(zeroLocation.copy(), copyTiles(), heuristic)
     }
@@ -38,6 +52,26 @@ class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, 
             return x >= lowerBound && y >= lowerBound && x < upperBound && y < upperBound
         }
     }
+
+    override fun hashCode(): Int {
+        return hashCode
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return super.equals(other)
+    }
+
+}
+
+fun tiles(size: Int, init: Array<ByteArray>.() -> Unit): Array<ByteArray> {
+    val tiles = Array(size, { ByteArray(0) })
+    tiles.init()
+    return tiles
+}
+
+fun Array<ByteArray>.row(vararg args: Int) {
+    val index = indexOfFirst { it.isEmpty() }
+    this[index] = args.map { it.toByte() }.toByteArray()
 }
 
 operator fun Array<ByteArray>.get(location: SlidingTilePuzzleState.Location): Byte {

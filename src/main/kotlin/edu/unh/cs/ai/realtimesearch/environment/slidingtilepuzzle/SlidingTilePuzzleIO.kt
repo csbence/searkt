@@ -39,9 +39,12 @@ object SlidingTilePuzzleIO {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
             var zeroLocation: SlidingTilePuzzleState.Location? = null
             tileList.forEachIndexed { i, value ->
-                puzzle[i / dimension][i % dimension] = value
+                val y = i / dimension
+                val x = i % dimension
+
+                puzzle[y][x] = value
                 if (value == 0.toByte()) {
-                    zeroLocation = SlidingTilePuzzleState.Location(i / dimension, i % dimension)
+                    zeroLocation = SlidingTilePuzzleState.Location(x, y)
                 }
             }
 

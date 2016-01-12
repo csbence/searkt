@@ -135,10 +135,33 @@ class SlidingTilePuzzleTest {
     }
 
     @Test
-    fun testAStarFromFile() {
-        Thread.sleep(10000)
+    fun testLssLrtaStar1() {
+        val tiles = tiles(3) {
+            row (1, 2, 0)
+            row (3, 4, 5)
+            row (6, 7, 8)
+        }
 
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File("input/tiles/korf/5/1")))
+        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val initialState = SlidingTilePuzzleState(SlidingTilePuzzleState.Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        //
+        println("hashcode: ${initialState.hashCode()}")
+
+        //        val environment = SlidingTilePuzzleEnvironment(slidingTilePuzzle, initialState)
+        //        val terminalCondition = CallsTerminationChecker(10)
+        //
+        //        val lsslrtaStarPlanner = LssLrtaStarPlanner(slidingTilePuzzle)
+        //        LssLrtaStarPlanner
+
+        //        val lssRTAAgent = RTSAgent(null!!)
+        //        val lssRTAExperiment = RTSExperiment(lssRTAAgent, environment, terminalCondition)
+        //
+        //        lssRTAExperiment.run()
+    }
+
+    @Test
+    fun testAStarFromFile() {
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File("input/tiles/korf/4/2")))
         val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
         val initialState = slidingTilePuzzleInstance.startState
 
@@ -148,14 +171,5 @@ class SlidingTilePuzzleTest {
         aStarExperiment.run()
     }
 
-    private fun tiles(size: Int, init: Array<ByteArray>.() -> Unit): Array<ByteArray> {
-        val tiles = Array(size, { ByteArray(0) })
-        tiles.init()
-        return tiles
-    }
 
-    private fun Array<ByteArray>.row(vararg args: Int) {
-        val index = indexOfFirst { it.isEmpty() }
-        this[index] = args.map { it.toByte() }.toByteArray()
-    }
 }

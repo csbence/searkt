@@ -53,10 +53,10 @@ class SlidingTilePuzzle(val size: Int) : Domain {
 
         for (x in 0..size - 1) {
             for (y in 0..size - 1) {
-                val value = tiles[x][y]
+                val value = tiles[y][x]
                 if (value == zero) continue
 
-                manhattanSum += abs(value / size - x) + abs(value % size - y)
+                manhattanSum += abs(value / size - y) + abs(value % size - x)
             }
         }
 
