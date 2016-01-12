@@ -31,16 +31,11 @@ class SlidingTilePuzzleStateTest {
         val state2 = SlidingTilePuzzleState(location2, tiles2, slidingTilePuzzle.heuristic(tiles2))
 
         assertTrue(location1 == location2)
-        println(location1.hashCode())
-        println(location2.hashCode())
+        assertTrue(location1.hashCode() == location2.hashCode())
 
-        var byte: Byte = 0
+        assertTrue(tiles1 == tiles2)
+        assertTrue(tiles1.hashCode() == tiles2.hashCode())
 
-        println(tiles1.hashCode())
-        println(tiles2.hashCode())
-
-        println(state1.hashCode())
-        println(state2.hashCode())
         assertTrue(state1 == state2)
         assertTrue(state1.hashCode() == state2.hashCode())
     }

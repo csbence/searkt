@@ -145,7 +145,6 @@ class SlidingTilePuzzleTest {
         val slidingTilePuzzle = SlidingTilePuzzle(3)
         val initialState = SlidingTilePuzzleState(SlidingTilePuzzleState.Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
         //
-        println("hashcode: ${initialState.hashCode()}")
 
         //        val environment = SlidingTilePuzzleEnvironment(slidingTilePuzzle, initialState)
         //        val terminalCondition = CallsTerminationChecker(10)

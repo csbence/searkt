@@ -27,10 +27,10 @@ class SlidingTilePuzzle(val size: Int) : Domain {
     private fun successorState(state: SlidingTilePuzzleState, relativeLocation: SlidingTilePuzzleState.Location): SlidingTilePuzzleState? {
         val zeroLocation = state.zeroLocation + relativeLocation
         if (zeroLocation.inBounds(size)) {
-            val tiles: Array<ByteArray> = state.copyTiles()
+            val tiles = state.tiles.copy()
 
             tiles[state.zeroLocation] = tiles[zeroLocation]
-            tiles[zeroLocation] = 0.toByte()
+            tiles[zeroLocation] = 0
 
             return SlidingTilePuzzleState(zeroLocation, tiles, heuristic(tiles))
         }
@@ -47,13 +47,13 @@ class SlidingTilePuzzle(val size: Int) : Domain {
 
     public inline fun <R> State.cast(f: (SlidingTilePuzzleState) -> R): R = f(this as SlidingTilePuzzleState)
 
-    fun heuristic(tiles: Array<ByteArray>): Double {
+    fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
         var manhattanSum = 0.0
         var zero: Byte = 0
 
         for (x in 0..size - 1) {
             for (y in 0..size - 1) {
-                val value = tiles[y][x]
+                val value = tiles[tiles.getIndex(x, y)]
                 if (value == zero) continue
 
                 manhattanSum += abs(value / size - y) + abs(value % size - x)

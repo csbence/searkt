@@ -33,7 +33,7 @@ object SlidingTilePuzzleIO {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(dimension)
-        val puzzle = Array(dimension, { ByteArray(dimension) })
+        val tiles = SlidingTilePuzzleState.Tiles(dimension)
 
         try {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
@@ -42,13 +42,13 @@ object SlidingTilePuzzleIO {
                 val y = i / dimension
                 val x = i % dimension
 
-                puzzle[y][x] = value
+                tiles[tiles.getIndex(x, y)] = value
                 if (value == 0.toByte()) {
                     zeroLocation = SlidingTilePuzzleState.Location(x, y)
                 }
             }
 
-            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzleState(zeroLocation!!, puzzle, slidingTilePuzzle.heuristic(puzzle)))
+            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzleState(zeroLocation!!, tiles, slidingTilePuzzle.heuristic(tiles)))
         } catch (e: NumberFormatException) {
             throw InvalidSlidingTilePuzzleException("Tile must be a number.", e)
         }
