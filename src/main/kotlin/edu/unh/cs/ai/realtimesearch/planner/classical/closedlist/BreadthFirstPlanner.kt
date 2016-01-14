@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
 import java.util.*
 
@@ -9,9 +10,9 @@ import java.util.*
  *
  * @param domain: The domain to plan in
  */
-class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
+class BreadthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClosedListPlanner<StateType>(domain) {
 
-    private val openList: Deque<Node> = linkedListOf()
+    private val openList: Deque<Node<StateType>> = linkedListOf()
 
     /**
      * Clears open list
@@ -26,7 +27,7 @@ class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
      *
      * @param node is the node that is generated
      */
-    protected override fun generateNode(node: Node) {
+    protected override fun generateNode(node: Node<StateType>) {
         openList.add(node)
         super.generateNode(node)
     }
@@ -35,5 +36,5 @@ class BreadthFirstPlanner(domain: Domain) : ClosedListPlanner(domain) {
      * Gets node from front of openlist
      * @return first on the openlist (first in first out)
      */
-    override fun popFromOpenList(): Node = openList.pop()
+    override fun popFromOpenList(): Node<StateType> = openList.pop()
 }

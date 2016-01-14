@@ -14,7 +14,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
  *
  * @param domain: The domain to plan in
  */
-abstract class RealTimePlanner(protected val domain: Domain) : Planner {
+abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
     public var generatedNodes = 0
     public var expandedNodes = 0
@@ -26,7 +26,7 @@ abstract class RealTimePlanner(protected val domain: Domain) : Planner {
      * @param terminationChecker provides the termination criteria
      * @return an action for current state
      */
-    abstract public fun selectAction(state: State, terminationChecker: TerminationChecker): Action
+    abstract public fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action
 
     /**
      * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare

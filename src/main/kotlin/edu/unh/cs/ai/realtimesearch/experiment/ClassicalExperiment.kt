@@ -22,10 +22,10 @@ import kotlin.util.measureTimeMillis
  * @param runs is the amount of runs you want the experiment to do
  *
  */
-class ClassicalExperiment(val agent: ClassicalAgent,
-                          val domain: Domain,
-                          val initState: State? = null,
-                          runs: Int = 1) : Experiment(runs) {
+class ClassicalExperiment<StateType : State<StateType>>(val agent: ClassicalAgent<StateType>,
+                                             val domain: Domain<StateType>,
+                                             val initState: StateType? = null,
+                                             runs: Int = 1) : Experiment(runs) {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var plan: List<Action> = emptyList()
@@ -35,7 +35,7 @@ class ClassicalExperiment(val agent: ClassicalAgent,
 
         for (run in 1..runs) {
             // do experiment on state, either given or randomly created
-            val state = initState?.copy() ?: domain.randomState()
+            val state: StateType = initState?.copy() ?: domain.randomState()
             logger.warn("Starting experiment run $run with state $state on agent $agent")
 
             val timeInMillis = measureTimeMillis { plan = agent.plan(state) }

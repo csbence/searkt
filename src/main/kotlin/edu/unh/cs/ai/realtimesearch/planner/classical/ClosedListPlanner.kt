@@ -13,9 +13,9 @@ import java.util.*
  *
 r @param domain is the domain to plan in
  */
-abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
+abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlanner<StateType>(domain) {
 
-    private val closedList: HashSet<State> = hashSetOf()
+    private val closedList: HashSet<StateType> = hashSetOf()
 
     /** Interface of ClassicalPlanner **/
 
@@ -30,7 +30,7 @@ abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
     /**
      * Adds the state of the node to the closedlist
      */
-    protected override fun generateNode(node: Node) {
+    protected override fun generateNode(node: Node<StateType>) {
         closedList.add(node.state)
     }
 
@@ -42,6 +42,6 @@ abstract class ClosedListPlanner(domain: Domain) : ClassicalPlanner(domain) {
      * @param state is the state to check for
      * @return whether state has been seen before
      */
-    protected override fun visitedBefore(state: State, leave: Node) = state in closedList
+    protected override fun visitedBefore(state: StateType, leave: Node<StateType>) = state in closedList
 
 }

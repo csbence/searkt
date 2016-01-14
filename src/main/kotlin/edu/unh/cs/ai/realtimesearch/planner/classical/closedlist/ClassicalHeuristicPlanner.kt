@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
 import java.util.*
@@ -13,8 +14,8 @@ import java.util.*
  * @param domain: is the domain to be planned in
  * @param openList is the list used for deciding which nodes to expand upon
  */
-open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue<ClassicalPlanner.Node>) :
-        ClosedListPlanner(domain) {
+open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val openList: PriorityQueue<ClassicalPlanner.Node<StateType>>) :
+        ClosedListPlanner<StateType>(domain) {
 
     /**
      * Clears open list
@@ -27,7 +28,7 @@ open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue
     /**
      * Adds the node to back of openList
      */
-    protected override fun generateNode(node: Node) {
+    protected override fun generateNode(node: Node<StateType>) {
         openList.add(node)
         super.generateNode(node)
     }
@@ -35,5 +36,10 @@ open class ClassicalHeuristicPlanner(domain: Domain, val openList: PriorityQueue
     /**
      * Gets node from front of openList
      */
-    override fun popFromOpenList(): Node = openList.remove()
+    override fun popFromOpenList(): Node<StateType> {
+        val node = openList.remove()
+//        val costs = openList.toArray().maps { it as Node<StateType> }.map { it.cost + domain.heuristic(it.state) }
+//        println("Cost: ${ node.cost + domain.heuristic(node.state)} Id: ${node.state.hashCode()}")
+        return node
+    }
 }

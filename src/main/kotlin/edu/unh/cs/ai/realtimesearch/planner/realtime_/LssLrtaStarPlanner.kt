@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.ai.realtimesearch.planner.realtime_
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
@@ -18,29 +18,29 @@ import java.util.*
  *
  * This loop continue until the goal has been found
  */
-class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
+class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
 
-    private val logger = LoggerFactory.getLogger(LSSLRTAStarPlanner::class.java)
+    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
 
     // cached h and g values
-    private val heuristicTable: MutableMap<State, Double> = hashMapOf()
-    private val costTable: MutableMap<State, Double> = hashMapOf()
-    private val treePointers: MutableMap<State, Pair<State, Action>> = hashMapOf()
+    private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
+    private val costTable: MutableMap<StateType, Double> = hashMapOf()
+    private val treePointers: MutableMap<StateType, Pair<StateType, Action>> = hashMapOf()
 
     // default search lists
-    private val closedList: HashSet<State> = hashSetOf()
+    private val closedList: HashSet<StateType> = hashSetOf()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<State>(compareBy {
+    private var openList = PriorityQueue<StateType>(compareBy {
         heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
     })
     // for fast lookup we maintain a set in parallel
-    private val openSet = hashSetOf<State>()
+    private val openSet = hashSetOf<StateType>()
 
     // current plan in execution
     private var executingPlan: Queue<Action> = ArrayDeque()
-    private var rootState: State? = null
+    private var rootState: StateType? = null
 
     /**
      * Current mode, either doing dijkstra updates or AStar search
@@ -77,7 +77,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: State, terminationChecker: TerminationChecker): Action {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
         // Initiate for the first search
         if (mode == Mode.INIT) {
 
@@ -151,7 +151,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      *
      * Returns end state of the plan
      */
-    private fun generateExecutionPlan(terminationChecker: TerminationChecker): State {
+    private fun generateExecutionPlan(terminationChecker: TerminationChecker): StateType {
         logger.info("Currently no plan, executing AStar")
 
         // emergency: we need to have at least a clean search if not done with dijkstra
@@ -173,7 +173,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      * The first call, when in mode NEW_SEARCH, it will clear the open list, closed list & cost table
      * Other than that will just repeatedly expand according to A*.
      */
-    private fun AStar(terminationChecker: TerminationChecker): State {
+    private fun AStar(terminationChecker: TerminationChecker): StateType {
         // During first call, get ready for a search (erase previous open/closed list and cost able
         if (mode == Mode.NEW_SEARCH) {
             logger.info("New Search...")
@@ -226,7 +226,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering to heuristic only
         var tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<State>(compareBy { heuristicTable.getOrPut(it, { domain.heuristic(it) }) })
+        openList = PriorityQueue<StateType>(compareBy { heuristicTable.getOrPut(it, { domain.heuristic(it) }) })
         openList.addAll(tempOpenList)
 
         // update all g(s) in closedList, starting from frontiers in openList
@@ -258,7 +258,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
 
         // change openList ordering back to f value
         tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<State>(compareBy {
+        openList = PriorityQueue<StateType>(compareBy {
             heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
         })
         openList.addAll(tempOpenList)
@@ -272,7 +272,7 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
      * it will add it to the open list and store it's g value, as long as the
      * state has not been seen before, or is found with a lower g value
      */
-    private fun expandNode(state: State): State {
+    private fun expandNode(state: StateType): StateType {
         expandedNodes += 1
 
         logger.debug("Expanding state " + state + ", " +
@@ -310,11 +310,11 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(state: State): Queue<Action> {
+    private fun extractPlan(state: StateType): Queue<Action> {
         val actions: Deque<Action> = ArrayDeque()
 
         // first step
-        var stateActionPair: Pair<State, Action> = treePointers[state]!!
+        var stateActionPair: Pair<StateType, Action> = treePointers[state]!!
 
         // keep on pushing actions to our queue until source state (our root) is reached
         while (stateActionPair.first != rootState) {
@@ -341,15 +341,15 @@ class LSSLRTAStarPlanner(domain: Domain) : RealTimePlanner(domain) {
         openSet.clear()
     }
 
-    private fun inOpenList(state: State) = openSet.contains(state)
+    private fun inOpenList(state: StateType) = openSet.contains(state)
 
-    private fun popOpenList(): State {
+    private fun popOpenList(): StateType {
         val state = openList.remove()
         openSet.remove(state)
         return state
     }
 
-    private fun addToOpenList(state: State) {
+    private fun addToOpenList(state: StateType) {
         openList.add(state)
         openSet.add(state)
     }

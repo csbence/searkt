@@ -8,7 +8,7 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
  * An agent for RTS experiments. In RTS the agent is repeatedly asked to provide
  * an action, under some constraint.
  */
-class RTSAgent(val planner: RealTimePlanner) {
+class RTSAgent<StateType : State<StateType>>(val planner: RealTimePlanner<StateType>) {
 
     /**
      * Returns an action within the termination constraint. Simply calls the
@@ -18,7 +18,7 @@ class RTSAgent(val planner: RealTimePlanner) {
      * @param terminationChecker is the object that returns whether the agent should terminate
      * @return an action, given current state and termination check
      */
-    public fun selectAction(state: State, terminationChecker: TerminationChecker) = planner.selectAction(state, terminationChecker)
+    public fun selectAction(state: StateType, terminationChecker: TerminationChecker) = planner.selectAction(state, terminationChecker)
 
     /**
      * Resets the agent for a new run. This function is called whenever a new run starts. This should prepare

@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
@@ -14,19 +13,18 @@ import java.util.concurrent.ThreadLocalRandom
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
 class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>,
-                  val initialAmountDirty: Int = 1) : Domain {
+                  val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
-    public inline fun <R> State.cast(f: (VacuumWorldState) -> R): R = f(this as VacuumWorldState)
 
     /**
      * Part of the Domain interface.
      */
-    override fun successors(state: State): List<SuccessorBundle> = state.cast { state ->
+    override fun successors(state: VacuumWorldState): List<SuccessorBundle<VacuumWorldState>> {
         // to return
-        val successors: MutableList<SuccessorBundle> = arrayListOf()
+        val successors: MutableList<SuccessorBundle<VacuumWorldState>> = arrayListOf()
 
-        VacuumWorldAction.values.forEach {
+        VacuumWorldAction.values().forEach {
             val newLocation = state.agentLocation + it.getRelativeLocation()
 
             // add the legal movement actions
@@ -52,11 +50,11 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         return successors
     }
 
-    override fun predecessors(state: State): List<SuccessorBundle> = state.cast { state ->
+    override fun predecessors(state: VacuumWorldState): List<SuccessorBundle<VacuumWorldState>> {
         // to return
-        val predecessors: MutableList<SuccessorBundle> = arrayListOf()
+        val predecessors: MutableList<SuccessorBundle<VacuumWorldState>> = arrayListOf()
 
-        VacuumWorldAction.values.forEach {
+        VacuumWorldAction.values().forEach {
             val newLocation = state.agentLocation - it.getRelativeLocation()
 
             // add the legal movement actions
@@ -98,14 +96,14 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @param state is the state to provide a heuristic for
      * @return the # of dirty cells
      */
-    override fun heuristic(state: State) = state.cast {
-        it.dirtyCells.size.toDouble()
+    override fun heuristic(state: VacuumWorldState): Double {
+        return state.dirtyCells.size.toDouble()
     }
 
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: State) = heuristic(state)
+    override fun distance(state: VacuumWorldState) = heuristic(state)
 
     /**
      * Returns whether the current state is a goal state.
@@ -114,7 +112,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @param state: the state that is being checked on
      * @return whether the state is a goal state
      */
-    override fun isGoal(state: State): Boolean = state.cast { state ->
+    override fun isGoal(state: VacuumWorldState): Boolean {
         return state.dirtyCells.isEmpty()
     }
 
@@ -125,7 +123,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * # == blocked
      * $ == dirty
      */
-    override fun print(state: State): String = state.cast { state ->
+    override fun print(state: VacuumWorldState): String {
         val description = StringBuilder()
         for (h in 1..height) {
             for (w in 1..width) {
@@ -147,7 +145,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * Creates a state with a random initial location for the agent and
      * initialAmountDirty number of random dirty cells
      */
-    override fun randomState(): State {
+    override fun randomState(): VacuumWorldState {
         val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width, height))
 
         // generate random locations until enough

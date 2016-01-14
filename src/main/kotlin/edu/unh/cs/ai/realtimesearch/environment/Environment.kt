@@ -4,7 +4,7 @@ package edu.unh.cs.ai.realtimesearch.environment
  * An environment of the experiments. In contrast to domains, which are used
  * to model transitions only, an environment is stateful
  */
-interface Environment {
+interface Environment<StateType : State<StateType>> {
 
     /**
      * Performs a step according to action a and current (maintained state)
@@ -16,7 +16,7 @@ interface Environment {
      * Returns current state
      * @return the current state of the environment
      */
-    public fun getState(): State
+    public fun getState(): StateType
 
     /**
      * Returns whether world has been solved

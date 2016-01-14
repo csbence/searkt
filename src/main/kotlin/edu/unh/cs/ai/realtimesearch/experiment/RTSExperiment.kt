@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
 import kotlin.util.measureTimeMillis
 
@@ -24,10 +25,10 @@ import kotlin.util.measureTimeMillis
  * @param terminationChecker controls the constraint put upon the agent
  * @param runs is the amount of runs you want the experiment to do
  */
-class RTSExperiment(val agent: RTSAgent,
-                    val world: Environment,
-                    val terminationChecker: TerminationChecker,
-                    runs: Int = 1) : Experiment(runs) {
+class RTSExperiment<StateType : State<StateType>>(val agent: RTSAgent<StateType>,
+                                       val world: Environment<StateType>,
+                                       val terminationChecker: TerminationChecker,
+                                       runs: Int = 1) : Experiment(runs) {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 

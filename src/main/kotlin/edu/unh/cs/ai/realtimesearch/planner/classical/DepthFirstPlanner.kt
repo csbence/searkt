@@ -10,9 +10,9 @@ import java.util.*
  *
  * @param domain is the domain to plan in
  */
-class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
+class DepthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlanner<StateType>(domain) {
 
-    private val openList: Deque<Node> = linkedListOf()
+    private val openList: Deque<Node<StateType>> = linkedListOf()
 
     /** ClassicalPlanner interface **/
 
@@ -24,7 +24,7 @@ class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
     /**
      * Adds node to front of openlist
      */
-    override fun generateNode(node: Node) = openList.push(node)
+    override fun generateNode(node: Node<StateType>) = openList.push(node)
 
     /**
      * Return node in front of openlist
@@ -41,8 +41,8 @@ class DepthFirstPlanner(domain: Domain) : ClassicalPlanner(domain) {
      *
      * @return true if state has been visited before
      */
-    override fun visitedBefore(state: State, leave: Node): Boolean {
-        var node: Node? = leave
+    override fun visitedBefore(state: StateType, leave: Node<StateType>): Boolean {
+        var node: Node<StateType>? = leave
 
         // root will have null action. So as long as the parent
         // is not null, we can take it's action and assume all is good

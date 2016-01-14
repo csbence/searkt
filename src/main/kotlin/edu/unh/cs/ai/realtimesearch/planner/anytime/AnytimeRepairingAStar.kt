@@ -10,23 +10,23 @@ import java.util.*
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class AnytimeRepairingAStar(val domain: Domain, var inflationFactor: Double) {
+class AnytimeRepairingAStar<StateType : State<StateType>>(val domain: Domain<StateType>, var inflationFactor: Double) {
 
     private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)
 
-    private val openList: Queue<State> = PriorityQueue(compareBy { inflatedFValue(it) })
-    private val closedList: MutableMap<State, Node> = hashMapOf()
-    private val inconsistentStates: MutableList<State> = arrayListOf()
-    private var goal: State? = null
+    private val openList: Queue<StateType> = PriorityQueue(compareBy { inflatedFValue(it) })
+    private val closedList: MutableMap<StateType, Node<StateType>> = hashMapOf()
+    private val inconsistentStates: MutableList<StateType> = arrayListOf()
+    private var goal: StateType? = null
 
     public var generatedNodes = 0
     public var expandedNodes = 0
 
-    data class Node(val parent: Node? = null, val state: State, val action: Action? = null, val cost: Double = 0.0, val heuristic: Double = 0.0)
+    data class Node<State>(val parent: Node<State>? = null, val state: State, val action: Action? = null, val cost: Double = 0.0, val heuristic: Double = 0.0)
 
     private fun improvePath() {
         // This is analogue to Likhachev's CLOSED list
-        val localClosedList: MutableSet<State> = hashSetOf()
+        val localClosedList: MutableSet<StateType> = hashSetOf()
 
         while (goalCost() > inflatedFValue(openList.element())) {
             val currentState = openList.poll() ?: return // Return if the frontier is empty
@@ -55,7 +55,7 @@ class AnytimeRepairingAStar(val domain: Domain, var inflationFactor: Double) {
         }
     }
 
-    public fun solve(startState: State) {
+    public fun solve(startState: StateType) {
         closedList[startState] = Node(state = startState, heuristic = domain.heuristic(startState))
         openList.add(startState)
         improvePath()
@@ -87,12 +87,12 @@ class AnytimeRepairingAStar(val domain: Domain, var inflationFactor: Double) {
         inflationFactor = goalCost() / min(minimalInconsistentFValue, minimalOpenStateFValue)
     }
 
-    private fun fValue(state: State): Double {
+    private fun fValue(state: StateType): Double {
         val node = closedList[state]!!
         return node.cost + node.heuristic
     }
 
-    private fun inflatedFValue(state: State): Double {
+    private fun inflatedFValue(state: StateType): Double {
         val node = closedList[state]!!
         return node.cost + inflationFactor * node.heuristic
     }

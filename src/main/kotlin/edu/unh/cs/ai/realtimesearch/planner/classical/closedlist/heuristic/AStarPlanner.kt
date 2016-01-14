@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.ClassicalHeuristicPlanner
 import java.util.*
 
@@ -11,7 +12,7 @@ import java.util.*
  *
  * @param domain is the domain to plan in
  */
-class AStarPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
+class AStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalHeuristicPlanner<StateType>(domain,
         PriorityQueue(AStarPlanner.AStarNodeComparator(domain))) {
 
     /**
@@ -19,19 +20,22 @@ class AStarPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
      * both the nodes, a negative value means the first node is less than the second.
      *
      * In a priority queue the least element will be at the head.
-     *
-     * TODO: will this round -0.4 to 0? That would be bad
-     * TODO: test
      */
-    public class AStarNodeComparator(val domain: Domain) : Comparator<Node> {
-        override fun compare(n1: Node?, n2: Node?): Int {
-            if (n1 != null && n2 != null)
-                return (
-                        (domain.heuristic(n1.state) + n1.cost) -
-                                (domain.heuristic(n2.state) + n2.cost)
-                        ).toInt()
-            else throw RuntimeException("Cannot insert null into closed list")
+    public class AStarNodeComparator<State>(val domain: Domain<State>) : Comparator<Node<State>> {
+        override fun compare(node1: Node<State>?, n2: Node<State>?): Int {
+            if (node1 != null && n2 != null) {
+                val node1Value = domain.heuristic(node1.state) + node1.cost
+                val node2Value = domain.heuristic(n2.state) + n2.cost
+                val value = node1Value.compareTo(node2Value)
+
+                if (value == 0) {
+                    return domain.heuristic(node1.state).compareTo(domain.heuristic(n2.state))
+                }
+
+                return value
+            } else {
+                throw RuntimeException("Cannot insert null into closed list")
+            }
         }
     }
-
 }

@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.ClassicalHeuristicPlanner
 import java.util.*
 
@@ -10,7 +11,7 @@ import java.util.*
  * Instantiates as a classical heuristic planner whose comparator sorts on h value
  * @param domain is the domain to plan in
  */
-class GreedyBestFirstPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
+class GreedyBestFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalHeuristicPlanner<StateType>(domain,
         PriorityQueue(GreedyBestFirstPlanner.GreedyBestFirstNodeComparator(domain))) {
 
     /**
@@ -18,16 +19,14 @@ class GreedyBestFirstPlanner(domain: Domain) : ClassicalHeuristicPlanner(domain,
      * both the nodes, a negative value means the first node is less than the second.
      *
      * In a priority queue the least element will be at the head.
-     *
-     * TODO: will this round -0.4 to 0? That would be bad
-     * TODO: test
      */
-    public class GreedyBestFirstNodeComparator(val domain: Domain) : Comparator<Node> {
-        override fun compare(n1: Node?, n2: Node?): Int {
-            if (n1 != null && n2 != null)
-                return (domain.heuristic(n1.state) -
-                        domain.heuristic(n2.state)).toInt()
-            else throw RuntimeException("Cannot insert null into closed list")
+    public class GreedyBestFirstNodeComparator<StateType : State<StateType>>(val domain: Domain<StateType>) : Comparator<Node<StateType>> {
+        override fun compare(n1: Node<StateType>?, n2: Node<StateType>?): Int {
+            if (n1 != null && n2 != null) {
+                return domain.heuristic(n1.state).compareTo(domain.heuristic(n2.state))
+            } else {
+                throw RuntimeException("Cannot insert null into closed list")
+            }
         }
     }
 
