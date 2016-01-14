@@ -159,8 +159,38 @@ class SlidingTilePuzzleTest {
     }
 
     @Test
-    fun testAStarFromFile() {
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File("input/tiles/korf/4/2")))
+    fun testAStarFromFileEasy1() {
+        val fileName = "input/tiles/korf/test/easy0"
+        runAStarOnSlidingTilePuzzleFileInput(fileName)
+    }
+
+    @Test
+    fun testAStarFromFileEasy2() {
+        val fileName = "input/tiles/korf/test/easy1"
+        runAStarOnSlidingTilePuzzleFileInput(fileName)
+    }
+
+    @Test
+    fun testAStarFromFileEasy3() {
+        val fileName = "input/tiles/korf/test/easy2"
+        runAStarOnSlidingTilePuzzleFileInput(fileName)
+    }
+
+//    @Test
+//    fun testAStarFromFileMedium1() {
+//        val fileName = "input/tiles/korf/test/medium1"
+//        runAStarOnSlidingTilePuzzleFileInput(fileName)
+//    }
+
+    @Test
+    fun testAStarFromFileHard() {
+        val fileName = "input/tiles/korf/4/1"
+
+        runAStarOnSlidingTilePuzzleFileInput(fileName)
+    }
+
+    private fun runAStarOnSlidingTilePuzzleFileInput(fileName: String) {
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File(fileName)))
         val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
         val initialState = slidingTilePuzzleInstance.startState
 
