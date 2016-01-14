@@ -1,19 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import java.lang.Math.abs
 
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class SlidingTilePuzzle(val size: Int) : Domain {
-    override fun successors(state: State): List<SuccessorBundle> = state.cast {
-        val successorBundles: MutableList<SuccessorBundle> = arrayListOf()
+class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
+    override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
+        val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzleState>> = arrayListOf()
 
-        for (action in SlidingTilePuzzleAction.values) {
-            val successorState = successorState(it, action.getRelativeLocation())
+        for (action in SlidingTilePuzzleAction.values()) {
+            val successorState = successorState(state, action.getRelativeLocation())
 
             if (successorState != null) {
                 successorBundles.add(SuccessorBundle(successorState, action, 1.0))
@@ -38,14 +37,12 @@ class SlidingTilePuzzle(val size: Int) : Domain {
         return null
     }
 
-    override fun predecessors(state: State) = successors(state)
+    override fun predecessors(state: SlidingTilePuzzleState) = successors(state)
 
-    override fun heuristic(state: State): Double = state.cast {
-        val tiles = it.tiles
+    override fun heuristic(state: SlidingTilePuzzleState): Double {
+        val tiles = state.tiles
         return heuristic(tiles)
     }
-
-    public inline fun <R> State.cast(f: (SlidingTilePuzzleState) -> R): R = f(this as SlidingTilePuzzleState)
 
     fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
         var manhattanSum = 0.0
@@ -63,17 +60,17 @@ class SlidingTilePuzzle(val size: Int) : Domain {
         return manhattanSum
     }
 
-    override fun distance(state: State): Double {
+    override fun distance(state: SlidingTilePuzzleState): Double {
         throw UnsupportedOperationException()
     }
 
-    override fun isGoal(state: State) = state.cast { it.heuristic == 0.0 }
+    override fun isGoal(state: SlidingTilePuzzleState) = state.heuristic == 0.0
 
-    override fun print(state: State): String {
+    override fun print(state: SlidingTilePuzzleState): String {
         throw UnsupportedOperationException()
     }
 
-    override fun randomState(): State {
+    override fun randomState(): SlidingTilePuzzleState {
         throw UnsupportedOperationException()
     }
 

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 /**
  * The SlidingTilePuzzle environment. Contains the domain and a current state.
  */
-class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, private val initialState: SlidingTilePuzzleState) : Environment {
+class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, private val initialState: SlidingTilePuzzleState) : Environment<SlidingTilePuzzleState> {
 
     private val logger = LoggerFactory.getLogger(SlidingTilePuzzleEnvironment::class.java)
     private var currentState = initialState
@@ -16,7 +16,7 @@ class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, privat
         val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action
-        currentState = successorBundles.first { it.action == action }.state as SlidingTilePuzzleState
+        currentState = successorBundles.first { it.action == action }.state
         logger.trace("Action " + action.toString() + " leads to state " + currentState.toString())
     }
 

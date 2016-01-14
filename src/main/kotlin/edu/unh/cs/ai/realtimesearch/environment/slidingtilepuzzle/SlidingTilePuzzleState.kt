@@ -19,7 +19,7 @@ import java.util.*
  *
  * @author Bence Cserna (bence@cserna.net)
  */
-data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State {
+data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
@@ -27,7 +27,7 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
         return hashCode xor zeroLocation.hashCode()
     }
 
-    override fun copy(): State {
+    override fun copy(): SlidingTilePuzzleState {
         return SlidingTilePuzzleState(zeroLocation.copy(), tiles.copy(), heuristic)
     }
 
