@@ -30,16 +30,21 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     // default search lists
     private val closedList: HashSet<StateType> = hashSetOf()
 
+    private val fValueComparator = compareBy<StateType> {
+        heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
+    }
+
+    private val heuristicComparator = compareBy<StateType> { heuristicTable.getOrPut(it, { domain.heuristic(it) }) }
+
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<StateType>(compareBy {
-        heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
-    })
+    private var openList = PriorityQueue<StateType>(fValueComparator)
+
     // for fast lookup we maintain a set in parallel
     private val openSet = hashSetOf<StateType>()
-
     // current plan in execution
     private var executingPlan: Queue<Action> = ArrayDeque()
+
     private var rootState: StateType? = null
 
     /**
@@ -80,15 +85,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
         // Initiate for the first search
         if (mode == Mode.INIT) {
-
-            // clear members that persist during action selection
-            heuristicTable.clear()
-            treePointers.clear()
-            executingPlan = ArrayDeque()
-
-            // Ready to start new search!
-            rootState = state
-            mode = Mode.NEW_SEARCH
+            initializeSearch(state)
         }
 
         logger.info("Selecting action in state $state, but considering rootState $rootState")
@@ -101,42 +98,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         if (executingPlan.isEmpty()) {
             // 1): no current plan
-
-            val endState = generateExecutionPlan(terminationChecker)
-            executingPlan = extractPlan(endState)
-
-            logger.info("Got a new plan, up to state $endState " +
-                    ", h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}")
-
-            if (domain.isGoal(endState)) {
-                setMode(Mode.FOUND_GOAL)
-            } else {
-                // setup for next steps: Dijkstra and new root state
-                setMode(Mode.NEW_DIJKSTRA)
-                rootState = endState
-            }
+            createInitialPlan(terminationChecker)
         } else {
             // 2) We are executing a plan. We either need to do a) Dijkstra or b) more searching
-            when (mode) {
-                Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker) // a
-
-                Mode.A_STAR, Mode.NEW_SEARCH -> {
-                    // b
-                    val endState = AStar(terminationChecker)
-
-                    // if we find a goal while executing, simply extend the plan
-                    if (domain.isGoal(endState)) {
-                        setMode(Mode.FOUND_GOAL)
-                        executingPlan.addAll(extractPlan(endState))
-                    }
-
-                }
-                Mode.FOUND_GOAL -> logger.info("In mode found goal")
-
-                else -> {
-                    throw RuntimeException("LSS-LRTA does not expect to be in mode $mode here")
-                }
-            }
+            continueExecution(terminationChecker)
         }
 
         // actual return an action from the current plan
@@ -144,6 +109,56 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info("Returning action $action with plan $executingPlan left")
 
         return action
+    }
+
+    private fun initializeSearch(state: StateType) {
+        // clear members that persist during action selection
+        heuristicTable.clear()
+        treePointers.clear()
+        executingPlan = ArrayDeque()
+
+        // Ready to start new search!
+        rootState = state
+        mode = Mode.NEW_SEARCH
+    }
+
+    private fun continueExecution(terminationChecker: TerminationChecker) {
+        when (mode) {
+            Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker) // a
+
+            Mode.A_STAR, Mode.NEW_SEARCH -> {
+                // b
+                val endState = AStar(terminationChecker)
+
+                // if we find a goal while executing, simply extend the plan
+                if (domain.isGoal(endState)) {
+                    setMode(Mode.FOUND_GOAL)
+                    executingPlan.addAll(extractPlan(endState))
+                }
+
+            }
+            Mode.FOUND_GOAL -> logger.info("In mode found goal")
+
+            else -> {
+                throw RuntimeException("LSS-LRTA does not expect to be in mode $mode here")
+            }
+        }
+    }
+
+    private fun createInitialPlan(terminationChecker: TerminationChecker) {
+        val endState = generateExecutionPlan(terminationChecker)
+        executingPlan = extractPlan(endState)
+
+        logger.info("Got a new plan, up to state $endState " +
+                ", h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}")
+
+        if (domain.isGoal(endState)) {
+            setMode(Mode.FOUND_GOAL)
+        } else {
+            // setup for next steps: Dijkstra and new root state
+            setMode(Mode.NEW_DIJKSTRA)
+            rootState = endState
+        }
     }
 
     /**
@@ -165,7 +180,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         return endState
     }
-
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
@@ -191,8 +205,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // actual core steps of A*, building the tree
         var state = popOpenList()
-        while (!terminationChecker.reachedTermination() && !domain.isGoal(state))
+        while (!terminationChecker.reachedTermination() && !domain.isGoal(state)) {
             state = expandNode(state)
+        }
 
         logger.info("Done with AStar")
         return state
@@ -218,16 +233,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // set all g(s) for s in closedList to infinite
         if (mode == Mode.NEW_DIJKSTRA) {
-            closedList.forEach { heuristicTable.put(it, Double.MAX_VALUE) }
+            closedList.forEach { heuristicTable.put(it, Double.POSITIVE_INFINITY) }
 
             // no need to setup dijkstra again next round
             setMode(Mode.DIJKSTRA)
         }
 
         // change openList ordering to heuristic only
-        var tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<StateType>(compareBy { heuristicTable.getOrPut(it, { domain.heuristic(it) }) })
-        openList.addAll(tempOpenList)
+        reorderOpenListBy(heuristicComparator)
 
         // update all g(s) in closedList, starting from frontiers in openList
         while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
@@ -257,14 +270,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         // change openList ordering back to f value
-        tempOpenList = openList.toArrayList()
-        openList = PriorityQueue<StateType>(compareBy {
-            heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
-        })
-        openList.addAll(tempOpenList)
+        reorderOpenListBy(fValueComparator)
 
         // update mode if done
-        if (closedList.isEmpty()) setMode(Mode.NEW_SEARCH)
+        if (closedList.isEmpty()) {
+            setMode(Mode.NEW_SEARCH)
+        }
     }
 
     /**
@@ -296,8 +307,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
 
-                if (!inOpenList(successor.state))
+                if (!inOpenList(successor.state)) {
                     addToOpenList(successor.state)
+                }
             } else {
                 logger.trace("Did not add, because it's cost is " + costTable[successor.state] +
                         " compared to cost of predecessor ( " + costTable[state] + "), and action cost " + successor.actionCost)
@@ -352,5 +364,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun addToOpenList(state: StateType) {
         openList.add(state)
         openSet.add(state)
+    }
+
+    private fun reorderOpenListBy(comparator: Comparator<StateType>) {
+        val tempOpenList = openList.toArrayList() // O(1)
+        openList = PriorityQueue<StateType>(tempOpenList.size, comparator) // O(1)
+        openList.addAll(tempOpenList) // O(n * log(n))
     }
 }
