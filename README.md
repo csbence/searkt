@@ -85,6 +85,7 @@ Dynamics: from Ai-Omari et al. 2013.
     - iAmGoodFunction()
     - Braces open on same line
     - No abbreviations
+    - Braces are always present after loops and if statements
 * Use Javadoc on functions and classes, but mind the verbosity
 * Logging is done using the different levels:
     - error: Actual errors / wrong stuff
