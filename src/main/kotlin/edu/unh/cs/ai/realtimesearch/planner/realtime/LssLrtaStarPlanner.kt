@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
