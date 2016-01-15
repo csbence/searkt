@@ -1,15 +1,11 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleState
-import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import java.io.File
 import java.io.FileInputStream
@@ -38,10 +34,10 @@ fun main(args: Array<String>) {
     val environment = SlidingTilePuzzleEnvironment(world, state)
     val terminalCondition = CallsTerminationChecker(10)
 
-    val aStarAgent = ClassicalAgent<SlidingTilePuzzleState>(AStarPlanner(world))
-    val lssRTAAgent = RTSAgent<SlidingTilePuzzleState>(LssLrtaStarPlanner(world))
+    //val aStarAgent = ClassicalAgent<SlidingTilePuzzleState>(AStarPlanner(world))
+    val lssRTAAgent = RTSAgent(LssLrtaStarPlanner(world))
 
-    val aStarExperiment = ClassicalExperiment(aStarAgent, world, state, 10)
+    //val aStarExperiment = ClassicalExperiment(aStarAgent, world, state, 10)
     val lssRTAExperiment = RTSExperiment(lssRTAAgent, environment, terminalCondition)
     //val randomLssRTAExperiment = RTSExperiment(lssRTAAgent, randomVacuumEnvironment, terminalCondition)
 
