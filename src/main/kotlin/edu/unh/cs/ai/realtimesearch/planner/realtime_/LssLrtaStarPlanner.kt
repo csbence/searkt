@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.ai.realtimesearch.planner.realtime_
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
@@ -368,7 +368,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun reorderOpenListBy(comparator: Comparator<StateType>) {
         val tempOpenList = openList.toArrayList() // O(1)
-        openList = PriorityQueue<StateType>(tempOpenList.size, comparator) // O(1)
+        if (tempOpenList.size >= 1) {
+            openList = PriorityQueue<StateType>(tempOpenList.size, comparator) // O(1)
+        } else {
+            openList = PriorityQueue<StateType>(comparator) // O(1)
+        }
         openList.addAll(tempOpenList) // O(n * log(n))
     }
 }

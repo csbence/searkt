@@ -94,6 +94,10 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
         public operator fun set(location: SlidingTilePuzzleState.Location, value: Byte) {
             tiles[location.y * dimension + location.x] = value
         }
+
+        override fun toString(): String {
+            return "Tiles(dimension = $dimension)"
+        }
     }
 
     override fun hashCode(): Int {

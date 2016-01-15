@@ -12,7 +12,7 @@ class SlidingTilePuzzleIOTest {
 
     @Test
     fun testParseFromStream() {
-        val file = File("input/tiles/5_5.tiles")
+        val file = File("input/tiles/korf/5/5")
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(file))
         val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
         val startState = slidingTilePuzzleInstance.startState
