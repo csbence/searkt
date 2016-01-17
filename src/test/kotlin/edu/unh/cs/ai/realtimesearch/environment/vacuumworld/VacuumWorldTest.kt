@@ -5,13 +5,9 @@ import kotlin.test.assertFalse
 
 class VacuumWorldTest {
 
-    @Test
-    fun moveTest() {
-
-    }
 
     @Test
-    fun goalTest() {
+    fun testGoalChecker() {
         val world = VacuumWorld(10,10, emptyList())
         val l1 = VacuumWorldState.Location(3, 5)
         val l2 = VacuumWorldState.Location(0, 5)
@@ -27,8 +23,4 @@ class VacuumWorldTest {
         assertFalse(world.isGoal(notGoalState2))
     }
 
-    @Test
-    fun legalLocationTest() {
-        // TODO: make islegalLocation private to package
-    }
 }
