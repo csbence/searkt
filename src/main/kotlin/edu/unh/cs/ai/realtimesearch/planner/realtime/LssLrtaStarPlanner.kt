@@ -274,6 +274,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // update mode if done
         if (closedList.isEmpty()) {
+            logger.info("Done with Dijkstra")
             setMode(Mode.NEW_SEARCH)
         }
     }

@@ -29,6 +29,8 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
             val tiles = state.tiles.copy()
 
             tiles[state.zeroLocation] = tiles[zeroLocation]
+            assert(!tiles.tiles.any {it == 0.toByte()})
+
             tiles[zeroLocation] = 0
 
             return SlidingTilePuzzleState(zeroLocation, tiles, heuristic(tiles))
