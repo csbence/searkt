@@ -75,7 +75,7 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
             }
         }
 
-        public inline fun getIndex(x: Int, y: Int): Int {
+        public fun getIndex(x: Int, y: Int): Int {
             return dimension * y + x
         }
 
@@ -93,6 +93,10 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
 
         public operator fun set(location: SlidingTilePuzzleState.Location, value: Byte) {
             tiles[location.y * dimension + location.x] = value
+        }
+
+        override fun toString(): String {
+            return "Tiles(dimension = $dimension)"
         }
     }
 
