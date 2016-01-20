@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
@@ -12,8 +13,10 @@ import java.util.concurrent.ThreadLocalRandom
  *
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<VacuumWorldState.Location>,
-                  val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
+class VacuumWorld(public val width: Int,
+                  public val height: Int,
+                  public val blockedCells: List<Location>,
+                  public val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
 
@@ -85,7 +88,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * @param location the location to test
      * @return true if location is legal
      */
-    fun isLegalLocation(location: VacuumWorldState.Location): Boolean {
+    fun isLegalLocation(location: Location): Boolean {
         return location.x >= 0 && location.y >= 0 && location.x < width &&
                 location.y < height && location !in blockedCells
     }
@@ -127,7 +130,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         val description = StringBuilder()
         for (h in 1..height) {
             for (w in 1..width) {
-                val charCell = when (VacuumWorldState.Location(w, h)) {
+                val charCell = when (Location(w, h)) {
                     state.agentLocation -> '@'
                     in blockedCells -> '#'
                     in state.dirtyCells -> '*'
@@ -165,8 +168,8 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
     /**
      * Returns a random location within width and height
      */
-    private fun randomLocation(width: Int, height: Int): VacuumWorldState.Location {
-        return VacuumWorldState.Location(
+    private fun randomLocation(width: Int, height: Int): Location {
+        return Location(
                 ThreadLocalRandom.current().nextInt(0, width),
                 ThreadLocalRandom.current().nextInt(0, height)
         )

@@ -1,16 +1,16 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Test
 import kotlin.test.assertFalse
 
 class VacuumWorldTest {
 
-
     @Test
     fun testGoalChecker() {
         val world = VacuumWorld(10,10, emptyList())
-        val l1 = VacuumWorldState.Location(3, 5)
-        val l2 = VacuumWorldState.Location(0, 5)
+        val l1 = Location(3, 5)
+        val l2 = Location(0, 5)
 
         val goalState1 = VacuumWorldState(l1, emptyList())
         val goalState2 = VacuumWorldState(l2, emptyList())

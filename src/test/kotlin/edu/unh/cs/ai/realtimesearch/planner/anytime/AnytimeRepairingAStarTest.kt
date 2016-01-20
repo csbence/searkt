@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.anytime
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.junit.Test
@@ -9,7 +10,7 @@ class AnytimeRepairingAStarTest {
     @Test
     fun solveVacuumWorldTest1() {
         val world = VacuumWorld(2,2, emptyList())
-        val location = VacuumWorldState.Location(0, 0)
+        val location = Location(0, 0)
 
         val startState = VacuumWorldState(location, listOf(location))
 

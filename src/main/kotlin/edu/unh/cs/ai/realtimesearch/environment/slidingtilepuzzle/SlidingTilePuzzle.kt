@@ -2,11 +2,9 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.lang.Math.abs
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
     override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
         val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzleState>> = arrayListOf()
@@ -23,13 +21,13 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         return successorBundles
     }
 
-    private fun successorState(state: SlidingTilePuzzleState, relativeLocation: SlidingTilePuzzleState.Location): SlidingTilePuzzleState? {
+    private fun successorState(state: SlidingTilePuzzleState, relativeLocation: Location): SlidingTilePuzzleState? {
         val zeroLocation = state.zeroLocation + relativeLocation
         if (zeroLocation.inBounds(size)) {
             val tiles = state.tiles.copy()
 
             tiles[state.zeroLocation] = tiles[zeroLocation]
-            assert(!tiles.tiles.any {it == 0.toByte()})
+            assert(!tiles.tiles.any { it == 0.toByte() })
 
             tiles[zeroLocation] = 0
 

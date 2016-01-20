@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.*
 
 /**
@@ -17,9 +18,8 @@ import java.util.*
  * (1, 0) == 1
  * (0, 1) == 3
  *
- * @author Bence Cserna (bence@cserna.net)
  */
-data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Location, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
+data class SlidingTilePuzzleState(val zeroLocation: Location, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
@@ -29,20 +29,6 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
 
     override fun copy(): SlidingTilePuzzleState {
         return SlidingTilePuzzleState(zeroLocation.copy(), tiles.copy(), heuristic)
-    }
-
-    data class Location(val x: Int, val y: Int) {
-        operator fun plus(rhs: Location): Location {
-            return Location(x + rhs.x, y + rhs.y)
-        }
-
-        /**
-         * Check if location is inside the boundaries.
-         * The lower bound is inclusive the upper bound is exclusive.
-         */
-        fun inBounds(upperBound: Int, lowerBound: Int = 0): Boolean {
-            return x >= lowerBound && y >= lowerBound && x < upperBound && y < upperBound
-        }
     }
 
     class Tiles(val dimension: Int, tiles: ByteArray? = null) {
@@ -87,11 +73,11 @@ data class SlidingTilePuzzleState(val zeroLocation: SlidingTilePuzzleState.Locat
             tiles[index] = value
         }
 
-        public operator fun get(location: SlidingTilePuzzleState.Location): Byte {
+        public operator fun get(location: Location): Byte {
             return tiles[location.y * dimension + location.x]
         }
 
-        public operator fun set(location: SlidingTilePuzzleState.Location, value: Byte) {
+        public operator fun set(location: Location, value: Byte) {
             tiles[location.y * dimension + location.x] = value
         }
 

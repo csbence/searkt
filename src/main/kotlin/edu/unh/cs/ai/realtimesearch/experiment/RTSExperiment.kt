@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
-import kotlin.util.measureTimeMillis
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -45,7 +44,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             world.reset()
 
             logger.warn("Starting experiment $run from state ${world.getState()}")
-            val timeInMillis = measureTimeMillis {
+            val timeInMillis = kotlin.system.measureTimeMillis {
                 while (!world.isGoal()) {
 
                     terminationChecker.init()

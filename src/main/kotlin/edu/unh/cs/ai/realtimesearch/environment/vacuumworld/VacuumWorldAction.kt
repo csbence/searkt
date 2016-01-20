@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
  * This is An action in the vacuumworld is simply an enum:
@@ -13,11 +14,11 @@ enum class VacuumWorldAction(val index: Int) : Action {
 
     // Storage of all relative locations (up down left right), returned by reference
     private val relativeLocations = arrayOf(
-            VacuumWorldState.Location(0, 0),
-            VacuumWorldState.Location(-1, 0),
-            VacuumWorldState.Location(0, -1),
-            VacuumWorldState.Location(0, 1),
-            VacuumWorldState.Location(1, 0)
+            Location(0, 0),
+            Location(-1, 0),
+            Location(0, -1),
+            Location(0, 1),
+            Location(1, 0)
     )
 
     fun getRelativeLocation() = relativeLocations[index]

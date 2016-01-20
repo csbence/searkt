@@ -1,8 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment
 
 /**
- * @author Bence Cserna (bence@cserna.net)
- *
  * A domain is a problem setting that defines, given a state, all possible successor states with their
  * accompanied action and cost
  */

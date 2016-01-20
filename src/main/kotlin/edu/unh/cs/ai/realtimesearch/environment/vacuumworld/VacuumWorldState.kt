@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
  * A state in the vacuumworld is simply the current location of the agent,
@@ -27,25 +28,6 @@ data class VacuumWorldState(val agentLocation: Location, val dirtyCells: List<Lo
      * Copy simply calls the data class implemented copy
      */
     override fun copy() = copy(agentLocation, dirtyCells)
-
-    /**
-     * This represents a grid location, defined by its x and y coordinate.
-     *
-     * @param x: x index of the location
-     * @param y: y index of the location
-     */
-    data class Location(val x: Int, val y: Int) {
-
-        /**
-         * Adds two locations together the intuitive way (x+x, y+y).
-         *
-         * @param other: the other location
-         * @return the addition of this and other location
-         */
-        operator fun plus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x + other.x, y + other.y)
-
-        operator fun minus(other: VacuumWorldState.Location) = VacuumWorldState.Location(x - other.x, y - other.y)
-    }
 
     public override fun toString(): String {
         return "Agent location: " + agentLocation.toString() + ", dirty: " + dirtyCells.toString()

@@ -1,11 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.io.InputStream
 import java.util.*
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 object VacuumWorldIO {
 
     fun parseFromStream(input: InputStream): VacuumWorldInstance {
@@ -23,9 +21,9 @@ object VacuumWorldIO {
             throw InvalidVacuumWorldException("VacuumWorld's first and second line must be a number.", e)
         }
 
-        val blockedCells = arrayListOf<VacuumWorldState.Location>()
-        val dirtyCells = arrayListOf<VacuumWorldState.Location>()
-        var startLocation: VacuumWorldState.Location? = null
+        val blockedCells = arrayListOf<Location>()
+        val dirtyCells = arrayListOf<Location>()
+        var startLocation: Location? = null
 
         try {
             for (y in 0..rowCount - 1) {
@@ -33,9 +31,9 @@ object VacuumWorldIO {
 
                 for (x in 0..columnCount - 1) {
                     when (line[x]) {
-                        '#' -> blockedCells.add(VacuumWorldState.Location(x, y))
-                        '*' -> dirtyCells.add(VacuumWorldState.Location(x, y))
-                        '@' -> startLocation = VacuumWorldState.Location(x, y)
+                        '#' -> blockedCells.add(Location(x, y))
+                        '*' -> dirtyCells.add(Location(x, y))
+                        '@' -> startLocation = Location(x, y)
                     }
                 }
             }

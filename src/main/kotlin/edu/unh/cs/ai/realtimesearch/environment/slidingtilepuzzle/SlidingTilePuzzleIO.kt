@@ -1,11 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.io.InputStream
 import java.util.*
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 object SlidingTilePuzzleIO {
 
     fun parseFromStream(input: InputStream): SlidingTilePuzzleInstance {
@@ -37,14 +35,14 @@ object SlidingTilePuzzleIO {
 
         try {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
-            var zeroLocation: SlidingTilePuzzleState.Location? = null
+            var zeroLocation: Location? = null
             tileList.forEachIndexed { i, value ->
                 val y = i / dimension
                 val x = i % dimension
 
                 tiles[tiles.getIndex(x, y)] = value
                 if (value == 0.toByte()) {
-                    zeroLocation = SlidingTilePuzzleState.Location(x, y)
+                    zeroLocation = Location(x, y)
                 }
             }
 

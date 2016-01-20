@@ -1,11 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Test
 import kotlin.test.assertTrue
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class SlidingTilePuzzleStateTest {
 
     @Test
@@ -24,8 +22,8 @@ class SlidingTilePuzzleStateTest {
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
 
-        val location1 = SlidingTilePuzzleState.Location(2, 0)
-        val location2 = SlidingTilePuzzleState.Location(2, 0)
+        val location1 = Location(2, 0)
+        val location2 = Location(2, 0)
 
         val state1 = SlidingTilePuzzleState(location1, tiles1, slidingTilePuzzle.heuristic(tiles1))
         val state2 = SlidingTilePuzzleState(location2, tiles2, slidingTilePuzzle.heuristic(tiles2))

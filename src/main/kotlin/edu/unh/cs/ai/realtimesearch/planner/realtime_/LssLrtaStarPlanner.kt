@@ -304,7 +304,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 costTable[successor.state] = successorGValueFromCurrent
-                treePointers.put(successor.state, Pair(state, successor.action!!))
+                treePointers.put(successor.state, Pair(state, successor.action))
 
                 logger.trace("Adding it to to cost table with value " + costTable[successor.state])
 
