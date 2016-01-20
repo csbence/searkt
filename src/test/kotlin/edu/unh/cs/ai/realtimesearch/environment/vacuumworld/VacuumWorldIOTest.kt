@@ -14,7 +14,7 @@ class VacuumWorldIOTest {
     fun parseFromStreamCupsTest() {
         val file = File("input/vacuum/cups.vw")
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(file))
-        val startState = vacuumWorldInstance.startState
+        val startState = vacuumWorldInstance.initialState
         val agentLocation = startState.agentLocation
 
         assertTrue(startState.dirtyCells.count() == 1)

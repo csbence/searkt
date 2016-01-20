@@ -25,10 +25,11 @@ import kotlin.util.measureTimeMillis
  * @param terminationChecker controls the constraint put upon the agent
  * @param runs is the amount of runs you want the experiment to do
  */
-class RTSExperiment<StateType : State<StateType>>(val agent: RTSAgent<StateType>,
-                                       val world: Environment<StateType>,
-                                       val terminationChecker: TerminationChecker,
-                                       runs: Int = 1) : Experiment(runs) {
+class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: ExperimentConfiguration? = null,
+                                                  val agent: RTSAgent<StateType>,
+                                                  val world: Environment<StateType>,
+                                                  val terminationChecker: TerminationChecker,
+                                                  runs: Int = 1) : Experiment(runs) {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 
@@ -63,7 +64,7 @@ class RTSExperiment<StateType : State<StateType>>(val agent: RTSAgent<StateType>
                     agent.planner.expandedNodes + " expanded and " +
                     agent.planner.generatedNodes + " generated nodes")
 
-            results.add(ExperimentResult(agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
+            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }
 
         return results

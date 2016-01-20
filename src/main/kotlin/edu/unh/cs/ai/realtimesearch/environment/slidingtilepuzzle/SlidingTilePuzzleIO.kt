@@ -57,4 +57,4 @@ object SlidingTilePuzzleIO {
 }
 
 class InvalidSlidingTilePuzzleException(message: String, e: Exception? = null) : RuntimeException(message, e)
-data class SlidingTilePuzzleInstance(val slidingTilePuzzle: SlidingTilePuzzle, val startState: SlidingTilePuzzleState)
+data class SlidingTilePuzzleInstance(val domain: SlidingTilePuzzle, val initialState: SlidingTilePuzzleState)

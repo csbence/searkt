@@ -16,5 +16,5 @@ interface Domain<State> {
     public fun randomState(): State
 }
 
-data class SuccessorBundle<State>(val state: State, val action: Action?, val actionCost: Double)
+data class SuccessorBundle<State>(val state: State, val action: Action, val actionCost: Double)
 

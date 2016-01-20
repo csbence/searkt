@@ -5,4 +5,10 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-data class ExperimentResult(val expandedNodes: Int, val generatedNodes: Int, val timeInMillis: Long, val actions: List<Action>, val pathLength: Double? = null)
+data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
+                            val expandedNodes: Int = 0,
+                            val generatedNodes: Int = 0, val timeInMillis: Long = 0,
+                            val actions: List<Action> = emptyList(),
+                            val pathLength: Double? = null,
+                            val errorMessage: String? = null
+)

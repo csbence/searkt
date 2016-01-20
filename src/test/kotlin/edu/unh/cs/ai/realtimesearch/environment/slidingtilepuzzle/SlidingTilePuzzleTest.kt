@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
@@ -99,7 +100,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(SlidingTilePuzzleState.Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(ExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState, 1)
 
         aStarExperiment.run()
     }
@@ -116,7 +117,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(SlidingTilePuzzleState.Location(1, 0), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(ExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState, 1)
 
         aStarExperiment.run()
     }
@@ -133,7 +134,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(SlidingTilePuzzleState.Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(ExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState, 1)
 
         aStarExperiment.run()
     }
@@ -170,8 +171,8 @@ class SlidingTilePuzzleTest {
     fun testLssLrtaStarOnFileInput() {
         val fileName = "input/tiles/korf/4/1"
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File(fileName)))
-        val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
-        val initialState = slidingTilePuzzleInstance.startState
+        val slidingTilePuzzle = slidingTilePuzzleInstance.domain
+        val initialState = slidingTilePuzzleInstance.initialState
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
     }
@@ -183,7 +184,7 @@ class SlidingTilePuzzleTest {
         val lsslrtaStarPlanner = LssLrtaStarPlanner(slidingTilePuzzle)
 
         val lssRTAAgent = RTSAgent(lsslrtaStarPlanner)
-        val lssRTAExperiment = RTSExperiment(lssRTAAgent, environment, terminalCondition)
+        val lssRTAExperiment = RTSExperiment<SlidingTilePuzzleState>(ExperimentConfiguration(), lssRTAAgent, environment, terminalCondition)
 
         lssRTAExperiment.run()
     }
@@ -221,11 +222,11 @@ class SlidingTilePuzzleTest {
 
     private fun runAStarOnSlidingTilePuzzleFileInput(fileName: String) {
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File(fileName)))
-        val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
-        val initialState = slidingTilePuzzleInstance.startState
+        val slidingTilePuzzle = slidingTilePuzzleInstance.domain
+        val initialState = slidingTilePuzzleInstance.initialState
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(ExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState, 1)
 
         aStarExperiment.run()
     }

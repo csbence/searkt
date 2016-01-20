@@ -14,8 +14,8 @@ class SlidingTilePuzzleIOTest {
     fun testParseFromStream() {
         val file = File("input/tiles/korf/5/1")
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(file))
-        val slidingTilePuzzle = slidingTilePuzzleInstance.slidingTilePuzzle
-        val startState = slidingTilePuzzleInstance.startState
+        val slidingTilePuzzle = slidingTilePuzzleInstance.domain
+        val startState = slidingTilePuzzleInstance.initialState
 
         assertTrue(slidingTilePuzzle.size == 5)
         assertTrue(startState.zeroLocation.x == 2)

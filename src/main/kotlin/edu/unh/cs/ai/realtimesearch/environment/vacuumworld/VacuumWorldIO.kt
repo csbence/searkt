@@ -54,5 +54,6 @@ object VacuumWorldIO {
 
 }
 
-data class VacuumWorldInstance(val vacuumWorld: VacuumWorld, val startState: VacuumWorldState)
+data class VacuumWorldInstance(val domain: VacuumWorld, val initialState: VacuumWorldState)
+
 class InvalidVacuumWorldException(message: String, e: Exception? = null) : RuntimeException(message, e)

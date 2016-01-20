@@ -24,7 +24,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
         // to return
         val successors: MutableList<SuccessorBundle<VacuumWorldState>> = arrayListOf()
 
-        VacuumWorldAction.values().forEach {
+        for (it in VacuumWorldAction.values()) {
             val newLocation = state.agentLocation + it.getRelativeLocation()
 
             // add the legal movement actions
@@ -46,7 +46,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
             }
         }
 
-        logger.trace("State $state produces successors: $successors")
+        //        logger.trace("State $state produces successors: $successors")
         return successors
     }
 
@@ -146,7 +146,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
      * initialAmountDirty number of random dirty cells
      */
     override fun randomState(): VacuumWorldState {
-        val dirtyCells: MutableSet<VacuumWorldState.Location> = hashSetOf(randomLocation(width, height))
+        val dirtyCells = arrayListOf(randomLocation(width, height))
 
         // generate random locations until enough
         // do not add those that would be in blocked cells
