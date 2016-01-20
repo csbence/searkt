@@ -40,7 +40,7 @@ class VacuumWorld(val width: Int, val height: Int, val blockedCells: List<Vacuum
                 // add legit vacuum action
                 successors.add(SuccessorBundle(
                         // TODO: inefficient?
-                        VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }.toSet()),
+                        VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                         it,
                         1.0))
             }
