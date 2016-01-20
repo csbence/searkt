@@ -7,9 +7,6 @@ import org.slf4j.LoggerFactory
 import java.lang.Math.min
 import java.util.*
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class AnytimeRepairingAStar<StateType : State<StateType>>(val domain: Domain<StateType>, var inflationFactor: Double) {
 
     private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)

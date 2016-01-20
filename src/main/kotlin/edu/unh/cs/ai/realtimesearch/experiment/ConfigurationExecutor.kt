@@ -14,9 +14,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val domainName: String = experimentConfiguration.getDomainName()

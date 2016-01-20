@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory
 import kotlin.util.measureTimeMillis
 
 /**
- * @author Bence Cserna (bence@cserna.net)
- *
  * An RTS experiment repeatedly queries the agent
  * for an action by some constraint (allowed time for example).
  * After each selected action, the experiment then applies this action

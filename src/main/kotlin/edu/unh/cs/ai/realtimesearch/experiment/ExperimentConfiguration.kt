@@ -1,8 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class ExperimentConfiguration {
     fun getDomainName(): String {
         throw UnsupportedOperationException("not implemented")
@@ -20,7 +17,7 @@ class ExperimentConfiguration {
         throw UnsupportedOperationException("not implemented")
     }
 
-    fun getTerminationCheckerType() : String {
+    fun getTerminationCheckerType(): String {
         throw UnsupportedOperationException("not implemented")
     }
 

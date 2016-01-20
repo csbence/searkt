@@ -5,9 +5,6 @@ import java.io.File
 import java.io.FileInputStream
 import kotlin.test.assertTrue
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class VacuumWorldIOTest {
 
     @Test

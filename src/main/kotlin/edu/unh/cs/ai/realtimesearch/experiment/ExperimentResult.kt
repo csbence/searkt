@@ -2,9 +2,6 @@ package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
                             val expandedNodes: Int = 0,
                             val generatedNodes: Int = 0, val timeInMillis: Long = 0,

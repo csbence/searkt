@@ -17,13 +17,10 @@ import java.io.FileInputStream
 import java.io.PrintWriter
 import java.util.*
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 fun main(args: Array<String>) {
-//    aStartCupExperiment()
-//    aStartSlalomExperiment()
-//    aStartUniformExperiment()
+    //    aStartCupExperiment()
+    //    aStartSlalomExperiment()
+    //    aStartUniformExperiment()
     lssLrtaStarUniformExperiment()
 }
 

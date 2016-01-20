@@ -10,9 +10,6 @@ import org.junit.Test
 import java.io.File
 import java.io.FileInputStream
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class RealTimeAStarPlannerTest {
 
     @Test
@@ -26,6 +23,4 @@ class RealTimeAStarPlannerTest {
         val rtsExperiment = RTSExperiment<VacuumWorldState>(null, realTimeAStarAgent, vacuumWorldEnvironment, CallsTerminationChecker(10))
         val experimentResults = rtsExperiment.run()
     }
-
-
 }

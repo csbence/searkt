@@ -38,8 +38,8 @@ open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domai
      */
     override fun popFromOpenList(): Node<StateType> {
         val node = openList.remove()
-//        val costs = openList.toArray().maps { it as Node<StateType> }.map { it.cost + domain.heuristic(it.state) }
-//        println("Cost: ${ node.cost + domain.heuristic(node.state)} Id: ${node.state.hashCode()}")
+        //        val costs = openList.toArray().maps { it as Node<StateType> }.map { it.cost + domain.heuristic(it.state) }
+        //        println("Cost: ${ node.cost + domain.heuristic(node.state)} Id: ${node.state.hashCode()}")
         return node
     }
 }

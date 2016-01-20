@@ -9,9 +9,6 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)

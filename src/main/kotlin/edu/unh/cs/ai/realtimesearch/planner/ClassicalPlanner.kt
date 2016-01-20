@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
  * Possible derivatives of this class are depthfirst search, A* etc.
  *
  * @param domain is the domain to plan in
- * @author Bence Cserna (bence@cserna.net)
  */
 abstract class ClassicalPlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
@@ -21,7 +20,7 @@ abstract class ClassicalPlanner<StateType : State<StateType>>(protected val doma
     public var expandedNodes = 0
 
     data class Node<State>(val parent: Node<State>?, val state: State,
-                    val action: Action?, val cost: Double)
+                           val action: Action?, val cost: Double)
 
     /** Interface3 functions **/
 

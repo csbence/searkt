@@ -4,9 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.junit.Test
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
 class AnytimeRepairingAStarTest {
 
     @Test
