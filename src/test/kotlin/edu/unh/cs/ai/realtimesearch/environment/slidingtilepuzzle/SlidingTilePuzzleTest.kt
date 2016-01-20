@@ -213,12 +213,12 @@ class SlidingTilePuzzleTest {
     //        runAStarOnSlidingTilePuzzleFileInput(fileName)
     //    }
 
-    @Test
-    fun testAStarFromFileHard() {
-        val fileName = "input/tiles/korf/4/1"
-
-        runAStarOnSlidingTilePuzzleFileInput(fileName)
-    }
+//    @Test
+//    fun testAStarFromFileHard() {
+//        val fileName = "input/tiles/korf/4/1"
+//
+//        runAStarOnSlidingTilePuzzleFileInput(fileName)
+//    }
 
     private fun runAStarOnSlidingTilePuzzleFileInput(fileName: String) {
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(File(fileName)))
