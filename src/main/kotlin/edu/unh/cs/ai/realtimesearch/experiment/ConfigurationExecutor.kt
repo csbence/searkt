@@ -5,6 +5,8 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
@@ -21,6 +23,7 @@ object ConfigurationExecutor {
         return when (domainName) {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
+            "grid world" -> executeGridWorld(experimentConfiguration)
             else -> listOf(ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName"))
         }
     }
@@ -32,6 +35,15 @@ object ConfigurationExecutor {
 
         return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState, vacuumWorldEnvironment)
     }
+
+    private fun executeGridWorld(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
+        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream())
+        val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
+
+        return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState, gridWorldEnvironment)
+    }
+
 
     private fun executeSlidingTilePuzzle(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val rawDomain: String = experimentConfiguration.getRawDomain()
@@ -84,6 +96,5 @@ object ConfigurationExecutor {
     private fun <StateType : edu.unh.cs.ai.realtimesearch.environment.State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
         throw UnsupportedOperationException("not implemented")
     }
-
 
 }
