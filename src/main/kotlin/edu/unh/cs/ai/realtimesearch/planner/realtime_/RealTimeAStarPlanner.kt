@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -13,19 +14,22 @@ import java.util.*
  */
 class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
 
+    val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
+
     private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
 
     override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
 
-        val sortedSuccessors = domain.successors(state)
+        val successors = domain.successors(state)
+        val sortedSuccessors = successors
                 .map { successor -> successor to heuristicLookahead(successor) }
                 .sortedBy { it.first.actionCost + it.second }
 
-        return if (sortedSuccessors.size == 1) {
+        val action = if (sortedSuccessors.size == 1) {
             val successorHeuristicPair = sortedSuccessors[0]
             heuristicTable[state] = successorHeuristicPair.second
             successorHeuristicPair.first.action
-        } else if (sortedSuccessors.size == 2) {
+        } else if (sortedSuccessors.size >= 2) {
             // Save the second best actions heuristic value
             heuristicTable[state] = sortedSuccessors[1].second
             // Use the best action
@@ -33,6 +37,9 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         } else {
             throw RuntimeException("Cannot expand a state with no successors.")
         }
+
+        logger.debug("Selected action: $action")
+        return action
     }
 
     private fun heuristicLookahead(successor: SuccessorBundle<StateType>): Double {
@@ -60,7 +67,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                     // Leaf level reached
                     bestAvailable = Math.min(bestAvailable, successorCost)
                 } else {
-                    openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, depth - 1))
+                    openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, miniminNode.depth - 1))
                 }
             }
         }
