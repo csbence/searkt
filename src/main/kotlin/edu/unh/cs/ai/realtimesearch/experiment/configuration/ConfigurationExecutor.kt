@@ -5,8 +5,8 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
@@ -19,6 +19,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
 
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
@@ -98,7 +99,11 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        throw UnsupportedOperationException("not implemented")
+        val realTimeAStarPlanner = RealTimeAStarPlanner(domain)
+        val rtsAgent = RTSAgent(realTimeAStarPlanner)
+        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration), experimentConfiguration.getNumberOfRuns())
+
+        return rtsExperiment.run()
     }
 
 }

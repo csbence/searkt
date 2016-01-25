@@ -21,12 +21,12 @@ import java.util.*
 
 fun main(args: Array<String>) {
 
-    val instanceFileName = "input/vacuum/dylan/cups.vw"
+    val instanceFileName = "input/vacuum/dylan/uniform.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "A*", 1, "calls", 100)
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-            aStartCupExperiment()
+//            aStartCupExperiment()
     //    aStartSlalomExperiment()
     //    aStartUniformExperiment()
     //    lssLrtaStarUniformExperiment()
