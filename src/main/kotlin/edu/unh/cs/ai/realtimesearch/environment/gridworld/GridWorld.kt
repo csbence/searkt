@@ -29,7 +29,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: List<Location
                 successors.add(SuccessorBundle(
                         GridWorldState(newLocation, state.targetLocation),
                         action,
-                        actionCost = .0))
+                        actionCost = 1.0))
             }
         }
 

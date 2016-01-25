@@ -6,9 +6,11 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironme
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
@@ -18,10 +20,16 @@ import java.io.PrintWriter
 import java.util.*
 
 fun main(args: Array<String>) {
-    //    aStartCupExperiment()
+
+    val instanceFileName = "input/vacuum/dylan/cups.vw"
+    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "A*", 1, "calls", 100)
+    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+            aStartCupExperiment()
     //    aStartSlalomExperiment()
     //    aStartUniformExperiment()
-    lssLrtaStarUniformExperiment()
+    //    lssLrtaStarUniformExperiment()
 }
 
 fun lssLrtaStarUniformExperiment() {
@@ -58,7 +66,7 @@ fun aStartUniformExperiment(): List<ExperimentResult> {
 private fun aStarVacuumWorldExperiment(instanceFileName: String): List<ExperimentResult> {
     val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
     val aStarAgent = ClassicalAgent(AStarPlanner(vacuumWorldInstance.domain))
-    val classicalExperiment = ClassicalExperiment<VacuumWorldState>(ExperimentConfiguration(), aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+    val classicalExperiment = ClassicalExperiment<VacuumWorldState>(EmptyConfiguration, aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     return classicalExperiment.run()
 }
 
