@@ -5,6 +5,8 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.logging.info
+import edu.unh.cs.ai.realtimesearch.logging.warn
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,13 +39,13 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         for (run in 1..runs) {
             // do experiment on state, either given or randomly created
             val state: StateType = initState?.copy() ?: domain.randomState()
-            logger.warn("Starting experiment run $run with state $state on agent ${agent}")
+            logger.warn { "Starting experiment run $run with state $state on agent $agent" }
 
             // TODO: complains should be from kotlin.system, but does not seem to exist
             val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
 
             // log results
-            logger.info("Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes")
+            logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes" }
 
 
             results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))

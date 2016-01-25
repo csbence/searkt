@@ -8,7 +8,7 @@ class VacuumWorldTest {
 
     @Test
     fun testGoalChecker() {
-        val world = VacuumWorld(10,10, emptyList())
+        val world = VacuumWorld(10,10, emptySet())
         val l1 = Location(3, 5)
         val l2 = Location(0, 5)
 

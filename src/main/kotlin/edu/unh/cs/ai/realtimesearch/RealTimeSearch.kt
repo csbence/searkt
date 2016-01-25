@@ -23,7 +23,7 @@ fun main(args: Array<String>) {
 
     val instanceFileName = "input/vacuum/dylan/uniform.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 1)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
 //            aStartCupExperiment()
@@ -69,7 +69,6 @@ private fun aStarVacuumWorldExperiment(instanceFileName: String): List<Experimen
     val classicalExperiment = ClassicalExperiment<VacuumWorldState>(EmptyConfiguration, aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     return classicalExperiment.run()
 }
-
 
 fun writeResultsToFile(name: String, results: List<ExperimentResult>) {
     val writer = PrintWriter("results/Results-$name-${Random().nextInt()}.csv", "UTF-8")

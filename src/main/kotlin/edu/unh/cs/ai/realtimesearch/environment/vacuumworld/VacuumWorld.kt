@@ -3,6 +3,8 @@ package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
@@ -49,7 +51,7 @@ class VacuumWorld(public val width: Int,
             }
         }
 
-        //        logger.trace("State $state produces successors: $successors")
+        //        logger.trace { "State $state produces successors: $successors" }
         return successors
     }
 
@@ -78,7 +80,7 @@ class VacuumWorld(public val width: Int,
             }
         }
 
-        logger.trace("State $state produces predecessors: $predecessors")
+        logger.trace { "State $state produces predecessors: $predecessors" }
         return predecessors
     }
 
@@ -160,7 +162,7 @@ class VacuumWorld(public val width: Int,
         }
 
         val randomState = VacuumWorldState(randomLocation(width, height), dirtyCells)
-        logger.debug("Returning random state $randomState")
+        logger.debug { "Returning random state $randomState" }
 
         return randomState
     }

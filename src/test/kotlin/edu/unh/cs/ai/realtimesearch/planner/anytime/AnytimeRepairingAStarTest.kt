@@ -9,7 +9,7 @@ class AnytimeRepairingAStarTest {
 
     @Test
     fun solveVacuumWorldTest1() {
-        val world = VacuumWorld(2,2, emptyList())
+        val world = VacuumWorld(2,2, emptySet())
         val location = Location(0, 0)
 
         val startState = VacuumWorldState(location, listOf(location))

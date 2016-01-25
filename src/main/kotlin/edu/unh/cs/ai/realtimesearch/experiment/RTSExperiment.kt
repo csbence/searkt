@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
 
 /**
@@ -44,7 +45,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             agent.reset()
             world.reset()
 
-            logger.info("Starting experiment $run from state ${world.getState()}")
+            logger.info { "Starting experiment $run from state ${world.getState()}" }
             val timeInMillis = kotlin.system.measureTimeMillis {
                 while (!world.isGoal()) {
 
@@ -54,11 +55,11 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
                     actions.add(action)
                     world.step(action)
 
-                    logger.info("Agent return action $action to state ${world.getState()}")
+                    logger.info { "Agent return action $action to state ${world.getState()}" }
                 }
             }
 
-            logger.info("Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes")
+            logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes" }
 
             results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }

@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 
 /**
@@ -17,14 +18,14 @@ class GridWorldEnvironment(private val domain: GridWorld, private val initialSta
 
         // get the state from the successors by filtering on action
         currentState = successorBundles.first { it.action == action }.state
-        logger.trace("Action " + action.toString() + " leads to state " + currentState.toString())
+        logger.trace { "Action $action leads to state $currentState" }
     }
 
     override fun getState() = currentState
 
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)
-        logger.trace("State $currentState is ${if (goal) "" else "not"} a goal")
+        logger.trace { "State $currentState is ${if (goal) "" else "not"} a goal" }
 
         return goal
     }

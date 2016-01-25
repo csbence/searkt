@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
 
 /**
@@ -82,7 +83,7 @@ abstract class ClassicalPlanner<StateType : State<StateType>>(protected val doma
     public fun expandNode(node: Node<StateType>): Node<StateType> {
         expandedNodes += 1
         if (expandedNodes % 100000 == 0) {
-            logger.debug("expanded: $expandedNodes ")
+            logger.debug { "expanded: $expandedNodes " }
         }
 
         // expand (only those not visited yet)
