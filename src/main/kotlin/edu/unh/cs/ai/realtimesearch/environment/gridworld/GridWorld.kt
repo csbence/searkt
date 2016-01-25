@@ -1,8 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldAction
 import org.slf4j.LoggerFactory
 
 /**
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory
  *
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class GridWorld(val width: Int, val height: Int, val blockedCells: List<Location>) : Domain<GridWorldState> {
+class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>) : Domain<GridWorldState> {
 
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
@@ -22,7 +23,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: List<Location
     override fun successors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
         val successors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
 
-        for (action in VacuumWorldAction.values()) {
+        for (action in GridWorldAction.values()) {
             val newLocation = state.agentLocation + action.getRelativeLocation()
 
             if (isLegalLocation(newLocation)) {

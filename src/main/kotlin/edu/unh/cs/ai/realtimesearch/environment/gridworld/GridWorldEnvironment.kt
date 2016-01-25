@@ -1,9 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorld
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldState
 import org.slf4j.LoggerFactory
 
 /**

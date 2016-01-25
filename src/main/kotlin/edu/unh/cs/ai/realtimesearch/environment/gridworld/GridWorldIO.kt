@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorld
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldState
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldState
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import java.io.InputStream
 

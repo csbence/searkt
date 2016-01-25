@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
+package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
