@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import org.slf4j.LoggerFactory
 
 /**
@@ -28,7 +29,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
                                                         runs: Int = 1) : Experiment(runs) {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
-    private var plan: List<Action> = emptyList()
+    private var actions: List<Action> = emptyList()
 
     override fun run(): List<ExperimentResult> {
         val results: MutableList<ExperimentResult> = arrayListOf()
@@ -39,13 +40,13 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
             logger.warn("Starting experiment run $run with state $state on agent ${agent}")
 
             // TODO: complains should be from kotlin.system, but does not seem to exist
-            val timeInMillis = kotlin.system.measureTimeMillis { plan = agent.plan(state) }
+            val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
 
             // log results
-            logger.warn("Path: $plan\nAfter ${agent.planner.expandedNodes} expanded " +
-                    "and ${agent.planner.generatedNodes} generated nodes")
+            logger.info("Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes")
 
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, plan))
+
+            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }
 
         return results

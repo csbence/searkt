@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 
 data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
                             val expandedNodes: Int = 0,

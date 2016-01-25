@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import org.slf4j.LoggerFactory
 
 /**
@@ -43,7 +44,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             agent.reset()
             world.reset()
 
-            logger.warn("Starting experiment $run from state ${world.getState()}")
+            logger.info("Starting experiment $run from state ${world.getState()}")
             val timeInMillis = kotlin.system.measureTimeMillis {
                 while (!world.isGoal()) {
 
@@ -57,9 +58,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
                 }
             }
 
-            logger.warn("Path: " + actions + "\nAfter " +
-                    agent.planner.expandedNodes + " expanded and " +
-                    agent.planner.generatedNodes + " generated nodes")
+            logger.info("Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes")
 
             results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }
