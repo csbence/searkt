@@ -45,7 +45,7 @@ object VacuumWorldIO {
             throw InvalidVacuumWorldException("Unknown start location. Start location has was not defined.")
         }
 
-        val vacuumWorld = edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld(columnCount, rowCount, blockedCells)
+        val vacuumWorld = edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld(columnCount, rowCount, blockedCells.toHashSet())
         val startState = VacuumWorldState(startLocation, dirtyCells)
         return VacuumWorldInstance(vacuumWorld, startState)
     }

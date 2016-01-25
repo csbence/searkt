@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom
  */
 class VacuumWorld(public val width: Int,
                   public val height: Int,
-                  public val blockedCells: List<Location>,
+                  public val blockedCells: Set<Location>,
                   public val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
