@@ -63,7 +63,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     enum class Mode {INIT, NEW_SEARCH, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
 
-    private var mode = Mode.INIT
+    private var _mode = Mode.INIT
+    private var mode: Mode
+        get() = _mode
+        set(value) {
+            logger.info { "Changing mode: $mode -> $value" }
+            _mode = value
+        }
 
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
@@ -137,7 +143,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
                 // if we find a goal while executing, simply extend the plan
                 if (domain.isGoal(endState)) {
-                    setMode(Mode.FOUND_GOAL)
+                    mode = Mode.FOUND_GOAL
                     executingPlan.addAll(extractPlan(endState))
                 }
             }
@@ -157,10 +163,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "Got a new plan, up to state $endState , h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}" }
 
         if (domain.isGoal(endState)) {
-            setMode(Mode.FOUND_GOAL)
+            mode = Mode.FOUND_GOAL
         } else {
             // setup for next steps: Dijkstra and new root state
-            setMode(Mode.NEW_DIJKSTRA)
+            mode = Mode.NEW_DIJKSTRA
             rootState = endState
         }
     }
@@ -176,7 +182,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // emergency: we need to have at least a clean search if not done with dijkstra
         if (mode == Mode.DIJKSTRA) {
             logger.info { "Not finished with Dijkstra backups, but starting new search" }
-            setMode(Mode.NEW_SEARCH)
+            mode = Mode.NEW_SEARCH
         }
 
         // generate new plan
@@ -204,13 +210,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             costTable.put(rootState!!, 0.0)
 
             // We do not need to setup for a new search after this
-            setMode(Mode.A_STAR)
+            mode = Mode.A_STAR
         }
 
         // actual core steps of A*, building the tree
         var state = popOpenList()
-
-        //        val startExpansionCount = expandedNodes
 
         val expandedNodes = measureInt({ expandedNodes }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(state)) {
@@ -219,7 +223,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
         }
 
-        //        val expandedNodes = expandedNodes - startExpansionCount
         if (expandedNodes == 0 && !domain.isGoal(state)) {
             throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
@@ -254,7 +257,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             closedList.forEach { heuristicTable.put(it, Double.POSITIVE_INFINITY) }
 
             // no need to setup dijkstra again next round
-            setMode(Mode.DIJKSTRA)
+            mode = Mode.DIJKSTRA
         }
 
         // change openList ordering to heuristic only
@@ -293,7 +296,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // update mode if done
         if (closedList.isEmpty()) {
             logger.info { "Done with Dijkstra" }
-            setMode(Mode.NEW_SEARCH)
+            mode = Mode.NEW_SEARCH
         }
     }
 
@@ -355,14 +358,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         actions.push(stateActionPair.second)
 
         return actions
-    }
-
-    /**
-     * Sets the mode of LSS-LRTA(and logs some)
-     */
-    private fun setMode(newMode: Mode) {
-        mode = newMode
-        logger.info { "Setting mode to " + mode }
     }
 
     private fun clearOpenList() {
