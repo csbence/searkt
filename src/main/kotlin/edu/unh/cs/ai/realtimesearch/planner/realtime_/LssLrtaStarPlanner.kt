@@ -63,12 +63,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     enum class Mode {INIT, NEW_SEARCH, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
 
-    private var _mode = Mode.INIT
-    private var mode: Mode
-        get() = _mode
+    private var mode = Mode.INIT
         set(value) {
             logger.info { "Changing mode: $mode -> $value" }
-            _mode = value
+            field = value
         }
 
     /**
@@ -180,7 +178,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "Currently no plan, executing AStar" }
 
         // emergency: we need to have at least a clean search if not done with dijkstra
-        if (mode == Mode.DIJKSTRA) {
+        if (mode == Mode.DIJKSTRA || mode == Mode.NEW_DIJKSTRA) {
             logger.info { "Not finished with Dijkstra backups, but starting new search" }
             mode = Mode.NEW_SEARCH
         }

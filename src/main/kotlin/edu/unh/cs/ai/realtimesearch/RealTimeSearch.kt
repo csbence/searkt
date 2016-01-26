@@ -23,7 +23,7 @@ fun main(args: Array<String>) {
 
     val instanceFileName = "input/vacuum/dylan/uniform.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 1)
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
 //            aStartCupExperiment()
