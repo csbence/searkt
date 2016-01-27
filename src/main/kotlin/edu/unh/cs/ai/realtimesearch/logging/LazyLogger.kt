@@ -10,24 +10,24 @@ public inline fun Logger.info(log: () -> String) {
 
 public inline fun Logger.debug(log: () -> String) {
     if (isDebugEnabled) {
-        info(log())
+        debug(log())
     }
 }
 
 public inline fun Logger.trace(log: () -> String) {
     if (isTraceEnabled) {
-        info(log())
+        trace(log())
     }
 }
 
 public inline fun Logger.warn(log: () -> String) {
     if (isWarnEnabled) {
-        info(log())
+        warn(log())
     }
 }
 
 public inline fun Logger.error(log: () -> String) {
     if (isErrorEnabled) {
-        info(log())
+        error(log())
     }
 }
