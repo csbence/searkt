@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientT
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.logging.trace
+import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -61,7 +62,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      *
      * This ensures that those initiation steps are not taken if we are continuing from a previous run
      */
-    enum class Mode {INIT, NEW_SEARCH, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
+    enum class Mode {INIT, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
 
     private var mode = Mode.INIT
         set(value) {
@@ -94,7 +95,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
         // Initiate for the first search
         if (mode == Mode.INIT) {
-            initializeSearch(state)
+            initializePlanner(state)
         }
 
         logger.info { "Selecting action in state $state, but considering rootState $rootState" }
@@ -120,7 +121,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         return action
     }
 
-    private fun initializeSearch(state: StateType) {
+    /**
+     * We start a new problem, erase all information in lists and our state(tree) pointers
+     */
+    private fun initializePlanner(state: StateType) {
         // clear members that persist during action selection
         heuristicTable.clear()
         treePointers.clear()
@@ -128,14 +132,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // Ready to start new search!
         rootState = state
-        mode = Mode.NEW_SEARCH
+        resetSearch()
     }
 
     private fun continueExecution(terminationChecker: TerminationChecker) {
         when (mode) {
             Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker) // a
 
-            Mode.A_STAR, Mode.NEW_SEARCH -> {
+            Mode.A_STAR -> {
                 // b
                 val endState = AStar(terminationChecker)
 
@@ -179,8 +183,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // emergency: we need to have at least a clean search if not done with dijkstra
         if (mode == Mode.DIJKSTRA || mode == Mode.NEW_DIJKSTRA) {
-            logger.info { "Not finished with Dijkstra backups, but starting new search" }
-            mode = Mode.NEW_SEARCH
+            logger.warn { "Not finished with Dijkstra backups, but starting new search" }
+            resetSearch()
         }
 
         // generate new plan
@@ -191,26 +195,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
-     *
-     * The first call, when in mode NEW_SEARCH, it will clear the open list, closed list & cost table
-     * Other than that will just repeatedly expand according to A*.
+     * Will just repeatedly expand according to A*.
      */
     private fun AStar(terminationChecker: TerminationChecker): StateType {
-        // During first call, get ready for a search (erase previous open/closed list and cost able
-        if (mode == Mode.NEW_SEARCH) {
-            logger.info { "New Search..." }
-
-            costTable.clear()
-            clearOpenList()
-            closedList.clear()
-
-            addToOpenList(rootState!!)
-            costTable.put(rootState!!, 0.0)
-
-            // We do not need to setup for a new search after this
-            mode = Mode.A_STAR
-        }
-
         // actual core steps of A*, building the tree
         var state = popOpenList()
 
@@ -233,9 +220,29 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     /**
+     * Clears closed list and initiates open list with current root state
+     */
+    private fun resetSearch() {
+        logger.info { "New Search..." }
+
+        costTable.clear()
+        clearOpenList()
+        closedList.clear()
+
+        // change openList ordering back to f value
+        reorderOpenListBy(fValueComparator)
+
+        addToOpenList(rootState!!)
+        costTable.put(rootState!!, 0.0)
+
+        // We do not need to setup for a new search after this
+        mode = Mode.A_STAR
+    }
+
+    /**
      * Performs Dijkstra updates until runs out of resources or done
      *
-     * Updates the mode to NEW_SEARCH if done with DIJKSTRA
+     * Updates the mode to SEARCH if done with DIJKSTRA
      *
      * Dijkstra updates repeatedly pop the state s according to their heuristic value, and then update
      * the cost values for all it's visited successors, based on the heuristic s.
@@ -256,10 +263,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             // no need to setup dijkstra again next round
             mode = Mode.DIJKSTRA
+
+            // change openList ordering to heuristic only
+            reorderOpenListBy(heuristicComparator)
         }
 
-        // change openList ordering to heuristic only
-        reorderOpenListBy(heuristicComparator)
 
         // update all g(s) in closedList, starting from frontiers in openList
         while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
@@ -288,13 +296,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
         }
 
-        // change openList ordering back to f value
-        reorderOpenListBy(fValueComparator)
-
         // update mode if done
         if (closedList.isEmpty()) {
             logger.info { "Done with Dijkstra" }
-            mode = Mode.NEW_SEARCH
+            resetSearch()
         }
     }
 
