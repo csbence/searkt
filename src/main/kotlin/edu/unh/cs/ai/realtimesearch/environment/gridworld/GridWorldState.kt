@@ -7,11 +7,11 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  * A state in the vacuumworld is simply the current location of the agent,
  * and the location of all dirty cells. The blocked cells are global.
  */
-data class GridWorldState(val agentLocation: Location, val targetLocation: Location) : State<GridWorldState> {
+data class GridWorldState(val agentLocation: Location) : State<GridWorldState> {
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
-        return agentLocation.hashCode() xor targetLocation.hashCode()
+        return agentLocation.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -19,17 +19,17 @@ data class GridWorldState(val agentLocation: Location, val targetLocation: Locat
             other == null -> false
             other === this -> true
             other !is GridWorldState -> false
-            else -> agentLocation == other.agentLocation && this.targetLocation == other.targetLocation
+            else -> agentLocation == other.agentLocation
         }
     }
 
     /**
      * Copy simply calls the data class implemented copy
      */
-    override fun copy() = copy(agentLocation, targetLocation)
+    override fun copy() = copy(agentLocation)
 
     public override fun toString(): String {
-        return "Agent location: " + agentLocation.toString() + ", target: " + targetLocation.toString()
+        return "Agent location: " + agentLocation.toString()
     }
 
 }

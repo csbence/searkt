@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  *
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>) : Domain<GridWorldState> {
+class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location) : Domain<GridWorldState> {
 
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
@@ -28,7 +28,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
 
             if (isLegalLocation(newLocation)) {
                 successors.add(SuccessorBundle(
-                        GridWorldState(newLocation, state.targetLocation),
+                        GridWorldState(newLocation),
                         action,
                         actionCost = 1.0))
             }
@@ -73,7 +73,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      * @return whether the state is a goal state
      */
     override fun isGoal(state: GridWorldState): Boolean {
-        return state.agentLocation == state.targetLocation
+        return state.agentLocation == targetLocation
     }
 
     /**
@@ -89,7 +89,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
             for (w in 1..width) {
                 val charCell = when (Location(w, h)) {
                     state.agentLocation -> '@'
-                    state.targetLocation -> '*'
+                    targetLocation -> '*'
                     in blockedCells -> '#'
                     else -> '_'
                 }

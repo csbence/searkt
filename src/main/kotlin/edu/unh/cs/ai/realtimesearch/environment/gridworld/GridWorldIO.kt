@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldState
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import java.io.InputStream
 
@@ -10,7 +9,7 @@ object GridWorldIO {
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(input)
 
         val gridWorld = vacuumWorldInstance.domain.run {
-            GridWorld(width, height, blockedCells)
+            GridWorld(width, height, blockedCells, vacuumWorldInstance.initialState.dirtyCells[0])
         }
 
         val worldState = vacuumWorldInstance.initialState.run {
@@ -18,7 +17,7 @@ object GridWorldIO {
                 throw InvalidGridWorldException("Grid world should have exactly one goal. ${dirtyCells.size} found. ")
             }
 
-            GridWorldState(agentLocation, dirtyCells[0])
+            GridWorldState(agentLocation)
         }
 
         return GridWorldInstance(gridWorld, worldState)
