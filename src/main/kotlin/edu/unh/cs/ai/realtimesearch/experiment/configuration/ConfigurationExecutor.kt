@@ -18,8 +18,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.RtLssLrtaStarPlanner
 
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
@@ -48,7 +48,6 @@ object ConfigurationExecutor {
 
         return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState, gridWorldEnvironment)
     }
-
 
     private fun executeSlidingTilePuzzle(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val rawDomain: String = experimentConfiguration.getRawDomain()
@@ -79,7 +78,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val lssLrtaPlanner = LssLrtaStarPlanner(domain)
+        val lssLrtaPlanner = RtLssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration), experimentConfiguration.getNumberOfRuns())
 

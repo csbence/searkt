@@ -20,16 +20,16 @@ import java.io.PrintWriter
 import java.util.*
 
 fun main(args: Array<String>) {
+//
+//    val instanceFileName = "input/vacuum/dylan/uniform.vw"
+//    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+//    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
+//    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-    val instanceFileName = "input/vacuum/dylan/uniform.vw"
+    val instanceFileName = "input/tiles/korf/4/87"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
-
-//            aStartCupExperiment()
-    //    aStartSlalomExperiment()
-    //    aStartUniformExperiment()
-    //    lssLrtaStarUniformExperiment()
 }
 
 fun lssLrtaStarUniformExperiment() {
@@ -44,7 +44,7 @@ fun lssLrtaVacuumWorldExperiment(instanceFileName: String) {
     val lssLrtaAgent = RTSAgent(lssLrtaPlanner)
     val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
 
-    val rtsExperiment = RTSExperiment<VacuumWorldState>(null, lssLrtaAgent, vacuumWorldEnvironment, CallsTerminationChecker(10))
+    val rtsExperiment = RTSExperiment<VacuumWorldState>(null, lssLrtaAgent, vacuumWorldEnvironment, CallsTerminationChecker(40))
     rtsExperiment.run()
 }
 

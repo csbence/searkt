@@ -36,13 +36,3 @@ sourceSets {
     main.java.srcDirs += 'src/main/kotlin'
     test.java.srcDirs += 'src/test/kotlin'
 }
-
-//task execute(type: JavaExec) {
-////    standardInput = new FileInputStream(new File('problems/line1.vw'))
-//    main = 'edu.unh.cs.ai.realtimesearch.RealTimeSearchKt'
-//    def argList = []
-//
-//    args = argList
-//    classpath = sourceSets.main.runtimeClasspath
-//}
-//

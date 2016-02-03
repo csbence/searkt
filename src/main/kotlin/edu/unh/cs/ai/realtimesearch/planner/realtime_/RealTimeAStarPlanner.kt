@@ -20,7 +20,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
     private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
 
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
 
         val successors = domain.successors(state)
         val sortedSuccessors = evaluateSuccessors(successors, terminationChecker).sortedBy { it.successorBundle.actionCost + it.heuristicLookahead }
@@ -39,7 +39,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         }
 
         logger.debug { "Selected action: $action" }
-        return action
+        return Collections.singletonList(action)
     }
 
     private fun evaluateSuccessors(successors: List<SuccessorBundle<StateType>>, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>> {

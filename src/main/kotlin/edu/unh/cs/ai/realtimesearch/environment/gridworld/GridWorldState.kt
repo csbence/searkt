@@ -27,10 +27,5 @@ data class GridWorldState(val agentLocation: Location) : State<GridWorldState> {
      * Copy simply calls the data class implemented copy
      */
     override fun copy() = copy(agentLocation)
-
-    public override fun toString(): String {
-        return "Agent location: " + agentLocation.toString()
-    }
-
 }
 

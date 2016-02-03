@@ -92,7 +92,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): Action {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         // Initiate for the first search
         if (mode == Mode.INIT) {
             initializePlanner(state)
@@ -118,7 +118,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val action = executingPlan.remove()
         logger.info { "Returning action $action with plan $executingPlan left" }
 
-        return action
+        return Collections.singletonList(action)
     }
 
     /**
