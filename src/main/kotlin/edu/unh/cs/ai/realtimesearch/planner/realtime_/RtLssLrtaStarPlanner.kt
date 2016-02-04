@@ -46,6 +46,9 @@ class RtLssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
     private var rootState: StateType? = null
 
+    public var aStarPopCounter = 0
+    public var dijkstraPopCounter = 0
+
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
@@ -115,6 +118,8 @@ class RtLssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         val plan = extractPlan(targetState, state)
         rootState = targetState
 
+        logger.info { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+
         return plan
     }
 
@@ -133,6 +138,7 @@ class RtLssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
         val expandedNodes = measureInt({ expandedNodes }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(currentState)) {
+                aStarPopCounter++
                 currentState = popOpenList()
                 expandFromNode(currentState)
             }
@@ -257,6 +263,7 @@ class RtLssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
             //            logger.debug { "Open list $openSet\n" }
 
             val state = popOpenList()
+            dijkstraPopCounter++
 
             val removed = closedList.remove(state)
             logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${predecessors[state]?.size} :: $state      Removed: $removed - $removedCounter" }
