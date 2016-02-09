@@ -19,7 +19,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RtLssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
@@ -78,7 +78,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val lssLrtaPlanner = RtLssLrtaStarPlanner(domain)
+        val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration), experimentConfiguration.getNumberOfRuns())
 

@@ -2,17 +2,16 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime_
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.logging.trace
-import edu.unh.cs.ai.realtimesearch.logging.warn
+import edu.unh.cs.ai.realtimesearch.logging.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.Double.Companion.POSITIVE_INFINITY
+import kotlin.system.measureTimeMillis
 
 /**
  * Local Search Space Learning Real Time Search A*, a type of RTS planner.
@@ -25,58 +24,101 @@ import java.util.*
  * This loop continue until the goal has been found
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
 
-    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var actionCost: Double, var action: Action,
+                                             var iteration: Long,
+                                             parent: Node<StateType>? = null) {
 
-    // cached h and g values
-    private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
-    private val costTable: MutableMap<StateType, Double> = hashMapOf()
-    private val treePointers: MutableMap<StateType, Pair<StateType, Action>> = hashMapOf()
+        var predecessors: MutableList<Edge<StateType>> = arrayListOf()
+        var parent: Node<StateType>
 
-    // default search lists
-    private val closedList: HashSet<StateType> = hashSetOf()
+        init {
+            this.parent = parent ?: this
+        }
 
-    private val fValueComparator = compareBy<StateType> {
-        heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { Double.POSITIVE_INFINITY })
+        override fun hashCode(): Int {
+            return state.hashCode()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other != null && other is Node<*>) {
+                return state.equals(other.state)
+            }
+            return false
+        }
     }
 
-    private val heuristicComparator = compareBy<StateType> { heuristicTable.getOrPut(it, { domain.heuristic(it) }) }
+    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
+    private var iterationCounter = 0L
+
+    private val fValueComparator = compareBy<Node<StateType>> { node ->
+        val state = node.state
+        nodes[state]?.let { it.heuristic + it.cost } ?: domain.heuristic(state) // TODO
+        //        heuristicTable.getOrPut(it, { domain.heuristic(it) }) + costTable.getOrPut(it, { POSITIVE_INFINITY })
+    }
+
+    private val heuristicComparator = compareBy<Node<StateType>> { node ->
+        val state = node.state
+        nodes[state]?.heuristic ?: domain.heuristic(state) // TODO
+    }
+
+    private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
+
+    // cached h and g values
+    //    private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
+    //    private val costTable: MutableMap<StateType, Double> = hashMapOf()
+    //    private val treePointers: MutableMap<StateType, Pair<StateType, Action>> = hashMapOf()
+    //    private val predecessors: MutableMap<StateType, MutableList<StateCostPair<StateType>>> = hashMapOf()
+
+    private val closedList: MutableSet<Node<StateType>> = hashSetOf()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<StateType>(fValueComparator)
+    private var openList = PriorityQueue<Node<StateType>>(fValueComparator)
 
     // for fast lookup we maintain a set in parallel
-    private val openSet = hashSetOf<StateType>()
-    // current plan in execution
-    private var executingPlan: Queue<Action> = ArrayDeque()
+    private val openSet = hashSetOf<Node<StateType>>()
 
     private var rootState: StateType? = null
 
-    /**
-     * Current mode, either doing dijkstra updates or AStar search
-     *
-     * Since both A* and Dijkstra performs can be interrupted by the termination checker,
-     * and both initiate values at the start, there is a distinction between the first dijkstra
-     * and A* run, and the others.
-     *
-     * This ensures that those initiation steps are not taken if we are continuing from a previous run
-     */
-    enum class Mode {INIT, A_STAR, NEW_DIJKSTRA, DIJKSTRA, FOUND_GOAL }
-
-    private var mode = Mode.INIT
-        set(value) {
-            logger.info { "Changing mode: $mode -> $value" }
-            field = value
-        }
+    public var aStarPopCounter = 0
+    public var dijkstraPopCounter = 0
+    private var aStarTimer = 0L
+    private var dijkstraTimer = 0L
 
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
      */
     override public fun reset() {
-        mode = Mode.INIT
         super.reset()
+
+        //        heuristicTable.clear()
+        //        treePointers.clear()
+        resetSearch()
+
+        // Ready to start new search!
+        rootState = null
+        resetSearch()
+    }
+
+    /**
+     * Clears closed list and initiates open list with current root state
+     */
+    private fun resetSearch() {
+        logger.info { "New Search..." }
+
+        //        costTable.clear()
+        clearOpenList()
+        closedList.clear()
+
+        // change openList ordering back to f value
+        reorderOpenListBy(fValueComparator)
+
+        //        addToOpenList(rootState!!)
+        //        costTable.put(rootState!!, 0.0)
     }
 
     /**
@@ -94,149 +136,146 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         // Initiate for the first search
-        if (mode == Mode.INIT) {
-            initializePlanner(state)
+
+        if (rootState == null) {
+            rootState = state
+        } else if (state != rootState) {
+            // The given state should be the last target
+            logger.error { "Inconsistent world state. Expected $rootState got $state" }
         }
+
+        // TODO check whether the given state is goal or not
 
         logger.info { "Selecting action in state $state, but considering rootState $rootState" }
+        // Every turn learn then A* until time expires
 
-        // 2 Possible scenarios:
-        // 1) We currently have no plan and need to think of one
-        // 2) We are currently executing a plan and have time to search more
-        //      2a) Doing dijkstra
-        //      2b) Doing A*
-
-        if (executingPlan.isEmpty()) {
-            // 1): no current plan
-            createInitialPlan(terminationChecker)
-        } else {
-            // 2) We are executing a plan. We either need to do a) Dijkstra or b) more searching
-            continueExecution(terminationChecker)
+        if (closedList.isNotEmpty()) {
+            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
-        // actual return an action from the current plan
-        val action = executingPlan.remove()
-        logger.info { "Returning action $action with plan $executingPlan left" }
-
-        return Collections.singletonList(action)
-    }
-
-    /**
-     * We start a new problem, erase all information in lists and our state(tree) pointers
-     */
-    private fun initializePlanner(state: StateType) {
-        // clear members that persist during action selection
-        heuristicTable.clear()
-        treePointers.clear()
-        executingPlan = ArrayDeque()
-
-        // Ready to start new search!
-        rootState = state
-        resetSearch()
-    }
-
-    private fun continueExecution(terminationChecker: TerminationChecker) {
-        when (mode) {
-            Mode.NEW_DIJKSTRA, Mode.DIJKSTRA -> Dijkstra(terminationChecker) // a
-
-            Mode.A_STAR -> {
-                // b
-                val endState = AStar(terminationChecker)
-
-                // if we find a goal while executing, simply extend the plan
-                if (domain.isGoal(endState)) {
-                    mode = Mode.FOUND_GOAL
-                    executingPlan.addAll(extractPlan(endState))
-                }
-            }
-
-            Mode.FOUND_GOAL -> logger.info { "In mode found goal" }
-
-            else -> {
-                throw RuntimeException("LSS-LRTA does not expect to be in mode $mode here")
-            }
-        }
-    }
-
-    private fun createInitialPlan(terminationChecker: TerminationChecker) {
-        val endState = generateExecutionPlan(terminationChecker)
-        executingPlan = extractPlan(endState)
-
-        logger.info { "Got a new plan, up to state $endState , h(${heuristicTable[endState]}) & g(${costTable[endState]}), of plan size  ${executingPlan.size}" }
-
-        if (domain.isGoal(endState)) {
-            mode = Mode.FOUND_GOAL
-        } else {
-            // setup for next steps: Dijkstra and new root state
-            mode = Mode.NEW_DIJKSTRA
-            rootState = endState
-        }
-    }
-
-    /**
-     * Sets a execution plan to current most promising state (f value)
-     *
-     * Returns end state of the plan
-     */
-    private fun generateExecutionPlan(terminationChecker: TerminationChecker): StateType {
-        logger.info { "Currently no plan, executing AStar" }
-
-        // emergency: we need to have at least a clean search if not done with dijkstra
-        if (mode == Mode.DIJKSTRA || mode == Mode.NEW_DIJKSTRA) {
-            logger.warn { "Not finished with Dijkstra backups, but starting new search" }
-            resetSearch()
+        var plan : List<Action>? = null
+        aStarTimer += measureTimeMillis {
+            val targetNode = aStar(state, terminationChecker)
+            plan = extractPlan(targetNode, state)
+            rootState = targetNode.state
         }
 
-        // generate new plan
-        val endState = AStar(terminationChecker)
+        logger.info { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.info { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
-        return endState
+        return plan!!
     }
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun AStar(terminationChecker: TerminationChecker): StateType {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
-        var state = popOpenList()
+        initializeAStar()
+
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter)
+        nodes[state] = node
+        //        costTable.put(state, 0.0) TODO
+        var currentNode = node
+        addToOpenList(node)
+        logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodes }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(state)) {
-                expandFromNode(state)
-                state = popOpenList()
+            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+                aStarPopCounter++
+                currentNode = popOpenList()
+                expandFromNode(currentNode)
             }
         }
 
-        if (expandedNodes == 0 && !domain.isGoal(state)) {
-            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
+        if (expandedNodes == 0 && !domain.isGoal(currentNode.state)) {
+            //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
             logger.info { "A* : expanded $expandedNodes nodes" }
         }
 
-        logger.info { "Done with AStar" }
+        logger.info { "Done with AStar at $currentNode" }
 
-        return state
+        return currentNode
     }
 
-    /**
-     * Clears closed list and initiates open list with current root state
-     */
-    private fun resetSearch() {
-        logger.info { "New Search..." }
+    private fun initializeAStar() {
+        //        treePointers.clear()
+        //        predecessors.clear()
+        //        costTable.forEach { costTable.put(it.key, POSITIVE_INFINITY) }
 
-        costTable.clear()
+        iterationCounter++
         clearOpenList()
         closedList.clear()
 
-        // change openList ordering back to f value
         reorderOpenListBy(fValueComparator)
+    }
 
-        addToOpenList(rootState!!)
-        costTable.put(rootState!!, 0.0)
+    /**
+     * Expands a node and add it to closed list. For each successor
+     * it will add it to the open list and store it's g value, as long as the
+     * state has not been seen before, or is found with a lower g value
+     */
+    private fun expandFromNode(node: Node<StateType>) {
+        expandedNodes += 1
 
-        // We do not need to setup for a new search after this
-        mode = Mode.A_STAR
+        //        logger.debug { "Expanding state $state, h(${heuristicTable[state]}) & g(${costTable[state]})" }
+
+        closedList.add(node)
+
+        val currentGValue = node.cost
+        for (successor in domain.successors(node.state)) {
+            val successorState = successor.state
+            logger.trace { "Considering successor $successorState" }
+
+            // Get or create a successor node
+            val tempSuccessorNode = nodes[successorState]
+
+            val successorNode = if (tempSuccessorNode == null) {
+                val undiscoveredNode = Node(
+                        state = successorState,
+                        heuristic = domain.heuristic(successorState),
+                        cost = POSITIVE_INFINITY,
+                        actionCost = successor.actionCost,
+                        action = successor.action,
+                        parent = node,
+                        iteration = iterationCounter)
+
+                nodes[successorState] = undiscoveredNode
+                undiscoveredNode
+            } else {
+                tempSuccessorNode
+            }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = node, action = successor.action, actionCost = successor.actionCost))
+
+            // only generate those state that are not visited yet or whose cost value are lower than this path
+            //            val successorGValue = costTable.getOrPut(successor.state, { POSITIVE_INFINITY })
+            val successorGValue = successorNode.cost
+            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            if (successorGValue > successorGValueFromCurrent) {
+                generatedNodes += 1
+
+                // here we generate a state. We store it's g value and remember how to get here via the treePointers
+                successorNode.cost = successorGValueFromCurrent
+                successorNode.parent = node
+                successorNode.action = successor.action
+                successorNode.actionCost = successor.actionCost
+
+                logger.debug { "Expanding from $node --> $successorState :: open list size: ${openList.size}" }
+                logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
+
+                if (!inOpenList(successorNode)) {
+                    addToOpenList(successorNode)
+                }
+            } else {
+                logger.trace {
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${node.cost}), and action cost ${successor.actionCost}"
+                }
+            }
+        }
     }
 
     /**
@@ -254,139 +293,115 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * We then update
      *
      */
-    private fun Dijkstra(terminationChecker: TerminationChecker) {
+    private fun dijkstra(terminationChecker: TerminationChecker) {
         logger.info { "Doing Dijkstra" }
 
         // set all g(s) for s in closedList to infinite
-        if (mode == Mode.NEW_DIJKSTRA) {
-            closedList.forEach { heuristicTable.put(it, Double.POSITIVE_INFINITY) }
-
-            // no need to setup dijkstra again next round
-            mode = Mode.DIJKSTRA
-
-            // change openList ordering to heuristic only
-            reorderOpenListBy(heuristicComparator)
-        }
-
+        closedList.forEach { it.heuristic = POSITIVE_INFINITY }
+        // change openList ordering to heuristic only
+        reorderOpenListBy(heuristicComparator)
 
         // update all g(s) in closedList, starting from frontiers in openList
-        while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
-            val state = popOpenList()
-            closedList.remove(state)
+        var counter = 0 // TODO
+        var removedCounter = 0;
+        //        logger.info { "\nOpen list: ${openSet.size} - ${openList.size}" }
+        //        openSet.forEach { logger.debug("$it") }
+        //
+        //        logger.info { "\nClosed list: ${closedList.size}" }
+        //        closedList.forEach { logger.debug("$it") }
 
-            val currentHeuristicValue = heuristicTable[state]!!
-            logger.debug { "Checking for predecessors of $state (h value: $currentHeuristicValue)" }
+        while (!terminationChecker.reachedTermination() && !openList.isEmpty()) {
+            val node = popOpenList()
+            dijkstraPopCounter++ // TODO remove
+
+            val removed = closedList.remove(node)
+            logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${node.predecessors.size} :: $node      Removed: $removed - $removedCounter" }
+
+            val currentHeuristicValue = node.heuristic
+            //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
 
             // update heuristic value for each predecessor
-            domain.predecessors(state).forEach {
-
-                val predecessorHeuristicValue = heuristicTable[it.state]
-                logger.trace { "Considering predecessor ${it.state} with heuristic value $predecessorHeuristicValue" }
+            node.predecessors.forEach {
+                val predecessorHeuristicValue = it.node.heuristic
+                logger.debug { "Considering predecessor ${it.node} with heuristic value $predecessorHeuristicValue" }
 
                 // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessorHeuristicValue != null && it.state in closedList &&
-                        predecessorHeuristicValue > (currentHeuristicValue + it.actionCost)) {
+                //                if (predecessorHeuristicValue != null && it.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + it.actionCost)) {
+                if (it.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + it.actionCost)) {
 
-                    heuristicTable[it.state] = currentHeuristicValue + it.actionCost
-                    logger.trace { "Updated to " + heuristicTable[it.state] }
+                    it.node.heuristic = currentHeuristicValue + it.actionCost
+                    logger.debug { "Updated to ${it.node.heuristic}" }
 
-                    if (!inOpenList(it.state))
-                        addToOpenList(it.state)
+                    if (!inOpenList(it.node))
+                        addToOpenList(it.node)
                 }
-            }
+            } ?: assert(node == rootState)
         }
 
         // update mode if done
         if (closedList.isEmpty()) {
             logger.info { "Done with Dijkstra" }
             resetSearch()
+        } else {
+            logger.warn { "Incomplete learning step. " }
         }
-    }
 
-    /**
-     * Expands a node and add it to closed list. For each successor
-     * it will add it to the open list and store it's g value, as long as the
-     * state has not been seen before, or is found with a lower g value
-     */
-    private fun expandFromNode(state: StateType) {
-        expandedNodes += 1
-
-        logger.debug { "Expanding state $state, h(${heuristicTable[state]}) & g(${costTable[state]})" }
-
-        closedList.add(state)
-
-        val currentGValue = costTable[state]!!
-        for (successor in domain.successors(state)) {
-            logger.trace { "Considering successor ${successor.state}" }
-
-            // only generate those state that are not visited yet or whose cost value are lower than this path
-            val successorGValue = costTable.getOrPut(successor.state, { Double.POSITIVE_INFINITY })
-            val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorGValue > successorGValueFromCurrent) {
-                generatedNodes += 1
-
-                // here we generate a state. We store it's g value and remember how to get here via the treePointers
-                costTable[successor.state] = successorGValueFromCurrent
-                treePointers.put(successor.state, Pair(state, successor.action))
-
-                logger.trace { "Adding it to to cost table with value " + costTable[successor.state] }
-
-                if (!inOpenList(successor.state)) {
-                    addToOpenList(successor.state)
-                }
-            } else {
-                logger.trace {
-                    "Did not add, because it's cost is ${costTable[successor.state]} compared to cost of predecessor ( ${costTable[state]}), and action cost ${successor.actionCost}"
-                }
-            }
-        }
     }
 
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(state: StateType): Queue<Action> {
-        val actions: Deque<Action> = ArrayDeque()
+    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<Action> {
+        val actions = arrayListOf<Action>()
+        var currentNode = targetNode
 
-        // first step
-        var stateActionPair: Pair<StateType, Action> = treePointers[state]!!
+        logger.debug() { "Extracting plan" }
 
-        // keep on pushing actions to our queue until source state (our root) is reached
-        while (stateActionPair.first != rootState) {
-            actions.push(stateActionPair.second) // push to head, queue will pop head
-            stateActionPair = treePointers[stateActionPair.first]!!
+        if (targetNode.state == sourceState) {
+            return emptyList()
         }
 
-        // add last action
-        actions.push(stateActionPair.second)
+        // keep on pushing actions to our queue until source state (our root) is reached
+        do {
+            actions.add(currentNode.action)
+            currentNode = currentNode.parent
+        } while (currentNode.state != sourceState)
 
-        return actions
+        logger.debug() { "Plan extracted" }
+
+        return actions.reversed()
     }
 
     private fun clearOpenList() {
+        logger.debug { "Clear open list" }
         openList.clear()
         openSet.clear()
     }
 
-    private fun inOpenList(state: StateType) = openSet.contains(state)
+    private fun inOpenList(node: Node<StateType>) = openSet.contains(node)
 
-    private fun popOpenList(): StateType {
+    private fun popOpenList(): Node<StateType> {
         val state = openList.remove()
         openSet.remove(state)
+
+        assert(openList.size == openSet.size)
         return state
     }
 
-    private fun addToOpenList(state: StateType) {
-        openList.add(state)
-        openSet.add(state)
+    private fun addToOpenList(node: Node<StateType>) {
+        openList.add(node)
+        openSet.add(node)
+
+        assert(openList.size == openSet.size)
+
     }
 
-    private fun reorderOpenListBy(comparator: Comparator<StateType>) {
+    private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
         val tempOpenList = openList.toArrayList() // O(1)
         if (tempOpenList.size >= 1) {
-            openList = PriorityQueue<StateType>(tempOpenList.size, comparator) // O(1)
+            openList = PriorityQueue<Node<StateType>>(tempOpenList.size, comparator) // O(1)
         } else {
-            openList = PriorityQueue<StateType>(comparator) // O(1)
+            openList = PriorityQueue<Node<StateType>>(comparator) // O(1)
         }
         openList.addAll(tempOpenList) // O(n * log(n))
     }
