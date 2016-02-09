@@ -49,17 +49,17 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             val timeInMillis = kotlin.system.measureTimeMillis {
                 while (!world.isGoal()) {
 
-                    logger.info { "Next iteration" } // TODO remove
-
                     terminationChecker.init()
+//                    System.gc() // Hint garbage collection to improve real time performance
+
                     val actionList = agent.selectAction(world.getState(), terminationChecker);
 
-                    logger.info { "Actions returned." } // TODO remove
-
                     actions.addAll(actionList)
-                    actionList.forEach { world.step(it) }
 
                     logger.info { "Agent return action $actionList to state ${world.getState()}" }
+
+                    actionList.forEach { world.step(it) }
+
                 }
             }
 
