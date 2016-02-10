@@ -6,12 +6,13 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import org.slf4j.LoggerFactory
 import java.lang.Math.min
 import java.util.*
+import kotlin.comparisons.compareBy
 
 class AnytimeRepairingAStar<StateType : State<StateType>>(val domain: Domain<StateType>, var inflationFactor: Double) {
 
     private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)
 
-    private val openList: Queue<StateType> = PriorityQueue(compareBy { inflatedFValue(it) })
+    private val openList: Queue<StateType> = PriorityQueue(compareBy<StateType> { inflatedFValue(it) })
     private val closedList: MutableMap<StateType, Node<StateType>> = hashMapOf()
     private val inconsistentStates: MutableList<StateType> = arrayListOf()
     private var goal: StateType? = null

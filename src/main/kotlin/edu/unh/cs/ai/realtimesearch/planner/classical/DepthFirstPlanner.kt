@@ -12,7 +12,7 @@ import java.util.*
  */
 class DepthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlanner<StateType>(domain) {
 
-    private val openList: Deque<Node<StateType>> = linkedListOf()
+    private val openList: Deque<Node<StateType>> = LinkedList()
 
     /** ClassicalPlanner interface **/
 

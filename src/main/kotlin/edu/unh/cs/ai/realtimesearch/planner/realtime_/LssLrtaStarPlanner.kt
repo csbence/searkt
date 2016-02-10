@@ -11,6 +11,7 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
+import kotlin.comparisons.compareBy
 import kotlin.system.measureTimeMillis
 
 /**
@@ -83,8 +84,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private var rootState: StateType? = null
 
-    public var aStarPopCounter = 0
-    public var dijkstraPopCounter = 0
+    private var aStarPopCounter = 0
+    private var dijkstraPopCounter = 0
     private var aStarTimer = 0L
     private var dijkstraTimer = 0L
 
@@ -92,7 +93,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
      */
-    override public fun reset() {
+    override fun reset() {
         super.reset()
 
         //        heuristicTable.clear()
@@ -335,7 +336,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     if (!inOpenList(it.node))
                         addToOpenList(it.node)
                 }
-            } ?: assert(node == rootState)
+            }
         }
 
         // update mode if done
@@ -397,12 +398,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
-        val tempOpenList = openList.toArrayList() // O(1)
+        val tempOpenList = openList.toTypedArray() // O(1)
         if (tempOpenList.size >= 1) {
             openList = PriorityQueue<Node<StateType>>(tempOpenList.size, comparator) // O(1)
         } else {
             openList = PriorityQueue<Node<StateType>>(comparator) // O(1)
         }
+
         openList.addAll(tempOpenList) // O(n * log(n))
     }
 }
