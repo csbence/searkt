@@ -37,8 +37,6 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         return successors
     }
 
-    override fun predecessors(state: GridWorldState) = successors(state)
-
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *

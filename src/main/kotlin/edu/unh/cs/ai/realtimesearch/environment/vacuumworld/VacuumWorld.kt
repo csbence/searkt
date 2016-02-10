@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
@@ -53,35 +52,6 @@ class VacuumWorld(public val width: Int,
 
         //        logger.trace { "State $state produces successors: $successors" }
         return successors
-    }
-
-    override fun predecessors(state: VacuumWorldState): List<SuccessorBundle<VacuumWorldState>> {
-        // to return
-        val predecessors: MutableList<SuccessorBundle<VacuumWorldState>> = arrayListOf()
-
-        VacuumWorldAction.values().forEach {
-            val newLocation = state.agentLocation - it.getRelativeLocation()
-
-            // add the legal movement actions
-            if (it != VacuumWorldAction.VACUUM) {
-                if (isLegalLocation(newLocation)) {
-                    predecessors.add(SuccessorBundle(
-                            VacuumWorldState(newLocation, state.dirtyCells),
-                            it,
-                            1.0)) // all actions have cost of 1
-
-                }
-            } else if (newLocation !in state.dirtyCells) {
-                // no dirty means might have been dirty
-                predecessors.add(SuccessorBundle(
-                        VacuumWorldState(newLocation, state.dirtyCells + newLocation),
-                        it,
-                        1.0))
-            }
-        }
-
-        logger.trace { "State $state produces predecessors: $predecessors" }
-        return predecessors
     }
 
     /**

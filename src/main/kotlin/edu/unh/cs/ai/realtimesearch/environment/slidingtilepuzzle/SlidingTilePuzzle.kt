@@ -37,8 +37,6 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         return null
     }
 
-    override fun predecessors(state: SlidingTilePuzzleState) = successors(state)
-
     override fun heuristic(state: SlidingTilePuzzleState): Double {
         val tiles = state.tiles
         return heuristic(tiles)
