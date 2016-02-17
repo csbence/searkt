@@ -11,6 +11,8 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.doubleintegrator.DoubleIntegratorEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.doubleintegrator.DoubleIntegratorIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
@@ -29,8 +31,17 @@ object ConfigurationExecutor {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
+            "double integrator" -> executeDoubleIntegrator(experimentConfiguration)
             else -> listOf(ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName"))
         }
+    }
+
+    private fun executeDoubleIntegrator(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
+        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val doubleIntegratorInstance = DoubleIntegratorIO.parseFromStream(rawDomain.byteInputStream())
+        val doubleIntegratorEnvironment = DoubleIntegratorEnvironment(doubleIntegratorInstance.domain, doubleIntegratorInstance.initialState)
+
+        return executeDomain(experimentConfiguration, doubleIntegratorInstance.domain, doubleIntegratorInstance.initialState, doubleIntegratorEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {

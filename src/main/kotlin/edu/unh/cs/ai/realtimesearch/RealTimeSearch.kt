@@ -26,9 +26,9 @@ fun main(args: Array<String>) {
 //    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
 //    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-    val instanceFileName = "input/tiles/korf/4/87"
+    val instanceFileName = "input/doubleintegrator/empty"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("double integrator", rawDomain, "A*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
 }
 

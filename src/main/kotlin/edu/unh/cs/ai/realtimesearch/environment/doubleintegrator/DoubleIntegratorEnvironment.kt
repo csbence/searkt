@@ -21,17 +21,26 @@ class DoubleIntegratorEnvironment(private val domain: DoubleIntegrator, private 
         logger.trace { "Action $action leads to state $currentState" }
     }
 
+    /**
+     * Returns current state of the world
+     */
     override fun getState() = currentState
 
+    /**
+     * Returns whether current state is the goal
+     */
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)
+
         logger.trace { "State $currentState is ${if (goal) "" else "not"} a goal" }
 
         return goal
     }
 
+    /**
+     * Resets the current state to either initial (if given at construction), or a random state
+     */
     override fun reset() {
-        currentState = initialState
+        currentState = initialState?.copy() ?: domain.randomState()
     }
-
 }

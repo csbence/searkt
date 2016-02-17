@@ -3,33 +3,104 @@ package edu.unh.cs.ai.realtimesearch.environment.doubleintegrator
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldAction
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.slf4j.LoggerFactory
 
 /**
- * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
- * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
- * the four directions, or to vacuum.
- *
- * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
+ * Double Integrator Domain
  */
-class DoubleIntegrator(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location) : Domain<DoubleIntegratorState> {
+class DoubleIntegrator(val width: Int, val height: Int, val blockedCells: Set<Location>, val endLocation: Location) : Domain<DoubleIntegratorState> {
 
-    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
+//    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
 
-    /**
-     * Part of the Domain interface.
-     */
     override fun successors(state: DoubleIntegratorState): List<SuccessorBundle<DoubleIntegratorState>> {
+        // to return
         val successors: MutableList<SuccessorBundle<DoubleIntegratorState>> = arrayListOf()
 
-        for (action in DoubleIntegratorAction.values()) {
-            val newLocation = state.agentLocation + action.getRelativeLocation()
+        for (it in DoubleIntegratorAction.values()) {
+//            val newLocation = state.agentLocation + it.getRelativeLocation()
 
-            if (isLegalLocation(newLocation)) {
-                successors.add(SuccessorBundle(
-                        DoubleIntegratorState(newLocation),
-                        action,
-                        actionCost = 1.0))
+            var theta = state.theta
+            var speed = state.speed
+            var x = state.x
+            var y = state.y
+            val dt = 0.1
+            val nSteps = 10
+
+            // add the legal movement actions
+            if (it == DoubleIntegratorAction.ACC) {
+                val v = 1
+                val t = 0
+
+                for(i in 0..nSteps){
+                    theta += t * dt;
+                    theta %= (2*Math.PI);
+                    if(theta < 0){
+                        theta += (2*Math.PI);
+                    }
+
+                    speed += v * dt;
+
+                    x += Math.cos(theta) * speed * dt;
+                    y += Math.sin(theta) * speed * dt;
+                }
+
+                val newLocation = Location(x.toInt(), y.toInt())
+                if(isLegalLocation(newLocation)) {
+                    successors.add(SuccessorBundle(
+                            DoubleIntegratorState(x, y, speed, theta),
+                            it,
+                            1.0));
+                }
+            } else if (it == DoubleIntegratorAction.DEC) {
+                val v = -1
+                val t = 0
+
+                for(i in 0..nSteps){
+                    theta += t * dt;
+                    theta %= (2*Math.PI);
+                    if(theta < 0){
+                        theta += (2*Math.PI);
+                    }
+
+                    speed += v * dt;
+
+                    x += Math.cos(theta) * speed * dt;
+                    y += Math.sin(theta) * speed * dt;
+                }
+
+                val newLocation = Location(x.toInt(), y.toInt())
+                if(isLegalLocation(newLocation)) {
+                    successors.add(SuccessorBundle(
+                            DoubleIntegratorState(x, y, speed, theta),
+                            it,
+                            1.0));
+                }
+            } else {
+                val v = 0
+                val t = (Math.PI / 180) * (it.index * 2)
+
+                for(i in 0..nSteps){
+                    theta += t * dt;
+                    theta %= (2*Math.PI);
+                    if(theta < 0){
+                        theta += (2*Math.PI);
+                    }
+
+                    speed += v * dt;
+
+                    x += Math.cos(theta) * speed * dt;
+                    y += Math.sin(theta) * speed * dt;
+                }
+
+                val newLocation = Location(x.toInt(), y.toInt())
+                if(isLegalLocation(newLocation)) {
+                    successors.add(SuccessorBundle(
+                            DoubleIntegratorState(x, y, speed, theta),
+                            it,
+                            1.0));
+                }
             }
         }
 
@@ -47,63 +118,37 @@ class DoubleIntegrator(val width: Int, val height: Int, val blockedCells: Set<Lo
                 location.y < height && location !in blockedCells
     }
 
-    /**
-     * Returns a heuristic for a vacuum world state: the amount of dirty cells left
-     *
-     * @param state is the state to provide a heuristic for
-     * @return the # of dirty cells
-     */
     override fun heuristic(state: DoubleIntegratorState): Double {
-        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+        //TODO Implement heuristic!
+
+        return 0.0
     }
 
-    /**
-     * Goal distance estimate. Equal to the cost when the cost of each edge is one.
-     */
     override fun distance(state: DoubleIntegratorState) = heuristic(state)
 
-    /**
-     * Returns whether the current state is a goal state.
-     * Returns true if no dirty cells are present in the state.
-     *
-     * @param state: the state that is being checked on
-     * @return whether the state is a goal state
-     */
     override fun isGoal(state: DoubleIntegratorState): Boolean {
-        return state.agentLocation == targetLocation
+        return endLocation.x == state.x.toInt() && endLocation.y == state.y.toInt()
     }
 
-    /**
-     * Simply prints the block grid.
-     *
-     * @ == agent
-     * # == blocked
-     * $ == dirty
-     */
     override fun print(state: DoubleIntegratorState): String {
         val description = StringBuilder()
-        for (h in 1..height) {
-            for (w in 1..width) {
-                val charCell = when (Location(w, h)) {
-                    state.agentLocation -> '@'
-                    targetLocation -> '*'
-                    in blockedCells -> '#'
-                    else -> '_'
-                }
-                description.append(charCell)
-            }
-            description.append("\n")
-        }
+
+        description.append("State: at (")
+        description.append(state.x)
+        description.append(", ")
+        description.append(state.y)
+        description.append(") going ")
+        description.append(state.speed)
+        description.append(" in the ")
+        description.append(state.theta)
+        description.append("direction.")
 
         return description.toString()
     }
 
-    /**
-     * Creates a state with a random initial location for the agent and
-     * initialAmountDirty number of random dirty cells
-     */
     override fun randomState(): DoubleIntegratorState {
-        throw UnsupportedOperationException("not implemented")
+        throw UnsupportedOperationException()
     }
+
 }
 
