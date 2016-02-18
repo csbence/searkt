@@ -4,16 +4,17 @@ package edu.unh.cs.ai.realtimesearch.visualizer
  * Created by Stephen on 2/11/16.
  */
 
+import javafx.animation.PathTransition
+import javafx.animation.Timeline
 import javafx.application.Application
 import javafx.scene.Scene
 import javafx.stage.Stage
 import javafx.scene.paint.Color
 import java.util.*
-import javafx.scene.Group;
-import javafx.scene.canvas.Canvas
-import javafx.scene.canvas.GraphicsContext
+import javafx.scene.layout.TilePane
+import javafx.scene.shape.*
+import javafx.util.Duration
 import kotlin.system.exitProcess
-import edu.unh.cs.ai.realtimesearch.environment.Action
 
 class VaccumVisualizer : Application() {
     override fun start(primaryStage: Stage) {
@@ -46,12 +47,25 @@ class VaccumVisualizer : Application() {
         /* Graphical parameters */
         val WIDTH = 1200.0
         val HEIGHT = 700.0
-        val TILE_WIDTH: Double = (WIDTH/columnCount) * 0.98
-        val TILE_HEIGHT: Double = (HEIGHT/rowCount) * 0.98
+        val TILE_WIDTH: Double = (WIDTH/columnCount)
+        println(WIDTH)
+        println(TILE_WIDTH)
+        val TILE_HEIGHT: Double = (HEIGHT/rowCount)
+        println(HEIGHT)
+        println(TILE_HEIGHT)
 
-        val root = Group()
-        val canvas = Canvas(WIDTH,HEIGHT)
-        val gc = canvas.graphicsContext2D
+        val root = TilePane(0.0, 0.0)
+        root.isSnapToPixel = true
+        /* The robot */
+        val robotWidth = TILE_WIDTH/4.0
+        val robot = Rectangle(robotWidth, robotWidth)
+        //robot.stroke = Color.ORANGE
+        robot.fill = Color.ORANGE
+
+        /* The robots starting location, needs to be drawn later */
+        var startX: Double? = null
+        var startY: Double? = null
+
 
         for (y in 0..rowCount - 1) {
             val line = inputScanner.nextLine()
@@ -59,49 +73,85 @@ class VaccumVisualizer : Application() {
             for (x in 0..columnCount - 1) {
                 when (line[x]) {
                     '#' -> {
-                        gc.fill = Color.BLACK
-                        gc.stroke = Color.BLACK
-                        gc.fillRect(x*TILE_WIDTH, y*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
+                        val blocked = Rectangle(TILE_WIDTH, TILE_HEIGHT)
+                        blocked.fill = Color.BLACK
+                        //blocked.stroke = Color.BLACK
+                        root.children.add(blocked)
                     }
                     '_' -> {
-                        gc.fill = Color.LIGHTSLATEGRAY
-                        gc.stroke = Color.LIGHTSLATEGRAY
-                        gc.fillRect(x*TILE_WIDTH, y*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
+                        val free = Rectangle(TILE_WIDTH, TILE_HEIGHT)
+                        free.fill = Color.LIGHTSLATEGRAY
+                        //free.stroke = Color.LIGHTSLATEGRAY
+                        free.opacity = .5
+                        root.children.add(free)
                     }
                     '*' -> {
-                        /* Draw background */
-                        gc.fill = Color.LIGHTSLATEGRAY
-                        gc.stroke = Color.LIGHTSLATEGRAY
-                        gc.fillRect(x*TILE_WIDTH, y*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
-
-                        /* Draw dirty cell on top */
-                        gc.fill = Color.BLUE
-                        val radius = TILE_WIDTH/4
-                        gc.fillOval(x*TILE_WIDTH + ((TILE_WIDTH-radius)/2), y*TILE_HEIGHT + ((TILE_HEIGHT-radius)/2),
-                                radius, radius);
+                        val radius = TILE_WIDTH/10.0
+                        val dirtyCell = Circle(radius)
+                        //dirtyCell.stroke = Color.BLUE
+                        dirtyCell.fill = Color.BLUE
+                        root.children.add(dirtyCell)
                     }
                     '@' -> {
-                        /* Draw background */
-                        gc.fill = Color.LIGHTSLATEGRAY
-                        gc.stroke = Color.LIGHTSLATEGRAY
-                        gc.fillRect(x*TILE_WIDTH, y*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
-
-                        /* Draw robot on top */
-                        gc.fill = Color.ORANGE
-                        val width = TILE_WIDTH/4
-                        gc.fillRect(x*TILE_WIDTH + ((TILE_WIDTH-width)/2), y*TILE_HEIGHT + ((TILE_HEIGHT-width)/2),
-                                width, width);
+                        startX = x * 1.0
+                        startY = y * 1.0
+                        root.children.add(robot)
                     }
                 }
             }
         }
 
-        root.children.add(canvas)
-        primaryStage.scene = Scene(root, WIDTH, HEIGHT)
+        primaryStage.scene = Scene(root, WIDTH + columnCount, HEIGHT + rowCount)
         primaryStage.show()
-    }
-    private fun animate(gc: GraphicsContext){
 
+        if(startX == null || startY == null){
+            println("Start location must be defined")
+            exitProcess(1)
+        }
+
+
+        /* Create the path that the robot will travel */
+        val path = Path()
+        val xLoc = startX*TILE_WIDTH + ((TILE_WIDTH - robotWidth)/2.0)
+        val yLoc = startY*TILE_HEIGHT + ((TILE_HEIGHT - robotWidth)/2.0)
+        robot.x = xLoc
+        robot.y = yLoc
+        robot.translateX = xLoc
+        robot.translateY = yLoc
+        path.elements.add(MoveTo(xLoc, yLoc))
+        //robot.translateX = xLoc
+        //robot.translateY = yLoc
+
+        for(action in actionList){
+            animate(action, path, robot, TILE_WIDTH, TILE_HEIGHT)
+        }
+        val pathTransition =  PathTransition()
+        pathTransition.setDuration(Duration.millis(10000.0))
+        pathTransition.setPath(path)
+        pathTransition.setNode(robot)
+        pathTransition.setAutoReverse(true)
+        pathTransition.play()
+    }
+
+    private fun animate(action: String, path: Path, robot: Rectangle, width: Double, height: Double){
+        when(action){
+            "UP" -> {
+                path.elements.add(LineTo(robot.translateX,robot.translateY + height + 1))
+                robot.translateY = robot.translateY + height + 1
+            }
+            "RIGHT" -> {
+                path.elements.add(LineTo(robot.translateX + width +1,robot.translateY))
+                robot.translateX = robot.translateX + width + 1
+            }
+            "DOWN" -> {
+                path.elements.add(LineTo(robot.translateX,robot.translateY - height -1))
+                robot.translateY = robot.translateY - height - 1
+            }
+            "LEFT" -> {
+                path.elements.add(LineTo(robot.translateX - width -1,robot.translateY))
+                robot.translateX = robot.translateX - width - 1
+            }
+        }
     }
 
 }
