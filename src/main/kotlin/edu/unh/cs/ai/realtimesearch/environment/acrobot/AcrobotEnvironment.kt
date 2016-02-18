@@ -5,21 +5,46 @@ import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 
+/**
+ * The Acrobot environment.  Contains the domain and a current state.
+ *
+ * @param domain is the Acrobot domain
+ * @param initialState is the initial state.  Will use default initial state if not provided
+ */
+class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState? = null) : Environment<AcrobotState> {
 
-class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState) : Environment<AcrobotState> {
+    private val logger = LoggerFactory.getLogger(AcrobotEnvironment::class.java)
+    val defaultInitialAcrobotState = AcrobotState(0.0, 0.0, 0.0, 0.0)
+    private var currentState: AcrobotState = initialState ?: defaultInitialAcrobotState
+
+    /**
+     * Applies the action to the environment
+     */
     override fun step(action: Action) {
         throw UnsupportedOperationException()
+        logger.trace { "Action $action leads to state $currentState" }
     }
 
-    override fun getState(): AcrobotState {
-        throw UnsupportedOperationException()
-    }
+    /**
+     * Returns current state of the world
+     */
+    override fun getState(): AcrobotState = currentState
 
+    /**
+     * Returns wether current state is the goal
+     */
     override fun isGoal(): Boolean {
-        throw UnsupportedOperationException()
+        val goal = domain.isGoal(currentState)
+
+        logger.trace { "State $currentState is ${if (goal) "" else "not"} a goal" }
+
+        return goal
     }
 
+    /**
+     * Resets teh current state to either initial (if given at construction), or a random state
+     */
     override fun reset() {
-        throw UnsupportedOperationException()
+        currentState = initialState?.copy() ?: defaultInitialAcrobotState // TODO necessary to copy?
     }
 }
