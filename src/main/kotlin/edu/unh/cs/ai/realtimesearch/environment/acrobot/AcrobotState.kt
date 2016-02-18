@@ -40,13 +40,14 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
 
     // Acceleration equations
     data class Accelerations(val linkAcceleration1: Double, val LinkAcceleration2: Double)
-    private fun calculateLinkAcceleration1(linkAcceleration2: Double) = (d12 * linkAcceleration2 + c1 + phi1) / (-1.0 * d11)
-    fun calculateLinkAcceleration1(torque: AcrobotAction) = calculateLinkAcceleration1(calculateLinkAcceleration2(torque))
-    fun calculateLinkAcceleration2(torque: AcrobotAction) = (d11 * (torque.value - c2 - phi2) + d12 * (c1 + phi1)) / (d11 * d22 - (d12 * d12))
-    fun calculateLinkAccelerations(torque: AcrobotAction): Accelerations {
+//    private fun calculateLinkAcceleration1(linkAcceleration2: Double) = (d12 * linkAcceleration2 + c1 + phi1) / (-1.0 * d11)
+//    fun calculateLinkAcceleration1(torque: AcrobotAction) = calculateLinkAcceleration1(calculateLinkAcceleration2(torque))
+    fun calculateLinkAcceleration1(torque: AcrobotAction) = (-1.0 * d12 * (torque.torque - c2 - phi2) - d22 * (c1 + phi1)) / (d11 * d22 - (d12 * d12))
+    fun calculateLinkAcceleration2(torque: AcrobotAction) = (d11 * (torque.torque - c2 - phi2) + d12 * (c1 + phi1)) / (d11 * d22 - (d12 * d12))
+    fun calculateLinkAccelerations(torque: AcrobotAction): Accelerations = Accelerations(calculateLinkAcceleration1(torque), calculateLinkAcceleration2(torque))/*{
         val linkAcceleration2 = calculateLinkAcceleration2(torque)
         return Accelerations(calculateLinkAcceleration1(linkAcceleration2), linkAcceleration2)
-    }
+    }*/
     fun calculateForwardDynamics(torque: AcrobotAction): RealMatrix {
         val (linkAcceleration1, linkAcceleration2) = calculateLinkAccelerations(torque)
         return MatrixUtils.createColumnRealMatrix(doubleArrayOf(linkAcceleration1, linkAcceleration2))
@@ -57,18 +58,18 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
     val potentialEnergy = linkMass1 * gravity * linkCenterOfMass1 * Math.sin(linkPosition1) + linkMass2 * gravity * linkLength1 * Math.sin(linkPosition1) + linkMass2 * gravity * linkCenterOfMass2 * Math.sin(linkPosition1 + linkPosition2)
     val totalEnergy = kineticEnergy + potentialEnergy
 
-    var inertialAccelerationMatrix: RealMatrix
-    var coriolisCentrifugalForceVector: RealMatrix
-    var gravitationalLoadingForceVector: RealMatrix
-    init {
-        val dValues = Array(2) { DoubleArray(2) }
-        dValues[0][0] = d11
-        dValues[0][1] = d12
-        dValues[1][0] = d21
-        dValues[1][1] = d22
-        inertialAccelerationMatrix = MatrixUtils.createRealMatrix(dValues)
-        coriolisCentrifugalForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(c1, c2))
-        gravitationalLoadingForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(phi1, phi2))
-    }
+//    var inertialAccelerationMatrix: RealMatrix
+//    var coriolisCentrifugalForceVector: RealMatrix
+//    var gravitationalLoadingForceVector: RealMatrix
+//    init {
+//        val dValues = Array(2) { DoubleArray(2) }
+//        dValues[0][0] = d11
+//        dValues[0][1] = d12
+//        dValues[1][0] = d21
+//        dValues[1][1] = d22
+//        inertialAccelerationMatrix = MatrixUtils.createRealMatrix(dValues)
+//        coriolisCentrifugalForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(c1, c2))
+//        gravitationalLoadingForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(phi1, phi2))
+//    }
 }
 

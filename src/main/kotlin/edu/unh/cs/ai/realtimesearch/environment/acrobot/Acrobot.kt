@@ -7,8 +7,9 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
 import org.slf4j.LoggerFactory
 
 
-val anglePrecision = 1.0
-val velocityPrecision = 1.0
+//val anglePrecision = 1.0
+//val velocityPrecision = 1.0
+val timeStep = .2
 
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
@@ -22,16 +23,25 @@ class Acrobot() : Domain<AcrobotState> {
         val linkPosition2 : Double = 0.0
     }
 
-    /**
-     * TODO not 100% sure what this needs to generate
-     */
+    private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
+    private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + acceleration * time
+
     override fun successors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {
-        throw UnsupportedOperationException()
         // to return
         val successors : MutableList<SuccessorBundle<AcrobotState>> = arrayListOf()
 
-        for (it in AcrobotAction.values()) {
+        for (action in AcrobotAction.values()) {
             // add the legal movement actions
+            val (linkAcceleration1, linkAcceleration2) = state.calculateLinkAccelerations(action)
+            val newLinkVelocity1 = calculateVelocity(linkAcceleration1, state.linkVelocity1, timeStep)
+            val newLinkVelocity2 = calculateVelocity(linkAcceleration2, state.linkVelocity2, timeStep)
+            val newLinkPosition1 = state.linkPosition1 + calculateDisplacement(linkAcceleration1, state.linkVelocity1, timeStep)
+            val newLinkPosition2 = state.linkPosition2 + calculateDisplacement(linkAcceleration2, state.linkVelocity2, timeStep)
+
+            successors.add(SuccessorBundle(
+                    AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2),
+                    action,
+                    actionCost = 1.0))
         }
 
         return successors

@@ -21,7 +21,10 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
      * Applies the action to the environment
      */
     override fun step(action: Action) {
-        throw UnsupportedOperationException()
+        var successorBundle = domain.successors(currentState)
+
+        // get the state from the successors by filtering on action
+        currentState = successorBundle.first { it.action == action }.state
         logger.trace { "Action $action leads to state $currentState" }
     }
 
