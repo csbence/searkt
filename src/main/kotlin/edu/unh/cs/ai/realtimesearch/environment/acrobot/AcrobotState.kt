@@ -71,5 +71,11 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
 //        coriolisCentrifugalForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(c1, c2))
 //        gravitationalLoadingForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(phi1, phi2))
 //    }
+    
+    fun withinBounds(lowerBound: AcrobotState, upperBound: AcrobotState): Boolean {
+        val positionCondition = linkPosition1 >= Acrobot.goal.lowerBound.linkPosition1 && linkPosition1 <= Acrobot.goal.upperBound.linkPosition1 && linkPosition2 >= Acrobot.goal.lowerBound.linkPosition2 && linkPosition2 <= Acrobot.goal.upperBound.linkPosition2
+        val velocityCondition = linkVelocity1 >= Acrobot.goal.lowerBound.linkVelocity1 && linkVelocity1 <= Acrobot.goal.upperBound.linkVelocity1 && linkVelocity2 >= Acrobot.goal.lowerBound.linkVelocity2 && linkVelocity2 <= Acrobot.goal.upperBound.linkVelocity2
+        return positionCondition && velocityCondition
+    }
 }
 

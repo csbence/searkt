@@ -2,13 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
-import org.slf4j.LoggerFactory
 
-
-//val anglePrecision = 1.0
-//val velocityPrecision = 1.0
 val timeStep = .2
 
 /**
@@ -19,8 +13,10 @@ val timeStep = .2
  */
 class Acrobot() : Domain<AcrobotState> {
     object goal {
-        val linkPosition1 : Double = Math.PI / 2
-        val linkPosition2 : Double = 0.0
+        val verticalLinkPosition1: Double = Math.PI / 2
+        val verticalLinkPosition2: Double = 0.0
+        val lowerBound = AcrobotState(verticalLinkPosition1 - 0.3, verticalLinkPosition2 - 0.3, -0.3, -0.3)
+        val upperBound = AcrobotState(verticalLinkPosition1 + 0.3, verticalLinkPosition2 + 0.3, 0.3, 0.3)
     }
 
     private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
@@ -54,22 +50,16 @@ class Acrobot() : Domain<AcrobotState> {
 
     /**
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
-     * TODO this is dumb since it may be necessary to move away from the goal with one link in order to build velocity to be able to reach the goal
      */
     override fun distance(state: AcrobotState): Double {
-        return Acrobot.goal.linkPosition1 - state.linkPosition1 + Acrobot.goal.linkPosition2 - state.linkPosition2
+        return Acrobot.goal.verticalLinkPosition1 - state.linkPosition1 + Acrobot.goal.verticalLinkPosition2 - state.linkPosition2
     }
 
     /**
      * Returns whether the given state is a goal state.
-     * Returns true if the links are in their goal positions and the velocities are within a threshold.
-     * TODO add thresholds for both position and velocity since exact values are unrealistic
+     * Returns true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean {
-        val positionCondition = state.linkPosition1 == Acrobot.goal.linkPosition1 && state.linkPosition2 == Acrobot.goal.linkPosition2
-        val velocityCondition = state.linkVelocity1 == 0.0 && state.linkVelocity2 == 0.0
-        return positionCondition && velocityCondition
-    }
+    override fun isGoal(state: AcrobotState): Boolean = state.withinBounds(Acrobot.goal.lowerBound, Acrobot.goal.upperBound)
 
     /**
      * Simply prints the state values.  TODO would be nice to have some rough ASCII art
