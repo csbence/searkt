@@ -73,8 +73,8 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
 //    }
     
     fun withinBounds(lowerBound: AcrobotState, upperBound: AcrobotState): Boolean {
-        val positionCondition = linkPosition1 >= Acrobot.goal.lowerBound.linkPosition1 && linkPosition1 <= Acrobot.goal.upperBound.linkPosition1 && linkPosition2 >= Acrobot.goal.lowerBound.linkPosition2 && linkPosition2 <= Acrobot.goal.upperBound.linkPosition2
-        val velocityCondition = linkVelocity1 >= Acrobot.goal.lowerBound.linkVelocity1 && linkVelocity1 <= Acrobot.goal.upperBound.linkVelocity1 && linkVelocity2 >= Acrobot.goal.lowerBound.linkVelocity2 && linkVelocity2 <= Acrobot.goal.upperBound.linkVelocity2
+        val positionCondition = linkPosition1 >= lowerBound.linkPosition1 && linkPosition1 <= upperBound.linkPosition1 && linkPosition2 >= lowerBound.linkPosition2 && linkPosition2 <= upperBound.linkPosition2
+        val velocityCondition = linkVelocity1 >= lowerBound.linkVelocity1 && linkVelocity1 <= upperBound.linkVelocity1 && linkVelocity2 >= lowerBound.linkVelocity2 && linkVelocity2 <= upperBound.linkVelocity2
         return positionCondition && velocityCondition
     }
 }

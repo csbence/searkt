@@ -3,7 +3,10 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
-val timeStep = .2
+val timeStep = 0.2
+// Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
+val maxAngularVelocity1 = 4.0 * Math.PI
+val maxAngularVelocity2 = 9.0 * Math.PI
 
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
@@ -12,9 +15,14 @@ val timeStep = .2
  * vertically from a downward facing position.
  */
 class Acrobot() : Domain<AcrobotState> {
+    // Angles naturally restricted to [0,2\pi]
+    /**
+     * Goal values for the Acrobot domain.
+     */
     object goal {
-        val verticalLinkPosition1: Double = Math.PI / 2
+        val verticalLinkPosition1: Double = Math.PI
         val verticalLinkPosition2: Double = 0.0
+        // Capture region around goal for both positions and velocities
         val lowerBound = AcrobotState(verticalLinkPosition1 - 0.3, verticalLinkPosition2 - 0.3, -0.3, -0.3)
         val upperBound = AcrobotState(verticalLinkPosition1 + 0.3, verticalLinkPosition2 + 0.3, 0.3, 0.3)
     }
@@ -22,6 +30,9 @@ class Acrobot() : Domain<AcrobotState> {
     private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + acceleration * time
 
+    /**
+     * Get successor states from the given state for all valid actions.
+     */
     override fun successors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {
         // to return
         val successors : MutableList<SuccessorBundle<AcrobotState>> = arrayListOf()
@@ -36,28 +47,58 @@ class Acrobot() : Domain<AcrobotState> {
 
             successors.add(SuccessorBundle(
                     AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2),
-                    action,
-                    actionCost = 1.0))
+                    action, actionCost = timeStep))
         }
 
         return successors
     }
 
+    /**
+     * Returns a heuristic for a Acrobot state: the distance over the max velocities.
+     *
+     * @param state the state to provide a heuristic for
+     */
     override fun heuristic(state: AcrobotState): Double {
-        // Dumb heuristic 1 (distance)
-        return distance(state)
+        // Dumb heuristic 1 (distance over max velocity)
+        val distance1 = angleDistance(state.linkPosition1, Acrobot.goal.verticalLinkPosition1)
+        val distance2 = angleDistance(state.linkPosition2, Acrobot.goal.verticalLinkPosition2)
+
+        return distance1 / maxAngularVelocity1 + distance2 / maxAngularVelocity2
     }
 
     /**
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
      */
     override fun distance(state: AcrobotState): Double {
-        return Acrobot.goal.verticalLinkPosition1 - state.linkPosition1 + Acrobot.goal.verticalLinkPosition2 - state.linkPosition2
+        return angleDistance(state.linkPosition1, Acrobot.goal.verticalLinkPosition1) +
+                angleDistance(state.linkPosition2, Acrobot.goal.verticalLinkPosition2)
+    }
+
+    /**
+     * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
+     * [-pi,pi] to avoid attempting to rotate completely around in one direction.
+     */
+    private fun angleDifference(angle: Double, goalAngle: Double): Double {
+        var difference = goalAngle - angle
+        if (difference < -Math.PI)
+            difference += 2 * Math.PI
+        else if (difference > Math.PI)
+            difference -= 2 * Math.PI
+        return difference
+    }
+
+    /**
+     * Calculate the angle distance between an angle and a goal angle.  The resulting distance will be in the range
+     * [0,pi].
+     */
+    private fun angleDistance(angle: Double, goalAngle: Double): Double {
+        val distance = angleDifference(angle, goalAngle)
+        return if (distance < 0) distance * -1 else distance
     }
 
     /**
      * Returns whether the given state is a goal state.
-     * Returns true if the links within a threshold of positions and velocities.
+     * @return true if the links within a threshold of positions and velocities.
      */
     override fun isGoal(state: AcrobotState): Boolean = state.withinBounds(Acrobot.goal.lowerBound, Acrobot.goal.upperBound)
 
