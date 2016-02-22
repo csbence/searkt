@@ -60,6 +60,8 @@ class Acrobot() : Domain<AcrobotState> {
      */
     override fun heuristic(state: AcrobotState): Double {
         // Dumb heuristic 1 (distance over max velocity)
+        if (isGoal(state))
+            return 0.0
         val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
         val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
