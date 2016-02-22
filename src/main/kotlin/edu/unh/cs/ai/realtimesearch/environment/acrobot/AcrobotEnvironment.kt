@@ -14,8 +14,7 @@ import org.slf4j.LoggerFactory
 class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState? = null) : Environment<AcrobotState> {
 
     private val logger = LoggerFactory.getLogger(AcrobotEnvironment::class.java)
-    val defaultInitialAcrobotState = AcrobotState(0.0, 0.0, 0.0, 0.0)
-    private var currentState: AcrobotState = initialState ?: defaultInitialAcrobotState
+    private var currentState: AcrobotState = initialState ?: initialAcrobotState
 
     /**
      * Applies the action to the environment
@@ -48,6 +47,6 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
      * Resets teh current state to either initial (if given at construction), or a random state
      */
     override fun reset() {
-        currentState = initialState?.copy() ?: defaultInitialAcrobotState // TODO necessary to copy?
+        currentState = initialState?.copy() ?: initialAcrobotState // TODO necessary to copy?
     }
 }

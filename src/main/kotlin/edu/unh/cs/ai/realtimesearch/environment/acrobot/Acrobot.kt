@@ -20,7 +20,7 @@ class Acrobot() : Domain<AcrobotState> {
      * Goal values for the Acrobot domain.
      */
     object goal {
-        val verticalLinkPosition1: Double = Math.PI
+        val verticalLinkPosition1: Double = Math.PI / 2
         val verticalLinkPosition2: Double = 0.0
         // Capture region around goal for both positions and velocities
         val lowerBound = AcrobotState(verticalLinkPosition1 - 0.3, verticalLinkPosition2 - 0.3, -0.3, -0.3)
@@ -28,7 +28,7 @@ class Acrobot() : Domain<AcrobotState> {
     }
 
     private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
-    private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + acceleration * time
+    private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     /**
      * Get successor states from the given state for all valid actions.
@@ -60,8 +60,8 @@ class Acrobot() : Domain<AcrobotState> {
      */
     override fun heuristic(state: AcrobotState): Double {
         // Dumb heuristic 1 (distance over max velocity)
-        val distance1 = angleDistance(state.linkPosition1, Acrobot.goal.verticalLinkPosition1)
-        val distance2 = angleDistance(state.linkPosition2, Acrobot.goal.verticalLinkPosition2)
+        val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
+        val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
         return distance1 / maxAngularVelocity1 + distance2 / maxAngularVelocity2
     }
@@ -100,7 +100,7 @@ class Acrobot() : Domain<AcrobotState> {
      * Returns whether the given state is a goal state.
      * @return true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean = state.withinBounds(Acrobot.goal.lowerBound, Acrobot.goal.upperBound)
+    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(Acrobot.goal.lowerBound, Acrobot.goal.upperBound)
 
     /**
      * Simply prints the state values.  TODO would be nice to have some rough ASCII art
