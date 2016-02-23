@@ -82,19 +82,19 @@ class Acrobot() : Domain<AcrobotState> {
     }
 
     /**
-     * Returns a heuristic for a Acrobot state: the distance over the max velocities.  Also factors in the velocity
-     * since we want to have very low velocity at goal.
+     * Returns a heuristic for a Acrobot state: the distance over the max velocities.  Also factors in the state's
+     * velocity since we want to have very low velocity at goal.
      *
      * @param state the state to provide a heuristic for
      */
     private fun distanceHeuristic(state: AcrobotState): Double {
-        // Dumb heuristic 1 (distance over max velocity)
+        // Dumb heuristic 1 (distance over velocity)
         if (isGoal(state))
             return 0.0
         val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
         val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
-        return (distance1 + Math.abs(state.linkVelocity1)) / AcrobotState.limits.maxAngularVelocity1 + (distance2 + Math.abs(state.linkVelocity2)) / AcrobotState.limits.maxAngularVelocity2
+        return distance1 / (AcrobotState.limits.maxAngularVelocity1 - Math.abs(state.linkVelocity1)) + distance2 / (AcrobotState.limits.maxAngularVelocity2 - Math.abs(state.linkVelocity2))
     }
 
     private fun energyHeuristic(state: AcrobotState): Double {
