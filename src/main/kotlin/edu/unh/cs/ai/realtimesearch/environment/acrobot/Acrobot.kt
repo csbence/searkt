@@ -4,9 +4,11 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
 val timeStep = 0.2
-// Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
-val maxAngularVelocity1 = 4.0 * Math.PI
-val maxAngularVelocity2 = 9.0 * Math.PI
+
+val positionGranularity1 = 0.5
+val positionGranularity2 = 0.5
+val velocityGranularity1 = 0.5
+val velocityGranularity2 = 0.5
 
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
@@ -15,7 +17,7 @@ val maxAngularVelocity2 = 9.0 * Math.PI
  * vertically from a downward facing position.
  */
 class Acrobot() : Domain<AcrobotState> {
-    // Angles naturally restricted to [0,2\pi]
+    // Angles naturally restricted to [0,2\pi)
     /**
      * Goal values for the Acrobot domain.
      */
@@ -30,6 +32,11 @@ class Acrobot() : Domain<AcrobotState> {
     private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
+    private fun roundToDecimal(number: Double, decimal: Double): Double {
+        val fraction = 1.0 / decimal
+        return Math.round(number * fraction) / fraction
+    }
+
     /**
      * Get successor states from the given state for all valid actions.
      */
@@ -40,13 +47,20 @@ class Acrobot() : Domain<AcrobotState> {
         for (action in AcrobotAction.values()) {
             // add the legal movement actions
             val (linkAcceleration1, linkAcceleration2) = state.calculateLinkAccelerations(action)
-            val newLinkVelocity1 = calculateVelocity(linkAcceleration1, state.linkVelocity1, timeStep)
-            val newLinkVelocity2 = calculateVelocity(linkAcceleration2, state.linkVelocity2, timeStep)
-            val newLinkPosition1 = state.linkPosition1 + calculateDisplacement(linkAcceleration1, state.linkVelocity1, timeStep)
-            val newLinkPosition2 = state.linkPosition2 + calculateDisplacement(linkAcceleration2, state.linkVelocity2, timeStep)
+            var newLinkPosition1 = state.linkPosition1 + calculateDisplacement(linkAcceleration1, state.linkVelocity1, timeStep)
+            var newLinkPosition2 = state.linkPosition2 + calculateDisplacement(linkAcceleration2, state.linkVelocity2, timeStep)
+            var newLinkVelocity1 = calculateVelocity(linkAcceleration1, state.linkVelocity1, timeStep)
+            var newLinkVelocity2 = calculateVelocity(linkAcceleration2, state.linkVelocity2, timeStep)
+
+            // Round to a granularity in order to discretize states
+            val newState = AcrobotState(
+                    roundToDecimal(newLinkPosition1, positionGranularity1),
+                    roundToDecimal(newLinkPosition2, positionGranularity2),
+                    roundToDecimal(newLinkVelocity1, velocityGranularity1),
+                    roundToDecimal(newLinkVelocity2, velocityGranularity2))
 
             successors.add(SuccessorBundle(
-                    AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2),
+                    newState.adjustLimits(),
                     action, actionCost = timeStep))
         }
 
@@ -54,18 +68,38 @@ class Acrobot() : Domain<AcrobotState> {
     }
 
     /**
-     * Returns a heuristic for a Acrobot state: the distance over the max velocities.
+     * Returns a heuristic for a Acrobot state.  If the state does not have enough energy to reach the goal, must
+     * inject energy before trying to reach the goal.  If the state does have enough energy, attempt to move towards
+     * the goal.
      *
      * @param state the state to provide a heuristic for
      */
     override fun heuristic(state: AcrobotState): Double {
+        if (state.totalEnergy < Acrobot.goal.lowerBound.totalEnergy && state.totalEnergy < Acrobot.goal.upperBound.totalEnergy)
+            return energyHeuristic(state)
+        else
+            return distanceHeuristic(state)
+    }
+
+    /**
+     * Returns a heuristic for a Acrobot state: the distance over the max velocities.  Also factors in the velocity
+     * since we want to have very low velocity at goal.
+     *
+     * @param state the state to provide a heuristic for
+     */
+    private fun distanceHeuristic(state: AcrobotState): Double {
         // Dumb heuristic 1 (distance over max velocity)
         if (isGoal(state))
             return 0.0
         val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
         val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
-        return distance1 / maxAngularVelocity1 + distance2 / maxAngularVelocity2
+        return (distance1 + Math.abs(state.linkVelocity1)) / AcrobotState.limits.maxAngularVelocity1 + (distance2 + Math.abs(state.linkVelocity2)) / AcrobotState.limits.maxAngularVelocity2
+    }
+
+    private fun energyHeuristic(state: AcrobotState): Double {
+        // TODO need to give states with high energy low values
+        return distanceHeuristic(state) // return distance heuristic until implemented
     }
 
     /**

@@ -1,17 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import org.junit.Test
-import java.io.File
-import java.io.FileInputStream
 import kotlin.test.assertTrue
 
 fun doubleNearEquals(a: Double, b: Double): Boolean {
@@ -35,14 +28,15 @@ class AcrobotTest {
     @Test
     fun testHeuristic1() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(Acrobot.goal.lowerBound - AcrobotState(0.1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(Acrobot.goal.lowerBound - AcrobotState(positionGranularity1, 0.0, 0.0, 0.0))
+
         assertTrue { heuristic > 0.0 }
     }
 
     @Test
     fun testHeuristic2() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(Acrobot.goal.upperBound + AcrobotState(0.1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(Acrobot.goal.upperBound + AcrobotState(positionGranularity1, 0.0, 0.0, 0.0))
         assertTrue { heuristic > 0.0 }
     }
 

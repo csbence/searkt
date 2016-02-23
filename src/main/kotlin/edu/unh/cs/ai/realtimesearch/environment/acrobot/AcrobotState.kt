@@ -28,7 +28,16 @@ val initialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
 data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double) : State<AcrobotState> {
     override fun copy() = copy(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
     private val logger = LoggerFactory.getLogger(AcrobotState::class.java)
-    // TODO bounds checking?
+
+    object limits {
+        // Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
+        val maxAngularVelocity1 = 4.0 * Math.PI
+        val maxAngularVelocity2 = 9.0 * Math.PI
+        val minAngularVelocity1 = -maxAngularVelocity1
+        val minAngularVelocity2 = -maxAngularVelocity2
+        val minAngle = 0.0
+        val maxAngle = 2 * Math.PI
+    }
 
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 + rhs.linkPosition1, linkPosition2 + rhs.linkPosition2, linkVelocity1 + rhs.linkVelocity1, linkVelocity2 + rhs.linkVelocity2)
     operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 - rhs.linkPosition1, linkPosition2 - rhs.linkPosition2, linkVelocity1 - rhs.linkVelocity1, linkVelocity2 - rhs.linkVelocity2)
@@ -112,6 +121,29 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
         val positionCondition = linkPosition1 >= lowerBound.linkPosition1 && linkPosition1 <= upperBound.linkPosition1 && linkPosition2 >= lowerBound.linkPosition2 && linkPosition2 <= upperBound.linkPosition2
         val velocityCondition = linkVelocity1 >= lowerBound.linkVelocity1 && linkVelocity1 <= upperBound.linkVelocity1 && linkVelocity2 >= lowerBound.linkVelocity2 && linkVelocity2 <= upperBound.linkVelocity2
         return positionCondition && velocityCondition
+    }
+
+    /**
+     * Adjust a value according to the given limits.
+     */
+    private fun adjustLimit(value: Double, minLimit: Double, maxLimit: Double): Double {
+        if (value < minLimit)
+            return minLimit
+        else if (value > maxLimit)
+            return maxLimit
+        return value
+    }
+
+    /**
+     * Checks that the values in the state are valid.  If they are, returns the state unchanged; if not then
+     * returns a new state with any values that are outside of their limits adjusted to their closest limit.
+     */
+    fun adjustLimits(): AcrobotState {
+        val position1 = adjustLimit(linkPosition1, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
+        val position2 = adjustLimit(linkPosition2, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
+        val velocity1 = adjustLimit(linkVelocity1, AcrobotState.limits.minAngularVelocity1, AcrobotState.limits.maxAngularVelocity1)
+        val velocity2 = adjustLimit(linkVelocity2, AcrobotState.limits.minAngularVelocity2, AcrobotState.limits.maxAngularVelocity2)
+        return AcrobotState(position1, position2, velocity1, velocity2)
     }
 }
 
