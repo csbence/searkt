@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
@@ -25,7 +26,8 @@ val initialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.
  * Instances of this class are immutable.
  */
-data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double) : State<AcrobotState> {
+data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double) : DiscretizableState<AcrobotState> {
+
     override fun copy() = copy(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
     private val logger = LoggerFactory.getLogger(AcrobotState::class.java)
 
@@ -35,8 +37,22 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
         val maxAngularVelocity2 = 9.0 * Math.PI
         val minAngularVelocity1 = -maxAngularVelocity1
         val minAngularVelocity2 = -maxAngularVelocity2
+        // Angles naturally restricted to [0,2\pi)
         val minAngle = 0.0
         val maxAngle = 2 * Math.PI
+        // Discretization granularity for each state variable
+        val positionGranularity1 = 0.5
+        val positionGranularity2 = 0.5
+        val velocityGranularity1 = 0.5
+        val velocityGranularity2 = 0.5
+    }
+
+    override fun discretize(): AcrobotState {
+        return AcrobotState(
+                roundDownToDecimal(linkPosition1, AcrobotState.limits.positionGranularity1),
+                roundDownToDecimal(linkPosition2, AcrobotState.limits.positionGranularity2),
+                roundDownToDecimal(linkVelocity1, AcrobotState.limits.velocityGranularity1),
+                roundDownToDecimal(linkVelocity2, AcrobotState.limits.velocityGranularity2))
     }
 
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 + rhs.linkPosition1, linkPosition2 + rhs.linkPosition2, linkVelocity1 + rhs.linkVelocity1, linkVelocity2 + rhs.linkVelocity2)
@@ -90,29 +106,29 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
 //        gravitationalLoadingForceVector = MatrixUtils.createColumnRealMatrix(doubleArrayOf(phi1, phi2))
 //    }
 
-    init {
-        logger.debug { "Pos1 = $linkPosition1" }
-        logger.debug { "Pos2 = $linkPosition2" }
-        logger.debug { "Vel1 = $linkVelocity1" }
-        logger.debug { "Vel2 = $linkVelocity2" }
-        logger.debug { "D = [ $d11 $d12 ]" }
-        logger.debug { "    [ $d21 $d22 ]" }
-        logger.debug { "C = [ $c1 ]" }
-        logger.debug { "    [ $c2 ]" }
-        logger.debug { "P = [ $phi1 ]" }
-        logger.debug { "    [ $phi2 ]" }
-        logger.debug { "K = $kineticEnergy" }
-        logger.debug { "U = $potentialEnergy" }
-        logger.debug { "E = $totalEnergy" }
-        if (logger.isDebugEnabled) {
-            for (action in AcrobotAction.values()) {
-                logger.debug { "Apply torque = ${action.torque}" }
-                val (acceleration1, acceleration2) = calculateLinkAccelerations(action)
-                logger.debug { "A = [ $acceleration1 ]" }
-                logger.debug { "    [ $acceleration2 ]" }
-            }
-        }
-    }
+//    init {
+//        logger.debug { "Pos1 = $linkPosition1" }
+//        logger.debug { "Pos2 = $linkPosition2" }
+//        logger.debug { "Vel1 = $linkVelocity1" }
+//        logger.debug { "Vel2 = $linkVelocity2" }
+//        logger.debug { "D = [ $d11 $d12 ]" }
+//        logger.debug { "    [ $d21 $d22 ]" }
+//        logger.debug { "C = [ $c1 ]" }
+//        logger.debug { "    [ $c2 ]" }
+//        logger.debug { "P = [ $phi1 ]" }
+//        logger.debug { "    [ $phi2 ]" }
+//        logger.debug { "K = $kineticEnergy" }
+//        logger.debug { "U = $potentialEnergy" }
+//        logger.debug { "E = $totalEnergy" }
+//        if (logger.isDebugEnabled) {
+//            for (action in AcrobotAction.values()) {
+//                logger.debug { "Apply torque = ${action.torque}" }
+//                val (acceleration1, acceleration2) = calculateLinkAccelerations(action)
+//                logger.debug { "A = [ $acceleration1 ]" }
+//                logger.debug { "    [ $acceleration2 ]" }
+//            }
+//        }
+//    }
 
     /**
      * Returns whether this state is within the given bounds for each link position and velocity.

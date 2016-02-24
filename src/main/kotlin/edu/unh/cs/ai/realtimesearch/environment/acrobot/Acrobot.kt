@@ -5,10 +5,17 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
 val timeStep = 0.2
 
-val positionGranularity1 = 0.5
-val positionGranularity2 = 0.5
-val velocityGranularity1 = 0.5
-val velocityGranularity2 = 0.5
+fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
+fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
+
+fun roundOperation(number: Double, decimal: Double, op: (Double) -> Double): Double {
+    val fraction = 1.0 / decimal
+    return op(number * fraction) / fraction
+}
+
+fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.round(num) as Double })
+fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.floor(num) })
+fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.ceil(num) })
 
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
@@ -17,7 +24,6 @@ val velocityGranularity2 = 0.5
  * vertically from a downward facing position.
  */
 class Acrobot() : Domain<AcrobotState> {
-    // Angles naturally restricted to [0,2\pi)
     /**
      * Goal values for the Acrobot domain.
      */
@@ -25,16 +31,9 @@ class Acrobot() : Domain<AcrobotState> {
         val verticalLinkPosition1: Double = Math.PI / 2
         val verticalLinkPosition2: Double = 0.0
         // Capture region around goal for both positions and velocities
+        // Values from Boone
         val lowerBound = AcrobotState(verticalLinkPosition1 - 0.3, verticalLinkPosition2 - 0.3, -0.3, -0.3)
         val upperBound = AcrobotState(verticalLinkPosition1 + 0.3, verticalLinkPosition2 + 0.3, 0.3, 0.3)
-    }
-
-    private fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
-    private fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
-
-    private fun roundToDecimal(number: Double, decimal: Double): Double {
-        val fraction = 1.0 / decimal
-        return Math.round(number * fraction) / fraction
     }
 
     /**
@@ -53,11 +52,12 @@ class Acrobot() : Domain<AcrobotState> {
             var newLinkVelocity2 = calculateVelocity(linkAcceleration2, state.linkVelocity2, timeStep)
 
             // Round to a granularity in order to discretize states
-            val newState = AcrobotState(
-                    roundToDecimal(newLinkPosition1, positionGranularity1),
-                    roundToDecimal(newLinkPosition2, positionGranularity2),
-                    roundToDecimal(newLinkVelocity1, velocityGranularity1),
-                    roundToDecimal(newLinkVelocity2, velocityGranularity2))
+//            val newState = AcrobotState(
+//                    roundToNearestDecimal(newLinkPosition1, AcrobotState.positionGranularity1),
+//                    roundToNearestDecimal(newLinkPosition2, positionGranularity2),
+//                    roundToNearestDecimal(newLinkVelocity1, velocityGranularity1),
+//                    roundToNearestDecimal(newLinkVelocity2, velocityGranularity2))
+            val newState = AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2)
 
             successors.add(SuccessorBundle(
                     newState.adjustLimits(),
@@ -94,12 +94,18 @@ class Acrobot() : Domain<AcrobotState> {
         val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
         val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
+//        return (distance1 + Math.abs(state.linkVelocity1)) / AcrobotState.limits.maxAngularVelocity1 + (distance2 + Math.abs(state.linkVelocity2)) / AcrobotState.limits.maxAngularVelocity2
         return distance1 / (AcrobotState.limits.maxAngularVelocity1 - Math.abs(state.linkVelocity1)) + distance2 / (AcrobotState.limits.maxAngularVelocity2 - Math.abs(state.linkVelocity2))
     }
 
+    /**
+     * Returns a heuristic based on the energy of a state.  Equal to the inverse of the state's energy in order to give
+     * states with high energy a low heuristic value.
+     *
+     * @param state the state to provide a heuritic for
+     */
     private fun energyHeuristic(state: AcrobotState): Double {
-        // TODO need to give states with high energy low values
-        return distanceHeuristic(state) // return distance heuristic until implemented
+        return 1.0 / state.totalEnergy
     }
 
     /**

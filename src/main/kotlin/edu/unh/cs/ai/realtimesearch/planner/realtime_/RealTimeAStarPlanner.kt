@@ -13,7 +13,7 @@ import java.util.*
 
 class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
 
-    data class SuccessorHeuristicPair<out StateType : State<out StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
+    data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
     val depthLimit = 5

@@ -45,5 +45,7 @@ class AcrobotStateTest {
         assertTrue { state2.inBounds(lowerBound, upperBound) }
         assertTrue { state3.inBounds(lowerBound, upperBound) }
         assertFalse { state1.inBounds(lowerBound, upperBound) }
+        assertTrue { lowerBound.inBounds(lowerBound, upperBound) }
+        assertTrue { upperBound.inBounds(lowerBound, upperBound) }
     }
 }
