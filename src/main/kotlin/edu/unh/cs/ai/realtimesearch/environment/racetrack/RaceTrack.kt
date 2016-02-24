@@ -2,37 +2,99 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
- * TODO: nyi
+ * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
+ * agent starts at one of the cells on the starting line, and the goal is to reach one of the
+ * cells at the finish line. The shape of the track is variable, and driving of the grid returns
+ * the agent to a cell on the starting line.
+ *
+ * The car can choose to accelerate up to 1 in either x or y direction, reaching a speed of up to
+ * 1 (in both directions). The dynamics are as follows:
+ *
+ * x(t+1) = x(t) + x.(t) + m(x,t)
+ * y(t+1) = y(t) + y.(t) + m(y,t)
+ * x.(t+1) = x.(t) + m(x,t)
+ * y.(t+1) = y.(t) + m(y,t)
+ *
+ * The parameter 'p' introduces stochasticity to the problem: with probability p the car will
+ * fail its action and maintain its speed.
+ *
  */
-class RaceTrack() : Domain<RaceTrackState> {
-    private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
+class RaceTrack(val start_line: Set<Location>,
+                val finish_line: Set<Location>,
+                val track: Set<Location>,
+                val width: Int,
+                val height: Int) : Domain<RaceTrackState> {
+
+    //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
-        throw UnsupportedOperationException()
+        val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
+
+        for (action in RaceTrackAction.values()) {
+            val new_x_speed = state.x_speed + action.getAcceleration().x
+            val new_y_speed = state.y_speed + action.getAcceleration().y
+
+            val newLocation = state.agentLocation + Location(new_x_speed, new_y_speed)
+
+            // filter on legal moves (not too fast and on the track)
+            if (new_x_speed < 2 && new_x_speed > -2 &&
+                    new_y_speed < 2 && new_x_speed > -2 &&
+                    track.contains(newLocation)) {
+
+                successors.add(SuccessorBundle(
+                        RaceTrackState(newLocation, new_x_speed, new_y_speed),
+                        action,
+                        actionCost = 1.0))
+            }
+        }
+
+        return successors
     }
 
-    override fun heuristic(state: RaceTrackState): Double {
-        throw UnsupportedOperationException()
-    }
+    /**
+     * TODO: think of an heuristic. The regular manhattanDistance only works if you have only one goal
+     */
+    override fun heuristic(state: RaceTrackState) = 1.0
 
-    override fun distance(state: RaceTrackState): Double {
-        throw UnsupportedOperationException()
-    }
+    // distance is equal to heuristic, since each step has cost of 1
+    override fun distance(state: RaceTrackState) = heuristic(state)
 
-    override fun isGoal(state: RaceTrackState): Boolean {
-        throw UnsupportedOperationException()
-    }
+    override fun isGoal(state: RaceTrackState) = finish_line.contains(state.agentLocation)
 
+    /**
+     * agent = @
+     * blocked cell = ' '
+     * track = #
+     * finish line = $
+     * start line = %
+     */
     override fun print(state: RaceTrackState): String {
-        throw UnsupportedOperationException()
+        val description = StringBuilder()
+        for (h in 1..height) {
+            for (w in 1..width) {
+                val charCell = when (Location(w, h)) {
+                    state.agentLocation -> '@'
+                    in finish_line -> '$'
+                    in start_line -> '%'
+                    in track -> '*'
+                    else -> ' '
+                }
+                description.append(charCell)
+            }
+            description.append("\n")
+        }
+
+        return description.toString()
     }
 
+    /**
+     * TODO: implement racetrack.randomState()
+     */
     override fun randomState(): RaceTrackState {
-        throw UnsupportedOperationException()
+        throw UnsupportedOperationException("Random state not implemented for racetrack domain")
     }
-
 }
 

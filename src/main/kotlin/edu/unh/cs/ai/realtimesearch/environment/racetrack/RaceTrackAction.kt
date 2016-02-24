@@ -15,12 +15,12 @@ enum class RaceTrackAction(val index: Int) : Action {
     LEFTDOWN(6), DOWN(7), RIGHTDOWN(8);
 
 
-    // Storage of all relative locations
-    private val relativeLocations = arrayOf(
+    // Storage of all speed moves
+    private val acceleration = arrayOf(
             Location(-1, 1), Location(0, 1), Location(1, 1),
             Location(-1, 0), Location(0, 0), Location(1, 0),
             Location(-1, -1), Location(0, -1), Location(1, -1)
     )
 
-    fun getRelativeLocation() = relativeLocations[index]
+    fun getAcceleration() = acceleration[index]
 }
