@@ -1,6 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
-import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
 
@@ -11,7 +13,7 @@ import org.slf4j.LoggerFactory
  *
  * @param domain is the domain to plan in
  */
-abstract class ClassicalPlanner<StateType: State<StateType>>(protected val domain: Domain<StateType>) : Planner {
+abstract class ClassicalPlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
     private val logger = LoggerFactory.getLogger(ClassicalPlanner::class.java)
 
