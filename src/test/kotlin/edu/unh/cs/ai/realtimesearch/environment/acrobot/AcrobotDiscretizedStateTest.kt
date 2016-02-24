@@ -61,8 +61,8 @@ class AcrobotDiscretizedStateTest {
 
     private fun getDiscretizationIncrement(granularity: Double): Double {
         var increment = 0.1
-        while (increment > granularity)
-            increment / 10.0
+        while (increment >= granularity)
+            increment /= 10.0
         return increment
     }
 }
