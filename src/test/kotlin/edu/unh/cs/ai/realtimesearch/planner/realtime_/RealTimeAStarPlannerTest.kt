@@ -1,11 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime_
 
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import org.junit.Ignore
 import org.junit.Test
 import java.io.File
@@ -17,12 +16,12 @@ class RealTimeAStarPlannerTest {
     @Test
     fun testRealTimeAStarPlanner() {
         val instanceFileName = "input/vacuum/empty.vw"
-        val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
-        val realTimeAStarPlanner = RealTimeAStarPlanner(vacuumWorldInstance.domain)
+        val gridWorldInstance = GridWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
+        val realTimeAStarPlanner = RealTimeAStarPlanner(gridWorldInstance.domain)
         val realTimeAStarAgent = RTSAgent(realTimeAStarPlanner)
-        val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+        val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 
-        val rtsExperiment = RTSExperiment<VacuumWorldState>(null, realTimeAStarAgent, vacuumWorldEnvironment, CallsTerminationChecker(10))
+        val rtsExperiment = RTSExperiment(null, realTimeAStarAgent, gridWorldEnvironment, FakeTerminationChecker())
         val experimentResults = rtsExperiment.run()
     }
 }
