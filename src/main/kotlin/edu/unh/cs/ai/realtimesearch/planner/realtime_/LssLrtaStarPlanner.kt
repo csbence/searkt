@@ -3,9 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime_
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.*
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
@@ -123,7 +121,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // Every turn learn then A* until time expires
 
         if (closedList.isNotEmpty()) {
-            dijkstraTimer += measureTimeMillis { dijkstra(FakeTerminationChecker()) }
+            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
         var plan: List<Action>? = null
