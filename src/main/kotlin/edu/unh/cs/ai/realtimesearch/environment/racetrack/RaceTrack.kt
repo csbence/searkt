@@ -79,7 +79,7 @@ class RaceTrack(val width: Int,
      */
     fun isLegalLocation( x : Double, y : Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
-                y < height && Location(x.toInt(), y.toInt()) !in track
+                y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in track
     }
 
     /**
