@@ -40,7 +40,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             val nSteps = 10
             var valid = true
 
-            for (i in 0..nSteps) {
+            for (i in 0..nSteps-1) {
                 x += it.xdot * dt;
                 y += it.ydot * dt;
 
@@ -54,8 +54,9 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 
 //                    println("" + state.x + " " + state.y)
 //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
+//                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
-                        PointRobotState(state.x + it.xdot, state.y + it.ydot),
+                        PointRobotState(x, y),
                         PointRobotAction(it.xdot, it.ydot),
                         1.0));
             }
