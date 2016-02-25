@@ -1,3 +1,8 @@
+
+#3rd party libraries for testing
+/src/main/kotlin/edu/unh/cs/ai/realtimesearch/external
+/input/external
+
 # Sam tools
 make.sh
 test.sh
