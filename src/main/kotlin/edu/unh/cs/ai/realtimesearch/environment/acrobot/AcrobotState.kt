@@ -41,10 +41,10 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
         val minAngle = 0.0
         val maxAngle = 2 * Math.PI
         // Discretization granularity for each state variable
-        val positionGranularity1 = 0.5
-        val positionGranularity2 = 0.5
-        val velocityGranularity1 = 0.5
-        val velocityGranularity2 = 0.5
+        val positionGranularity1 = 0.2992
+        val positionGranularity2 = 0.2992
+        val velocityGranularity1 = 0.1005
+        val velocityGranularity2 = 0.0754
     }
 
     override fun discretize(): AcrobotState {

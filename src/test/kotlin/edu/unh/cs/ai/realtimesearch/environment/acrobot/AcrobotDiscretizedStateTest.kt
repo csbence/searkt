@@ -11,17 +11,17 @@ class AcrobotDiscretizedStateTest {
     private val logger = LoggerFactory.getLogger(AcrobotDiscretizedStateTest::class.java)
 
     private val positionIncrement1 = getDiscretizationIncrement(AcrobotState.limits.positionGranularity1)
-    private val positionIncrement2 = getDiscretizationIncrement(AcrobotState.limits.velocityGranularity2)
-    private val velocityIncrement1 = getDiscretizationIncrement(AcrobotState.limits.positionGranularity1)
+    private val positionIncrement2 = getDiscretizationIncrement(AcrobotState.limits.positionGranularity2)
+    private val velocityIncrement1 = getDiscretizationIncrement(AcrobotState.limits.velocityGranularity1)
     private val velocityIncrement2 = getDiscretizationIncrement(AcrobotState.limits.velocityGranularity2)
 
     @Test
     fun testDiscretization1() {
         val state = DiscretizedState(AcrobotState(
                 AcrobotState.limits.positionGranularity1,
-                AcrobotState.limits.positionGranularity2 * 2,
-                AcrobotState.limits.velocityGranularity1 * 3,
-                AcrobotState.limits.velocityGranularity2 * 4))
+                AcrobotState.limits.positionGranularity2 + AcrobotState.limits.positionGranularity2,
+                AcrobotState.limits.velocityGranularity1 + AcrobotState.limits.velocityGranularity1,
+                AcrobotState.limits.velocityGranularity2 + AcrobotState.limits.velocityGranularity2))
 
         assertTrue { doubleNearEquals(state.state.linkPosition1, state.discretizedState.linkPosition1) }
         assertTrue { doubleNearEquals(state.state.linkPosition2, state.discretizedState.linkPosition2) }
@@ -66,4 +66,5 @@ class AcrobotDiscretizedStateTest {
         return increment
     }
 }
+
 
