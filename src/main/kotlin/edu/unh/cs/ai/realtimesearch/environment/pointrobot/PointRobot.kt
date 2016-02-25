@@ -57,8 +57,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
 //                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
-//                        PointRobotState(x, y),
-                        PointRobotState(state.x + it.xdot, state.y + it.ydot),
+                        PointRobotState(x, y),
                         PointRobotAction(it.xdot, it.ydot),
                         1.0));
             }
@@ -90,7 +89,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val curXLoc = (state.x * 2).toInt() / 2.0
         val curYLoc = (state.y * 2).toInt() / 2.0
 
-        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
 
 
 
