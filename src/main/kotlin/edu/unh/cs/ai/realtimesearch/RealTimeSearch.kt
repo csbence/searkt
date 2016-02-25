@@ -27,9 +27,9 @@ fun main(args: Array<String>) {
     val alg = "A*"
     //val alg = "RTA"
 
-    val instanceFileName = "input/vacuum/maze.vw"
+    val instanceFileName = "input/vacuum/dylan/wall.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("point robot", rawDomain, alg, 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("point robot", rawDomain, alg, 1, "time", 40)
     val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* Since VaccumVisualizer is an abstract class, the only choice we have to pass
