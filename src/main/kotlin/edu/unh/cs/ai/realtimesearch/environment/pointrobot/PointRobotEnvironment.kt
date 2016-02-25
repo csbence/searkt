@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.doubleintegrator
+package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory
 /**
  * The SlidingTilePuzzle environment. Contains the domain and a current state.
  */
-class DoubleIntegratorEnvironment(private val domain: DoubleIntegrator, private val initialState: DoubleIntegratorState) : Environment<DoubleIntegratorState> {
+class PointRobotEnvironment(private val domain: PointRobot, private val initialState: PointRobotState) : Environment<PointRobotState> {
 
-    private val logger = LoggerFactory.getLogger(DoubleIntegratorEnvironment::class.java)
+    private val logger = LoggerFactory.getLogger(PointRobotEnvironment::class.java)
     private var currentState = initialState
 
     override fun step(action: Action) {

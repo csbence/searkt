@@ -1,12 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.environment.doubleintegrator
+package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.io.InputStream
 import java.util.*
 
-object DoubleIntegratorIO {
+object PointRobotIO {
 
-    fun parseFromStream(input: InputStream): DoubleIntegratorInstance {
+    fun parseFromStream(input: InputStream): PointRobotInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -49,13 +49,13 @@ object DoubleIntegratorIO {
             throw InvalidDoubleIntegratorException("Unknown end location. End location has was not defined.")
         }
 
-        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.doubleintegrator.DoubleIntegrator(columnCount, rowCount, blockedCells.toHashSet(), endLocation)
-        val startState = DoubleIntegratorState(startLocation.x.toDouble(), startLocation.y.toDouble(), 0.0, 0.0)
-        return DoubleIntegratorInstance(doubleIntegrator, startState)
+        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobot(columnCount, rowCount, blockedCells.toHashSet(), endLocation)
+        val startState = PointRobotState(startLocation.x.toDouble(), startLocation.y.toDouble())
+        return PointRobotInstance(doubleIntegrator, startState)
     }
 
 }
 
-data class DoubleIntegratorInstance(val domain: DoubleIntegrator, val initialState: DoubleIntegratorState)
+data class PointRobotInstance(val domain: PointRobot, val initialState: PointRobotState)
 
 class InvalidDoubleIntegratorException(message: String, e: Exception? = null) : RuntimeException(message, e)

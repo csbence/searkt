@@ -11,8 +11,10 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.doubleintegrator.DoubleIntegratorEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.doubleintegrator.DoubleIntegratorIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
@@ -31,17 +33,26 @@ object ConfigurationExecutor {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
-            "double integrator" -> executeDoubleIntegrator(experimentConfiguration)
+            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
+            "point robot" -> executePointRobot(experimentConfiguration)
             else -> listOf(ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName"))
         }
     }
 
-    private fun executeDoubleIntegrator(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
+    private fun executePointRobot(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val rawDomain: String = experimentConfiguration.getRawDomain()
-        val doubleIntegratorInstance = DoubleIntegratorIO.parseFromStream(rawDomain.byteInputStream())
-        val doubleIntegratorEnvironment = DoubleIntegratorEnvironment(doubleIntegratorInstance.domain, doubleIntegratorInstance.initialState)
+        val pointRobotInstance = PointRobotIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
 
-        return executeDomain(experimentConfiguration, doubleIntegratorInstance.domain, doubleIntegratorInstance.initialState, doubleIntegratorEnvironment)
+        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
+    }
+
+    private fun executePointRobotWithInertia(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
+        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
