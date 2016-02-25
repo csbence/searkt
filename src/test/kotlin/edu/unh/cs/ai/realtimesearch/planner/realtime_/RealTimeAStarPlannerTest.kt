@@ -17,7 +17,7 @@ class RealTimeAStarPlannerTest {
     fun testRealTimeAStarPlanner() {
         val instanceFileName = "input/vacuum/empty.vw"
         val gridWorldInstance = GridWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
-        val realTimeAStarPlanner = RealTimeAStarPlanner(gridWorldInstance.domain)
+        val realTimeAStarPlanner = RealTimeAStarPlanner(gridWorldInstance.domain, 4)
         val realTimeAStarAgent = RTSAgent(realTimeAStarPlanner)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 

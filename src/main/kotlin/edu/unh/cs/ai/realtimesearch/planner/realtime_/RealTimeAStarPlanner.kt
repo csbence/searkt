@@ -10,21 +10,17 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val depthLimit: Int) : RealTimePlanner<StateType>(domain) {
 
     data class SuccessorHeuristicPair<out StateType : State<out StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
-    val depthLimit = 0
 
     private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
 
     override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
-
         val successors = domain.successors(state)
         val sortedSuccessors = evaluateSuccessors(successors, terminationChecker).sortedBy { it.successorBundle.actionCost + it.heuristicLookahead }
-
-//        Thread.sleep(500)
 
         val action = if (sortedSuccessors.size == 1) {
             // Only one action is available
@@ -45,7 +41,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
     }
 
     private fun evaluateSuccessors(successors: List<SuccessorBundle<StateType>>, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>> {
-
         var successorHeuristicPairs = heuristicLookahead(successors, 0, terminationChecker) ?: throw InsufficientTerminationCriterionException("Not enough time to calculate the successor f values.")
 
         for (depth in 1..depthLimit) {
@@ -55,6 +50,11 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         return successorHeuristicPairs
     }
 
+    /**
+     * Time bounded heuristic lookahead.
+     *
+     * Uses IDA* to augment the heuristic value of the given node.
+     */
     private fun heuristicLookahead(successors: List<SuccessorBundle<StateType>>, depth: Int, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>>? {
         val successorHeuristicPairs = arrayListOf<SuccessorHeuristicPair<StateType>>()
 
@@ -66,6 +66,9 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         return successorHeuristicPairs
     }
 
+    /**
+     * Depth limited heuristic lookahead.
+     */
     private fun heuristicLookahead(successor: SuccessorBundle<StateType>, depthLimit: Int, terminationChecker: TerminationChecker): Double? {
         if (terminationChecker.reachedTermination()) {
             return null
@@ -74,8 +77,14 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         return heuristicTable[successor.state] ?: alphaPruningLookahead(successor.state, depthLimit, terminationChecker)
     }
 
-    private fun alphaPruningLookahead(state: StateType, depth: Int, terminationChecker: TerminationChecker): Double? {
-        if (domain.isGoal(state)) {
+    /**
+     * Minimin lookahead search from a given node. The lookahead search uses depth limited A* to find the most promising
+     * state on the search frontier. Alpha pruning is used to reduce the number of extended states.
+     *
+     * @return Best backed up heuristic value on the horizon, or the goal's backed up value if found.
+     */
+    private fun alphaPruningLookahead(sourceState: StateType, depthLimit: Int, terminationChecker: TerminationChecker): Double? {
+        if (domain.isGoal(sourceState)) {
             return 0.0
         }
 
@@ -84,10 +93,11 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         var bestAvailable = Double.POSITIVE_INFINITY
 
         val openList: Queue<MiniminNode> = ArrayDeque()
-        openList.add(MiniminNode(state, 0.0, depth))
+        openList.add(MiniminNode(sourceState, 0.0, depthLimit))
 
         while (openList.isNotEmpty()) {
             val miniminNode = openList.remove()
+            expandedNodes++
 
             if (terminationChecker.reachedTermination()) {
                 return null
@@ -110,6 +120,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                     bestAvailable = Math.min(bestAvailable, successorCost)
                 } else {
                     openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, miniminNode.depth - 1))
+                    generatedNodes++
                 }
             }
         }

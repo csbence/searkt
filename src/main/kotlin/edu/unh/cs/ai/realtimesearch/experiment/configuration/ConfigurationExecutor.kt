@@ -68,7 +68,7 @@ object ConfigurationExecutor {
         return when (algorithmName) {
             "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
             "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, initialState, environment)
-            "RTA" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
+            "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
             "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState, environment)
             "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState, environment)
 
@@ -122,7 +122,8 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val realTimeAStarPlanner = RealTimeAStarPlanner(domain)
+        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it the the experiment configuration.")
+        val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration), experimentConfiguration.getNumberOfRuns())
 
