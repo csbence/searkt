@@ -40,25 +40,25 @@ class RaceTrack(val width: Int,
             val new_x_speed = state.x_speed + action.getAcceleration().x
             val new_y_speed = state.y_speed + action.getAcceleration().y
 
-//            var x = state.x.toDouble()
-//            var y = state.y.toDouble()
-//            val dt = 0.1
-//            val nSteps = 10
+            var x = state.x.toDouble()
+            var y = state.y.toDouble()
+            val dt = 0.1
+            val nSteps = 10
             var valid = true
-//
-//            for (i in 0..nSteps-1) {
-//                x += new_x_speed * dt;
-//                y += new_y_speed * dt;
-//
-//                if (!isLegalLocation(x, y)) {
-//                    valid = false;
-//                    break;
-//                }
-//            }
+
+            for (i in 0..nSteps-1) {
+                x += new_x_speed * dt;
+                y += new_y_speed * dt;
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
 
             // filter on legal moves (not too fast and on the track)
-            if (new_x_speed < 3 && new_x_speed > -3 &&
-                    new_y_speed < 3 && new_x_speed > -3 &&
+            if (new_x_speed <= 3 && new_x_speed >= -3 &&
+                    new_y_speed <= 3 && new_x_speed >= -3 &&
                     valid) {
 
                 successors.add(SuccessorBundle(
