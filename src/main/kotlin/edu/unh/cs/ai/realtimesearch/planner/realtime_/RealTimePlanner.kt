@@ -15,8 +15,8 @@ import edu.unh.cs.ai.realtimesearch.planner.Planner
  */
 abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
-    public var generatedNodes = 0
-    public var expandedNodes = 0
+    var generatedNodes = 0
+    var expandedNodes = 0
 
     /**
      * Returns an action while abiding the termination checker's criteria.
@@ -25,7 +25,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * @param terminationChecker provides the termination criteria
      * @return an action for current state
      */
-    abstract public fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action>
+    abstract fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action>
 
     /**
      * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare
@@ -34,7 +34,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      *
      * NOTE: do not forget to call super.reset() when implementing this. Will reset the node count
      */
-    open public fun reset() {
+    open fun reset() {
         generatedNodes = 0
         expandedNodes = 0
     }
