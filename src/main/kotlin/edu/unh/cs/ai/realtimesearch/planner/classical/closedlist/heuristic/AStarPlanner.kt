@@ -19,16 +19,12 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
 
     private val openList = PriorityQueue { lhs: Node, rhs: Node ->
-        if (lhs.f < rhs.f) {
-            -1
-        } else if (lhs.f > rhs.f) {
-            1
-        } else if (lhs.cost > rhs.cost) { // Tie braking on cost (g)
-            -1
-        } else if (lhs.cost < rhs.cost) {
-            1
-        } else {
-            0
+        when {
+            lhs.f < rhs.f -> -1
+            lhs.f > rhs.f -> 1
+            lhs.cost > rhs.cost -> -1// Tie braking on cost (g)
+            lhs.cost < rhs.cost -> 1
+            else -> 0
         }
     }
 
