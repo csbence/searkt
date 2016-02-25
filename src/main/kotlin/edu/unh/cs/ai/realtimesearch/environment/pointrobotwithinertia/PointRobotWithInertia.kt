@@ -90,14 +90,21 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun heuristic(state: PointRobotWithInertiaState): Double {
         //Distance Formula
         return Math.sqrt(
-                Math.pow(endLocation.x - state.x, 2.0)
-                        + Math.pow(endLocation.y - state.y, 2.0)) / 3
+                Math.pow((endLocation.x + 0.5) - state.x, 2.0)
+                        + Math.pow((endLocation.y + 0.5) - state.y, 2.0)) / 3
     }
 
     override fun distance(state: PointRobotWithInertiaState) = heuristic(state)
 
     override fun isGoal(state: PointRobotWithInertiaState): Boolean {
-        return endLocation.x == state.x.toInt() && endLocation.y == state.y.toInt()
+        val curXLoc = (state.x * 2).toInt() / 2.0
+        val curYLoc = (state.y * 2).toInt() / 2.0
+
+//        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+
+
+
+        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
     }
 
     override fun print(state: PointRobotWithInertiaState): String {
