@@ -35,32 +35,25 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         val maxSpeed = 3
         val minSpeed = maxSpeed * -1
 
-//        println("size: " + actions.size)
-
         for (it in actions) {
-//            println("here1")
-//            println(it.xDoubleDot + state.xdot > maxSpeed)
-//            println(it.xDoubleDot + state.xdot < minSpeed)
-//            println(it.xDoubleDot + state.xdot == 0.0)
-//            println(it.yDoubleDot + state.ydot > maxSpeed)
-//            println(it.yDoubleDot + state.ydot < minSpeed)
-//            println(it.yDoubleDot + state.ydot == 0.0)
             if(it.xDoubleDot + state.xdot > maxSpeed || it.xDoubleDot + state.xdot < minSpeed
                     || it.xDoubleDot + state.xdot == 0.0
                     || it.yDoubleDot + state.ydot > maxSpeed || it.yDoubleDot + state.ydot < minSpeed
                     || it.yDoubleDot + state.ydot == 0.0) {
                 continue;
             }
-//            println("here2")
+
             var x = state.x
             var y = state.y
+            val xdot = it.xDoubleDot + state.xdot
+            val ydot = it.yDoubleDot + state.ydot
             val dt = 0.1
             val nSteps = 10
             var valid = true
 
-            for (i in 0..nSteps) {
-                x += state.xdot * dt;
-                y += state.ydot * dt;
+            for (i in 0..nSteps-1) {
+                x += xdot * dt;
+                y += ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
                     valid = false;
@@ -72,9 +65,10 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
 //                    println("" + state.x + " " + state.y + " " + state.xdot + " " + state.ydot)
 //                    println("" + x + " " + y + " " + (state.xdot + it.xDoubleDot) + " " + (state.ydot + it.yDoubleDot) + " " + it.xDoubleDot + " " + it.yDoubleDot)
+//                println("" + x + " " + y + " " + (state.x + state.xdot) + " " + (state.y + state.ydot))
 
                 successors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(x, y, it.xDoubleDot + state.xdot, it.yDoubleDot + state.ydot),
+                        PointRobotWithInertiaState(x, y, xdot, ydot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         1.0));
             }
