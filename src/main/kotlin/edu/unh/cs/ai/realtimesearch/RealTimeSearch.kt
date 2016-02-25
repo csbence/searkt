@@ -14,28 +14,47 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.visualizer.VaccumVisualizer
+import javafx.application.Application
 import java.io.File
 import java.io.FileInputStream
 import java.io.PrintWriter
 import java.util.*
 
 fun main(args: Array<String>) {
-//
-//    val instanceFileName = "input/vacuum/dylan/uniform.vw"
-//    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-//    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
-//    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+    val alg = "LSS-LRTA*"
+    //val alg = "A*"
+    //val alg = "RTA"
 
-    val instanceFileName = "input/tiles/korf/4/87"
+    val instanceFileName = "input/vacuum/maze.vw"
+    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, alg, 1, "time", 10)
+    val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+    /* Since VaccumVisualizer is an abstract class, the only choice we have to pass
+        parameters is through a list of strings. The first string is the domain, and the subsequent
+        ones are the list of actions.
+      TODO make this more intuitive.
+     */
+    val params: MutableList<String> = arrayListOf()
+    val actionList = resultList.first().actions
+
+    params.add(rawDomain)
+    for(action in actionList){
+        params.add(action.toString())
+    }
+
+    /*val instanceFileName = "input/tiles/korf/4/87"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
     val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
-    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+    ConfigurationExecutor.executeConfiguration(manualConfiguration)*/
+
+    Application.launch(VaccumVisualizer::class.java, *params.toTypedArray())
 }
 
 fun lssLrtaStarUniformExperiment() {
     val instanceFileName = "input/vacuum/dylan/uniform.vw"
     return lssLrtaVacuumWorldExperiment(instanceFileName)
-
 }
 
 fun lssLrtaVacuumWorldExperiment(instanceFileName: String) {

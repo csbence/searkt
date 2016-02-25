@@ -8,7 +8,9 @@ import javafx.animation.PathTransition
 import javafx.animation.Timeline
 import javafx.application.Application
 import javafx.animation.Interpolator
+import javafx.event.EventHandler
 import javafx.scene.Scene
+import javafx.scene.input.MouseEvent
 import javafx.stage.Stage
 import javafx.scene.paint.Color
 import java.util.*
@@ -19,6 +21,8 @@ import kotlin.system.exitProcess
 
 class VaccumVisualizer : Application() {
     override fun start(primaryStage: Stage) {
+
+        val DISPLAY_LINE = true
 
         /* Get domain from Application */
         val parameters = getParameters()!!
@@ -35,6 +39,7 @@ class VaccumVisualizer : Application() {
             actionList.add(raw.get(i))
         }
         val TIME_TO_RUN = actionList.size * 200.0
+        //val TIME_TO_RUN = 2000.0
 
         /* Assuming the domain is correct because the experiment was already run */
         primaryStage.title = "RTS Visualizer"
@@ -50,10 +55,10 @@ class VaccumVisualizer : Application() {
 
         /* Graphical parameters */
         val WIDTH = 1700.0
-        val HEIGHT = 700.0
+        val HEIGHT = 1400.0
         val TILE_WIDTH: Double = (WIDTH / columnCount)
         val TILE_HEIGHT: Double = (HEIGHT / rowCount)
-        val TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
+        val TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT) / 1.19
 
         /* The robot */
         val robotWidth = TILE_SIZE / 2.0
@@ -67,30 +72,26 @@ class VaccumVisualizer : Application() {
 
         for (y in 0..rowCount - 1) {
             val line = inputScanner.nextLine()
-
             for (x in 0..columnCount - 1) {
                 when (line[x]) {
                     '#' -> {
                         val blocked = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         blocked.fill = Color.BLACK
                         blocked.stroke = Color.BLACK
-                        /*blocked.widthProperty().bind(root.widthProperty().divide(columnCount))
-                        blocked.heightProperty().bind(root.heightProperty().divide(rowCount))*/
+                        //blocked.widthProperty().bind(root.widthProperty().divide(columnCount))
+                        //blocked.heightProperty().bind(root.heightProperty().divide(rowCount))
 
                         root.children.add(blocked)
                     }
                     '_' -> {
                         val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
-                        /* resize x and y */
-                        //free.xProperty().bind(rectsAreaSize.multiply(x).divide(grid_x));
 
                         /* resize width and height */
-                        /*free.widthProperty().bind(root.widthProperty().divide(columnCount))
-                        free.heightProperty().bind(root.heightProperty().divide(rowCount))*/
+                        //free.widthProperty().bind(root.widthProperty().divide(columnCount))
+                        //free.heightProperty().bind(root.heightProperty().divide(rowCount))
 
                         free.stroke = Color.WHITE
-                        //free.opacity = .5
                         root.children.add(free)
                     }
                     '*' -> {
@@ -101,7 +102,6 @@ class VaccumVisualizer : Application() {
                         println(dirtyLocY)
 
                         val dirtyCell = Circle(dirtyLocX, dirtyLocY, radius)
-                        //dirtyCell.stroke = Color.BLUE
                         dirtyCell.fill = Color.BLUE
                         root.children.add(dirtyCell)
                     }
@@ -115,6 +115,7 @@ class VaccumVisualizer : Application() {
         }
 
         primaryStage.scene = Scene(root, TILE_SIZE * columnCount, TILE_SIZE * rowCount)
+        //primaryStage.scene = Scene(root, WIDTH, HEIGHT)
         primaryStage.show()
 
         if (startX == null || startY == null) {
@@ -133,21 +134,29 @@ class VaccumVisualizer : Application() {
         robot.translateX = xLoc
         robot.translateY = yLoc
         path.elements.add(MoveTo(xLoc, yLoc))
+        path.stroke = Color.ORANGE
+
+        /* Display the path */
+        if(DISPLAY_LINE)
+            root.children.add(path)
 
         for (action in actionList) {
-           animate(action, path, robot, TILE_SIZE, TILE_SIZE)
+           animate(root, action, path, robot, TILE_SIZE, TILE_SIZE)
         }
+
+        /* Animate the robot */
         val pathTransition = PathTransition()
         pathTransition.setDuration(Duration.millis(TIME_TO_RUN))
         pathTransition.setPath(path)
         pathTransition.setNode(robot)
         pathTransition.setInterpolator(Interpolator.LINEAR);
         pathTransition.setCycleCount(Timeline.INDEFINITE);
-        //pathTransition.setAutoReverse(true)
         pathTransition.play()
+
+
     }
 
-    private fun animate(action: String, path: Path, robot: Rectangle, width: Double, height: Double) {
+    private fun animate(root: Pane, action: String, path: Path, robot: Rectangle, width: Double, height: Double) {
         when (action) {
             "UP" -> {
                 path.elements.add(LineTo(robot.translateX, robot.translateY + height))
@@ -167,5 +176,4 @@ class VaccumVisualizer : Application() {
             }
         }
     }
-
 }
