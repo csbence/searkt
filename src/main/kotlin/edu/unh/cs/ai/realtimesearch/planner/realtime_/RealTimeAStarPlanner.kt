@@ -7,7 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
 import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 

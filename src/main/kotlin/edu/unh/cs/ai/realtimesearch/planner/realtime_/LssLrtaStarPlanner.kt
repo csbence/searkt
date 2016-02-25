@@ -5,7 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.*
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
