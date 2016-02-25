@@ -26,9 +26,9 @@ fun main(args: Array<String>) {
 //    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
 //    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-    val instanceFileName = "input/vacuum/dylan/wall.vw"
+    val instanceFileName = "input/racetrack/barto-big.track"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("point robot with inertia", rawDomain, "A*", 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("race track", rawDomain, "A*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)
 }
 

@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotAction
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
 import java.util.*
 
@@ -39,22 +40,46 @@ class RaceTrack(val width: Int,
             val new_x_speed = state.x_speed + action.getAcceleration().x
             val new_y_speed = state.y_speed + action.getAcceleration().y
 
-            val newX = state.x + new_x_speed
-            val newY = state.y + new_y_speed
+            var x = state.x.toDouble()
+            var y = state.y.toDouble()
+            val dt = 0.1
+            val nSteps = 10
+            var valid = true
+
+            for (i in 0..nSteps-1) {
+                x += new_x_speed * dt;
+                y += new_y_speed * dt;
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
 
             // filter on legal moves (not too fast and on the track)
-            if (new_x_speed < 2 && new_x_speed > -2 &&
-                    new_y_speed < 2 && new_x_speed > -2 &&
-                    track.contains(Location(newX.toInt(), newY.toInt()))) {
+            if (new_x_speed < 3 && new_x_speed > -3 &&
+                    new_y_speed < 3 && new_x_speed > -3 &&
+                    valid) {
 
                 successors.add(SuccessorBundle(
-                        RaceTrackState(newX, newY, new_x_speed, new_y_speed),
+                        RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
                         action,
                         actionCost = 1.0))
             }
         }
 
         return successors
+    }
+
+    /**
+     * Returns whether location within boundaries and not a blocked cell.
+     *
+     * @param location the location to test
+     * @return true if location is legal
+     */
+    fun isLegalLocation( x : Double, y : Double): Boolean {
+        return x >= 0 && y >= 0 && x < width &&
+                y < height && Location(x.toInt(), y.toInt()) !in track
     }
 
     /**
@@ -67,7 +92,7 @@ class RaceTrack(val width: Int,
 
 
     override fun isGoal(state: RaceTrackState): Boolean {
-        val newLocation = Location(state.x.toInt(), state.y.toInt())
+        val newLocation = Location(state.x, state.y)
         return newLocation in finish_line
     }
 

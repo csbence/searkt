@@ -50,7 +50,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             var y = state.y
             val xdot = it.xDoubleDot + state.xdot
             val ydot = it.yDoubleDot + state.ydot
-            val nSteps = 1000
+            val nSteps = 100
             val dt = 1.0/nSteps
             var valid = true
 

@@ -50,7 +50,7 @@ object RaceTrackIO {
         }
 
         val raceTrack = edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack(columnCount, rowCount, blockedCells.toHashSet(), endLocations.toHashSet())
-        val startState = RaceTrackState(startLocation.x.toDouble(), startLocation.y.toDouble(), 0, 0)
+        val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0)
         return RaceTrackInstance(raceTrack, startState)
     }
 
