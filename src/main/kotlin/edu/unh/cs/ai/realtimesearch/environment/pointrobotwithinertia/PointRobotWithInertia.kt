@@ -18,11 +18,15 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     fun getAllActions() : ArrayList<PointRobotWithInertiaAction>{
         var a = ArrayList<PointRobotWithInertiaAction>()
-        for (itX in 0..4) {
-            for (itY in 0..4) {
-                var xDoubleDot = ((itX) - 2.0) / 4.0;
-                var yDoubleDot = ((itY) - 2.0) / 4.0;
-                //                println("" + xDoubleDot + " " + yDoubleDot)
+//        for (itX in 0..4) {
+//            for (itY in 0..4) {
+//                var xDoubleDot = ((itX) - 2.0) / 4.0;
+//                var yDoubleDot = ((itY) - 2.0) / 4.0;
+            for (itX in 0..2) {
+                for (itY in 0..2) {
+                var xDoubleDot = (itX) - 1.0;
+                var yDoubleDot = (itY) - 1.0;
+//                                println("" + xDoubleDot + " " + yDoubleDot)
                 a.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
             }
         }
@@ -37,9 +41,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
         for (it in actions) {
             if(it.xDoubleDot + state.xdot > maxSpeed || it.xDoubleDot + state.xdot < minSpeed
-                    || it.xDoubleDot + state.xdot == 0.0
                     || it.yDoubleDot + state.ydot > maxSpeed || it.yDoubleDot + state.ydot < minSpeed
-                    || it.yDoubleDot + state.ydot == 0.0) {
+                    || (it.xDoubleDot + state.xdot == 0.0 && it.yDoubleDot + state.ydot == 0.0)) {
                 continue;
             }
 
