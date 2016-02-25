@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaState
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldAction
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.slf4j.LoggerFactory
@@ -78,14 +79,21 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     override fun heuristic(state: PointRobotState): Double {
         //Distance Formula
         return Math.sqrt(
-                Math.pow(endLocation.x - state.x, 2.0)
-                        + Math.pow(endLocation.y - state.y, 2.0)) / 3
+                Math.pow((endLocation.x + 0.5) - state.x, 2.0)
+                        + Math.pow((endLocation.y + 0.5) - state.y, 2.0)) / 3
     }
 
     override fun distance(state: PointRobotState) = heuristic(state)
 
     override fun isGoal(state: PointRobotState): Boolean {
-        return endLocation.x == state.x.toInt() && endLocation.y == state.y.toInt()
+        val curXLoc = (state.x * 2).toInt() / 2.0
+        val curYLoc = (state.y * 2).toInt() / 2.0
+
+        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+
+
+
+        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
     }
 
     override fun print(state: PointRobotState): String {
