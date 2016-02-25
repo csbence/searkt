@@ -1,9 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.planner
+package edu.unh.cs.ai.realtimesearch.planner.realtime_
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.Planner
 
 /**
  * A planner for real time search environments, where a constraint is placed
