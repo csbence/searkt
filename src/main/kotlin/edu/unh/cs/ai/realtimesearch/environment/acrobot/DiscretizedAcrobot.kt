@@ -20,15 +20,8 @@ class DiscretizedAcrobot() : Domain<DiscretizedState<AcrobotState>> {
 
         for (action in AcrobotAction.values()) {
             // add the legal movement actions
-            val (linkAcceleration1, linkAcceleration2) = actualState.calculateLinkAccelerations(action)
-            val newLinkPosition1 = actualState.linkPosition1 + calculateDisplacement(linkAcceleration1, actualState.linkVelocity1, timeStep)
-            val newLinkPosition2 = actualState.linkPosition2 + calculateDisplacement(linkAcceleration2, actualState.linkVelocity2, timeStep)
-            val newLinkVelocity1 = calculateVelocity(linkAcceleration1, actualState.linkVelocity1, timeStep)
-            val newLinkVelocity2 = calculateVelocity(linkAcceleration2, actualState.linkVelocity2, timeStep)
-
-            val newState = AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2)
-
-            successors.add(SuccessorBundle(DiscretizedState(newState.adjustLimits()), action, actionCost = timeStep))
+            successors.add(SuccessorBundle(DiscretizedState(acrobot.calculateNextState(actualState, action)),
+                    action, actionCost = timeStep))
         }
 
         return successors

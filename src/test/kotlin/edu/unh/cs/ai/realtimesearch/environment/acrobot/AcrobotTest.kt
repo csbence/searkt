@@ -4,12 +4,17 @@ import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.junit.Test
+import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
 
 fun doubleNearEquals(a: Double, b: Double): Boolean {
@@ -17,6 +22,24 @@ fun doubleNearEquals(a: Double, b: Double): Boolean {
 }
 
 class AcrobotTest {
+
+    private val logger = LoggerFactory.getLogger(AcrobotTest::class.java)
+
+    private fun printResults(result: ExperimentResult, initialState: DiscretizedState<AcrobotState>) {
+        var environment = DiscretizedAcrobotEnvironment(DiscretizedAcrobot(), initialState)
+        for (action in result.actions) {
+//            logger.debug { "Accelerations: ${environment.getState().state.calculateLinkAccelerations(action as AcrobotAction)}" }
+            environment.step(action)
+            logger.debug { "$action: ${environment.getState()}" }
+        }
+
+        logger.debug { "Final state: ${environment.getState()} (goal:${environment.isGoal()})" }
+
+        logger.debug { "Expanded nodes: ${result.expandedNodes}" }
+        logger.debug { "Generated nodes: ${result.generatedNodes}" }
+        logger.debug { "Path length: ${result.pathLength} (alt: ${result.actions.size}" }
+        logger.debug { "Runtime (ms): ${result.timeInMillis}" }
+    }
 
     @Test
     fun testGoalHeuristic() {
@@ -62,7 +85,7 @@ class AcrobotTest {
         val aStarAgent = ClassicalAgent(AStarPlanner(acrobot))
         val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, acrobot, initialState, 1)
 
-        aStarExperiment.run()
+        printResults(aStarExperiment.run().first(), initialState)
     }
 
 //    @Test
@@ -74,6 +97,26 @@ class AcrobotTest {
 //        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, acrobot, initialState, 1)
 //
 //        aStarExperiment.run()
+//    }
+
+//    @Test
+//    fun testLssLrtaStar1() {
+//        val acrobot = DiscretizedAcrobot()
+//        val initialState = DiscretizedState(initialAcrobotState)
+//
+//        runLssLrtaStarDiscretized(initialState, acrobot)
+//    }
+//
+//    private fun runLssLrtaStarDiscretized(initialState: DiscretizedState<AcrobotState>, acrobot: DiscretizedAcrobot) {
+//        val environment = DiscretizedAcrobotEnvironment(acrobot, initialState)
+//        val terminalCondition = CallsTerminationChecker(10)
+//
+//        val lsslrtaStarPlanner = LssLrtaStarPlanner(acrobot)
+//
+//        val lsslrtaStarAgent = RTSAgent(lsslrtaStarPlanner)
+//        val lsslrtaStarExperiment = RTSExperiment(EmptyConfiguration, lsslrtaStarAgent, environment, terminalCondition)
+//
+//        lsslrtaStarExperiment.run()
 //    }
 
 //    @Test

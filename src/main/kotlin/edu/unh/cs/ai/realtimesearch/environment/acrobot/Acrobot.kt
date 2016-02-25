@@ -5,18 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
 val timeStep = 0.2
 
-fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
-fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
-
-fun roundOperation(number: Double, decimal: Double, op: (Double) -> Double): Double {
-    val fraction = 1.0 / decimal
-    return op(number * fraction) / fraction
-}
-
-fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.round(num) as Double })
-fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.floor(num) })
-fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.ceil(num) })
-
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
  * second link but not the first thereby actuating joint 2.  The goal of the system
@@ -36,6 +24,10 @@ class Acrobot() : Domain<AcrobotState> {
         val upperBound = AcrobotState(verticalLinkPosition1 + 0.3, verticalLinkPosition2 + 0.3, 0.3, 0.3)
     }
 
+    internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
+        return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
+    }
+
     /**
      * Get successor states from the given state for all valid actions.
      */
@@ -45,22 +37,8 @@ class Acrobot() : Domain<AcrobotState> {
 
         for (action in AcrobotAction.values()) {
             // add the legal movement actions
-            val (linkAcceleration1, linkAcceleration2) = state.calculateLinkAccelerations(action)
-            var newLinkPosition1 = state.linkPosition1 + calculateDisplacement(linkAcceleration1, state.linkVelocity1, timeStep)
-            var newLinkPosition2 = state.linkPosition2 + calculateDisplacement(linkAcceleration2, state.linkVelocity2, timeStep)
-            var newLinkVelocity1 = calculateVelocity(linkAcceleration1, state.linkVelocity1, timeStep)
-            var newLinkVelocity2 = calculateVelocity(linkAcceleration2, state.linkVelocity2, timeStep)
-
-            // Round to a granularity in order to discretize states
-//            val newState = AcrobotState(
-//                    roundToNearestDecimal(newLinkPosition1, AcrobotState.positionGranularity1),
-//                    roundToNearestDecimal(newLinkPosition2, positionGranularity2),
-//                    roundToNearestDecimal(newLinkVelocity1, velocityGranularity1),
-//                    roundToNearestDecimal(newLinkVelocity2, velocityGranularity2))
-            val newState = AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2)
-
             successors.add(SuccessorBundle(
-                    newState.adjustLimits(),
+                    calculateNextState(state, action),
                     action, actionCost = timeStep))
         }
 

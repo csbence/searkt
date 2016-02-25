@@ -22,6 +22,16 @@ val gravity: Double = 9.8
 
 val initialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
 
+
+fun roundOperation(number: Double, decimal: Double, op: (Double) -> Double): Double {
+    val fraction = 1.0 / decimal
+    return op(number * fraction) / fraction
+}
+
+fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.round(num) as Double })
+fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.floor(num) })
+fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.ceil(num) })
+
 /**
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.
  * Instances of this class are immutable.
@@ -55,6 +65,18 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
                 roundDownToDecimal(linkVelocity2, AcrobotState.limits.velocityGranularity2))
     }
 
+    internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
+    internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
+
+    fun calculateNextState(accelerations: Accelerations): AcrobotState {
+        var newLinkPosition1 = linkPosition1 + calculateDisplacement(accelerations.linkAcceleration1, linkVelocity1, timeStep)
+        var newLinkPosition2 = linkPosition2 + calculateDisplacement(accelerations.linkAcceleration2, linkVelocity2, timeStep)
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, linkVelocity1, timeStep)
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, linkVelocity2, timeStep)
+
+        return AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2).adjustLimits()
+    }
+
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 + rhs.linkPosition1, linkPosition2 + rhs.linkPosition2, linkVelocity1 + rhs.linkVelocity1, linkVelocity2 + rhs.linkVelocity2)
     operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 - rhs.linkPosition1, linkPosition2 - rhs.linkPosition2, linkVelocity1 - rhs.linkVelocity1, linkVelocity2 - rhs.linkVelocity2)
 
@@ -73,7 +95,7 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
     private val phi2 = linkMass2 * linkCenterOfMass2 * gravity * Math.cos(linkPosition1 + linkPosition2)
 
     // Acceleration equations
-    data class Accelerations(val linkAcceleration1: Double, val LinkAcceleration2: Double)
+    data class Accelerations(val linkAcceleration1: Double, val linkAcceleration2: Double)
 //    private fun calculateLinkAcceleration1(linkAcceleration2: Double) = (d12 * linkAcceleration2 + c1 + phi1) / (-1.0 * d11)
 //    fun calculateLinkAcceleration1(torque: AcrobotAction) = calculateLinkAcceleration1(calculateLinkAcceleration2(torque))
     fun calculateLinkAcceleration1(torque: AcrobotAction) = (-1.0 * d12 * (torque.torque - c2 - phi2) - d22 * (c1 + phi1)) / (d11 * d22 - (d12 * d12))
@@ -142,11 +164,19 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
     /**
      * Adjust a value according to the given limits.
      */
-    private fun adjustLimit(value: Double, minLimit: Double, maxLimit: Double): Double {
+    private fun snapToLimit(value: Double, minLimit: Double, maxLimit: Double): Double {
         if (value < minLimit)
             return minLimit
         else if (value > maxLimit)
             return maxLimit
+        return value
+    }
+
+    private fun adjustCircularLimit(value: Double, minLimit: Double, maxLimit: Double): Double {
+        if (value < minLimit)
+            return maxLimit - Math.abs(value)
+        else if (value > maxLimit)
+            return minLimit + (Math.abs(value) - maxLimit)
         return value
     }
 
@@ -155,10 +185,10 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
      * returns a new state with any values that are outside of their limits adjusted to their closest limit.
      */
     fun adjustLimits(): AcrobotState {
-        val position1 = adjustLimit(linkPosition1, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
-        val position2 = adjustLimit(linkPosition2, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
-        val velocity1 = adjustLimit(linkVelocity1, AcrobotState.limits.minAngularVelocity1, AcrobotState.limits.maxAngularVelocity1)
-        val velocity2 = adjustLimit(linkVelocity2, AcrobotState.limits.minAngularVelocity2, AcrobotState.limits.maxAngularVelocity2)
+        val position1 = adjustCircularLimit(linkPosition1, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
+        val position2 = adjustCircularLimit(linkPosition2, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
+        val velocity1 = snapToLimit(linkVelocity1, AcrobotState.limits.minAngularVelocity1, AcrobotState.limits.maxAngularVelocity1)
+        val velocity2 = snapToLimit(linkVelocity2, AcrobotState.limits.minAngularVelocity2, AcrobotState.limits.maxAngularVelocity2)
         return AcrobotState(position1, position2, velocity1, velocity2)
     }
 }

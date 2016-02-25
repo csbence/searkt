@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
@@ -11,10 +12,10 @@ import org.slf4j.LoggerFactory
  * @param domain is the Acrobot domain
  * @param initialState is the initial state.  Will use default initial state if not provided
  */
-class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState? = null) : Environment<AcrobotState> {
+class DiscretizedAcrobotEnvironment(private val domain: DiscretizedAcrobot, private val initialState: DiscretizedState<AcrobotState>? = null) : Environment<DiscretizedState<AcrobotState>> {
 
     private val logger = LoggerFactory.getLogger(AcrobotEnvironment::class.java)
-    private var currentState: AcrobotState = initialState ?: initialAcrobotState
+    private var currentState: DiscretizedState<AcrobotState> = initialState ?: DiscretizedState(initialAcrobotState)
 
     /**
      * Applies the action to the environment
@@ -30,7 +31,7 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
     /**
      * Returns current state of the world
      */
-    override fun getState(): AcrobotState = currentState
+    override fun getState(): DiscretizedState<AcrobotState> = currentState
 
     /**
      * Returns wHether current state is the goal
@@ -47,6 +48,6 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
      * Resets teh current state to either initial (if given at construction), or a random state
      */
     override fun reset() {
-        currentState = initialState?.copy() ?: initialAcrobotState // TODO necessary to copy?
+        currentState = initialState ?: DiscretizedState(initialAcrobotState) // TODO necessary to copy?
     }
 }
