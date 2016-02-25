@@ -59,6 +59,39 @@ class AcrobotDiscretizedStateTest {
         assertTrue { state.state != state.discretizedState }
     }
 
+    @Test
+    fun testStateEquality() {
+        val state1 = DiscretizedState(AcrobotState(
+                AcrobotState.limits.positionGranularity1,
+                AcrobotState.limits.positionGranularity2,
+                AcrobotState.limits.velocityGranularity1,
+                AcrobotState.limits.velocityGranularity2))
+        val state2 = DiscretizedState(AcrobotState(
+                AcrobotState.limits.positionGranularity1 + positionIncrement1,
+                AcrobotState.limits.positionGranularity2 + positionIncrement2,
+                AcrobotState.limits.velocityGranularity1 + velocityIncrement1,
+                AcrobotState.limits.velocityGranularity2 + velocityIncrement2))
+
+        assertTrue { state1 == state2 }
+        assertTrue { state1.state != state2.state }
+    }
+
+    @Test
+    fun testStateHashcode() {
+        val state1 = DiscretizedState(AcrobotState(
+                AcrobotState.limits.positionGranularity1,
+                AcrobotState.limits.positionGranularity2,
+                AcrobotState.limits.velocityGranularity1,
+                AcrobotState.limits.velocityGranularity2))
+        val state2 = DiscretizedState(AcrobotState(
+                AcrobotState.limits.positionGranularity1 + positionIncrement1,
+                AcrobotState.limits.positionGranularity2 + positionIncrement2,
+                AcrobotState.limits.velocityGranularity1 + velocityIncrement1,
+                AcrobotState.limits.velocityGranularity2 + velocityIncrement2))
+
+        assertTrue { state1.hashCode() == state2.hashCode() }
+    }
+
     private fun getDiscretizationIncrement(granularity: Double): Double {
         var increment = 0.1
         while (increment >= granularity)

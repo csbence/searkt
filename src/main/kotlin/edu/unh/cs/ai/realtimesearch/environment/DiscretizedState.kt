@@ -1,5 +1,12 @@
 package edu.unh.cs.ai.realtimesearch.environment
 
+/**
+ * Represents a state which can be discretized.  The original state is preserved so that it can be used by the
+ * domain while a planner can use the discretized state.  This is achieved by determining equality and hashcode in
+ * terms of the discretized state while making the original state publicly accessible.
+ *
+ * @param state the state to be discretized
+ */
 open class DiscretizedState<ActualState: DiscretizableState<ActualState>>(val state: ActualState): State<DiscretizedState<ActualState>> {
     fun copy(state: ActualState): DiscretizedState<ActualState> = DiscretizedState(state.copy())
     override fun copy(): DiscretizedState<ActualState> = copy(state)

@@ -72,7 +72,6 @@ class Acrobot() : Domain<AcrobotState> {
         val distance1 = Math.min(angleDistance(state.linkPosition1, Acrobot.goal.lowerBound.linkPosition1), angleDistance(state.linkPosition1, Acrobot.goal.upperBound.linkPosition1))
         val distance2 = Math.min(angleDistance(state.linkPosition2, Acrobot.goal.lowerBound.linkPosition2), angleDistance(state.linkPosition2, Acrobot.goal.upperBound.linkPosition2))
 
-//        return (distance1 + Math.abs(state.linkVelocity1)) / AcrobotState.limits.maxAngularVelocity1 + (distance2 + Math.abs(state.linkVelocity2)) / AcrobotState.limits.maxAngularVelocity2
         return distance1 / (AcrobotState.limits.maxAngularVelocity1 - Math.abs(state.linkVelocity1)) + distance2 / (AcrobotState.limits.maxAngularVelocity2 - Math.abs(state.linkVelocity2))
     }
 
@@ -80,7 +79,7 @@ class Acrobot() : Domain<AcrobotState> {
      * Returns a heuristic based on the energy of a state.  Equal to the inverse of the state's energy in order to give
      * states with high energy a low heuristic value.
      *
-     * @param state the state to provide a heuritic for
+     * @param state the state to provide a heuristic for
      */
     private fun energyHeuristic(state: AcrobotState): Double {
         return 1.0 / state.totalEnergy

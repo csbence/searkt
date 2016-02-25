@@ -27,17 +27,17 @@ class AcrobotTest {
 
     private fun printResults(result: ExperimentResult, initialState: DiscretizedState<AcrobotState>) {
         var environment = DiscretizedAcrobotEnvironment(DiscretizedAcrobot(), initialState)
-        for (action in result.actions) {
-//            logger.debug { "Accelerations: ${environment.getState().state.calculateLinkAccelerations(action as AcrobotAction)}" }
-            environment.step(action)
-            logger.debug { "$action: ${environment.getState()}" }
-        }
+//        for (action in result.actions) {
+////            logger.debug { "Accelerations: ${environment.getState().state.calculateLinkAccelerations(action as AcrobotAction)}" }
+//            environment.step(action)
+//            logger.debug { "$action: ${environment.getState()}" }
+//        }
 
         logger.debug { "Final state: ${environment.getState()} (goal:${environment.isGoal()})" }
 
         logger.debug { "Expanded nodes: ${result.expandedNodes}" }
         logger.debug { "Generated nodes: ${result.generatedNodes}" }
-        logger.debug { "Path length: ${result.pathLength} (alt: ${result.actions.size}" }
+        logger.debug { "Path length: ${result.pathLength} (alt: ${result.actions.size})" }
         logger.debug { "Runtime (ms): ${result.timeInMillis}" }
     }
 
@@ -85,6 +85,7 @@ class AcrobotTest {
         val aStarAgent = ClassicalAgent(AStarPlanner(acrobot))
         val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, acrobot, initialState, 1)
 
+//        aStarExperiment.run()
         printResults(aStarExperiment.run().first(), initialState)
     }
 
@@ -99,25 +100,25 @@ class AcrobotTest {
 //        aStarExperiment.run()
 //    }
 
-//    @Test
-//    fun testLssLrtaStar1() {
-//        val acrobot = DiscretizedAcrobot()
-//        val initialState = DiscretizedState(initialAcrobotState)
-//
-//        runLssLrtaStarDiscretized(initialState, acrobot)
-//    }
-//
-//    private fun runLssLrtaStarDiscretized(initialState: DiscretizedState<AcrobotState>, acrobot: DiscretizedAcrobot) {
-//        val environment = DiscretizedAcrobotEnvironment(acrobot, initialState)
-//        val terminalCondition = CallsTerminationChecker(10)
-//
-//        val lsslrtaStarPlanner = LssLrtaStarPlanner(acrobot)
-//
-//        val lsslrtaStarAgent = RTSAgent(lsslrtaStarPlanner)
-//        val lsslrtaStarExperiment = RTSExperiment(EmptyConfiguration, lsslrtaStarAgent, environment, terminalCondition)
-//
-//        lsslrtaStarExperiment.run()
-//    }
+    @Test
+    fun testLssLrtaStarDiscretized1() {
+        val acrobot = DiscretizedAcrobot()
+        val initialState = DiscretizedState(initialAcrobotState)
+
+        runLssLrtaStarDiscretized(initialState, acrobot)
+    }
+
+    private fun runLssLrtaStarDiscretized(initialState: DiscretizedState<AcrobotState>, acrobot: DiscretizedAcrobot) {
+        val environment = DiscretizedAcrobotEnvironment(acrobot, initialState)
+        val terminalCondition = CallsTerminationChecker(10)
+
+        val lsslrtaStarPlanner = LssLrtaStarPlanner(acrobot)
+
+        val lsslrtaStarAgent = RTSAgent(lsslrtaStarPlanner)
+        val lsslrtaStarExperiment = RTSExperiment(EmptyConfiguration, lsslrtaStarAgent, environment, terminalCondition)
+
+        lsslrtaStarExperiment.run()
+    }
 
 //    @Test
 //    fun testLssLrtaStar1() {
