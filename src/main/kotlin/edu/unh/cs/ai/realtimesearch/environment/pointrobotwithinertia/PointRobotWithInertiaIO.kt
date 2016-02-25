@@ -50,7 +50,7 @@ object PointRobotWithInertiaIO {
         }
 
         val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia(columnCount, rowCount, blockedCells.toHashSet(), endLocation)
-        val startState = PointRobotWithInertiaState(startLocation.x.toDouble(), startLocation.y.toDouble(), 0.5, 0.5)
+        val startState = PointRobotWithInertiaState(startLocation.x.toDouble(), startLocation.y.toDouble(), 0.0, 0.0)
         return PointRobotWithInertiaInstance(doubleIntegrator, startState)
     }
 
