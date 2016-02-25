@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.Exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
 import org.slf4j.LoggerFactory
