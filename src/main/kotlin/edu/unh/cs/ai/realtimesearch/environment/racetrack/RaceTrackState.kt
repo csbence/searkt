@@ -11,8 +11,17 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * The actual size and shape of the world is state-independent, so not implemented here
  */
-data class RaceTrackState(val agentLocation: Location, val x_speed: Int, val y_speed: Int) : State<RaceTrackState> {
+data class RaceTrackState(val x : Double, val y : Double, val x_speed: Int, val y_speed: Int) : State<RaceTrackState> {
 
-    override fun copy() = RaceTrackState(agentLocation, x_speed, y_speed)
+    override fun equals(other: Any?): Boolean {
+        if(other !is RaceTrackState)
+            return false
+        if(other.x.toInt() == x.toInt() && other.y.toInt() == y.toInt()) {
+            return true;
+        }
+        return false;
+    }
+
+    override fun copy() = RaceTrackState(x, y, x_speed, y_speed)
 }
 

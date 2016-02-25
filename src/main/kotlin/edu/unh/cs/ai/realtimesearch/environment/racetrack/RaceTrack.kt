@@ -3,6 +3,8 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
+import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -22,11 +24,11 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  * fail its action and maintain its speed.
  *
  */
-class RaceTrack(val start_line: Set<Location>,
-                val finish_line: Set<Location>,
+class RaceTrack(val width: Int,
+                val height: Int,
                 val track: Set<Location>,
-                val width: Int,
-                val height: Int) : Domain<RaceTrackState> {
+                val finish_line: Set<Location>
+                ) : Domain<RaceTrackState> {
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
@@ -37,15 +39,16 @@ class RaceTrack(val start_line: Set<Location>,
             val new_x_speed = state.x_speed + action.getAcceleration().x
             val new_y_speed = state.y_speed + action.getAcceleration().y
 
-            val newLocation = state.agentLocation + Location(new_x_speed, new_y_speed)
+            val newX = state.x + new_x_speed
+            val newY = state.y + new_y_speed
 
             // filter on legal moves (not too fast and on the track)
             if (new_x_speed < 2 && new_x_speed > -2 &&
                     new_y_speed < 2 && new_x_speed > -2 &&
-                    track.contains(newLocation)) {
+                    track.contains(Location(newX.toInt(), newY.toInt()))) {
 
                 successors.add(SuccessorBundle(
-                        RaceTrackState(newLocation, new_x_speed, new_y_speed),
+                        RaceTrackState(newX, newY, new_x_speed, new_y_speed),
                         action,
                         actionCost = 1.0))
             }
@@ -62,7 +65,11 @@ class RaceTrack(val start_line: Set<Location>,
     // distance is equal to heuristic, since each step has cost of 1
     override fun distance(state: RaceTrackState) = heuristic(state)
 
-    override fun isGoal(state: RaceTrackState) = finish_line.contains(state.agentLocation)
+
+    override fun isGoal(state: RaceTrackState): Boolean {
+        val newLocation = Location(state.x.toInt(), state.y.toInt())
+        return newLocation in finish_line
+    }
 
     /**
      * agent = @
@@ -76,9 +83,9 @@ class RaceTrack(val start_line: Set<Location>,
         for (h in 1..height) {
             for (w in 1..width) {
                 val charCell = when (Location(w, h)) {
-                    state.agentLocation -> '@'
+                    //state.agentLocation -> '@'
                     in finish_line -> '$'
-                    in start_line -> '%'
+                    //in start_line -> '%'
                     in track -> '*'
                     else -> ' '
                 }

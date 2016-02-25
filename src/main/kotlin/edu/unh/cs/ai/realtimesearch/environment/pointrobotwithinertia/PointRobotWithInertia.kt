@@ -45,13 +45,15 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
             var x = state.x
             var y = state.y
+            val xdot = it.xDoubleDot + state.xdot
+            val ydot = it.yDoubleDot + state.ydot
             val dt = 0.1
             val nSteps = 10
             var valid = true
 
             for (i in 0..nSteps-1) {
-                x += state.xdot * dt;
-                y += state.ydot * dt;
+                x += xdot * dt;
+                y += ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
                     valid = false;
@@ -66,7 +68,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //                println("" + x + " " + y + " " + (state.x + state.xdot) + " " + (state.y + state.ydot))
 
                 successors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(x, y, it.xDoubleDot + state.xdot, it.yDoubleDot + state.ydot),
+                        PointRobotWithInertiaState(x, y, xdot, ydot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         1.0));
             }
