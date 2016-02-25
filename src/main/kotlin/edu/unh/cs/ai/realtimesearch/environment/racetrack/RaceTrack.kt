@@ -40,26 +40,27 @@ class RaceTrack(val width: Int,
             val new_x_speed = state.x_speed + action.getAcceleration().x
             val new_y_speed = state.y_speed + action.getAcceleration().y
 
-//            var x = state.x.toDouble()
-//            var y = state.y.toDouble()
-//            val dt = 0.1
-//            val nSteps = 10
+            var x = state.x.toDouble()
+            var y = state.y.toDouble()
+            val dt = 0.1
+            val nSteps = 10
             var valid = true
-//
-//            for (i in 0..nSteps-1) {
-//                x += new_x_speed * dt;
-//                y += new_y_speed * dt;
-//
-//                if (!isLegalLocation(x, y)) {
-//                    valid = false;
-//                    break;
-//                }
-//            }
+
+            for (i in 0..nSteps-1) {
+                x += new_x_speed * dt;
+                y += new_y_speed * dt;
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
 
             // filter on legal moves (not too fast and on the track)
-            if (new_x_speed < 3 && new_x_speed > -3 &&
-                    new_y_speed < 3 && new_x_speed > -3 &&
-                    valid) {
+//            if (new_x_speed <= 3 && new_x_speed >= -3 &&
+//                    new_y_speed <= 3 && new_x_speed >= -3 &&
+//                    valid) {
+             if(valid){
 
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
@@ -85,7 +86,11 @@ class RaceTrack(val width: Int,
     /**
      * TODO: think of an heuristic. The regular manhattanDistance only works if you have only one goal
      */
+    /*
+    * Max Acceleration, area under the curve to get the time
+    * */
     override fun heuristic(state: RaceTrackState) = 1.0
+
 
     // distance is equal to heuristic, since each step has cost of 1
     override fun distance(state: RaceTrackState) = heuristic(state)

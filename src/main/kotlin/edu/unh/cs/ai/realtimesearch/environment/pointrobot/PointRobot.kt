@@ -3,19 +3,17 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaState
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldAction
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import java.util.*
 
 /**
  * Double Integrator Domain
  */
-class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>, val endLocation: Location) : Domain<PointRobotState> {
+class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>, val endLocation: DoubleLocation) : Domain<PointRobotState> {
 
 //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
+    private var goalRadius  = 1.0;
 
     fun getAllActions() : ArrayList<PointRobotAction>{
         var a = ArrayList<PointRobotAction>()
@@ -35,15 +33,15 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val successors: MutableList<SuccessorBundle<PointRobotState>> = arrayListOf()
 
         for (it in actions) {
-            var x = state.x
-            var y = state.y
             val dt = 0.1
             val nSteps = 10
             var valid = true
 
             for (i in 0..nSteps-1) {
-                x += it.xdot * dt;
-                y += it.ydot * dt;
+                var x = state.loc.x + (it.xdot * (dt* i));
+                var y = state.loc.y + (it.ydot * (dt* i));
+//                x += it.xdot * dt;
+//                y += it.ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
                     valid = false;
@@ -57,7 +55,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
 //                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
-                        PointRobotState(x, y),
+                        PointRobotState(DoubleLocation(state.loc.x + it.xdot, state.loc.y + it.ydot)),
                         PointRobotAction(it.xdot, it.ydot),
                         1.0));
             }
@@ -76,33 +74,43 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 y < height && Location(x.toInt(), y.toInt()) !in blockedCells
     }
 
+    /*
+    * eight way - octile distance
+    * max(min(dx), min(dy))/3
+    * euclidiean distance
+    * */
     override fun heuristic(state: PointRobotState): Double {
         //Distance Formula
-        return Math.sqrt(
-                Math.pow((endLocation.x + 0.5) - state.x, 2.0)
-                        + Math.pow((endLocation.y + 0.5) - state.y, 2.0)) / 3
+        return distance(state) / 3
     }
 
-    override fun distance(state: PointRobotState) = heuristic(state)
+    override fun distance(state: PointRobotState): Double {
+        //Distance Formula
+        return (Math.sqrt(
+                Math.pow((endLocation.x) - state.loc.x, 2.0)
+                        + Math.pow((endLocation.y) - state.loc.y, 2.0)) - goalRadius)
+    }
 
     override fun isGoal(state: PointRobotState): Boolean {
-        val curXLoc = (state.x * 2).toInt() / 2.0
-        val curYLoc = (state.y * 2).toInt() / 2.0
-
-        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
-
-
-
-        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+//        val curXLoc = (state.x * 2).toInt() / 2.0
+//        val curYLoc = (state.y * 2).toInt() / 2.0
+//
+//        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+//
+//
+//
+//        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+//        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
+        return distance(state) <= 0;
     }
 
     override fun print(state: PointRobotState): String {
         val description = StringBuilder()
 
         description.append("State: at (")
-        description.append(state.x)
+        description.append(state.loc.x)
         description.append(", ")
-        description.append(state.y)
+        description.append(state.loc.y)
         description.append(")")
 
         return description.toString()
@@ -113,4 +121,3 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     }
 
 }
-
