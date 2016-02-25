@@ -19,38 +19,28 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
 
     private val openList = PriorityQueue { lhs: Node, rhs: Node ->
-        if (lhs.f == rhs.f) {
-            when {
-                lhs.g > rhs.g -> -1
-                lhs.g < rhs.g -> 1
-                else -> 0
-            }
+        if (lhs.f < rhs.f) {
+            -1
+        } else if (lhs.f > rhs.f) {
+            1
+        } else if (lhs.cost > rhs.cost) { // Tie braking on cost (g)
+            -1
+        } else if (lhs.cost < rhs.cost) {
+            1
         } else {
-            when {
-                lhs.f < rhs.f -> -1
-                lhs.f > rhs.f -> 1
-                else -> 0
-            }
+            0
         }
     }
 
     private val closedList: HashSet<StateType> = hashSetOf()
-
-    var generatedNodes = 0
-    var expandedNodes = 0
+    private var generatedNodes = 0
+    private var expandedNodes = 0
 
     inner class Node(val parent: Node?, val state: StateType, val action: Action?, val cost: Double) {
         internal val f: Double
-        internal val g: Double
 
         init {
-            g = if (parent != null) {
-                parent.g + cost
-            } else {
-                cost
-            }
-
-            f = g + domain.heuristic(state)
+            f = cost + domain.heuristic(state)
         }
     }
 
@@ -59,11 +49,13 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
         expandedNodes = 0
         openList.clear();
         closedList.clear();
-        generatedNodes = 0
 
         openList.add(Node(null, state, null, 0.0))
+        closedList.add(state)
+        generatedNodes += 1
+
         while (openList.isNotEmpty()) {
-            val node = openList.poll()
+            val node = openList.remove()
             expandedNodes += 1
 
             if (domain.isGoal(node.state)) {
@@ -85,17 +77,10 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
                 }
             }
 
-
-            if (expandedNodes % 100000 == 0) {
-                println(System.currentTimeMillis() - timestamp)
-                timestamp = System.currentTimeMillis()
-            }
         }
 
         throw GoalNotReachableException()
     }
-
-    var timestamp = 0L
 
     protected fun extractPlan(leave: Node): List<Action> {
         val actions: MutableList<Action> = arrayListOf()
