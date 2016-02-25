@@ -14,6 +14,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.visualizer.PointInertiaVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.VaccumVisualizer
 import javafx.application.Application
@@ -27,9 +28,9 @@ fun main(args: Array<String>) {
     val alg = "A*"
     //val alg = "RTA"
 
-    val instanceFileName = "input/vacuum/dylan/wall.vw"
+    val instanceFileName = "input/vacuum/empty.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("point robot", rawDomain, alg, 1, "time", 40)
+    val manualConfiguration = ManualConfiguration("point robot with inertia", rawDomain, alg, 1, "time", 10)
     val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* Since VaccumVisualizer is an abstract class, the only choice we have to pass
@@ -50,7 +51,7 @@ fun main(args: Array<String>) {
     val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)*/
 
-    Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+    Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
 }
 
 fun lssLrtaStarUniformExperiment() {
