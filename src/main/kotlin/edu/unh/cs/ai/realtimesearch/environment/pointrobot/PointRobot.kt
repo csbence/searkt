@@ -34,7 +34,23 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val successors: MutableList<SuccessorBundle<PointRobotState>> = arrayListOf()
 
         for (it in actions) {
-            if (isLegalLocation(state.x + it.xdot, state.y + it.ydot)) {
+            var x = state.x
+            var y = state.y
+            val dt = 0.1
+            val nSteps = 10
+            var valid = true
+
+            for (i in 0..nSteps) {
+                x += it.xdot * dt;
+                y += it.ydot * dt;
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (valid) {
 
 //                    println("" + state.x + " " + state.y)
 //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
