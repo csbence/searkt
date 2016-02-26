@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import java.util.*
 
 /**
@@ -13,7 +12,7 @@ import java.util.*
  *
 r @param domain is the domain to plan in
  */
-abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlanner<StateType>(domain) {
+abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlannerBase<StateType>(domain) {
 
     private val closedList: HashSet<StateType> = hashSetOf()
 

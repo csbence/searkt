@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.agent
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
+import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 
 /**
  * The agent for classic search problems, deterministic fully observable and without constraints.

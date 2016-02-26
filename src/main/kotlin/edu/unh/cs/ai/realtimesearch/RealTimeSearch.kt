@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import java.io.File
 import java.io.FileInputStream
@@ -20,16 +20,22 @@ import java.io.PrintWriter
 import java.util.*
 
 fun main(args: Array<String>) {
-//
-//    val instanceFileName = "input/vacuum/dylan/uniform.vw"
+
+    val instanceFileName = "input/vacuum/dylan/uniform.vw"
+    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "RTA*", 1, "time", 10)
+    manualConfiguration.setValue("lookahead depth limit", 4)
+    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+//    val instanceFileName = "input/tiles/korf/4/87"
 //    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-//    val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
+//    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
 //    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-    val instanceFileName = "input/tiles/korf/4/87"
-    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
-    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+//    val instanceFileName = "input/tiles/korf/4/1"
+//    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+//    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "A*", 1, "time", 10)
+//    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 }
 
 fun lssLrtaStarUniformExperiment() {
@@ -65,8 +71,8 @@ fun aStartUniformExperiment(): List<ExperimentResult> {
 
 private fun aStarVacuumWorldExperiment(instanceFileName: String): List<ExperimentResult> {
     val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
-    val aStarAgent = ClassicalAgent(AStarPlanner(vacuumWorldInstance.domain))
-    val classicalExperiment = ClassicalExperiment<VacuumWorldState>(EmptyConfiguration, aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+    val aStarAgent = ClassicalAgent(ClassicalAStarPlanner(vacuumWorldInstance.domain))
+    val classicalExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     return classicalExperiment.run()
 }
 
