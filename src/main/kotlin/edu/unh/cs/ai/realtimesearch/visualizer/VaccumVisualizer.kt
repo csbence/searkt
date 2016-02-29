@@ -8,9 +8,7 @@ import javafx.animation.PathTransition
 import javafx.animation.Timeline
 import javafx.application.Application
 import javafx.animation.Interpolator
-import javafx.event.EventHandler
 import javafx.scene.Scene
-import javafx.scene.input.MouseEvent
 import javafx.stage.Stage
 import javafx.scene.paint.Color
 import java.util.*

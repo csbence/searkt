@@ -15,7 +15,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.VaccumVisualizer
 import javafx.application.Application
 import java.io.File
 import java.io.FileInputStream
