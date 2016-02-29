@@ -288,7 +288,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "\nClosed list: ${closedList.size}" }
         closedList.forEach { logger.debug("$it") }
 
-        while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) { // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
             dijkstraPopCounter++ // TODO remove
@@ -325,7 +325,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         // update mode if done
-        if (closedList.isEmpty()) {
+        if (openList.isEmpty()) {
             logger.info { "Done with Dijkstra" }
         } else {
             logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
