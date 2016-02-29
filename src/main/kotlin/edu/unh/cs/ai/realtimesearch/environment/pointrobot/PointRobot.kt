@@ -9,11 +9,11 @@ import java.util.*
 /**
  * Double Integrator Domain
  */
-class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>, val endLocation: DoubleLocation) : Domain<PointRobotState> {
+class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>,
+                 val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotState> {
 
 //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
-    private var goalRadius  = 1.0;
 
     fun getAllActions() : ArrayList<PointRobotAction>{
         var a = ArrayList<PointRobotAction>()

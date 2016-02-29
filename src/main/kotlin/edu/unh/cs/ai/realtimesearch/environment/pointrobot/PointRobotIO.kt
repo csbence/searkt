@@ -14,6 +14,7 @@ object PointRobotIO {
         val columnCount: Int
         var startLocation: DoubleLocation? = null
         var endLocation: DoubleLocation? = null
+        var radius = 0.0;
 
         try {
             columnCount = inputScanner.nextLine().toInt()
@@ -41,6 +42,13 @@ object PointRobotIO {
         } catch (e: NumberFormatException) {
             throw InvalidPointRobotException("PointRobot's fifth or sixth line must be a number.", e)
         }
+        try {
+            radius = inputScanner.nextLine().toDouble()
+        } catch (e: NoSuchElementException) {
+            throw InvalidPointRobotException("PointRobot's seventh line is missing.", e)
+        } catch (e: NumberFormatException) {
+            throw InvalidPointRobotException("PointRobot's seventh line must be a number.", e)
+        }
 
         val blockedCells = arrayListOf<Location>()
 
@@ -66,7 +74,7 @@ object PointRobotIO {
             throw InvalidPointRobotException("Unknown end location. End location has was not defined.")
         }
 
-        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobot(columnCount, rowCount, blockedCells.toHashSet(), endLocation)
+        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobot(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius)
         val startState = PointRobotState(startLocation)
         return PointRobotInstance(doubleIntegrator, startState)
     }
