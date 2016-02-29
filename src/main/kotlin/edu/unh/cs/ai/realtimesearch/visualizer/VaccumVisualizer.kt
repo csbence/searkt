@@ -39,7 +39,6 @@ class VaccumVisualizer : Application() {
             actionList.add(raw.get(i))
         }
         val TIME_TO_RUN = actionList.size * 200.0
-        //val TIME_TO_RUN = 2000.0
 
         /* Assuming the domain is correct because the experiment was already run */
         primaryStage.title = "RTS Visualizer"
@@ -58,7 +57,12 @@ class VaccumVisualizer : Application() {
         val HEIGHT = 1400.0
         val TILE_WIDTH: Double = (WIDTH / columnCount)
         val TILE_HEIGHT: Double = (HEIGHT / rowCount)
-        val TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT) / 1.19
+        var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
+
+        while(((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)){
+            TILE_SIZE /= 1.05
+        }
+
 
         /* The robot */
         val robotWidth = TILE_SIZE / 2.0
