@@ -17,6 +17,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
 //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
+//    val maxSpeed = 5
+//    val minSpeed = maxSpeed * -1
 
     fun getAllActions() : ArrayList<PointRobotWithInertiaAction>{
         var a = ArrayList<PointRobotWithInertiaAction>()
@@ -38,14 +40,13 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun successors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         // to return
         val successors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = arrayListOf()
-        val maxSpeed = 3
-        val minSpeed = maxSpeed * -1
+
 
         for (it in actions) {
-            if(it.xDoubleDot + state.xdot > maxSpeed || it.xDoubleDot + state.xdot < minSpeed
-                    || it.yDoubleDot + state.ydot > maxSpeed || it.yDoubleDot + state.ydot < minSpeed) {
-                continue;
-            }
+//            if(it.xDoubleDot + state.xdot > maxSpeed || it.xDoubleDot + state.xdot < minSpeed
+//                    || it.yDoubleDot + state.ydot > maxSpeed || it.yDoubleDot + state.ydot < minSpeed) {
+//                continue;
+//            }
 
             val nSteps = 10
             val dt = 1.0/nSteps
@@ -77,7 +78,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //                    println("" + (state.loc.x + state.xdot) + " " + y + " " + (state.xdot + it.xDoubleDot) + " " + (state.ydot + it.yDoubleDot) + " " + it.xDoubleDot + " " + it.yDoubleDot)
 //                println("" + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot) );// + " " + (state.x + state.xdot) + " " + (state.y + state.ydot))
 
-//                println("" + (it.xDoubleDot + state.xdot) + " " + (it.yDoubleDot + state.ydot))
+//                println("dot " + (it.xDoubleDot + state.xdot) + " " + (it.yDoubleDot + state.ydot))
+//                println("loc " + x + " " + y )
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(DoubleLocation(x, y/*state.loc.x + state.xdot, state.loc.y + state.ydot*/), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
@@ -105,7 +107,44 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     * */
     override fun heuristic(state: PointRobotWithInertiaState): Double {
         //Distance Formula
-        return distance(state) / 3
+//        var a = -1 * distance(state)
+//        var b = pythagorean(state.xdot, state.ydot)
+//        var result1 = quadraticFormula(a, b, 0.5)
+//        println("" + a + " " + b + " "+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result1)
+//        var result2 = quadraticFormula(a, b, -0.5)
+//        println("" + a + " " + b + " -"+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result2)
+//
+//        return Math.max(result1, result2)
+        var ax = state.loc.x - endLocation.x
+        var bx = state.xdot
+
+        var ay = state.loc.y - endLocation.y
+        var by = state.ydot
+
+        var resultx1 = quadraticFormula(ax, bx, 0.5)
+        var resultx2 = quadraticFormula(ax, bx, -0.5)
+
+        var resulty1 = quadraticFormula(ay, by, 0.5)
+        var resulty2 = quadraticFormula(ay, by, -0.5)
+
+//        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2)
+
+        return Math.max(Math.max(resultx1, resultx2), Math.max(resulty1, resulty2))
+    }
+
+//    fun pythagorean(a : Double, b : Double) : Double{
+//        var result = Math.pow(a, 2.0) + Math.pow(b, 2.0)
+//        return Math.sqrt(result)
+//    }
+
+    fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
+        var result1 = -1 * b + Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
+        result1 /= (2 * a)
+
+        var result2 = -1 * b - Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
+        result2 /= (2 * a)
+
+        return Math.max(result1, result2)
     }
 
     override fun distance(state: PointRobotWithInertiaState): Double {
@@ -125,7 +164,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         //
         //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
         //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
-        return distance(state) <= 0 && state.xdot == 0.0 && state.ydot == 0.0;
+        return distance(state) <= 0 //&& state.xdot == 0.0 && state.ydot == 0.0;
     }
 
     override fun print(state: PointRobotWithInertiaState): String {
