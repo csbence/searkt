@@ -14,7 +14,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.RacetrackVisualizer
 import javafx.application.Application
 import java.io.File
 import java.io.FileInputStream
@@ -26,9 +28,9 @@ fun main(args: Array<String>) {
     val alg = "A*"
     //val alg = "RTA"
 
-    val instanceFileName = "input/pointrobot/wall2.pr"
+    val instanceFileName = "input/racetrack/barto-big.track"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("point robot", rawDomain, alg, 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("race track", rawDomain, alg, 1, "time", 10)
     val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     val params: MutableList<String> = arrayListOf()
@@ -44,7 +46,7 @@ fun main(args: Array<String>) {
     val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
     ConfigurationExecutor.executeConfiguration(manualConfiguration)*/
 
-    Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+    Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
 }
 
 fun lssLrtaStarUniformExperiment() {
