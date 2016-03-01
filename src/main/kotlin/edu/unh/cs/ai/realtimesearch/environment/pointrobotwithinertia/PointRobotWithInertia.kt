@@ -115,21 +115,22 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //        println("" + a + " " + b + " -"+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result2)
 //
 //        return Math.max(result1, result2)
-        var ax = state.loc.x - endLocation.x
         var bx = state.xdot
+        var cx = state.loc.x - endLocation.x
 
-        var ay = state.loc.y - endLocation.y
         var by = state.ydot
+        var cy = state.loc.y - endLocation.y
 
-        var resultx1 = quadraticFormula(ax, bx, 0.5)
-        var resultx2 = quadraticFormula(ax, bx, -0.5)
+        var resultx1 = quadraticFormula(0.5, bx, cx)
+        var resultx2 = quadraticFormula(-0.5, bx, cx)
 
-        var resulty1 = quadraticFormula(ay, by, 0.5)
-        var resulty2 = quadraticFormula(ay, by, -0.5)
+        var resulty1 = quadraticFormula(0.5, by, cy)
+        var resulty2 = quadraticFormula(-0.5, by, cy)
 
-//        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2)
+//        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
+//                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
 
-        return Math.max(Math.max(resultx1, resultx2), Math.max(resulty1, resulty2))
+        return Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2))
     }
 
 //    fun pythagorean(a : Double, b : Double) : Double{
@@ -138,11 +139,21 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //    }
 
     fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
+        if(Math.pow(b, 2.0) - 4 * a * c < 0.0)
+            return Double.MAX_VALUE
+
         var result1 = -1 * b + Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
         result1 /= (2 * a)
 
         var result2 = -1 * b - Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
         result2 /= (2 * a)
+        if(result1 < 0.0 && result2 >= 0.0)
+            return result2;
+        if(result2 < 0.0 && result1 >= 0.0)
+            return result1;
+
+        if(result1 < 0.0 && result2 < 0.0)
+            return Double.MAX_VALUE;
 
         return Math.max(result1, result2)
     }
