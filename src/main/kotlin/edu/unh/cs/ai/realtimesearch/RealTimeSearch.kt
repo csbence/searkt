@@ -15,8 +15,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.RacetrackVisualizer
 import javafx.application.Application
 import java.io.File
 import java.io.FileInputStream
@@ -28,9 +26,9 @@ fun main(args: Array<String>) {
     val alg = "A*"
     //val alg = "RTA"
 
-    val instanceFileName = "input/racetrack/barto-big.track"
+    val instanceFileName = "input/vacuum/empty.vw"
     val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration("race track", rawDomain, alg, 1, "time", 10)
+    val manualConfiguration = ManualConfiguration("point robot with inertia", rawDomain, alg, 1, "time", 10)
     val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     val params: MutableList<String> = arrayListOf()
