@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
+import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.io.InputStream
 import java.util.*
@@ -11,19 +12,45 @@ object PointRobotWithInertiaIO {
 
         val rowCount: Int
         val columnCount: Int
+        var startLocation: DoubleLocation? = null
+        var endLocation: DoubleLocation? = null
+        var radius = 0.5;
 
         try {
             columnCount = inputScanner.nextLine().toInt()
             rowCount = inputScanner.nextLine().toInt()
         } catch (e: NoSuchElementException) {
-            throw InvalidDoubleIntegratorException("DoubleIntegrator's first or second line is missing.", e)
+            throw InvalidPointRobotWithInertiaException("PointRobot's first or second line is missing.", e)
         } catch (e: NumberFormatException) {
-            throw InvalidDoubleIntegratorException("DoubleIntegrator's first and second line must be a number.", e)
+            throw InvalidPointRobotWithInertiaException("PointRobot's first and second line must be a number.", e)
+        }
+        try {
+            val x = inputScanner.nextLine().toDouble()
+            val y = inputScanner.nextLine().toDouble()
+            startLocation = DoubleLocation(x, y)
+        } catch (e: NoSuchElementException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's third or fourth line is missing.", e)
+        } catch (e: NumberFormatException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's third or fourth  line must be a number.", e)
+        }
+        try {
+            val x = inputScanner.nextLine().toDouble()
+            val y = inputScanner.nextLine().toDouble()
+            endLocation = DoubleLocation(x, y)
+        } catch (e: NoSuchElementException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's fifth or sixth line is missing.", e)
+        } catch (e: NumberFormatException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's fifth or sixth line must be a number.", e)
+        }
+        try {
+            radius = inputScanner.nextLine().toDouble()
+        } catch (e: NoSuchElementException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's seventh line is missing.", e)
+        } catch (e: NumberFormatException) {
+            throw InvalidPointRobotWithInertiaException("PointRobot's seventh line must be a number.", e)
         }
 
         val blockedCells = arrayListOf<Location>()
-        var startLocation: Location? = null
-        var endLocation: Location? = null
 
         try {
             for (y in 0..rowCount - 1) {
@@ -32,25 +59,24 @@ object PointRobotWithInertiaIO {
                 for (x in 0..columnCount - 1) {
                     when (line[x]) {
                         '#' -> blockedCells.add(Location(x, y))
-                        '*' -> endLocation = Location(x, y)
-                        '@' -> startLocation = Location(x, y)
                     }
                 }
             }
         } catch (e: NoSuchElementException) {
-            throw InvalidDoubleIntegratorException("DoubleIntegrator is not complete.", e)
+            throw InvalidPointRobotWithInertiaException("DoubleIntegrator is not complete.", e)
         }
 
         if (startLocation == null) {
-            throw InvalidDoubleIntegratorException("Unknown start location. Start location has was not defined.")
+            throw InvalidPointRobotWithInertiaException("Unknown start location. Start location has was not defined.")
         }
 
         if (endLocation == null) {
-            throw InvalidDoubleIntegratorException("Unknown end location. End location has was not defined.")
+            throw InvalidPointRobotWithInertiaException("Unknown end location. End location has was not defined.")
         }
 
-        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia(columnCount, rowCount, blockedCells.toHashSet(), endLocation)
-        val startState = PointRobotWithInertiaState(startLocation.x.toDouble(), startLocation.y.toDouble(), 0.0, 0.0)
+        val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.
+                PointRobotWithInertia(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius)
+        val startState = PointRobotWithInertiaState(startLocation, 0.0, 0.0)
         return PointRobotWithInertiaInstance(doubleIntegrator, startState)
     }
 
@@ -58,4 +84,4 @@ object PointRobotWithInertiaIO {
 
 data class PointRobotWithInertiaInstance(val domain: PointRobotWithInertia, val initialState: PointRobotWithInertiaState)
 
-class InvalidDoubleIntegratorException(message: String, e: Exception? = null) : RuntimeException(message, e)
+class InvalidPointRobotWithInertiaException(message: String, e: Exception? = null) : RuntimeException(message, e)
