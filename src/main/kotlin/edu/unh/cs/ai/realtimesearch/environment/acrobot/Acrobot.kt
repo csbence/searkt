@@ -6,6 +6,28 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 val timeStep = 0.2
 
 /**
+ * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
+ * [-pi,pi] to avoid attempting to rotate completely around in one direction.
+ */
+fun angleDifference(angle: Double, goalAngle: Double): Double {
+    var difference = goalAngle - angle
+    if (difference < -Math.PI)
+        difference += 2 * Math.PI
+    else if (difference > Math.PI)
+        difference -= 2 * Math.PI
+    return difference
+}
+
+/**
+ * Calculate the angle distance between an angle and a goal angle.  The resulting distance will be in the range
+ * [0,pi].
+ */
+fun angleDistance(angle: Double, goalAngle: Double): Double {
+    val distance = angleDifference(angle, goalAngle)
+    return if (distance < 0) distance * -1 else distance
+}
+
+/**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
  * second link but not the first thereby actuating joint 2.  The goal of the system
  * is to maneuver the links such that they are pointing straight up inverted
@@ -91,28 +113,6 @@ class Acrobot() : Domain<AcrobotState> {
     override fun distance(state: AcrobotState): Double {
         return angleDistance(state.linkPosition1, Acrobot.goal.verticalLinkPosition1) +
                 angleDistance(state.linkPosition2, Acrobot.goal.verticalLinkPosition2)
-    }
-
-    /**
-     * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
-     * [-pi,pi] to avoid attempting to rotate completely around in one direction.
-     */
-    private fun angleDifference(angle: Double, goalAngle: Double): Double {
-        var difference = goalAngle - angle
-        if (difference < -Math.PI)
-            difference += 2 * Math.PI
-        else if (difference > Math.PI)
-            difference -= 2 * Math.PI
-        return difference
-    }
-
-    /**
-     * Calculate the angle distance between an angle and a goal angle.  The resulting distance will be in the range
-     * [0,pi].
-     */
-    private fun angleDistance(angle: Double, goalAngle: Double): Double {
-        val distance = angleDifference(angle, goalAngle)
-        return if (distance < 0) distance * -1 else distance
     }
 
     /**
