@@ -37,7 +37,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             val nSteps = 10
             var valid = true
 
-            for (i in 0..nSteps-1) {
+            for (i in 1..nSteps) {
                 var x = state.loc.x + (it.xdot * (dt* i));
                 var y = state.loc.y + (it.ydot * (dt* i));
 //                x += it.xdot * dt;
