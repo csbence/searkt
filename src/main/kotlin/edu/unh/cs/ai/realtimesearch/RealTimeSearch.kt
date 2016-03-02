@@ -37,6 +37,7 @@ fun main(args: Array<String>) {
         /* create options */
         val options = Options()
 
+        options.addOption("h", "help", true, "Print help and exit")
         options.addOption("d", "domain", true, "The domain name")
         options.addOption("m", "map", true, "The path to map file")
         options.addOption("a", "alg-name", true, "The algorithm name")
@@ -45,6 +46,7 @@ fun main(args: Array<String>) {
         options.addOption("p", "term-param", true, "The termination parameter")
         options.addOption("v", "visualize", false, "Whether or not to visualize")
         options.addOption("o", "outfile", true, "Outfile of experiments")
+
 
         /* parse command line arguments */
         val parser = GnuParser()
@@ -58,10 +60,15 @@ fun main(args: Array<String>) {
         val termParam = cmd.getOptionValue('n')
         val outFile = cmd.getOptionValue('o')
 
+        /* print help if help option was specified*/
+        val formatter = HelpFormatter()
+        if(options.hasOption("h")){
+            formatter.printHelp("real-time-search", options)
+        }
+
         /* print help if any options weren't specified */
         if(domainName == null || mapFile == null || numRuns == null ||
                 termType == null || termParam == null || outFile == null){
-            val formatter = HelpFormatter()
             formatter.printHelp("real-time-search", options)
         }
 
