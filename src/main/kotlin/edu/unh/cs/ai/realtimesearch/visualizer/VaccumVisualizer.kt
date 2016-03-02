@@ -80,20 +80,14 @@ class VaccumVisualizer : Application() {
                         val blocked = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         blocked.fill = Color.BLACK
                         blocked.stroke = Color.BLACK
-                        //blocked.widthProperty().bind(root.widthProperty().divide(columnCount))
-                        //blocked.heightProperty().bind(root.heightProperty().divide(rowCount))
 
                         root.children.add(blocked)
                     }
                     '_' -> {
                         val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
-
-                        /* resize width and height */
-                        //free.widthProperty().bind(root.widthProperty().divide(columnCount))
-                        //free.heightProperty().bind(root.heightProperty().divide(rowCount))
-
                         free.stroke = Color.WHITE
+                        free.opacity = 0.5
                         root.children.add(free)
                     }
                     '*' -> {

@@ -130,7 +130,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
 //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
 
-        return Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2))
+        return Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)) / 3
     }
 
 //    fun pythagorean(a : Double, b : Double) : Double{

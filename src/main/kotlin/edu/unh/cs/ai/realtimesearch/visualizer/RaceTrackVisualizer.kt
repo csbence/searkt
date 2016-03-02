@@ -88,6 +88,7 @@ class RacetrackVisualizer : Application() {
                         val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
+                        free.opacity = 0.5
                         root.children.add(free)
                     }
                     '*' -> {

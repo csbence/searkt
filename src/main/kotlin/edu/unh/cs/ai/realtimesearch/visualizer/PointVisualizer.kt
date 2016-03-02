@@ -85,7 +85,7 @@ class PointVisualizer : Application() {
         root.children.add(robot)
 
         /* the dirty cell */
-        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 8.0)
+        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
         dirtyCell.fill = Color.BLUE
         root.children.add(dirtyCell)
 
@@ -111,6 +111,7 @@ class PointVisualizer : Application() {
                         val free = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
+                        free.opacity = 0.5
                         root.children.add(free)
                     }
                 }

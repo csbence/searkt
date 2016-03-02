@@ -10,3 +10,11 @@ data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration
                             val pathLength: Double? = null,
                             val errorMessage: String? = null
 )
+
+/*
+    - Date experiment was run
+    - Machine it was run on
+
+    algName/domain/paramter-set-name/instance.output
+
+ */
