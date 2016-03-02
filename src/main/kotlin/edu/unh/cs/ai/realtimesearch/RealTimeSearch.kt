@@ -23,6 +23,7 @@ import java.io.PrintWriter
 import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
 
@@ -64,12 +65,14 @@ fun main(args: Array<String>) {
         val formatter = HelpFormatter()
         if(options.hasOption("h")){
             formatter.printHelp("real-time-search", options)
+            exitProcess(1)
         }
 
         /* print help if any options weren't specified */
         if(domainName == null || mapFile == null || numRuns == null ||
                 termType == null || termParam == null || outFile == null){
             formatter.printHelp("real-time-search", options)
+            exitProcess(1)
         }
 
         /* run the experiment */
