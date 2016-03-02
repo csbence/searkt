@@ -88,8 +88,9 @@ class PointIntertiaVisualizer : Application() {
         root.children.add(robot)
 
         /* the dirty cell */
-        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 8.0)
+        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
         dirtyCell.fill = Color.BLUE
+        dirtyCell.toFront()
         root.children.add(dirtyCell)
 
         /* the goal radius */
@@ -114,6 +115,7 @@ class PointIntertiaVisualizer : Application() {
                         val free = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
+                        free.opacity = 0.5
                         root.children.add(free)
                     }
                 }
@@ -146,16 +148,18 @@ class PointIntertiaVisualizer : Application() {
         while (count != actionList.size) {
             val x = actionList.get(count)
             val y = actionList.get(count + 1)
-            var pt = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
-            sq.children.add(pt)
+            val ptList = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
+            for(pt in ptList)
+                sq.children.add(pt)
             count+=2
         }
         sq.setCycleCount(Timeline.INDEFINITE);
         sq.play()
     }
 
-    private fun animate(root: Pane, x: String, y: String, dispLine: Boolean, robot: Rectangle, width: Double): PathTransition {
-        val path = Path()
+
+    private fun animate(root: Pane, x: String, y: String, dispLine: Boolean, robot: Rectangle, width: Double): MutableList<PathTransition> {
+        val retval: MutableList<PathTransition> = arrayListOf()
 
         val xDDot = x.toDouble() * width
         val yDDot = y.toDouble() * width
@@ -163,32 +167,37 @@ class PointIntertiaVisualizer : Application() {
         val nSteps = 100
         val dt = 1.0 / nSteps
 
-        path.elements.add(MoveTo(robot.translateX, robot.translateY))
         for (i in 0..nSteps-1) {
+            val path = Path()
+            path.elements.add(MoveTo(robot.translateX, robot.translateY))
+
             var xdot = xDot + xDDot * (dt * i)
             var ydot = yDot + yDDot * (dt * i)
 
             path.elements.add(LineTo(robot.translateX + (xdot * dt), robot.translateY + (ydot * dt)))
             robot.translateX += xdot * dt;
             robot.translateY += ydot * dt;
+
+            if(dispLine){
+                path.stroke = Color.RED
+                root.children.add(path)
+            }
+            /* Animate the robot */
+            val pathTransition = PathTransition()
+            pathTransition.setDuration(Duration.millis(10.0))
+            pathTransition.setPath(path)
+            pathTransition.setNode(robot)
+            pathTransition.setInterpolator(Interpolator.LINEAR);
+            retval.add(pathTransition)
         }
 
         xDot += xDDot
         yDot += yDDot
 
         if(dispLine){
-            path.stroke = Color.RED
-            root.children.add(path)
             val action = Circle(robot.translateX, robot.translateY, width / 10.0)
             root.children.add(action)
         }
-
-        /* Animate the robot */
-        val pathTransition = PathTransition()
-        pathTransition.setDuration(Duration.millis(1000.0))
-        pathTransition.setPath(path)
-        pathTransition.setNode(robot)
-        pathTransition.setInterpolator(Interpolator.LINEAR);
-        return pathTransition
+        return retval
     }
 }
