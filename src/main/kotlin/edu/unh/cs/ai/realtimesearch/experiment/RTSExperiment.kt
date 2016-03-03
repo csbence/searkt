@@ -46,11 +46,12 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             world.reset()
 
             logger.info { "Starting experiment $run from state ${world.getState()}" }
-            val timeInMillis = kotlin.system.measureTimeMillis {
-                while (!world.isGoal()) {
+            var totalTimeInMillis = 0L
 
+            while (!world.isGoal()) {
+                val timeInMillis = kotlin.system.measureTimeMillis {
                     terminationChecker.init()
-//                    System.gc() // Hint garbage collection to improve real time performance
+                    //                    System.gc() // Hint garbage collection to improve real time performance
 
                     val actionList = agent.selectAction(world.getState(), terminationChecker);
 
@@ -59,12 +60,14 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
                     logger.info { "Agent return action $actionList to state ${world.getState()}" }
 
                     actionList.forEach { world.step(it) }
-
                 }
+
+                totalTimeInMillis += timeInMillis
+                System.gc()
             }
 
-            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes in $timeInMillis. (${agent.planner.expandedNodes * 1000 / timeInMillis})" }
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
+            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodes * 1000 / totalTimeInMillis})" }
+            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, totalTimeInMillis, actions))
         }
 
         return results
