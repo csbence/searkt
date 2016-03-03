@@ -11,10 +11,10 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
@@ -24,9 +24,14 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
 
+/**
+ * Configuration executor to execute experiment configurations.
+ */
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val domainName: String = experimentConfiguration.getDomainName()
@@ -35,13 +40,12 @@ object ConfigurationExecutor {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
-            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
             "point robot" -> executePointRobot(experimentConfiguration)
+            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
             "race track" -> executeRaceTrack(experimentConfiguration)
             else -> listOf(ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName"))
         }
     }
-
     private fun executeRaceTrack(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val rawDomain: String = experimentConfiguration.getRawDomain()
         val pointRobotInstance = RaceTrackIO.parseFromStream(rawDomain.byteInputStream())
@@ -65,6 +69,7 @@ object ConfigurationExecutor {
 
         return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
     }
+
 
     private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): List<ExperimentResult> {
         val rawDomain: String = experimentConfiguration.getRawDomain()
@@ -94,16 +99,35 @@ object ConfigurationExecutor {
         val algorithmName = experimentConfiguration.getAlgorithmName()
 
         return when (algorithmName) {
-            "A*" -> executeAStar<StateType>(experimentConfiguration, domain, initialState, environment)
-            "LSS-LRTA*" -> executeLssLrtaStar<StateType>(experimentConfiguration, domain, initialState, environment)
-            "RTA" -> executeRealTimeAStar<StateType>(experimentConfiguration, domain, initialState, environment)
+            "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
+            "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, initialState, environment)
+            "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
+            "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState, environment)
+            "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState, environment)
 
             else -> listOf(ExperimentResult(experimentConfiguration, errorMessage = "Unknown algorithm: $algorithmName"))
         }
     }
 
+    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
+        val aStarPlanner = SimpleAStar(domain)
+
+        val state: StateType = environment.getState()
+        aStarPlanner.search(state)
+
+        return listOf()
+    }
+
     private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
         val aStarPlanner = AStarPlanner(domain)
+        val classicalAgent = ClassicalAgent(aStarPlanner)
+        val classicalExperiment = ClassicalExperiment<StateType>(experimentConfiguration, classicalAgent, domain, initialState)
+
+        return classicalExperiment.run()
+    }
+
+    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
+        val aStarPlanner = ClassicalAStarPlanner(domain)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment<StateType>(experimentConfiguration, classicalAgent, domain, initialState)
 
@@ -131,7 +155,8 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val realTimeAStarPlanner = RealTimeAStarPlanner(domain)
+        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it the the experiment configuration.")
+        val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration), experimentConfiguration.getNumberOfRuns())
 

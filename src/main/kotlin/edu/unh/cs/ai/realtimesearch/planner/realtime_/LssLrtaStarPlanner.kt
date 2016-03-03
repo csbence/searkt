@@ -3,9 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime_
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.*
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
@@ -123,7 +121,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // Every turn learn then A* until time expires
 
         if (closedList.isNotEmpty()) {
-            dijkstraTimer += measureTimeMillis { dijkstra(FakeTerminationChecker()) }
+            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
         var plan: List<Action>? = null
@@ -276,28 +274,27 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun dijkstra(terminationChecker: TerminationChecker) {
         logger.info { "Start: Dijkstra" }
+        // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
-        // set all g(s) for s in closedList to infinite
-//        closedList.forEach { it.heuristic = POSITIVE_INFINITY }
         // change openList ordering to heuristic only`
         reorderOpenListBy(heuristicComparator)
 
-                var counter = 0 // TODO
-                var removedCounter = 0;
-                logger.info { "\nOpen list: ${openSet.size} - ${openList.size}" }
-                openSet.forEach { logger.debug("$it") }
+        var counter = 0 // TODO
+        var removedCounter = 0;
+        logger.info { "\nOpen list: ${openSet.size} - ${openList.size}" }
+        openSet.forEach { logger.debug("$it") }
 
-                logger.info { "\nClosed list: ${closedList.size}" }
-                closedList.forEach { logger.debug("$it") }
+        logger.info { "\nClosed list: ${closedList.size}" }
+        closedList.forEach { logger.debug("$it") }
 
-        while (!terminationChecker.reachedTermination() && !closedList.isEmpty()) {
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) { // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
-                dijkstraPopCounter++ // TODO remove
+            dijkstraPopCounter++ // TODO remove
 
             val removed = closedList.remove(node)
-                logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${node.predecessors.size} :: $node      Removed: $removed - $removedCounter" }
+            logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${node.predecessors.size} :: $node      Removed: $removed - $removedCounter" }
 
             val currentHeuristicValue = node.heuristic
             //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
@@ -307,7 +304,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 if (predecessor.node.iteration != iterationCounter) {
                     predecessor.node.heuristic = POSITIVE_INFINITY
                     predecessor.node.iteration = iterationCounter
-                    logger.debug {"Update node: Change heuristic to infinity."}
+                    logger.debug { "Update node: Change heuristic to infinity." }
                 }
 
                 val predecessorHeuristicValue = predecessor.node.heuristic
@@ -328,7 +325,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         // update mode if done
-        if (closedList.isEmpty()) {
+        if (openList.isEmpty()) {
             logger.info { "Done with Dijkstra" }
         } else {
             logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
