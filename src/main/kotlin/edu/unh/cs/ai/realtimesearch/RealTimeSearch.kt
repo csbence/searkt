@@ -14,9 +14,12 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.VaccumVisualizer
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Options
+import javafx.application.Application
 import java.io.File
 import java.io.FileInputStream
 import java.io.PrintWriter
@@ -28,11 +31,25 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
 
     if(args.isEmpty()){
-        val instanceFileName = "input/vacuum/dylan/uniform.vw"
+        val instanceFileName = "input/vacuum/maze.vw"
         val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration("grid world", rawDomain, "RTA*", 1, "time", 10)
+        val manualConfiguration = ManualConfiguration("grid world", rawDomain, "LSS-LRTA*", 1, "time", 10)
         manualConfiguration.setValue("lookahead depth limit", 4)
-        ConfigurationExecutor.executeConfiguration(manualConfiguration)
+        val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+        val params: MutableList<String> = arrayListOf()
+        val actionList = resultList.first().actions
+
+        params.add(rawDomain)
+        for(action in actionList){
+            params.add(action.toString())
+        }
+
+        //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        Application.launch(VaccumVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
+
     }
     else{
         /* create options */
