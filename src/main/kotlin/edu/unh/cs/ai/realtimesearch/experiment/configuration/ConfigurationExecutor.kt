@@ -86,7 +86,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val aStarPlanner = AStarPlanner(domain)
+        val aStarPlanner = ClassicalAStarPlanner(domain)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment<StateType>(experimentConfiguration, classicalAgent, domain, initialState)
 

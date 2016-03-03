@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
         /* create options */
         val options = Options()
 
-        options.addOption("h", "help", true, "Print help and exit")
+        options.addOption("h", "help", false, "Print help and exit")
         options.addOption("d", "domain", true, "The domain name")
         options.addOption("m", "map", true, "The path to map file")
         options.addOption("a", "alg-name", true, "The algorithm name")
@@ -52,7 +52,6 @@ fun main(args: Array<String>) {
         /* parse command line arguments */
         val parser = GnuParser()
         val cmd = parser.parse(options, args)
-
         val domainName = cmd.getOptionValue('d')
         val mapFile = cmd.getOptionValue('m')
         val algName = cmd.getOptionValue('a')
@@ -63,7 +62,7 @@ fun main(args: Array<String>) {
 
         /* print help if help option was specified*/
         val formatter = HelpFormatter()
-        if(options.hasOption("h")){
+        if(cmd.hasOption("h")){
             formatter.printHelp("real-time-search", options)
             exitProcess(1)
         }
@@ -109,15 +108,15 @@ fun main(args: Array<String>) {
 
 
 
-//    val instanceFileName = "input/tiles/korf/4/87"
-//    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-//    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
-//    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+    //    val instanceFileName = "input/tiles/korf/4/87"
+    //    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    //    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", 1, "time", 10)
+    //    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-//    val instanceFileName = "input/tiles/korf/4/1"
-//    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-//    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "A*", 1, "time", 10)
-//    ConfigurationExecutor.executeConfiguration(manualConfiguration)
+    //    val instanceFileName = "input/tiles/korf/4/1"
+    //    val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    //    val manualConfiguration = ManualConfiguration("sliding tile puzzle", rawDomain, "A*", 1, "time", 10)
+    //    ConfigurationExecutor.executeConfiguration(manualConfiguration)
 }
 
 fun lssLrtaStarUniformExperiment() {
