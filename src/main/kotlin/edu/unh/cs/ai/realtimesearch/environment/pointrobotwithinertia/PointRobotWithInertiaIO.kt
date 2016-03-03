@@ -14,7 +14,7 @@ object PointRobotWithInertiaIO {
         val columnCount: Int
         var startLocation: DoubleLocation? = null
         var endLocation: DoubleLocation? = null
-        var radius = 0.5;
+        var radius : Double;
 
         try {
             columnCount = inputScanner.nextLine().toInt()

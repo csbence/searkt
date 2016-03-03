@@ -53,11 +53,15 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             var valid = true
             var x = state.loc.x
             var y = state.loc.y
+            var xdot = state.xdot
+            var ydot = state.ydot
 
             for (i in 1..nSteps) {
-                var xdot = state.xdot + (it.xDoubleDot * (dt* i));
-                var ydot = state.ydot + (it.yDoubleDot * (dt* i));
+//                var xdot = state.xdot + (it.xDoubleDot * (dt* i));
+//                var ydot = state.ydot + (it.yDoubleDot * (dt* i));
 
+                xdot += it.xDoubleDot * dt
+                ydot += it.yDoubleDot * dt
                 x += xdot * dt;
                 y += ydot * dt;
 
@@ -107,14 +111,6 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     * */
     override fun heuristic(state: PointRobotWithInertiaState): Double {
         //Distance Formula
-//        var a = -1 * distance(state)
-//        var b = pythagorean(state.xdot, state.ydot)
-//        var result1 = quadraticFormula(a, b, 0.5)
-//        println("" + a + " " + b + " "+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result1)
-//        var result2 = quadraticFormula(a, b, -0.5)
-//        println("" + a + " " + b + " -"+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result2)
-//
-//        return Math.max(result1, result2)
         var bx = state.xdot
         var cx = state.loc.x - endLocation.x
 
@@ -130,7 +126,21 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
 //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
 
-        return Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2))
+        var minx = Math.min(resultx1, resultx2)
+        var miny = Math.min(resulty1, resulty2)
+
+        var retval : Double
+
+        if(minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
+            retval = miny;
+        else if(minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+            retval = minx
+        else if(minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
+            retval = 0.0;
+        else
+            retval = Math.max(minx, miny)
+//        println(retval)
+        return retval
     }
 
 //    fun pythagorean(a : Double, b : Double) : Double{
@@ -175,7 +185,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         //
         //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
         //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
-        return distance(state) <= 0 //&& state.xdot == 0.0 && state.ydot == 0.0;
+        return distance(state) <= 0 && state.xdot == 0.0 && state.ydot == 0.0;
     }
 
     override fun print(state: PointRobotWithInertiaState): String {

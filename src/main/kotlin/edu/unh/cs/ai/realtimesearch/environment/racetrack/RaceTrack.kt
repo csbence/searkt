@@ -63,7 +63,7 @@ class RaceTrack(val width: Int,
              if(valid){
 
                 successors.add(SuccessorBundle(
-                        RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
+                        RaceTrackState(state.x + state.x_speed, state.y + state.y_speed, new_x_speed, new_y_speed),
                         action,
                         actionCost = 1.0))
             }
@@ -89,16 +89,79 @@ class RaceTrack(val width: Int,
     /*
     * Max Acceleration, area under the curve to get the time
     * */
-    override fun heuristic(state: RaceTrackState) = 1.0
+    override fun heuristic(state: RaceTrackState): Double {
+        //Distance Formula
+        //        var a = -1 * distance(state)
+        //        var b = pythagorean(state.xdot, state.ydot)
+        //        var result1 = quadraticFormula(a, b, 0.5)
+        //        println("" + a + " " + b + " "+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result1)
+        //        var result2 = quadraticFormula(a, b, -0.5)
+        //        println("" + a + " " + b + " -"+ 0.5 + " " + state.loc.x + " " + state.loc.y + " " + result2)
+        //
+        //        return Math.max(result1, result2)
+//        var bx = state.xdot
+//        var cx = state.loc.x - endLocation.x
+//
+//        var by = state.ydot
+//        var cy = state.loc.y - endLocation.y
+//
+//        var resultx1 = quadraticFormula(0.5, bx, cx)
+//        var resultx2 = quadraticFormula(-0.5, bx, cx)
+//
+//        var resulty1 = quadraticFormula(0.5, by, cy)
+//        var resulty2 = quadraticFormula(-0.5, by, cy)
+//
+//        //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
+//        //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
+//
+//        return Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2))
+        return 0.0;
+    }
 
+    //    fun pythagorean(a : Double, b : Double) : Double{
+    //        var result = Math.pow(a, 2.0) + Math.pow(b, 2.0)
+    //        return Math.sqrt(result)
+    //    }
 
-    // distance is equal to heuristic, since each step has cost of 1
-    override fun distance(state: RaceTrackState) = heuristic(state)
+    fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
+        if(Math.pow(b, 2.0) - 4 * a * c < 0.0)
+            return Double.MAX_VALUE
 
+        var result1 = -1 * b + Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
+        result1 /= (2 * a)
+
+        var result2 = -1 * b - Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
+        result2 /= (2 * a)
+        if(result1 < 0.0 && result2 >= 0.0)
+            return result2;
+        if(result2 < 0.0 && result1 >= 0.0)
+            return result1;
+
+        if(result1 < 0.0 && result2 < 0.0)
+            return Double.MAX_VALUE;
+
+        return Math.max(result1, result2)
+    }
+
+    override fun distance(state: RaceTrackState): Double {
+        //Distance Formula
+//        return (Math.sqrt(
+//                Math.pow((endLocation.x) - state.loc.x, 2.0)
+//                        + Math.pow((endLocation.y) - state.loc.y, 2.0)) - goalRadius)
+        return 0.0;
+    }
 
     override fun isGoal(state: RaceTrackState): Boolean {
-        val newLocation = Location(state.x, state.y)
-        return newLocation in finish_line
+        //        val curXLoc = (state.x * 2).toInt() / 2.0
+        //        val curYLoc = (state.y * 2).toInt() / 2.0
+        //
+        //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+        //
+        //
+        //
+        //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+        //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
+        return distance(state) <= 0 //&& state.xdot == 0.0 && state.ydot == 0.0;
     }
 
     /**
