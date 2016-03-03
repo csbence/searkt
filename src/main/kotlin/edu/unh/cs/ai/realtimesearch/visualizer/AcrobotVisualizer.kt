@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.error
 import edu.unh.cs.ai.realtimesearch.logging.info
 import javafx.animation.Interpolator
@@ -158,25 +159,30 @@ class AcrobotVisualizer : Application() {
                 KeyValue(linkRotate1.angleProperty() as WritableValue<Any>, linkRotate1.angle),
                 KeyValue(linkRotate2.angleProperty() as WritableValue<Any>, linkRotate2.angle)))
 
-        var prevState = environment.getState().state
+        var previousState = environment.getState().state
         var time = timeStep
         for (action in actionList) {
             environment.step(action)
             val newState = environment.getState().state
-            val diff1 = Math.toDegrees(angleDifference(prevState.linkPosition1, newState.linkPosition1))
-            val diff2 = Math.toDegrees(angleDifference(prevState.linkPosition2, newState.linkPosition2))
-//            logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
+
+            val diff1 = Math.toDegrees(angleDifference(previousState.linkPosition1, newState.linkPosition1))
+            val diff2 = Math.toDegrees(angleDifference(previousState.linkPosition2, newState.linkPosition2)) + diff1
+
             val newRotate1 = linkRotate1.clone()
             val newRotate2 = linkRotate2.clone()
             newRotate1.onTransformChanged = linkRotate1.onTransformChanged
+
             link1.transforms.add(newRotate1)
             link2.transforms.add(newRotate2)
+
+            logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
             keyFrames.add(KeyFrame(Duration.seconds(time),
-                    KeyValue(newRotate1.angleProperty() as WritableValue<Any>, diff1, Interpolator.LINEAR),
-                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>, diff2, Interpolator.LINEAR)))
+                    KeyValue(newRotate1.angleProperty() as WritableValue<Any>, diff1, CustomEaseInInterpolator(previousState.calculateLinkAcceleration1(action))),
+                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>, diff2, CustomEaseInInterpolator(previousState.calculateLinkAcceleration2(action)))))
+
             time += timeStep
-            prevState = newState
+            previousState = newState
         }
         timeline.play()
     }
