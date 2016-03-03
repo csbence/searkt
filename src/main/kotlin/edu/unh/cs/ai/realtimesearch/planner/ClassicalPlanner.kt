@@ -1,9 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.planner.classical
+package edu.unh.cs.ai.realtimesearch.planner
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.Planner
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,14 +13,17 @@ import org.slf4j.LoggerFactory
  *
  * @param domain is the domain to plan in
  */
-abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner, ClassicalPlanner<StateType> {
+abstract class ClassicalPlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
-    private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
-    private var generatedNodes = 0
-    private var expandedNodes = 0
+    private val logger = LoggerFactory.getLogger(ClassicalPlanner::class.java)
+
+    public var generatedNodes = 0
+    public var expandedNodes = 0
 
     data class Node<State>(val parent: Node<State>?, val state: State,
                            val action: Action?, val cost: Double)
+
+    /** Interface3 functions **/
 
     /**
      * Resets all variables in the planner. Called before a new planning task
@@ -58,7 +61,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    override fun plan(state: StateType): List<Action> {
+    fun plan(state: StateType): List<Action> {
         // get ready / reset for plan
         reset()
 
@@ -71,9 +74,6 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
         return extractPlan(currentNode)
     }
 
-
-    var timestamp = 0L
-
     /**
      * Expands single node and generates the sucessor nodes
      *
@@ -83,8 +83,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
     public fun expandNode(node: Node<StateType>): Node<StateType> {
         expandedNodes += 1
         if (expandedNodes % 100000 == 0) {
-            println(System.currentTimeMillis() - timestamp)
-            timestamp = System.currentTimeMillis()
+            logger.debug { "expanded: $expandedNodes " }
         }
 
         // expand (only those not visited yet)
@@ -126,17 +125,9 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * Forcefully resets the planner to initial state, with no prior search
      * history or generated node.
      */
-    fun reset() {
+    public fun reset() {
         generatedNodes = 0
         expandedNodes = 0
         initiatePlan()
-    }
-
-    override fun getExpandedNodeCount(): Int {
-        return expandedNodes
-    }
-
-    override fun getGeneratedNodeCount(): Int {
-        return generatedNodes
     }
 }

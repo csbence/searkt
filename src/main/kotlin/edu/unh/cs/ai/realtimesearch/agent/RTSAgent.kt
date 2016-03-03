@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.agent
 
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 
 /**
  * An agent for RTS experiments. In RTS the agent is repeatedly asked to provide

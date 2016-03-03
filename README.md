@@ -49,7 +49,24 @@ by vacuuming those cells.
 State space: (x,y, {dirty locations})
 Actions: up, down, left, right, vacuum 
 
+### RaceTrack (from [1])
 
+A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a 
+starting and finish line. The goal is for the car to reach the finish line from the start location.
+
+Whenever the car hits a track boundary, it will be put back on a random position on the starting line with 0 velocity.
+
+
+State space: (x, y, x. [-1,0,1], y. [-1,0,1])
+Actions: Acceleration in x and y (x. and y.) of [-1,0,1]
+Dynamics:       x(t+1) = x(t) + x.(t) + m(x,t)
+                y(t+1) = y(t) + y.(t) + m(y,t)
+                x.(t+1) = x.(t) + m(x,t)
+                y.(t+1) = y.(t) + m(y,t)
+Stochasticity:  p: with probability p the system will ignore the action: (m(x,t),m(y,t)) = (0,0) with probability p 
+
+
+[1] Barto, Andrew G., Steven J. Bradtke, and Satinder P. Singh. "Learning to act using real-time dynamic programming." Artificial Intelligence 72.1 (1995): 81-138.
  
 
 

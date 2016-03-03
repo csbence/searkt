@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
+import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClosedListPlanner
 import java.util.*
 
@@ -14,7 +14,7 @@ import java.util.*
  * @param domain: is the domain to be planned in
  * @param openList is the list used for deciding which nodes to expand upon
  */
-open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val openList: PriorityQueue<ClassicalPlannerBase.Node<StateType>>) :
+open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val openList: PriorityQueue<ClassicalPlanner.Node<StateType>>) :
         ClosedListPlanner<StateType>(domain) {
 
     /**

@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
+import edu.unh.cs.ai.realtimesearch.planner.ClassicalPlanner
 import java.util.*
 
 /**
@@ -10,7 +10,7 @@ import java.util.*
  *
  * @param domain is the domain to plan in
  */
-class DepthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlannerBase<StateType>(domain) {
+class DepthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalPlanner<StateType>(domain) {
 
     private val openList: Deque<Node<StateType>> = LinkedList()
 
