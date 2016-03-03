@@ -15,10 +15,7 @@ import java.util.*
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
                             val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotWithInertiaState> {
 
-//    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
-//    val maxSpeed = 5
-//    val minSpeed = maxSpeed * -1
 
     fun getAllActions() : ArrayList<PointRobotWithInertiaAction>{
         var a = ArrayList<PointRobotWithInertiaAction>()
@@ -43,11 +40,6 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
 
         for (it in actions) {
-//            if(it.xDoubleDot + state.xdot > maxSpeed || it.xDoubleDot + state.xdot < minSpeed
-//                    || it.yDoubleDot + state.ydot > maxSpeed || it.yDoubleDot + state.ydot < minSpeed) {
-//                continue;
-//            }
-
             val nSteps = 10
             val dt = 1.0/nSteps
             var valid = true
@@ -57,35 +49,20 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             var ydot = state.ydot
 
             for (i in 1..nSteps) {
-//                var xdot = state.xdot + (it.xDoubleDot * (dt* i));
-//                var ydot = state.ydot + (it.yDoubleDot * (dt* i));
-
                 xdot += it.xDoubleDot * dt
                 ydot += it.yDoubleDot * dt
                 x += xdot * dt;
                 y += ydot * dt;
 
-
                 if (!isLegalLocation(x, y)) {
                     valid = false;
                     break;
                 }
-
-//                println("" + x + " " + y + " " + xdot + " " + ydot)
-
-
             }
 
             if (valid) {
-
-//                    println("" + state.x + " " + state.y + " " + state.xdot + " " + state.ydot)
-//                    println("" + (state.loc.x + state.xdot) + " " + y + " " + (state.xdot + it.xDoubleDot) + " " + (state.ydot + it.yDoubleDot) + " " + it.xDoubleDot + " " + it.yDoubleDot)
-//                println("" + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot) );// + " " + (state.x + state.xdot) + " " + (state.y + state.ydot))
-
-//                println("dot " + (it.xDoubleDot + state.xdot) + " " + (it.yDoubleDot + state.ydot))
-//                println("loc " + x + " " + y )
                 successors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(DoubleLocation(x, y/*state.loc.x + state.xdot, state.loc.y + state.ydot*/), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
+                        PointRobotWithInertiaState(DoubleLocation(x, y), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         1.0));
             }
@@ -143,11 +120,6 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         return retval
     }
 
-//    fun pythagorean(a : Double, b : Double) : Double{
-//        var result = Math.pow(a, 2.0) + Math.pow(b, 2.0)
-//        return Math.sqrt(result)
-//    }
-
     fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
         if(Math.pow(b, 2.0) - 4 * a * c < 0.0)
             return Double.MAX_VALUE
@@ -176,15 +148,6 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     override fun isGoal(state: PointRobotWithInertiaState): Boolean {
-        //        val curXLoc = (state.x * 2).toInt() / 2.0
-        //        val curYLoc = (state.y * 2).toInt() / 2.0
-        //
-        //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
-        //
-        //
-        //
-        //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
-        //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
         return distance(state) <= 0 && state.xdot == 0.0 && state.ydot == 0.0;
     }
 

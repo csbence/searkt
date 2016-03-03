@@ -15,6 +15,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.RacetrackVisualizer
 import javafx.application.Application
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
@@ -30,9 +32,9 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
 
     if(args.isEmpty()){
-        val instanceFileName = "input/pointrobot/wall.pr"
+        val instanceFileName = "input/racetrack/barto-big.track"
         val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration("point robot with inertia", rawDomain, "A*", 1, "time", 10)
+        val manualConfiguration = ManualConfiguration("race track", rawDomain, "A*", 1, "time", 10)
         manualConfiguration.setValue("lookahead depth limit", 4)
         val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
@@ -42,7 +44,7 @@ fun main(args: Array<String>) {
         for(action in actionList){
             params.add(action.toString())
         }
-        Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
+        Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
     }
     else{
         /* create options */
