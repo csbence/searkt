@@ -93,18 +93,11 @@ open class AcrobotVisualizer : Application() {
         // Add everything to the stage
         val rootPane = Pane()
         rootPane.children.addAll(visualAcrobot.getNodes())
-//        rootPane.children.add(link1)
-//        rootPane.children.add(link2)
-//        rootPane.children.add(joint1)
-//        rootPane.children.add(joint2)
 
         primaryStage.scene = Scene(rootPane, WIDTH, HEIGHT)
         primaryStage.show()
 
-//        animateAcrobot(visualAcrobot, actionList, {state, action -> CustomEaseInInterpolator(state.calculateLinkAcceleration1(action))})
-//        animateAcrobot(visualAcrobot, actionList, {state, action -> Interpolator.SPLINE(0.5, 0.5, 1.0, 1.0)})
-//        animateAcrobot(visualAcrobot, actionList)
-        animateAcrobot(visualAcrobot, actionList, {state, action -> Interpolator.DISCRETE})
+        animateAcrobot(visualAcrobot, actionList)
     }
 
     protected open fun animateAcrobot(visualAcrobot: VisualAcrobot, actionList: List<AcrobotAction>,
@@ -114,13 +107,14 @@ open class AcrobotVisualizer : Application() {
         // TODO setup links according to initial state values
         val acrobot = DiscretizedAcrobot()
         val environment = DiscretizedAcrobotEnvironment(acrobot) // TODO read optional initial state from input
+        val sequentialTransition = SequentialTransition()
         @Suppress("UNCHECKED_CAST")
-        val timeline = Timeline(60.0, KeyFrame(Duration.ZERO,
+        sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.ZERO,
                 KeyValue(visualAcrobot.linkRotate1.angleProperty() as WritableValue<Any>, visualAcrobot.linkRotate1.angle),
-                KeyValue(visualAcrobot.linkRotate2.angleProperty() as WritableValue<Any>, visualAcrobot.linkRotate2.angle)))
+                KeyValue(visualAcrobot.linkRotate2.angleProperty() as WritableValue<Any>, visualAcrobot.linkRotate2.angle))))
 
         var previousState = environment.getState().state
-        var time = timeStep
+        val time = timeStep
         for (action in actionList) {
             environment.step(action)
             val newState = environment.getState().state
@@ -133,14 +127,13 @@ open class AcrobotVisualizer : Application() {
 
             logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            timeline.keyFrames.add(KeyFrame(Duration.seconds(time),
+            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(time),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, getInterpolator1(previousState, action)),
-                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, getInterpolator2(previousState, action))))
+                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, getInterpolator2(previousState, action)))))
 
-            time += timeStep
             previousState = newState
         }
-        timeline.play()
-        return timeline
+        sequentialTransition.play()
+        return sequentialTransition
     }
 }
