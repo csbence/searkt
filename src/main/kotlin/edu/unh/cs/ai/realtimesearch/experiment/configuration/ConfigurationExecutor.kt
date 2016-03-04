@@ -20,8 +20,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 
 /**
  * Configuration executor to execute experiment configurations.
