@@ -12,7 +12,7 @@ import java.util.*
  */
 class BreadthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClosedListPlanner<StateType>(domain) {
 
-    private val openList: Deque<Node<StateType>> = ArrayDeque()
+    private val openList: Deque<Node<StateType>> = LinkedList()
 
     /**
      * Clears open list

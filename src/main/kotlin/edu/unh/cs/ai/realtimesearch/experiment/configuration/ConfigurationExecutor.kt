@@ -20,8 +20,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.RealTimeAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 
 /**
  * Configuration executor to execute experiment configurations.
@@ -86,7 +86,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): List<ExperimentResult> {
-        val aStarPlanner = AStarPlanner(domain)
+        val aStarPlanner = ClassicalAStarPlanner(domain)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment<StateType>(experimentConfiguration, classicalAgent, domain, initialState)
 

@@ -45,9 +45,10 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
             val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
 
             // log results
-            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.getExpandedNodeCount()} expanded and ${agent.planner.getGeneratedNodeCount()} generated nodes in $timeInMillis. (${agent.planner.getExpandedNodeCount() * 1000L / timeInMillis})" }
+            logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes" }
 
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.getExpandedNodeCount(), agent.planner.getGeneratedNodeCount(), timeInMillis, actions))
+
+            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
         }
 
         return results

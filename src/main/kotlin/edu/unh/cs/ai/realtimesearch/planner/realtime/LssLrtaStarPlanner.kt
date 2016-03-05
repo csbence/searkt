@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
@@ -9,6 +9,7 @@ import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
 import kotlin.comparisons.compareBy
 import kotlin.system.measureTimeMillis
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 
 /**
  * Local Search Space Learning Real Time Search A*, a type of RTS planner.
