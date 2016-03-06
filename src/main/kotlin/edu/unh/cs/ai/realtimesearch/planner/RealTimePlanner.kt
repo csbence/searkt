@@ -24,7 +24,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * @param terminationChecker provides the termination criteria
      * @return an action for current state
      */
-    abstract fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action>
+    abstract fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action<StateType>>
 
     /**
      * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare

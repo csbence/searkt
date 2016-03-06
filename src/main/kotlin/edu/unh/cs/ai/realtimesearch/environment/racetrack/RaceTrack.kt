@@ -1,11 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotAction
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
-import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -30,7 +28,6 @@ class RaceTrack(val width: Int,
                 val track: Set<Location>,
                 val finish_line: Set<Location>
                 ) : Domain<RaceTrackState> {
-
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
@@ -132,6 +129,10 @@ class RaceTrack(val width: Int,
      */
     override fun randomState(): RaceTrackState {
         throw UnsupportedOperationException("Random state not implemented for racetrack domain")
+    }
+
+    override fun actionDuration(action: Action<RaceTrackState>) {
+        throw UnsupportedOperationException()
     }
 }
 

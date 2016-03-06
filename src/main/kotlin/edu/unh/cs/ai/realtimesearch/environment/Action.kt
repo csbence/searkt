@@ -1,4 +1,4 @@
 package edu.unh.cs.ai.realtimesearch.environment
 
-interface Action
-object NoOperationAction : Action
+interface Action<ReceiverState : State<ReceiverState>>
+class NoOperationAction<ReceiverState : State<ReceiverState>> : Action<ReceiverState>

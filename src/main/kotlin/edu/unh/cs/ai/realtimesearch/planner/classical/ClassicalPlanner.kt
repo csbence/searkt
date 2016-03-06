@@ -12,5 +12,5 @@ interface ClassicalPlanner<StateType : State<StateType>> : Planner {
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    fun plan(state: StateType): List<Action>
+    fun plan(state: StateType): List<Action<StateType>>
 }

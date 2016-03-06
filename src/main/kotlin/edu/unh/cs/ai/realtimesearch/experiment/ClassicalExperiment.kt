@@ -30,7 +30,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
                                                         val initState: State<StateType>? = null) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
-    private var actions: List<Action> = emptyList()
+    private var actions: List<Action<StateType>> = emptyList()
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created

@@ -35,7 +35,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
-        val actions: MutableList<Action> = arrayListOf()
+        val actions: MutableList<Action<StateType>> = arrayListOf()
 
         // init for this run
         agent.reset()

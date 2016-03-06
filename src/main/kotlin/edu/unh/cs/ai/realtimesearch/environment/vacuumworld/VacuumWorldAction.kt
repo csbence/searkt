@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * @param index: the type of action, each return different relative locations
  */
-enum class VacuumWorldAction(val index: Int) : Action {
+enum class VacuumWorldAction(val index: Int) : Action<VacuumWorldState> {
     VACUUM(0), LEFT(1), DOWN(2), UP (3), RIGHT(4);
 
     // Storage of all relative locations (up down left right), returned by reference

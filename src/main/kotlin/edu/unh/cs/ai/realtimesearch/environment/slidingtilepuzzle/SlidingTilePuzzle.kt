@@ -1,11 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.lang.Math.abs
 
 class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
+
     override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
         val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzleState>> = arrayListOf()
 
@@ -72,5 +74,7 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         throw UnsupportedOperationException()
     }
 
-
+    override fun actionDuration(action: Action<SlidingTilePuzzleState>) {
+        throw UnsupportedOperationException()
+    }
 }

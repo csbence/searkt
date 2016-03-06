@@ -10,7 +10,7 @@ interface Environment<StateType : State<StateType>> {
      * Performs a step according to action a and current (maintained state)
      * @param action is the action taken
      */
-    public fun step(action: Action)
+    public fun step(action: Action<StateType>)
 
     /**
      * Returns current state

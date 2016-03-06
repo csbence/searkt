@@ -35,7 +35,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
     private var generatedNodes = 0
     private var expandedNodes = 0
 
-    inner class Node(val parent: Node?, val state: StateType, val action: Action?, val cost: Double) {
+    inner class Node(val parent: Node?, val state: StateType, val action: Action<StateType>?, val cost: Double) {
         internal val f: Double
 
         init {
@@ -43,7 +43,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
         }
     }
 
-    override fun plan(state: StateType): List<Action> {
+    override fun plan(state: StateType): List<Action<StateType>> {
         generatedNodes = 0
         expandedNodes = 0
         openList.clear();
@@ -81,8 +81,8 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
         throw GoalNotReachableException()
     }
 
-    protected fun extractPlan(leave: Node): List<Action> {
-        val actions: MutableList<Action> = arrayListOf()
+    protected fun extractPlan(leave: Node): List<Action<StateType>> {
+        val actions: MutableList<Action<StateType>> = arrayListOf()
 
         var node = leave
         // root will have null action. So as long as the parent
