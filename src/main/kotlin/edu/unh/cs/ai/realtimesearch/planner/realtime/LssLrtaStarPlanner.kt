@@ -89,8 +89,15 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     override fun reset() {
         super.reset()
 
-        // Ready to start new search!
         rootState = null
+
+        aStarPopCounter = 0
+        dijkstraPopCounter = 0
+        aStarTimer = 0L
+        dijkstraTimer = 0L
+
+        clearOpenList()
+        closedList.clear()
     }
 
     /**
@@ -116,7 +123,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             logger.error { "Inconsistent world state. Expected $rootState got $state" }
         }
 
-        // TODO check whether the given state is goal or not
+        if (domain.isGoal(state)) {
+            // The start state is the goal state
+            logger.warn { "selectAction: The goal state is already found." }
+            return emptyList()
+        }
 
         logger.info { "Root state: $state" }
         // Every turn learn then A* until time expires
@@ -289,7 +300,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "\nClosed list: ${closedList.size}" }
         closedList.forEach { logger.debug("$it") }
 
-        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) { // Closed list should be checked
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
+            // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
             dijkstraPopCounter++ // TODO remove
