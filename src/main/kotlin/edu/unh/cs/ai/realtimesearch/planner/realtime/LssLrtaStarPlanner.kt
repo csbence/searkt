@@ -1,9 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.logging.*
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
@@ -88,8 +89,15 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     override fun reset() {
         super.reset()
 
-        // Ready to start new search!
         rootState = null
+
+        aStarPopCounter = 0
+        dijkstraPopCounter = 0
+        aStarTimer = 0L
+        dijkstraTimer = 0L
+
+        clearOpenList()
+        closedList.clear()
     }
 
     /**
@@ -115,7 +123,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             logger.error { "Inconsistent world state. Expected $rootState got $state" }
         }
 
-        // TODO check whether the given state is goal or not
+        if (domain.isGoal(state)) {
+            // The start state is the goal state
+            logger.warn { "selectAction: The goal state is already found." }
+            return emptyList()
+        }
 
         logger.info { "Root state: $state" }
         // Every turn learn then A* until time expires
@@ -152,7 +164,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val expandedNodes = measureInt({ expandedNodes }) {
+        val expandedNodes = measureInt({ expandedNodeCount }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
                 aStarPopCounter++
                 currentNode = popOpenList()
@@ -185,7 +197,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * state has not been seen before, or is found with a lower g value
      */
     private fun expandFromNode(node: Node<StateType>) {
-        expandedNodes += 1
+        expandedNodeCount += 1
         closedList.add(node)
 
         val currentGValue = node.cost
@@ -212,7 +224,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val successorGValue = successorNode.cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorGValue > successorGValueFromCurrent) {
-                generatedNodes += 1
+                generatedNodeCount += 1
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
@@ -288,7 +300,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "\nClosed list: ${closedList.size}" }
         closedList.forEach { logger.debug("$it") }
 
-        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) { // Closed list should be checked
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
+            // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
             dijkstraPopCounter++ // TODO remove

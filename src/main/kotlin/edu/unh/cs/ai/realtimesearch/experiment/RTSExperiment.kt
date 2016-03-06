@@ -27,46 +27,42 @@ import org.slf4j.LoggerFactory
 class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: ExperimentConfiguration? = null,
                                                   val agent: RTSAgent<StateType>,
                                                   val world: Environment<StateType>,
-                                                  val terminationChecker: TerminationChecker,
-                                                  runs: Int = 1) : Experiment(runs) {
+                                                  val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 
     /**
      * Runs the experiment
      */
-    override fun run(): List<ExperimentResult> {
-        val results: MutableList<ExperimentResult> = arrayListOf()
+    override fun run(): ExperimentResult {
+        val actions: MutableList<Action> = arrayListOf()
 
-        for (run in 1..runs) {
-            val actions: MutableList<Action> = arrayListOf()
+        // init for this run
+        agent.reset()
+        world.reset()
 
-            // init for this run
-            agent.reset()
-            world.reset()
+        logger.info { "Starting experiment from state ${world.getState()}" }
+        var totalTimeInMillis = 0L
 
-            logger.info { "Starting experiment $run from state ${world.getState()}" }
+        while (!world.isGoal()) {
             val timeInMillis = kotlin.system.measureTimeMillis {
-                while (!world.isGoal()) {
+                terminationChecker.init()
+                //                    System.gc() // Hint garbage collection to improve real time performance
 
-                    terminationChecker.init()
-//                    System.gc() // Hint garbage collection to improve real time performance
+                val actionList = agent.selectAction(world.getState(), terminationChecker);
 
-                    val actionList = agent.selectAction(world.getState(), terminationChecker);
+                actions.addAll(actionList)
 
-                    actions.addAll(actionList)
+                logger.info { "Agent return action $actionList to state ${world.getState()}" }
 
-                    logger.info { "Agent return action $actionList to state ${world.getState()}" }
-
-                    actionList.forEach { world.step(it) }
-
-                }
+                actionList.forEach { world.step(it) }
             }
 
-            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes in $timeInMillis. (${agent.planner.expandedNodes * 1000 / timeInMillis})" }
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, timeInMillis, actions))
+            totalTimeInMillis += timeInMillis
+            System.gc()
         }
 
-        return results
+        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
+        return ExperimentResult(experimentConfiguration, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions)
     }
 }

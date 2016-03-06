@@ -9,8 +9,8 @@ class SlidingTilePuzzleIOTest {
 
     @Test
     fun testParseFromStream() {
-        val file = File("input/tiles/korf/5/1")
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(FileInputStream(file))
+        val stream = SlidingTilePuzzleIOTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/5/1")
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(stream)
         val slidingTilePuzzle = slidingTilePuzzleInstance.domain
         val startState = slidingTilePuzzleInstance.initialState
 

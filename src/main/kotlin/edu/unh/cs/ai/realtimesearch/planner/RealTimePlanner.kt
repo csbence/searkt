@@ -1,10 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.Planner
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -15,8 +14,8 @@ import edu.unh.cs.ai.realtimesearch.planner.Planner
  */
 abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
-    var generatedNodes = 0
-    var expandedNodes = 0
+    override var generatedNodeCount = 0
+    override var expandedNodeCount = 0
 
     /**
      * Returns an action while abiding the termination checker's criteria.
@@ -35,8 +34,8 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * NOTE: do not forget to call super.reset() when implementing this. Will reset the node count
      */
     open fun reset() {
-        generatedNodes = 0
-        expandedNodes = 0
+        generatedNodeCount = 0
+        expandedNodeCount = 0
     }
 
 }

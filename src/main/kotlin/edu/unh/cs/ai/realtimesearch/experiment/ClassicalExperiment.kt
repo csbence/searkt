@@ -27,30 +27,24 @@ import org.slf4j.LoggerFactory
 class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: ExperimentConfiguration,
                                                         val agent: ClassicalAgent<StateType>,
                                                         val domain: Domain<StateType>,
-                                                        val initState: State<StateType>? = null,
-                                                        runs: Int = 1) : Experiment(runs) {
+                                                        val initState: State<StateType>? = null) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
 
-    override fun run(): List<ExperimentResult> {
-        val results: MutableList<ExperimentResult> = arrayListOf()
+    override fun run(): ExperimentResult {
+        // do experiment on state, either given or randomly created
+        val state: StateType = initState?.copy() ?: domain.randomState()
+        logger.warn { "Starting experiment with state $state on agent $agent" }
 
-        for (run in 1..runs) {
-            // do experiment on state, either given or randomly created
-            val state: StateType = initState?.copy() ?: domain.randomState()
-            logger.warn { "Starting experiment run $run with state $state on agent $agent" }
+        // TODO: complains should be from kotlin.system, but does not seem to exist
+        val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
 
-            // TODO: complains should be from kotlin.system, but does not seem to exist
-            val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
+        // log results
+        logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
-            // log results
-            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.getExpandedNodeCount()} expanded and ${agent.planner.getGeneratedNodeCount()} generated nodes in $timeInMillis. (${agent.planner.getExpandedNodeCount() * 1000L / timeInMillis})" }
 
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.getExpandedNodeCount(), agent.planner.getGeneratedNodeCount(), timeInMillis, actions))
-        }
-
-        return results
+        return ExperimentResult(experimentConfiguration, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions)
 
     }
 }

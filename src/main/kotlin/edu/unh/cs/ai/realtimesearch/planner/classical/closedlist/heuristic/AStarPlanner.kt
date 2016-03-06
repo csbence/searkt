@@ -3,9 +3,9 @@ package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -17,6 +17,9 @@ import java.util.*
 class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) : ClassicalPlanner<StateType> {
 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
+
+    override var generatedNodeCount = 0
+    override var expandedNodeCount = 0
 
     private val openList = PriorityQueue { lhs: Node, rhs: Node ->
         when {
@@ -91,13 +94,4 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
 
         return actions.reversed() // we are adding actions in wrong order, to return the reverser
     }
-
-    override fun getExpandedNodeCount(): Int {
-        return expandedNodes
-    }
-
-    override fun getGeneratedNodeCount(): Int {
-        return generatedNodes
-    }
-
 }
