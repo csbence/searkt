@@ -99,7 +99,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
         while (openList.isNotEmpty()) {
             val miniminNode = openList.remove()
-            expandedNodes++
+            expandedNodeCount++
 
             if (terminationChecker.reachedTermination()) {
                 return null
@@ -122,7 +122,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                     bestAvailable = Math.min(bestAvailable, successorCost)
                 } else {
                     openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, miniminNode.depth - 1))
-                    generatedNodes++
+                    generatedNodeCount++
                 }
             }
         }

@@ -14,8 +14,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
  */
 abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
 
-    var generatedNodes = 0
-    var expandedNodes = 0
+    override var generatedNodeCount = 0
+    override var expandedNodeCount = 0
 
     /**
      * Returns an action while abiding the termination checker's criteria.
@@ -34,8 +34,8 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * NOTE: do not forget to call super.reset() when implementing this. Will reset the node count
      */
     open fun reset() {
-        generatedNodes = 0
-        expandedNodes = 0
+        generatedNodeCount = 0
+        expandedNodeCount = 0
     }
 
 }

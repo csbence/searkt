@@ -66,8 +66,8 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
                 System.gc()
             }
 
-            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodes} expanded and ${agent.planner.generatedNodes} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodes * 1000 / totalTimeInMillis})" }
-            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodes, agent.planner.generatedNodes, totalTimeInMillis, actions))
+            logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
+            results.add(ExperimentResult(experimentConfiguration, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions))
         }
 
         return results

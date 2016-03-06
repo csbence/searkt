@@ -4,12 +4,12 @@ import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.logging.*
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
 import kotlin.comparisons.compareBy
 import kotlin.system.measureTimeMillis
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 
 /**
  * Local Search Space Learning Real Time Search A*, a type of RTS planner.
@@ -153,7 +153,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val expandedNodes = measureInt({ expandedNodes }) {
+        val expandedNodes = measureInt({ expandedNodeCount }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
                 aStarPopCounter++
                 currentNode = popOpenList()
@@ -186,7 +186,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * state has not been seen before, or is found with a lower g value
      */
     private fun expandFromNode(node: Node<StateType>) {
-        expandedNodes += 1
+        expandedNodeCount += 1
         closedList.add(node)
 
         val currentGValue = node.cost
@@ -213,7 +213,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val successorGValue = successorNode.cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorGValue > successorGValueFromCurrent) {
-                generatedNodes += 1
+                generatedNodeCount += 1
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
