@@ -1,16 +1,14 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import org.junit.Test
-import java.io.File
-import java.io.FileInputStream
 import kotlin.test.assertTrue
 
 class VacuumWorldIOTest {
 
     @Test
     fun parseFromStreamCupsTest() {
-        val file = File("input/vacuum/cups.vw")
-        val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(file))
+        val stream = VacuumWorldIOTest::class.java.classLoader.getResourceAsStream("input/vacuum/cups.vw")
+        val vacuumWorldInstance = VacuumWorldIO.parseFromStream(stream)
         val startState = vacuumWorldInstance.initialState
         val agentLocation = startState.agentLocation
 
