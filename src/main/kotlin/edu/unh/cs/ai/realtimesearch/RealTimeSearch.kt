@@ -2,11 +2,9 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
-import edu.unh.cs.ai.realtimesearch.visualizer.VacuumVisualizer
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Options
-import javafx.application.Application
 import java.io.File
 import java.io.PrintWriter
 import java.net.InetAddress
@@ -23,10 +21,10 @@ fun main(args: Array<String>) {
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
         val manualConfiguration = ManualConfiguration("grid world", rawDomain, "RTA*", 1, "time", 10)
         manualConfiguration.setValue("lookahead depth limit", 4)
-        val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+        val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
         val params: MutableList<String> = arrayListOf()
-        val actionList = resultList.first().actions
+        val actionList = experimentResult.actions
 
         params.add(rawDomain)
         for (action in actionList) {
@@ -35,7 +33,7 @@ fun main(args: Array<String>) {
 
         //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
         //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+//        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 
     } else {
