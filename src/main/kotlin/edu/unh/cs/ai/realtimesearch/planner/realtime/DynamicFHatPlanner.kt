@@ -1,10 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.logging.*
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
+import java.lang.Math.max
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
 import kotlin.comparisons.compareBy
@@ -81,6 +83,9 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var aStarTimer = 0L
     private var dijkstraTimer = 0L
 
+    private var heuristicError = 0.0
+    private var distanceError = 0.0
+
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
@@ -88,8 +93,17 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     override fun reset() {
         super.reset()
 
-        // Ready to start new search!
         rootState = null
+
+        aStarPopCounter = 0
+        dijkstraPopCounter = 0
+        aStarTimer = 0L
+        dijkstraTimer = 0L
+        heuristicError = 0.0
+        distanceError = 0.0
+
+        clearOpenList()
+        closedList.clear()
     }
 
     /**
@@ -115,15 +129,20 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             logger.error { "Inconsistent world state. Expected $rootState got $state" }
         }
 
-        // TODO check whether the given state is goal or not
+        if (domain.isGoal(state)) {
+            // The start state is the goal state
+            logger.warn { "selectAction: The goal state is already found." }
+            return emptyList()
+        }
 
         logger.info { "Root state: $state" }
-        // Every turn learn then A* until time expires
 
+        // Learning phase
         if (closedList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
+        // Exploration phase
         var plan: List<Action>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
@@ -145,14 +164,13 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), domain.distance(state), 0.0, 0.0, NoOperationAction, iterationCounter)
-        nodes[state] = node
-        //        costTable.put(state, 0.0) TODO
+        val node = Node(state, domain.heuristic(state), domain.distance(state), 0.0, 0.0, NoOperationAction, iterationCounter) // Create root node
+        nodes[state] = node // Add root node to the node table
         var currentNode = node
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val expandedNodes = measureInt({ expandedNodes }) {
+        val expandedNodes = measureInt({ expandedNodeCount }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
                 aStarPopCounter++
                 currentNode = popOpenList()
@@ -182,18 +200,24 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Expands a node and add it to closed list. For each successor
      * it will add it to the open list and store it's g value, as long as the
-     * state has not been seen before, or is found with a lower g value
+     * state has not been seen before, or is found with a lower g value.
+     *
+     * During the expansion the child with the minimum f value is selected and used to update the distance and heuristic error.
+     *
      */
-    private fun expandFromNode(node: Node<StateType>) {
-        expandedNodes += 1
-        closedList.add(node)
+    private fun expandFromNode(parentNode: Node<StateType>) {
+        expandedNodeCount += 1
+        closedList.add(parentNode)
 
-        val currentGValue = node.cost
-        for (successor in domain.successors(node.state)) {
+        // Select the best children to update the distance and heuristic error
+        var bestChildNode: Node<StateType>? = null
+
+        val currentGValue = parentNode.cost
+        for (successor in domain.successors(parentNode.state)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
-            val successorNode = getNode(node, successor)
+            val successorNode = getNode(parentNode, successor)
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -206,23 +230,23 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = node, action = successor.action, actionCost = successor.actionCost))
+            successorNode.predecessors.add(Edge(node = parentNode, action = successor.action, actionCost = successor.actionCost))
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValue = successorNode.cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorGValue > successorGValueFromCurrent) {
-                generatedNodes += 1
+                generatedNodeCount++
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
                     cost = successorGValueFromCurrent
-                    parent = node
+                    parent = parentNode
                     action = successor.action
                     actionCost = successor.actionCost
                 }
 
-                logger.debug { "Expanding from $node --> $successorState :: open list size: ${openList.size}" }
+                logger.debug { "Expanding from $parentNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!inOpenList(successorNode)) {
@@ -230,9 +254,18 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             } else {
                 logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${node.cost}), and action cost ${successor.actionCost}"
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${parentNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
+        }
+
+        if (bestChildNode != null) {
+            val localHeuristicError = max(0.0, bestChildNode.heuristic - parentNode.heuristic) // should be f - f
+            val localDistanceError = max(0.0, bestChildNode.distance - parentNode.distance + 1) //
+
+            // TODO update error
+
+
         }
     }
 
@@ -289,7 +322,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "\nClosed list: ${closedList.size}" }
         closedList.forEach { logger.debug("$it") }
 
-        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) { // Closed list should be checked
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
+            // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
             dijkstraPopCounter++ // TODO remove
