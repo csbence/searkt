@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
-import edu.unh.cs.ai.realtimesearch.visualizer.VaccumVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.VacuumVisualizer
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Options
@@ -14,11 +14,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.system.exitProcess
 
+class Input
+
 fun main(args: Array<String>) {
 
-    if (args.isEmpty()) {
-        val instanceFileName = "input/vacuum/maze.vw"
-        val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
+    if (args.size < 2) {
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
+        val rawDomain = Scanner(input).useDelimiter("\\Z").next();
         val manualConfiguration = ManualConfiguration("grid world", rawDomain, "RTA*", 1, "time", 10)
         manualConfiguration.setValue("lookahead depth limit", 4)
         val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
@@ -33,7 +35,7 @@ fun main(args: Array<String>) {
 
         //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
         //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        Application.launch(VaccumVisualizer::class.java, *params.toTypedArray())
+        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 
     } else {
