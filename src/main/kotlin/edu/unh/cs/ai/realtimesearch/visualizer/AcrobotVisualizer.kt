@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.error
@@ -33,7 +35,7 @@ open class AcrobotVisualizer : Application() {
 //        val rawDomain = raw.first()
         var ghost: Boolean = false
         var start = 0
-
+        // TODO read configuration from file
         if (raw[0].equals("-g")) {
             ghost = true
             start += 1
@@ -112,8 +114,10 @@ open class AcrobotVisualizer : Application() {
         primaryStage.scene = Scene(rootPane, WIDTH, HEIGHT)
         primaryStage.show()
 
-        animateAcrobot(acrobotView, stateList)
-        
+        // Create the animations
+        val animations = mutableListOf<Animation>()
+        animations.add(animateAcrobot(acrobotView, stateList))
+
         // Animate a ghost acrobot if desired
         if (ghost) {
             val ghostAcrobot = AcrobotView(linkStartX1, linkStartY1, linkScaledLength1, linkWidth)
@@ -127,14 +131,18 @@ open class AcrobotVisualizer : Application() {
             ghostTransition.onFinished = EventHandler {
                 ghostAcrobot.isVisible = false
             }
+            animations.add(ghostTransition)
         }
+
+        // Play the animations
+        for(animation in animations)
+            animation.play()
     }
 
-    private fun getStateList(actionList: List<AcrobotAction>): List<AcrobotState> {
+    private fun getStateList(actionList: List<AcrobotAction>, acrobotConfiguration: AcrobotConfiguration = defaultAcrobotConfiguration): List<AcrobotState> {
         val stateList = mutableListOf<AcrobotState>()
-        // TODO setup links according to initial state values
-        val acrobot = DiscretizedAcrobot()
-        val environment = DiscretizedAcrobotEnvironment(acrobot) // TODO read optional initial state from input
+        val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
+        val environment = DiscretizedEnvironment(domain)
         for (action in actionList) {
             environment.step(action)
             stateList.add(environment.getState().state)
@@ -170,7 +178,7 @@ open class AcrobotVisualizer : Application() {
 
             previousState = newState
         }
-        sequentialTransition.play()
+//        sequentialTransition.play()
         return sequentialTransition
     }
 }
