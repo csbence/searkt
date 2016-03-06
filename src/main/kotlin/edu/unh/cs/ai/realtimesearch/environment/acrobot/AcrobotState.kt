@@ -14,8 +14,11 @@ val linkMomentOfInertia1: Double = 1.0
 val linkMomentOfInertia2: Double = 1.0
 val gravity: Double = 9.8
 
+val verticalUpAcrobotState = AcrobotState(Math.PI / 2, 0.0, 0.0, 0.0)
+val verticalDownAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
+
 // Initial state with both links pointed down
-val initialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
+val defaultInitialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
 
 fun roundOperation(number: Double, decimal: Double, op: (Double) -> Double): Double {
     val fraction = 1.0 / decimal
@@ -30,42 +33,30 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.
  * Instances of this class are immutable.
  */
-data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double) : DiscretizableState<AcrobotState> {
+data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double, val configuration: AcrobotStateConfiguration = defaultAcrobotStateConfiguration) : DiscretizableState<AcrobotState> {
 
     override fun copy() = copy(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
 
-    object limits {
-        // Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
-        val maxAngularVelocity1 = 4.0 * Math.PI
-        val maxAngularVelocity2 = 9.0 * Math.PI
-        val minAngularVelocity1 = -maxAngularVelocity1
-        val minAngularVelocity2 = -maxAngularVelocity2
-        // Angles naturally restricted to [0,2\pi)
-        val minAngle = 0.0
-        val maxAngle = 2 * Math.PI
-        // Discretization granularity for each state variable
-        val positionGranularity1 = 0.2992
-        val positionGranularity2 = 0.2992
-        val velocityGranularity1 = 0.1005
-        val velocityGranularity2 = 0.0754
-    }
+    // Angles naturally restricted to [0,2\pi)
+    val minAngle = 0.0
+    val maxAngle = 2 * Math.PI
 
     override fun discretize(): AcrobotState {
         return AcrobotState(
-                roundDownToDecimal(linkPosition1, AcrobotState.limits.positionGranularity1),
-                roundDownToDecimal(linkPosition2, AcrobotState.limits.positionGranularity2),
-                roundDownToDecimal(linkVelocity1, AcrobotState.limits.velocityGranularity1),
-                roundDownToDecimal(linkVelocity2, AcrobotState.limits.velocityGranularity2))
+                roundDownToDecimal(linkPosition1, configuration.positionGranularity1),
+                roundDownToDecimal(linkPosition2, configuration.positionGranularity2),
+                roundDownToDecimal(linkVelocity1, configuration.velocityGranularity1),
+                roundDownToDecimal(linkVelocity2, configuration.velocityGranularity2))
     }
 
     internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     fun calculateNextState(accelerations: Accelerations): AcrobotState {
-        var newLinkPosition1 = linkPosition1 + calculateDisplacement(accelerations.linkAcceleration1, linkVelocity1, timeStep)
-        var newLinkPosition2 = linkPosition2 + calculateDisplacement(accelerations.linkAcceleration2, linkVelocity2, timeStep)
-        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, linkVelocity1, timeStep)
-        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, linkVelocity2, timeStep)
+        var newLinkPosition1 = linkPosition1 + calculateDisplacement(accelerations.linkAcceleration1, linkVelocity1, configuration.timeStep)
+        var newLinkPosition2 = linkPosition2 + calculateDisplacement(accelerations.linkAcceleration2, linkVelocity2, configuration.timeStep)
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, linkVelocity1, configuration.timeStep)
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, linkVelocity2, configuration.timeStep)
 
         return AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2).adjustLimits()
     }
@@ -131,10 +122,10 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
      * returns a new state with any values that are outside of their limits adjusted to their closest limit.
      */
     fun adjustLimits(): AcrobotState {
-        val position1 = adjustCircularLimit(linkPosition1, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
-        val position2 = adjustCircularLimit(linkPosition2, AcrobotState.limits.minAngle, AcrobotState.limits.maxAngle)
-        val velocity1 = snapToLimit(linkVelocity1, AcrobotState.limits.minAngularVelocity1, AcrobotState.limits.maxAngularVelocity1)
-        val velocity2 = snapToLimit(linkVelocity2, AcrobotState.limits.minAngularVelocity2, AcrobotState.limits.maxAngularVelocity2)
+        val position1 = adjustCircularLimit(linkPosition1, minAngle, maxAngle)
+        val position2 = adjustCircularLimit(linkPosition2, minAngle, maxAngle)
+        val velocity1 = snapToLimit(linkVelocity1, configuration.minAngularVelocity1, configuration.maxAngularVelocity1)
+        val velocity2 = snapToLimit(linkVelocity2, configuration.minAngularVelocity2, configuration.maxAngularVelocity2)
         return AcrobotState(position1, position2, velocity1, velocity2)
     }
 }

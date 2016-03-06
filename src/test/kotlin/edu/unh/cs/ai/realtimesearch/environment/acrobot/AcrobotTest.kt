@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -44,9 +44,9 @@ class AcrobotTest {
     @Test
     fun testGoalHeuristic() {
         val acrobot = Acrobot()
-        val heuristic1 = acrobot.heuristic(Acrobot.goal.lowerBound)
-        val heuristic2 = acrobot.heuristic(Acrobot.goal.upperBound)
-        val heuristic3 = acrobot.heuristic(AcrobotState(Acrobot.goal.verticalLinkPosition1, Acrobot.goal.verticalLinkPosition2, 0.0, 0.0))
+        val heuristic1 = acrobot.heuristic(acrobot.configuration.endStateLowerBound)
+        val heuristic2 = acrobot.heuristic(acrobot.configuration.endStateUpperBound)
+        val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.linkPosition1, acrobot.configuration.endState.linkPosition2, 0.0, 0.0))
 
         assertTrue { doubleNearEquals(heuristic1, 0.0) }
         assertTrue { doubleNearEquals(heuristic2, 0.0) }
@@ -56,7 +56,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic1() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(Acrobot.goal.lowerBound - AcrobotState(AcrobotState.limits.positionGranularity1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(acrobot.configuration.endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
 
         assertTrue { heuristic > 0.0 }
     }
@@ -64,7 +64,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic2() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(Acrobot.goal.upperBound + AcrobotState(AcrobotState.limits.positionGranularity1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(acrobot.configuration.endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
         assertTrue { heuristic > 0.0 }
     }
 
@@ -80,7 +80,7 @@ class AcrobotTest {
     @Test
     fun testAStarDiscretized1() {
         val acrobot = DiscretizedAcrobot()
-        val initialState = DiscretizedState(initialAcrobotState)
+        val initialState = DiscretizedState(defaultInitialAcrobotState)
 
         val aStarAgent = ClassicalAgent(AStarPlanner(acrobot))
         val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, acrobot, initialState, 1)
@@ -100,25 +100,7 @@ class AcrobotTest {
 //        aStarExperiment.run()
 //    }
 
-    @Test
-    fun testLssLrtaStarDiscretized1() {
-        val acrobot = DiscretizedAcrobot()
-        val initialState = DiscretizedState(initialAcrobotState)
 
-        runLssLrtaStarDiscretized(initialState, acrobot)
-    }
-
-    private fun runLssLrtaStarDiscretized(initialState: DiscretizedState<AcrobotState>, acrobot: DiscretizedAcrobot) {
-        val environment = DiscretizedAcrobotEnvironment(acrobot, initialState)
-        val terminalCondition = CallsTerminationChecker(10)
-
-        val lsslrtaStarPlanner = LssLrtaStarPlanner(acrobot)
-
-        val lsslrtaStarAgent = RTSAgent(lsslrtaStarPlanner)
-        val lsslrtaStarExperiment = RTSExperiment(EmptyConfiguration, lsslrtaStarAgent, environment, terminalCondition)
-
-        lsslrtaStarExperiment.run()
-    }
 
 //    @Test
 //    fun testLssLrtaStar1() {

@@ -26,7 +26,7 @@ class AcrobotStateTest {
 
     @Test
     fun testAcceleration() {
-        val state = initialAcrobotState
+        val state = defaultInitialAcrobotState
 
         val (accelerationNone1, accelerationNone2) = state.calculateLinkAccelerations(AcrobotAction.NONE)
         assertTrue { doubleNearEquals(accelerationNone1, 0.0) }

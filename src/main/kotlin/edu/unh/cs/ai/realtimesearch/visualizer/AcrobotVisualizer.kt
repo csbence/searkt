@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory
 open class AcrobotVisualizer : Application() {
     private val logger = LoggerFactory.getLogger(AcrobotVisualizer::class.java)
 
+    private var acrobotConfiguration: AcrobotConfiguration = defaultAcrobotConfiguration
+
     override fun start(primaryStage: Stage) {
         primaryStage.title = "Acrobot Visualizer"
 
@@ -151,7 +153,7 @@ open class AcrobotVisualizer : Application() {
 
         val iterator = stateList.iterator()
         var previousState = iterator.next()
-        val time = timeStep
+        val time = acrobotConfiguration.stateConfiguration.timeStep
         while (iterator.hasNext()) {
             val newState = iterator.next()
             val diff1 = Math.toDegrees(angleDifference(previousState.linkPosition1, newState.linkPosition1))

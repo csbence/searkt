@@ -7,7 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 /**
  * The Acrobot domain with discretized states.
  */
-class DiscretizedAcrobot() : Domain<DiscretizedState<AcrobotState>> {
+class DiscretizedAcrobot(val configuration: AcrobotConfiguration = defaultAcrobotConfiguration) : Domain<DiscretizedState<AcrobotState>> {
     private val acrobot = Acrobot()
 
     /**
@@ -21,7 +21,7 @@ class DiscretizedAcrobot() : Domain<DiscretizedState<AcrobotState>> {
         for (action in AcrobotAction.values()) {
             // add the legal movement actions
             successors.add(SuccessorBundle(DiscretizedState(acrobot.calculateNextState(actualState, action)),
-                    action, actionCost = timeStep))
+                    action, actionCost = configuration.stateConfiguration.timeStep))
         }
 
         return successors
