@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
 
         //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
         //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-//        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+        //        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 
     } else {
@@ -85,24 +85,22 @@ private fun createCommandLineMenu(args: Array<String>) {
     val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
     val manualConfiguration = ManualConfiguration(domainName, rawDomain, algName,
             numRuns.toInt(), termType, termParam.toInt())
-    val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+    val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* output the results */
     val writer = PrintWriter(outFile, "UTF-8");
     val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
     val date = Date()
 
-    for (result in resultList) {
-        writer.println("Date: " + dateFormat.format(date))
-        writer.println("Hostname: " + InetAddress.getLocalHost().getHostName())
-        writer.println("Termination Type: " + termType)
-        writer.println("Termination parameter: " + termParam)
-        writer.println("Expanded nodes: " + result.expandedNodes)
-        writer.println("Generated nodes: " + result.generatedNodes)
-        writer.println("Time in millis: " + result.timeInMillis)
-        writer.println("Action list: " + result.actions)
-        writer.println("Path length: " + result.pathLength)
-    }
+    writer.println("Date: " + dateFormat.format(date))
+    writer.println("Hostname: " + InetAddress.getLocalHost().getHostName())
+    writer.println("Termination Type: " + termType)
+    writer.println("Termination parameter: " + termParam)
+    writer.println("Expanded nodes: " + result.expandedNodes)
+    writer.println("Generated nodes: " + result.generatedNodes)
+    writer.println("Time in millis: " + result.timeInMillis)
+    writer.println("Action list: " + result.actions)
+    writer.println("Path length: " + result.pathLength)
     writer.close()
 
     if (options.hasOption("v")) {
