@@ -7,21 +7,19 @@ import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import org.junit.Ignore
 import org.junit.Test
-import java.io.File
-import java.io.FileInputStream
 
 @Ignore
 class RealTimeAStarPlannerTest {
 
     @Test
     fun testRealTimeAStarPlanner() {
-        val instanceFileName = "input/vacuum/empty.vw"
-        val gridWorldInstance = GridWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
+        val stream = RealTimeAStarPlannerTest::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw")
+        val gridWorldInstance = GridWorldIO.parseFromStream(stream)
         val realTimeAStarPlanner = RealTimeAStarPlanner(gridWorldInstance.domain, 4)
         val realTimeAStarAgent = RTSAgent(realTimeAStarPlanner)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 
         val rtsExperiment = RTSExperiment(null, realTimeAStarAgent, gridWorldEnvironment, FakeTerminationChecker())
-        val experimentResults = rtsExperiment.run()
+        /*val experimentResults = */rtsExperiment.run()
     }
 }
