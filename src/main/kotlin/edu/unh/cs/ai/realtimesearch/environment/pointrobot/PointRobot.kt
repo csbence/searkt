@@ -1,9 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.*
 
 /**
@@ -11,8 +12,7 @@ import java.util.*
  */
 class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>,
                  val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotState> {
-
-//    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
+    //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
 
     fun getAllActions() : ArrayList<PointRobotAction>{
@@ -117,6 +117,10 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     }
 
     override fun randomState(): PointRobotState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun actionDuration(action: Action<PointRobotState>): Long {
         throw UnsupportedOperationException()
     }
 

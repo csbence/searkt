@@ -6,14 +6,18 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import groovy.json.JsonSlurper
 import java.io.InputStream
 import java.math.BigDecimal
+import java.util.*
 
 data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
                             val expandedNodes: Int = 0,
-                            val generatedNodes: Int = 0, val timeInMillis: Long = 0,
-                            val actions: List<Action> = emptyList(),
+                            val generatedNodes: Int = 0,
+                            val timeInMillis: Long = 0,
+                            val actions: List<Action<*>> = emptyList(),
                             val pathLength: Double? = null,
-                            val errorMessage: String? = null
-) {
+                            val errorMessage: String? = null,
+                            val values: Map<String, Any> = HashMap(),
+                            val timestamp: Long = System.currentTimeMillis(),
+                            val systemProperties: HashMap<String, String> = HashMap()) {
     companion object {
         fun fromStream(stream: InputStream): ExperimentResult = fromMap(JsonSlurper().parse(stream) as Map<*,*>)
         fun fromString(string: String): ExperimentResult = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
@@ -35,6 +39,15 @@ data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration
                     /*actionList,*/
                     pathLength = (map["pathLength"] as BigDecimal?)?.toDouble(),
                     errorMessage = map["errorMessage"] as String?)
+        }
+    }
+
+    init {
+        // Only initialize if empty
+        if (systemProperties.isEmpty()) {
+            System.getProperties().forEach {
+                systemProperties.put(it.key.toString(), it.value.toString())
+            }
         }
     }
 }

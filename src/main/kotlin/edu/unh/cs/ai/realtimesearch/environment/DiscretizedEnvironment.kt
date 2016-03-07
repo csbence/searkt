@@ -11,7 +11,7 @@ class DiscretizedEnvironment<StateType : DiscretizableState<StateType>,
     /**
      * Applies the action to the environment
      */
-    override fun step(action: Action) {
+    override fun step(action: Action<DiscretizedState<StateType>>) {
         var successorBundle = domain.successors(currentState)
 
         // get the state from the successors by filtering on action

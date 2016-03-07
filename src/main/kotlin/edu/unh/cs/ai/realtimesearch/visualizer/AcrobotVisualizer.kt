@@ -1,9 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
+import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
 import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
@@ -108,7 +105,6 @@ open class AcrobotVisualizer : Application() {
             copyActionList(AcrobotAction.fromResultString(text))
         } else {
             // Run the specified algorithm to retrieve path
-            val numRuns = 1
             val algorithm = cmd.getOptionValue(algorithmOption.opt)
             val terminationType = cmd.getOptionValue(terminationTypeOption.opt)
             val terminationParameters = cmd.getOptionValue(terminationParameterOption.opt)
@@ -116,11 +112,8 @@ open class AcrobotVisualizer : Application() {
                 throw IllegalArgumentException("Too few options provided to run algorithm")
 
             val manualConfiguration = ManualConfiguration("acrobot", acrobotConfiguration.toString(), algorithm,
-                    numRuns, terminationType, terminationParameters.toInt())
-            val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-            assert(resultList.size == numRuns)
-            assert(resultList.first().actions.size >= 1)
-            experimentResult = resultList.first()
+                    terminationType, terminationParameters.toInt())
+            experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
             actionListFromResult()
         }
     }
@@ -179,13 +172,18 @@ open class AcrobotVisualizer : Application() {
             animation.play()
     }
 
-    private fun getStateList(actionList: List<Action>, acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<AcrobotState> {
+    private fun getStateList(actionList: List<Action<AcrobotState>>, acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<AcrobotState> {
         val stateList = mutableListOf<AcrobotState>()
         val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
-        val environment = DiscretizedEnvironment(domain, DiscretizedState(acrobotConfiguration.initialState))
+        var currentState = DiscretizedState(acrobotConfiguration.initialState)
+        stateList.add(currentState.state)
         for (action in actionList) {
-            environment.step(action)
-            stateList.add(environment.getState().state)
+            var successorBundle = domain.successors(currentState)
+
+            // get the state from the successors by filtering on action
+            currentState = successorBundle.first { it.action == action }.state
+
+            stateList.add(currentState.state)
         }
         return stateList
     }

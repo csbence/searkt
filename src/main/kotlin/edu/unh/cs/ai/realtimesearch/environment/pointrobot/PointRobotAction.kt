@@ -9,7 +9,7 @@ import java.util.*
  *
  * @param index: the type of action, each return different relative locations
  */
-class PointRobotAction(val xdot : Double, val ydot : Double) : Action {
+class PointRobotAction(val xdot : Double, val ydot : Double) : Action<PointRobotState> {
 
     override fun toString(): String{
         return "(" + xdot + ", " + ydot + ")"

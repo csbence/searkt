@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location) : Domain<GridWorldState> {
-
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
     /**
@@ -106,5 +106,10 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
     override fun randomState(): GridWorldState {
         throw UnsupportedOperationException("not implemented")
     }
+
+    override fun actionDuration(action: Action<GridWorldState>): Long {
+        throw UnsupportedOperationException()
+    }
+
 }
 

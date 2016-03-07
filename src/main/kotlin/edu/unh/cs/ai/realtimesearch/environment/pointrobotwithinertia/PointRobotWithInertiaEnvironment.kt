@@ -13,7 +13,7 @@ class PointRobotWithInertiaEnvironment(private val domain: PointRobotWithInertia
     private val logger = LoggerFactory.getLogger(PointRobotWithInertiaEnvironment::class.java)
     private var currentState = initialState
 
-    override fun step(action: Action) {
+    override fun step(action: Action<PointRobotWithInertiaState>) {
         val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action

@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.Planner
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,20 +12,20 @@ import org.slf4j.LoggerFactory
  *
  * @param domain is the domain to plan in
  */
-abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner, ClassicalPlanner<StateType> {
+abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : ClassicalPlanner<StateType> {
 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
-    private var generatedNodes = 0
-    private var expandedNodes = 0
+    override var generatedNodeCount = 0
+    override var expandedNodeCount = 0
 
-    data class Node<State>(val parent: Node<State>?, val state: State,
-                           val action: Action?, val cost: Double)
+    data class Node<StateType : State<StateType>>(val parent: Node<StateType>?, val state: StateType,
+                           val action: Action<StateType>?, val cost: Double)
 
     /**
      * Resets all variables in the planner. Called before a new planning task
      */
     open protected fun initiatePlan() {
-        generatedNodes = 0
+        generatedNodeCount = 0
     }
 
     /**
@@ -58,7 +57,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    override fun plan(state: StateType): List<Action> {
+    override fun plan(state: StateType): List<Action<StateType>> {
         // get ready / reset for plan
         reset()
 
@@ -80,9 +79,9 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param node is the node to expand
      * @return the next node of interest
      */
-    public fun expandNode(node: Node<StateType>): Node<StateType> {
-        expandedNodes += 1
-        if (expandedNodes % 100000 == 0) {
+    fun expandNode(node: Node<StateType>): Node<StateType> {
+        expandedNodeCount += 1
+        if (expandedNodeCount % 100000 == 0) {
             println(System.currentTimeMillis() - timestamp)
             timestamp = System.currentTimeMillis()
         }
@@ -90,7 +89,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
         // expand (only those not visited yet)
         for (successor in domain.successors(node.state)) {
             if (!visitedBefore(successor.state, node)) {
-                generatedNodes += 1
+                generatedNodeCount += 1
 
                 // generate the node with correct cost
                 val nodeCost = successor.actionCost + node.cost
@@ -108,8 +107,8 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param leave the current end of the path
      * @return list of actions to get to leave
      */
-    protected fun extractPlan(leave: Node<StateType>): List<Action> {
-        val actions: MutableList<Action> = arrayListOf()
+    protected fun extractPlan(leave: Node<StateType>): List<Action<StateType>> {
+        val actions: MutableList<Action<StateType>> = arrayListOf()
 
         var node = leave
         // root will have null action. So as long as the parent
@@ -127,16 +126,8 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * history or generated node.
      */
     fun reset() {
-        generatedNodes = 0
-        expandedNodes = 0
+        generatedNodeCount = 0
+        expandedNodeCount = 0
         initiatePlan()
-    }
-
-    override fun getExpandedNodeCount(): Int {
-        return expandedNodes
-    }
-
-    override fun getGeneratedNodeCount(): Int {
-        return generatedNodes
     }
 }

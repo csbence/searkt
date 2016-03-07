@@ -13,7 +13,7 @@ class GridWorldEnvironment(private val domain: GridWorld, private val initialSta
     private val logger = LoggerFactory.getLogger(GridWorldEnvironment::class.java)
     private var currentState = initialState
 
-    override fun step(action: Action) {
+    override fun step(action: Action<GridWorldState>) {
         val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action

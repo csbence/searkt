@@ -10,8 +10,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminat
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import org.junit.Test
-import java.io.File
-import java.io.FileInputStream
 import java.io.InputStream
 import kotlin.test.assertTrue
 
@@ -99,7 +97,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -116,7 +114,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(Location(1, 0), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -133,7 +131,7 @@ class SlidingTilePuzzleTest {
         val initialState = SlidingTilePuzzleState(Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -225,7 +223,7 @@ class SlidingTilePuzzleTest {
         val initialState = slidingTilePuzzleInstance.initialState
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState, 1)
+        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }

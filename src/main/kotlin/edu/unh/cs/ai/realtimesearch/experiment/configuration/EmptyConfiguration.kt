@@ -21,10 +21,6 @@ object EmptyConfiguration : ExperimentConfiguration {
         throw UnsupportedOperationException()
     }
 
-    override fun getNumberOfRuns(): Int {
-        throw UnsupportedOperationException()
-    }
-
     override fun getTerminationCheckerType(): String {
         throw UnsupportedOperationException()
     }

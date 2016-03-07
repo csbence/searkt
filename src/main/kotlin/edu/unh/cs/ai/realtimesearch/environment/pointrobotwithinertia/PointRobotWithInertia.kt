@@ -1,12 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldAction
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
-import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -15,7 +13,8 @@ import java.util.*
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
                             val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotWithInertiaState> {
 
-//    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
+
+    //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
 //    val maxSpeed = 5
 //    val minSpeed = maxSpeed * -1
@@ -195,6 +194,10 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     override fun randomState(): PointRobotWithInertiaState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun actionDuration(action: Action<PointRobotWithInertiaState>): Long {
         throw UnsupportedOperationException()
     }
 

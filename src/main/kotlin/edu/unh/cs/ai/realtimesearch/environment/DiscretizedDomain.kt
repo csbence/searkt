@@ -3,6 +3,11 @@ package edu.unh.cs.ai.realtimesearch.environment
 class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : Domain<StateType>>(val domain: DomainType) : Domain<DiscretizedState<StateType>> {
 
     /**
+     * Retrieve the duration for which the given action will execute for.
+     */
+    override fun actionDuration(action: Action<DiscretizedState<StateType>>): Long = domain.actionDuration(action as Action<StateType>)
+
+    /**
      * Get successor states from the given state for all valid actions.
      */
     override fun successors(state: DiscretizedState<StateType>): List<SuccessorBundle<DiscretizedState<StateType>>> {
@@ -12,7 +17,7 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
 
         for (successor in indiscreteSuccessors) {
             successors.add(SuccessorBundle(DiscretizedState(successor.state),
-                    successor.action, successor.actionCost))
+                    successor.action as Action<DiscretizedState<StateType>>, successor.actionCost))
         }
         return successors
     }

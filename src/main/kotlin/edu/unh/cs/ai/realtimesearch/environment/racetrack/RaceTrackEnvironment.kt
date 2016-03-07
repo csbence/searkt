@@ -11,7 +11,7 @@ class RaceTrackEnvironment(private val domain: RaceTrack, private val initialSta
     private val logger = LoggerFactory.getLogger(RaceTrackEnvironment::class.java)
     private var currentState = initialState
 
-    override fun step(action: Action) {
+    override fun step(action: Action<RaceTrackState>) {
         throw UnsupportedOperationException()
     }
 

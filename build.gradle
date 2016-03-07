@@ -38,3 +38,9 @@ sourceSets {
     main.java.srcDirs += 'src/main/kotlin'
     test.java.srcDirs += 'src/test/kotlin'
 }
+
+run {
+    if ( project.hasProperty("appArgs") ) {
+        args = Eval.me(appArgs)
+    }
+}

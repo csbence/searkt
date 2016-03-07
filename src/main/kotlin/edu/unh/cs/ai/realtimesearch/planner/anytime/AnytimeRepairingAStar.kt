@@ -17,10 +17,10 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(val domain: Domain<Sta
     private val inconsistentStates: MutableList<StateType> = arrayListOf()
     private var goal: StateType? = null
 
-    public var generatedNodes = 0
-    public var expandedNodes = 0
+    var generatedNodes = 0
+    var expandedNodes = 0
 
-    data class Node<State>(val parent: Node<State>? = null, val state: State, val action: Action? = null, val cost: Double = 0.0, val heuristic: Double = 0.0)
+    data class Node<StateType : State<StateType>>(val parent: Node<StateType>? = null, val state: StateType, val action: Action<StateType>? = null, val cost: Double = 0.0, val heuristic: Double = 0.0)
 
     private fun improvePath() {
         // This is analogue to Likhachev's CLOSED list
@@ -53,7 +53,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(val domain: Domain<Sta
         }
     }
 
-    public fun solve(startState: StateType) {
+    fun solve(startState: StateType) {
         closedList[startState] = Node(state = startState, heuristic = domain.heuristic(startState))
         openList.add(startState)
         improvePath()
