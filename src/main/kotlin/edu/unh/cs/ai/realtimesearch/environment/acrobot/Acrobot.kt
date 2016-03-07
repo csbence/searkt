@@ -31,7 +31,7 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
  * is to maneuver the links such that they are pointing straight up inverted
  * vertically from a downward facing position.
  */
-class Acrobot(val configuration: AcrobotConfiguration = defaultAcrobotConfiguration) : Domain<AcrobotState> {
+class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
     internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
         return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
     }

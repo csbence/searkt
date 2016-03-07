@@ -1,6 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
+import groovy.json.JsonSlurper
+import java.math.BigDecimal
 
 // Constants
 // Given in Sutton and Barto 1998 as well as Boone 1997
@@ -33,13 +35,30 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.
  * Instances of this class are immutable.
  */
-data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double, val configuration: AcrobotStateConfiguration = defaultAcrobotStateConfiguration) : DiscretizableState<AcrobotState> {
+data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double, val configuration: AcrobotStateConfiguration = AcrobotStateConfiguration()) : DiscretizableState<AcrobotState> {
 
     override fun copy() = copy(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
 
-    // Angles naturally restricted to [0,2\pi)
-    val minAngle = 0.0
-    val maxAngle = 2 * Math.PI
+    companion object {
+        // Angles naturally restricted to [0,2\pi)
+        val minAngle = 0.0
+        val maxAngle = 2 * Math.PI
+
+        fun fromString(string: String): AcrobotState = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
+
+        fun fromMap(map: Map<*,*>): AcrobotState {
+            val linkPosition1 = (map["linkPosition1"] as BigDecimal).toDouble()
+            val linkPosition2 = (map["linkPosition2"] as BigDecimal).toDouble()
+            val linkVelocity1 = (map["linkVelocity1"] as BigDecimal).toDouble()
+            val linkVelocity2 = (map["linkVelocity2"] as BigDecimal).toDouble()
+            val configurationObject = map["configuration"]
+
+            if (configurationObject != null)
+                return AcrobotState(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2, AcrobotStateConfiguration.fromMap(configurationObject as Map<*,*>))
+            else
+                return AcrobotState(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
+        }
+    }
 
     override fun discretize(): AcrobotState {
         return AcrobotState(

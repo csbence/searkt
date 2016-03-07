@@ -9,7 +9,7 @@ class AcrobotDiscretizedStateTest {
 
     private val logger = LoggerFactory.getLogger(AcrobotDiscretizedStateTest::class.java)
 
-    private val acrobotConfiguration = defaultAcrobotConfiguration
+    private val acrobotConfiguration = AcrobotConfiguration()
 
     private val positionIncrement1 = getDiscretizationIncrement(acrobotConfiguration.stateConfiguration.positionGranularity1)
     private val positionIncrement2 = getDiscretizationIncrement(acrobotConfiguration.stateConfiguration.positionGranularity2)

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertFalse
@@ -53,5 +54,12 @@ class AcrobotStateTest {
         assertFalse { state1.inBounds(lowerBound, upperBound) }
         assertTrue { lowerBound.inBounds(lowerBound, upperBound) }
         assertTrue { upperBound.inBounds(lowerBound, upperBound) }
+    }
+
+    @Test
+    fun testJSON1() {
+        println("State1: ${JsonOutput.toJson(defaultInitialAcrobotState)}")
+        println("State2: ${JsonOutput.toJson(AcrobotState.fromString(JsonOutput.toJson(defaultInitialAcrobotState)))}")
+        assertTrue { defaultInitialAcrobotState.equals(AcrobotState.fromString(JsonOutput.toJson(defaultInitialAcrobotState))) }
     }
 }

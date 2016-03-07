@@ -1,41 +1,55 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import java.io.File
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import java.io.InputStream
-
-val defaultAcrobotStateConfiguration = AcrobotStateConfiguration(
-        // Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
-        4.0 * Math.PI,
-        9.0 * Math.PI,
-        -(4.0 * Math.PI),
-        -(9.0 * Math.PI),
-        0.2992, // 21 positions
-        0.2992, // 21 positions
-        0.1005, // 250 velocities
-        0.0754, // 750 velocities
-        0.2 // Sutton and Boone
-)
+import java.math.BigDecimal
 
 data class AcrobotStateConfiguration(
-        val maxAngularVelocity1: Double,
-        val maxAngularVelocity2: Double,
-        val minAngularVelocity1: Double,
-        val minAngularVelocity2: Double,
-        val positionGranularity1: Double,
-        val positionGranularity2: Double,
-        val velocityGranularity1: Double,
-        val velocityGranularity2: Double,
-        val timeStep: Double) {
+        // Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
+        val maxAngularVelocity1: Double = 4.0 * Math.PI,
+        val maxAngularVelocity2: Double = 9.0 * Math.PI,
+        val minAngularVelocity1: Double = -(4.0 * Math.PI),
+        val minAngularVelocity2: Double = -(9.0 * Math.PI),
+        val positionGranularity1: Double = 0.2992, // 21 positions
+        val positionGranularity2: Double = 0.2992,
+        val velocityGranularity1: Double = 0.1005, // 250 velocities
+        val velocityGranularity2: Double = 0.0754, // 750 velocities
+        val timeStep: Double = 0.2) { // Sutton and Boone
 
-    fun toJSON(): String {
-        throw UnsupportedOperationException()
+    companion object {
+        /**
+         * Returns an AcrobotStateConfiguration from the given string contents.
+         * @param string a string in JSON format representing an AcrobotStateConfiguration
+         */
+        fun fromString(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
+
+        /**
+         * Returns an AcrobotStateConfiguration from the given stream contents.
+         * @param stream a stream with JSON format content representing an AcrobotStateConfiguration
+         */
+        fun fromSteam(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*,*>)
+
+        /**
+         * Returns an AcrobotStateConfiguration from the given map.
+         * @param map a map containing AcrobotStateConfiguration values
+         */
+        fun fromMap(map: Map<*,*>): AcrobotStateConfiguration {
+            return AcrobotStateConfiguration(
+                    (map["maxAngularVelocity1"] as BigDecimal).toDouble(),
+                    (map["maxAngularVelocity2"] as BigDecimal).toDouble(),
+                    (map["minAngularVelocity1"] as BigDecimal).toDouble(),
+                    (map["minAngularVelocity2"] as BigDecimal).toDouble(),
+                    (map["positionGranularity1"] as BigDecimal).toDouble(),
+                    (map["positionGranularity2"] as BigDecimal).toDouble(),
+                    (map["velocityGranularity1"] as BigDecimal).toDouble(),
+                    (map["velocityGranularity2"] as BigDecimal).toDouble(),
+                    (map["timeStep"] as BigDecimal).toDouble())
+        }
     }
 
-    fun fromJSON(file: File): AcrobotConfiguration {
-        throw UnsupportedOperationException()
-    }
-
-    fun fromJSON(stream: InputStream): AcrobotConfiguration {
-        throw UnsupportedOperationException()
-    }
+    /**
+     * Writes the AcrobotStateConfiguration to a string in JSON format
+     */
+    override fun toString(): String = JsonOutput.toJson(this)
 }

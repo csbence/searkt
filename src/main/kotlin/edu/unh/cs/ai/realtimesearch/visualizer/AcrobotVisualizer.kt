@@ -1,11 +1,21 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
+import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.error
 import edu.unh.cs.ai.realtimesearch.logging.info
+import groovy.json.JsonOutput
+import groovyjarjarcommonscli.GnuParser
+import groovyjarjarcommonscli.HelpFormatter
+import groovyjarjarcommonscli.Option
+import groovyjarjarcommonscli.Options
 import javafx.animation.*
 import javafx.application.Application
 import javafx.beans.value.WritableValue
@@ -16,82 +26,112 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.FileInputStream
+import java.nio.charset.Charset
+import java.util.*
+import kotlin.system.exitProcess
 
 open class AcrobotVisualizer : Application() {
     private val logger = LoggerFactory.getLogger(AcrobotVisualizer::class.java)
 
-    private var acrobotConfiguration: AcrobotConfiguration = defaultAcrobotConfiguration
+    private var acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()
+    private var ghost: Boolean = false
+    private val actionList: MutableList<AcrobotAction> = mutableListOf()
+    private var experimentResult: ExperimentResult? = null
+
+    private fun actionListFromResult() {
+        assert(experimentResult != null)
+        assert(actionList.isEmpty())
+        for (action in experimentResult!!.actions) {
+            actionList.add(action as AcrobotAction)
+        }
+    }
+
+    private fun copyActionList(list: List<AcrobotAction>) {
+        assert(actionList.isEmpty())
+        for (action in list) {
+            actionList.add(action)
+        }
+    }
+
+    private fun processCommandLine(args: Array<String>) {
+        val options = Options()
+
+        val helpOption = Option("h", "help", false, "Print help and exit")
+        val ghostOption = Option("g", "ghost", false, "Display ghost animation")
+        val pathOption = Option("r", "result", true, "Read result from file")
+        val configurationFileOption = Option("c", "config", true, "Read Acrobot configuration from file")
+        val configurationOption = Option("C", "Config", true, "Read Acrobot configuration from string; overwrites -${configurationFileOption.opt}")
+        val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
+        val terminationTypeOption = Option("t", "term-type", true, "The termination type")
+        val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
+
+        options.addOption(helpOption)
+        options.addOption(ghostOption)
+        options.addOption(pathOption)
+        options.addOption(configurationFileOption) // TODO OptionGroup
+        options.addOption(configurationOption)
+        options.addOption(algorithmOption)
+        options.addOption(terminationTypeOption)
+        options.addOption(terminationParameterOption)
+
+        /* parse command line arguments */
+        val parser = GnuParser()
+        val cmd = parser.parse(options, args)
+
+        /* print help if help option was specified*/
+        val formatter = HelpFormatter()
+        if (cmd.hasOption("h")) {
+            formatter.printHelp("real-time-search", options)
+            exitProcess(1)
+        }
+
+        ghost = cmd.hasOption(ghostOption.opt)
+        val resultFile = cmd.getOptionValue(pathOption.opt)
+
+        // Get configuration options
+        if (cmd.hasOption(configurationOption.opt)) {
+            val configurationJSON = cmd.getOptionValue(configurationOption.opt)
+            acrobotConfiguration = AcrobotConfiguration.fromString(configurationJSON)
+        } else {
+            val configurationPath = cmd.getOptionValue(configurationFileOption.opt)
+            if (configurationPath != null)
+                acrobotConfiguration = AcrobotConfiguration.fromStream(FileInputStream(configurationPath))
+        }
+
+        if (resultFile != null) {
+            // Need to read twice so can't use a stream
+            val text = File(resultFile).readText()
+            experimentResult = ExperimentResult.fromString(text)
+            copyActionList(AcrobotAction.fromResultString(text))
+        } else {
+            // Run the specified algorithm to retrieve path
+            val numRuns = 1
+            val algorithm = cmd.getOptionValue(algorithmOption.opt)
+            val terminationType = cmd.getOptionValue(terminationTypeOption.opt)
+            val terminationParameters = cmd.getOptionValue(terminationParameterOption.opt)
+            if (algorithm == null || terminationType == null || terminationParameters == null)
+                throw IllegalArgumentException("Too few options provided to run algorithm")
+
+            val manualConfiguration = ManualConfiguration("acrobot", acrobotConfiguration.toString(), algorithm,
+                    numRuns, terminationType, terminationParameters.toInt())
+            val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+            assert(resultList.size == numRuns)
+            assert(resultList.first().actions.size >= 1)
+            experimentResult = resultList.first()
+            actionListFromResult()
+        }
+    }
 
     override fun start(primaryStage: Stage) {
         primaryStage.title = "Acrobot Visualizer"
 
-        /* Get domain from Application */
-        val parameters = parameters
-        val raw = parameters.raw
-//        if (raw.isEmpty()) {
-//            logger.error { "Cannot visualize without a domain!" }
-//            exitProcess(1)
-//        }
-//        val rawDomain = raw.first()
-        var ghost: Boolean = false
-        var start = 0
-        // TODO read configuration from file
-        if (raw[0].equals("-g")) {
-            ghost = true
-            start += 1
-        }
+        processCommandLine(parameters.raw.toTypedArray())
 
-        /* Get action list from Application */
-        val actionList: MutableList<AcrobotAction> = mutableListOf()
-        for (i in start..raw.lastIndex) {
-            val action: String = raw[i]
-            try {
-                actionList.add(AcrobotAction.valueOf(action))
-            } catch(e: IllegalArgumentException) {
-                logger.error { "Invalid action: $action" }
-            }
-        }
-
-        // TODO temp testing
-        actionList.clear()
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NONE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.NONE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NONE)
-        actionList.add(AcrobotAction.POSITIVE)
-        actionList.add(AcrobotAction.NEGATIVE)
-        actionList.add(AcrobotAction.NONE)
-
-        val stateList = getStateList(actionList)
-        assert(stateList.size > 1, {"Must have at least two states to animate"})
+        val stateList = getStateList(actionList, acrobotConfiguration)
+        assert(stateList.size > 0, {"Must have at least one state to animate"})
 
         /* Graphical parameters */
         val stageBorder = 100.0
@@ -139,10 +179,10 @@ open class AcrobotVisualizer : Application() {
             animation.play()
     }
 
-    private fun getStateList(actionList: List<AcrobotAction>, acrobotConfiguration: AcrobotConfiguration = defaultAcrobotConfiguration): List<AcrobotState> {
+    private fun getStateList(actionList: List<Action>, acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<AcrobotState> {
         val stateList = mutableListOf<AcrobotState>()
         val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
-        val environment = DiscretizedEnvironment(domain)
+        val environment = DiscretizedEnvironment(domain, DiscretizedState(acrobotConfiguration.initialState))
         for (action in actionList) {
             environment.step(action)
             stateList.add(environment.getState().state)
@@ -161,9 +201,11 @@ open class AcrobotVisualizer : Application() {
 
         val iterator = stateList.iterator()
         var previousState = iterator.next()
+
         val time = acrobotConfiguration.stateConfiguration.timeStep
         while (iterator.hasNext()) {
             val newState = iterator.next()
+
             val diff1 = Math.toDegrees(angleDifference(previousState.linkPosition1, newState.linkPosition1))
             val diff2 = Math.toDegrees(angleDifference(previousState.linkPosition2, newState.linkPosition2)) + diff1
 
