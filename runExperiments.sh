@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:t:p:vi:o:gG:"
+OPTIONS=":hd:m:a:n:t:p:vi:o:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -10,6 +10,8 @@ RESULTS_TOP_DIR="results"
 DIR=$RESULTS_TOP_DIR
 BIN="$BUILD_DIR/install/$PROJECT_NAME/bin"
 RUN_SCRIPT="$BIN/$PROJECT_NAME"
+NUM_RUNS=1
+RUN_NUM=0
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -23,21 +25,25 @@ usage() {
   echo "  n <num>      specify the number of experiment runs"
   echo "  t <type>     specify the termination type"
   echo "  p <param>    specify the termination parameter to provide"
-  echo "  v            visualize the experiment"
+  echo "  v            visualize the experiment (currently not supported)"
   echo "  i <name>     specify an instance name for the configuration"
   echo "  o <file>     specify an output file name"
+  echo "  D            run the experiments via installed distribution"
   echo "  g            run gradle to install the distribution"
   echo "  G <args>     run gradle with custom arguments"
   echo "Results will be placed in separate files with the following directory structure:"
   echo "  results/algorithm/domain/params/[instance]/out"
-  echo "If a parameter is not given then the directory name will be '$DEFAULT_DIR'"
+  echo "If a parameter is not given then the directory name will be '$DEFAULT_DIR'."
+  echo "The output file will be appended with 2 numbers with format 'out_XX_YY',"
+  echo "  where XX is a unique digit and YY is the run number of that set of runs."
 }
 
 add_dir() {
   if [ -z "$1" ]; then
-    echo "Internal script error: missing parameter to add_dir"
+    >&2 echo "Internal script error: missing parameter to add_dir"
   else
-    DIR="$DIR/$1"
+    NEW_DIR=$(echo $1 | sed -e 's/[^A-Za-z0-9._-\*]/_/g')
+    DIR="$DIR/$NEW_DIR"
     if [ ! -d "$DIR" ]; then
       mkdir "$DIR"
     fi
@@ -46,9 +52,72 @@ add_dir() {
 
 add_arg() {
   if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "Internal script error: missing parameter to add_arg"
+    >&2 echo "Internal script error: missing parameter to add_arg"
   else
-      EXPERIMENT_ARGS="$EXPERIMENT_ARGS $1 $2"
+    if [ -n "$DIST" ] && [ "$DIST" = true ]; then
+      echo "$EXPERIMENT_ARGS $1 \"$2\""
+    else
+      echo "$EXPERIMENT_ARGS'$1','$2',"
+    fi
+  fi
+}
+
+get_file_num() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to get_file_num"
+  else
+    if [ $1 -lt 10 ]; then
+      echo "_0$1"
+    else
+      echo "_$1"
+    fi
+  fi
+}
+
+get_unique_filename() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to get_file_num"
+  else
+    CURRENT=_00
+    COUNTER=0
+    while [ -f "$1$CURRENT" ] || [ -f "$1${CURRENT}_$RUN_NUM" ] || [ -f "$1${CURRENT}_0$RUN_NUM" ]; do
+      let COUNTER+=1
+      CURRENT=$(get_file_num $COUNTER)
+    done
+    echo "$1$CURRENT"
+  fi
+}
+
+run_gradle() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to run_gradle"
+  else
+    $GRADLE run $GRADLE_PARAMS -PappArgs="[$(add_arg "-o" "$1")]"
+  fi
+}
+
+run_dest() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to run_dest"
+  else
+    eval $RUN_SCRIPT $(add_arg "-o" "$1")
+  fi
+}
+
+run() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to run"
+  else
+    EXP_SCRIPT="$1"
+    if [ "$NUM_RUNS" -eq 1 ]; then
+      $EXP_SCRIPT "$OUT_FILE"
+    else
+      for ((i=0; i < $NUM_RUNS; i++)); do
+        RUN_NUM=$i
+        NEW_OUT="$OUT_FILE$(get_file_num $i)"
+        $EXP_SCRIPT "$NEW_OUT"
+      done
+    fi
   fi
 }
 
@@ -64,7 +133,7 @@ while getopts $OPTIONS arg; do
     m)
       MAP=$OPTARG
       if [ ! -f $MAP ]; then
-        echo "Map file $MAP does not exist"
+        >&2 echo "Map file $MAP does not exist"
         usage
         exit 1
       fi
@@ -90,6 +159,9 @@ while getopts $OPTIONS arg; do
     o)
       OUT_FILE=$OPTARG
       ;;
+    D)
+      DIST=true
+      ;;
     g)
       RUN_GRADLE=true
       ;;
@@ -98,12 +170,12 @@ while getopts $OPTIONS arg; do
       GRADLE_PARAMS=$OPTARG
       ;;
     \?)
-      echo "Invalid argument given: '$OPTARG'" >&2
+      >&2 echo "Invalid argument given: '$OPTARG'"
       usage
       exit 1
       ;;
     :)
-      echo "Option '$OPTARG' requires a parameter" >&2
+      >&2 echo "Option '$OPTARG' requires a parameter"
       usage
       exit 1
       ;;
@@ -124,61 +196,57 @@ fi
 # Translate to experiment expected args and build directory structure
 EXPERIMENT_ARGS=""
 if [ -n "$ALG" ]; then
-  add_arg "-a" "$ALG"
+  EXPERIMENT_ARGS=$(add_arg "-a" "$ALG")
   add_dir "$ALG"
 else
   add_dir "$DEFAULT_DIR"
 fi
+
 if [ -n "$DOMAIN" ]; then
-  add_arg "-d" "$DOMAIN"
+  EXPERIMENT_ARGS=$(add_arg "-d" "$DOMAIN")
   add_dir "$DOMAIN"
 else
   add_dir "$DEFAULT_DIR"
 fi
-if [ -n "$TERM_PARAM" ]; then
-  add_arg "-p" "$TERM_PARAM"
-  add_dir "$TERM_PARAM"
-else
-  add_dir "$DEFAULT_DIR"
+
+if [ -n "$TERM_TYPE" ]; then
+  EXPERIMENT_ARGS=$(add_arg "-t" "$TERM_TYPE")
+  PARAM_DIR="$TERM_TYPE"
 fi
+if [ -n "$TERM_PARAM" ]; then
+  EXPERIMENT_ARGS=$(add_arg "-p" "$TERM_PARAM")
+  PARAM_DIR="$PARAM_DIR-$TERM_PARAM"
+fi
+add_dir "$PARAM_DIR"
+
 if [ -n "$INSTANCE_NAME" ]; then
   add_dir "$INSTANCE_NAME"
 fi
+  
 if [ -n "$MAP" ]; then
-  add_arg "-m" "$MAP"
+  EXPERIMENT_ARGS=$(add_arg "-m" "$MAP")
 fi
-if [ -n "$NUM_RUNS" ]; then
-  add_arg "-n" "$NUM_RUNS"
-fi
-if [ -n "$TERM_TYPE" ]; then
-  add_arg "-t" "$TERM_TYPE"
-fi
-if [ -n "$VISUALIZE" ]; then
-  add_arg "-v" "$VISUALIZE"
-fi
+
+# if [ -n "$VISUALIZE" ]; then
+#   EXPERIMENT_ARGS=$(add_arg "-v" "$VISUALIZE")
+# fi
 
 # Setup out file
-OUT_FILE="$DIR/$OUT_FILE"
-CURRENT=
-COUNTER=0
-while [ -f "$OUT_FILE$CURRENT" ]; do
-  let COUNTER+=1
-  if [ $COUNTER -lt 10 ]; then
-    CURRENT="_0$COUNTER"
-  else
-    CURRENT="_$COUNTER"
+OUT_FILE=$(get_unique_filename "$DIR/$OUT_FILE")
+
+if [ -n "$DIST" ] && [ "$DIST" = true ]; then
+  # Run it
+  if [ -n "$RUN_GRADLE" ] && [ "$RUN_GRADLE" = true ]; then
+    $GRADLE installDist $GRADLE_PARAMS
   fi
-done
-add_arg "-o" "$OUT_FILE"
 
-# Run it
-if [ "$RUN_GRADLE" = true ]; then
-  $GRADLE installDist $GRADLE_PARAMS
-fi
+  if [ ! -d "$BIN" ]; then
+    >&2 echo "'$BIN' directory does not exist; build first or run with gradle"
+    usage
+    exit 1
+  fi
 
-if [ ! -d "$BIN" ]; then
-  echo "'$BIN' directory does not exist; build first or run with gradle"
-  usage
-  exit 1
+  run run_dest
+else
+  run run_gradle
 fi
-$RUN_SCRIPT "$EXPERIMENT_ARGS"
