@@ -1,11 +1,11 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 object EmptyConfiguration : ExperimentConfiguration {
-    override fun contains(key: String): Boolean {
+    override fun get(key: String) {
         throw UnsupportedOperationException()
     }
 
-    override fun getValue(key: String): String {
+    override fun contains(key: String): Boolean {
         throw UnsupportedOperationException()
     }
 
