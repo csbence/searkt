@@ -31,6 +31,14 @@ data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration
 //                actionList.add(action as String)
 //            }
 
+            val rawSystemProperties = map["systemProperties"]
+            val systemProperties = HashMap<String, String>()
+            if (rawSystemProperties != null) {
+                for ((key, value) in rawSystemProperties as Map<*,*>) {
+                    systemProperties.put(key.toString(), value.toString())
+                }
+            }
+
             return ExperimentResult(
                     if (experimentConfiguration == null) null else ManualConfiguration.fromMap(experimentConfiguration as Map<*,*>), // TODO depends on ManualConfiguration class
                     map["expandedNodes"] as Int,
@@ -38,7 +46,10 @@ data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration
                     (map["timeInMillis"] as Int).toLong(),
                     /*actionList,*/
                     pathLength = (map["pathLength"] as BigDecimal?)?.toDouble(),
-                    errorMessage = map["errorMessage"] as String?)
+                    errorMessage = map["errorMessage"] as String?,
+                    values = map["values"] as Map<String,Any>,
+                    timestamp = (map["timestamp"] as Int).toLong(),
+                    systemProperties = systemProperties)
         }
     }
 

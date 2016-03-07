@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
+import groovy.json.JsonOutput
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -97,18 +98,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* output the results */
-    val writer = PrintWriter(outFile, "UTF-8");
-    val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-    val date = Date()
-
-    writer.println("Date: " + dateFormat.format(date))
-    writer.println("Hostname: " + InetAddress.getLocalHost().getHostName())
-    writer.println("Termination Type: " + termType)
-    writer.println("Termination parameter: " + termParam)
-    writer.println("Expanded nodes: " + result.expandedNodes)
-    writer.println("Generated nodes: " + result.generatedNodes)
-    writer.println("Time in millis: " + result.timeInMillis)
-    writer.println("Action list: " + result.actions)
-    writer.println("Path length: " + result.pathLength)
-    writer.close()
+    PrintWriter(outFile, "UTF-8").use {
+        it.print(JsonOutput.toJson(result))
+    }
 }
