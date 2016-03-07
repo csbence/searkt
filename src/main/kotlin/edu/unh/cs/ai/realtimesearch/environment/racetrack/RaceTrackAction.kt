@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * TODO: copied much from GridWorld/VacuumWorld. Maybe refactor?
  */
-enum class RaceTrackAction(val index: Int) : Action<RaceTrackState> {
+enum class RaceTrackAction(val index: Int) : Action {
     LEFTUP(0), UP(1), RIGHTUP(2),
     LEFT(3), NOOP(4), RIGHT(5),
     LEFTDOWN(6), DOWN(7), RIGHTDOWN(8);

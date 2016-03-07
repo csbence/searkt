@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -106,10 +105,5 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
     override fun randomState(): GridWorldState {
         throw UnsupportedOperationException("not implemented")
     }
-
-    override fun actionDuration(action: Action<GridWorldState>): Long {
-        return actionDuration
-    }
-
 }
 
