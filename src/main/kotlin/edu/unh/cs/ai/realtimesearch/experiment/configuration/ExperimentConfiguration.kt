@@ -8,10 +8,13 @@ interface ExperimentConfiguration {
     fun getTerminationCheckerType(): String
     fun getTerminationCheckerParameter(): Int
 
+    operator fun get(key: String)
+    @Deprecated("Use get instead")
     fun getValue(key: String): Any?
     fun getBoolean(key: String): Boolean? = getValue(key) as? Boolean
     fun getInt(key: String): Int? = getValue(key) as? Int
     fun getDouble(key: String): Double? = getValue(key) as? Double
     fun <T> getTypedValue(key: String) : T? = getValue(key) as? T
+
     fun contains(key: String): Boolean
 }

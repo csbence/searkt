@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  *
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location) : Domain<GridWorldState> {
+class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
     /**
@@ -107,8 +107,8 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun actionDuration(action: Action<GridWorldState>) {
-        throw UnsupportedOperationException()
+    override fun actionDuration(action: Action<GridWorldState>): Long {
+        return actionDuration
     }
 
 }

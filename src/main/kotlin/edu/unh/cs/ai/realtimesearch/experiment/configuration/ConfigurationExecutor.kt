@@ -47,7 +47,8 @@ object ConfigurationExecutor {
 
     private fun executeGridWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.getRawDomain()
-        val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream())
+        val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it the the experiment configuration.")
+        val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream(), actionDuration)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 
         return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState, gridWorldEnvironment)
@@ -121,7 +122,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it the the experiment configuration.")
+        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
