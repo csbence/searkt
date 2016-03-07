@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.experiment
+package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration

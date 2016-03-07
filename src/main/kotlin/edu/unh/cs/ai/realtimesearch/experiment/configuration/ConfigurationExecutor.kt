@@ -12,9 +12,9 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
@@ -27,7 +27,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
  */
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
-        val domainName: String = experimentConfiguration.getDomainName()
+        val domainName: String = experimentConfiguration.domainName
 
         return when (domainName) {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
@@ -38,7 +38,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
-        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val rawDomain: String = experimentConfiguration.rawDomain
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(rawDomain.byteInputStream())
         val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
 
@@ -46,7 +46,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeGridWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
-        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val rawDomain: String = experimentConfiguration.rawDomain
         val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it the the experiment configuration.")
         val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream(), actionDuration)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
@@ -55,7 +55,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeSlidingTilePuzzle(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
-        val rawDomain: String = experimentConfiguration.getRawDomain()
+        val rawDomain: String = experimentConfiguration.rawDomain
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(rawDomain.byteInputStream())
         val slidingTilePuzzleEnvironment = SlidingTilePuzzleEnvironment(slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
 
@@ -63,7 +63,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val algorithmName = experimentConfiguration.getAlgorithmName()
+        val algorithmName = experimentConfiguration.algorithmName
 
         return when (algorithmName) {
             "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
@@ -110,8 +110,8 @@ object ConfigurationExecutor {
     }
 
     private fun getTerminationChecker(experimentConfiguration: ExperimentConfiguration): TerminationChecker {
-        val terminationCheckerType = experimentConfiguration.getTerminationCheckerType()
-        val terminationCheckerParameter = experimentConfiguration.getTerminationCheckerParameter()
+        val terminationCheckerType = experimentConfiguration.terminationCheckerType
+        val terminationCheckerParameter = experimentConfiguration.terminationCheckerParameter
 
         return when (terminationCheckerType) {
             "time" -> TimeTerminationChecker(terminationCheckerParameter.toDouble())
