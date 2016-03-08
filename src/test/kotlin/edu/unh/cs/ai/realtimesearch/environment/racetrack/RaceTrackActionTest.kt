@@ -25,8 +25,8 @@ class RaceTrackActionTest {
         action = RaceTrackAction.UP
         assertEquals(action.getAcceleration(), Location(0, 1))
 
-        action = RaceTrackAction.NOOP
-        assertEquals(action.getAcceleration(), Location(0, 0))
+        /*action = RaceTrackAction.NOOP
+        assertEquals(action.getAcceleration(), Location(0, 0))*/
 
         action = RaceTrackAction.LEFT
         assertEquals(action.getAcceleration(), Location(-1, 0))

@@ -7,6 +7,12 @@ import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
@@ -33,8 +39,35 @@ object ConfigurationExecutor {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
+            "race track" -> executeRaceTrack(experimentConfiguration)
+            "point robot" -> executePointRobot(experimentConfiguration)
+            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
             else -> ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName")
         }
+    }
+
+    private fun executeRaceTrack(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val raceTrackInstance = RaceTrackIO.parseFromStream(rawDomain.byteInputStream())
+        val raceTrackEnvironment = RaceTrackEnvironment(raceTrackInstance.domain, raceTrackInstance.initialState)
+
+        return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState, raceTrackEnvironment)
+    }
+
+    private fun executePointRobot(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val pointRobotInstance = PointRobotIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
+    }
+
+    private fun executePointRobotWithInertia(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {

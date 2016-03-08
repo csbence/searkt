@@ -1,165 +1,119 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
-import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime_.LssLrtaStarPlanner
-import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.RacetrackVisualizer
-import javafx.application.Application
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigurationDto
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
+import groovyjarjarcommonscli.Option
 import groovyjarjarcommonscli.Options
 import java.io.File
-import java.io.FileInputStream
 import java.io.PrintWriter
 import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.system.exitProcess
+import edu.unh.cs.ai.realtimesearch.visualizer.PointIntertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.RacetrackVisualizer
+import javafx.application.Application
+
+class Input
 
 fun main(args: Array<String>) {
+    if (args.size < 2) {
+        val input = Input::class.java.classLoader.getResourceAsStream("input/racetrack/barto-small.track")!!
+        val rawDomain = Scanner(input).useDelimiter("\\Z").next();
+        val manualConfiguration = ExperimentConfigurationDto("race track", rawDomain, "RTA*", "time", 10)
+        manualConfiguration.set("lookahead depth limit", 4)
+        manualConfiguration.set("action duration", 10L)
 
-    if(args.isEmpty()){
-        val instanceFileName = "input/racetrack/barto-big.track"
-        val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration("race track", rawDomain, "RTA*", 1, "time", 10)
-        manualConfiguration.setValue("lookahead depth limit", 4)
-        val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+        val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
         val params: MutableList<String> = arrayListOf()
-        val actionList = resultList.first().actions
+        val actionList = experimentResult.actions
+
         params.add(rawDomain)
-        for(action in actionList){
+        for (action in actionList) {
             params.add(action.toString())
         }
+
+        //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        //        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
-    }
-    else{
+
+    } else {
         /* create options */
-        val options = Options()
-
-        options.addOption("h", "help", false, "Print help and exit")
-        options.addOption("d", "domain", true, "The domain name")
-        options.addOption("m", "map", true, "The path to map file")
-        options.addOption("a", "alg-name", true, "The algorithm name")
-        options.addOption("n", "num-runs", true, "The number of runs")
-        options.addOption("t", "term-type", true, "The termination type")
-        options.addOption("p", "term-param", true, "The termination parameter")
-        options.addOption("v", "visualize", false, "Whether or not to visualize")
-        options.addOption("o", "outfile", true, "Outfile of experiments")
-
-
-        /* parse command line arguments */
-        val parser = GnuParser()
-        val cmd = parser.parse(options, args)
-        val domainName = cmd.getOptionValue('d')
-        val mapFile = cmd.getOptionValue('m')
-        val algName = cmd.getOptionValue('a')
-        val numRuns = cmd.getOptionValue('n')
-        val termType = cmd.getOptionValue('n')
-        val termParam = cmd.getOptionValue('n')
-        val outFile = cmd.getOptionValue('o')
-
-        /* print help if help option was specified*/
-        val formatter = HelpFormatter()
-        if(cmd.hasOption("h")){
-            formatter.printHelp("real-time-search", options)
-            exitProcess(1)
-        }
-
-        /* print help if any options weren't specified */
-        if(domainName == null || mapFile == null || numRuns == null ||
-                termType == null || termParam == null || outFile == null){
-            formatter.printHelp("real-time-search", options)
-            exitProcess(1)
-        }
-
-        /* run the experiment */
-        val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration(domainName, rawDomain, algName,
-                numRuns.toInt(), termType, termParam.toInt())
-        val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-
-        /* output the results */
-        val writer =  PrintWriter(outFile, "UTF-8");
-        val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-        val date = Date()
-
-        for(result in resultList){
-            writer.println("Date: " + dateFormat.format(date))
-            writer.println("Hostname: " + InetAddress.getLocalHost().getHostName())
-            writer.println("Termination Type: " + termType)
-            writer.println("Termination parameter: " + termParam)
-            writer.println("Expanded nodes: " + result.expandedNodes)
-            writer.println("Generated nodes: " + result.generatedNodes)
-            writer.println("Time in millis: " + result.timeInMillis)
-            writer.println("Action list: " + result.actions)
-            writer.println("Path length: " + result.pathLength)
-        }
-        writer.close()
-
-        if(options.hasOption("v")){
-            /* visualize the output */
-            /* TODO: Make visualizer easier to use and read from file, then merge with master
-             */
-
-        }
+        createCommandLineMenu(args)
     }
 }
 
-fun lssLrtaStarUniformExperiment() {
-    val instanceFileName = "input/vacuum/dylan/uniform.vw"
-    return lssLrtaVacuumWorldExperiment(instanceFileName)
-}
+private fun createCommandLineMenu(args: Array<String>) {
+    val options = Options()
+    val appName = "real-time-search"
 
-fun lssLrtaVacuumWorldExperiment(instanceFileName: String) {
-    val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
-    val lssLrtaPlanner = LssLrtaStarPlanner(vacuumWorldInstance.domain)
-    val lssLrtaAgent = RTSAgent(lssLrtaPlanner)
-    val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+    // Setup the options
+    val helpOption = Option("h", "help", false, "Print help and exit")
+    val mapFileOption = Option("m", "map", true, "The path to map file")
+    val domainOption = Option("d", "domain", true, "The domain name")
+    val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
+    val terminationTypeOption = Option("t", "term-type", true, "The termination type")
+    val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
+    val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
 
-    val rtsExperiment = RTSExperiment<VacuumWorldState>(null, lssLrtaAgent, vacuumWorldEnvironment, CallsTerminationChecker(40))
-    rtsExperiment.run()
-}
+    // Set required options
+    mapFileOption.isRequired = true
+    domainOption.isRequired = true
+    algorithmOption.isRequired = true
+    terminationTypeOption.isRequired = true
+    terminationParameterOption.isRequired = true
+    outFileOption.isRequired = true
 
-fun aStartCupExperiment(): List<ExperimentResult> {
-    val instanceFileName = "input/vacuum/dylan/cups.vw"
-    return aStarVacuumWorldExperiment(instanceFileName)
-}
+    // Add the options
+    options.addOption(helpOption)
+    options.addOption(mapFileOption)
+    options.addOption(domainOption)
+    options.addOption(algorithmOption)
+    options.addOption(terminationTypeOption)
+    options.addOption(terminationParameterOption)
+    options.addOption(outFileOption)
 
-fun aStartSlalomExperiment(): List<ExperimentResult> {
-    val instanceFileName = "input/vacuum/dylan/slalom.vw"
-    return aStarVacuumWorldExperiment(instanceFileName)
-}
+    /* parse command line arguments */
+    val parser = GnuParser()
+    val cmd = parser.parse(options, args)
 
-fun aStartUniformExperiment(): List<ExperimentResult> {
-    val instanceFileName = "input/vacuum/dylan/uniform.vw"
-    return aStarVacuumWorldExperiment(instanceFileName)
-}
+    val domainName = cmd.getOptionValue(domainOption.opt)
+    val mapFile = cmd.getOptionValue(mapFileOption.opt)
+    val algName = cmd.getOptionValue(algorithmOption.opt)
+    val termType = cmd.getOptionValue(terminationTypeOption.opt)
+    val termParam = cmd.getOptionValue(terminationParameterOption.opt)
+    val outFile = cmd.getOptionValue(outFileOption.opt)
 
-private fun aStarVacuumWorldExperiment(instanceFileName: String): List<ExperimentResult> {
-    val vacuumWorldInstance = VacuumWorldIO.parseFromStream(FileInputStream(File(instanceFileName)))
-    val aStarAgent = ClassicalAgent(ClassicalAStarPlanner(vacuumWorldInstance.domain))
-    val classicalExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
-    return classicalExperiment.run()
-}
-
-fun writeResultsToFile(name: String, results: List<ExperimentResult>) {
-    val writer = PrintWriter("results/Results-$name-${Random().nextInt()}.csv", "UTF-8")
-    results.forEach {
-        writer.println("${it.expandedNodes}, ${it.generatedNodes}, ${it.timeInMillis}, ${it.actions.size}")
+    /* print help if help option was specified*/
+    val formatter = HelpFormatter()
+    if (cmd.hasOption(helpOption.opt)) {
+        formatter.printHelp(appName, options)
+        exitProcess(1)
     }
+    /* run the experiment */
+    val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
+    val manualConfiguration = ExperimentConfigurationDto(domainName, rawDomain, algName,
+            termType, termParam.toInt())
+    val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+    /* output the results */
+    val writer = PrintWriter(outFile, "UTF-8");
+    val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+    val date = Date()
+
+    writer.println("Date: " + dateFormat.format(date))
+    writer.println("Hostname: " + InetAddress.getLocalHost().getHostName())
+    writer.println("Termination Type: " + termType)
+    writer.println("Termination parameter: " + termParam)
+    writer.println("Expanded nodes: " + result.expandedNodes)
+    writer.println("Generated nodes: " + result.generatedNodes)
+    writer.println("Time in millis: " + result.timeInMillis)
+    writer.println("Action list: " + result.actions)
+    writer.println("Path length: " + result.pathLength)
     writer.close()
 }
