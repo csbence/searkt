@@ -12,16 +12,23 @@ class RaceTrackEnvironment(private val domain: RaceTrack, private val initialSta
     private var currentState = initialState
 
     override fun step(action: Action) {
-        throw UnsupportedOperationException()
+        val successorBundles = domain.successors(currentState)
+
+        // get the state from the successors by filtering on action
+        currentState = successorBundles.first { it.action == action }.state
     }
 
     override fun getState() = currentState
 
     override fun isGoal(): Boolean {
-        throw UnsupportedOperationException()
+        val goal = domain.isGoal(currentState)
+
+        //logger.trace { "State $currentState is ${if (goal) "" else "not"} a goal" }
+
+        return goal
     }
 
     override fun reset() {
-        throw UnsupportedOperationException()
+        currentState = initialState?.copy() ?: domain.randomState()
     }
 }

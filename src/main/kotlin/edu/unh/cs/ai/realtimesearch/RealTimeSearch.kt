@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
     if(args.isEmpty()){
         val instanceFileName = "input/racetrack/barto-big.track"
         val rawDomain = Scanner(File(instanceFileName)).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration("race track", rawDomain, "A*", 1, "time", 10)
+        val manualConfiguration = ManualConfiguration("race track", rawDomain, "RTA*", 1, "time", 10)
         manualConfiguration.setValue("lookahead depth limit", 4)
         val resultList = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
