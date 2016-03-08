@@ -21,6 +21,8 @@ fun main(args: Array<String>) {
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
         val manualConfiguration = ExperimentConfigurationDto("grid world", rawDomain, "RTA*", "time", 10)
         manualConfiguration.set("lookahead depth limit", 4)
+        manualConfiguration.set("action duration", 10)
+
         val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
         val params: MutableList<String> = arrayListOf()
