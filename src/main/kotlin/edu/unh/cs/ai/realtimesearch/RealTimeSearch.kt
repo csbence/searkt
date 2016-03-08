@@ -21,9 +21,9 @@ class Input
 
 fun main(args: Array<String>) {
     if (args.size < 2) {
-        val input = Input::class.java.classLoader.getResourceAsStream("input/racetrack/barto-small.track")!!
+        val input = Input::class.java.classLoader.getResourceAsStream("input/racetrack/barto-big.track")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
-        val manualConfiguration = ExperimentConfigurationDto("race track", rawDomain, "RTA*", "time", 10)
+        val manualConfiguration = ExperimentConfigurationDto("race track", rawDomain, "A*", "time", 10)
         manualConfiguration.set("lookahead depth limit", 4)
         manualConfiguration.set("action duration", 10L)
 

@@ -57,8 +57,8 @@ class RaceTrack(val width: Int,
             }
 
             //filter on legal moves (not too fast and on the track)
-            if (new_x_speed <= 2 && new_x_speed >= -2 &&
-                    new_y_speed <= 2 && new_y_speed >= -2 &&
+            if (/*new_x_speed <= 2 && new_x_speed >= -2 &&
+                    new_y_speed <= 2 && new_y_speed >= -2 &&*/
                     valid) {
 
                 successors.add(SuccessorBundle(
@@ -85,7 +85,7 @@ class RaceTrack(val width: Int,
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState) = distance(state) / 2
+    override fun heuristic(state: RaceTrackState) = 0.0 //distance(state) / 2
 
 
     // Distance is the max(min(dx), min(dy))
