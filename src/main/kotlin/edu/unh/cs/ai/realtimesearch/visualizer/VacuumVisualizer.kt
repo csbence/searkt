@@ -17,7 +17,7 @@ import javafx.scene.shape.*
 import javafx.util.Duration
 import kotlin.system.exitProcess
 
-class VaccumVisualizer : Application() {
+class VacuumVisualizer : Application() {
     override fun start(primaryStage: Stage) {
 
         val DISPLAY_LINE = true

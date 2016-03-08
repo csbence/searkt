@@ -1,8 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
-abstract class Experiment(val runs: Int) {
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+
+abstract class Experiment {
     /**
      * Runs the experiment
      */
-    abstract fun run(): List<ExperimentResult>
+    abstract fun run(): ExperimentResult
 }

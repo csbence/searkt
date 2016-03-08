@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
 import java.util.*
 
 /**
@@ -58,3 +57,4 @@ class DepthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType>)
     }
 
 }
+

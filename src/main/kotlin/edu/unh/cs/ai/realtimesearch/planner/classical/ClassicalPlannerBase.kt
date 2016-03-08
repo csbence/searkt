@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory
  *
  * @param domain is the domain to plan in
  */
-abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner, ClassicalPlanner<StateType> {
+abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : ClassicalPlanner<StateType> {
 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
-    private var generatedNodes = 0
-    private var expandedNodes = 0
+    override var generatedNodeCount = 0
+    override var expandedNodeCount = 0
 
     data class Node<State>(val parent: Node<State>?, val state: State,
                            val action: Action?, val cost: Double)
@@ -26,7 +26,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * Resets all variables in the planner. Called before a new planning task
      */
     open protected fun initiatePlan() {
-        generatedNodes = 0
+        generatedNodeCount = 0
     }
 
     /**
@@ -80,9 +80,9 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param node is the node to expand
      * @return the next node of interest
      */
-    public fun expandNode(node: Node<StateType>): Node<StateType> {
-        expandedNodes += 1
-        if (expandedNodes % 100000 == 0) {
+    fun expandNode(node: Node<StateType>): Node<StateType> {
+        expandedNodeCount += 1
+        if (expandedNodeCount % 100000 == 0) {
             println(System.currentTimeMillis() - timestamp)
             timestamp = System.currentTimeMillis()
         }
@@ -90,7 +90,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
         // expand (only those not visited yet)
         for (successor in domain.successors(node.state)) {
             if (!visitedBefore(successor.state, node)) {
-                generatedNodes += 1
+                generatedNodeCount += 1
 
                 // generate the node with correct cost
                 val nodeCost = successor.actionCost + node.cost
@@ -127,16 +127,8 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * history or generated node.
      */
     fun reset() {
-        generatedNodes = 0
-        expandedNodes = 0
+        generatedNodeCount = 0
+        expandedNodeCount = 0
         initiatePlan()
-    }
-
-    override fun getExpandedNodeCount(): Int {
-        return expandedNodes
-    }
-
-    override fun getGeneratedNodeCount(): Int {
-        return generatedNodes
     }
 }

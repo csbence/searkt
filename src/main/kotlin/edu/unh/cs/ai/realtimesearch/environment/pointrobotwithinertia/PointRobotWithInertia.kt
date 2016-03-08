@@ -4,9 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldAction
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
-import org.slf4j.LoggerFactory
 import java.util.*
 
 /**

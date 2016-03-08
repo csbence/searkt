@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime_
+package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
 import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -25,11 +26,12 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         val action = if (sortedSuccessors.size == 1) {
             // Only one action is available
             val successorHeuristicPair = sortedSuccessors[0]
-            heuristicTable[state] = successorHeuristicPair.heuristicLookahead
+            heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
             successorHeuristicPair.successorBundle.action
         } else if (sortedSuccessors.size >= 2) {
-            // Save the second best actions heuristic value
-            heuristicTable[state] = sortedSuccessors[1].heuristicLookahead
+            // Save the second best action's f value
+            val successorHeuristicPair = sortedSuccessors[1]
+            heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
             // Use the best action
             sortedSuccessors[0].successorBundle.action
         } else {
@@ -97,7 +99,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
         while (openList.isNotEmpty()) {
             val miniminNode = openList.remove()
-            expandedNodes++
+            expandedNodeCount++
 
             if (terminationChecker.reachedTermination()) {
                 return null
@@ -120,7 +122,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                     bestAvailable = Math.min(bestAvailable, successorCost)
                 } else {
                     openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, miniminNode.depth - 1))
-                    generatedNodes++
+                    generatedNodeCount++
                 }
             }
         }
