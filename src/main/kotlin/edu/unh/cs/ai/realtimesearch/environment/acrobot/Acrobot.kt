@@ -33,8 +33,6 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
  * vertically from a downward facing position.
  */
 class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
-    override fun actionDuration(action: Action<AcrobotState>) = (configuration.stateConfiguration.timeStep * 1000.0).toLong()
-
     internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
         return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
     }

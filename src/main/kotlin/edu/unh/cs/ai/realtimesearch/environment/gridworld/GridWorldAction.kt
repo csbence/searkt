@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldState
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
@@ -10,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * @param index: the type of action, each return different relative locations
  */
-enum class GridWorldAction(val index: Int) : Action<GridWorldState> {
+enum class GridWorldAction(val index: Int) : Action {
     LEFT(0), DOWN(1), UP (2), RIGHT(3);
 
     // Storage of all relative locations (up down left right), returned by reference

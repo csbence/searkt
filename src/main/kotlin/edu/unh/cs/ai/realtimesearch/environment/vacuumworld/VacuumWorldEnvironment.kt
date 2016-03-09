@@ -19,7 +19,7 @@ class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initia
     /**
      * Applies the action to the environment
      */
-    override fun step(action: Action<VacuumWorldState>) {
+    override fun step(action: Action) {
         // contains successor per possible action
         val successorBundles = domain.successors(currentState)
 

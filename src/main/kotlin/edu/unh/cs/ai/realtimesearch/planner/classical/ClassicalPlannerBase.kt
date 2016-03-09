@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.planner.Planner
 import org.slf4j.LoggerFactory
 
 /**
@@ -18,8 +19,8 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
 
-    data class Node<StateType : State<StateType>>(val parent: Node<StateType>?, val state: StateType,
-                           val action: Action<StateType>?, val cost: Double)
+    data class Node<State>(val parent: Node<State>?, val state: State,
+                           val action: Action?, val cost: Double)
 
     /**
      * Resets all variables in the planner. Called before a new planning task
@@ -57,7 +58,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    override fun plan(state: StateType): List<Action<StateType>> {
+    override fun plan(state: StateType): List<Action> {
         // get ready / reset for plan
         reset()
 
@@ -107,8 +108,8 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param leave the current end of the path
      * @return list of actions to get to leave
      */
-    protected fun extractPlan(leave: Node<StateType>): List<Action<StateType>> {
-        val actions: MutableList<Action<StateType>> = arrayListOf()
+    protected fun extractPlan(leave: Node<StateType>): List<Action> {
+        val actions: MutableList<Action> = arrayListOf()
 
         var node = leave
         // root will have null action. So as long as the parent

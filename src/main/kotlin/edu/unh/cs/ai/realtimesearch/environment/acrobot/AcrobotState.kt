@@ -22,14 +22,22 @@ val verticalDownAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
 // Initial state with both links pointed down
 val defaultInitialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
 
-fun roundOperation(number: Double, decimal: Double, op: (Double) -> Double): Double {
-    val fraction = 1.0 / decimal
-    return op(number * fraction) / fraction
+val defaultFloatAccuracy = 0.00001
+
+fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean {
+    return a == b || Math.abs(a - b) < accuracy
 }
 
-fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.round(num) + 0.0 })
-fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.floor(num) })
-fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num -> Math.ceil(num) })
+fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Double, accuracy: Double = defaultFloatAccuracy): Double {
+    val fraction = 1.0 / decimal
+    val operand = if (doubleNearEquals(decimal, number)) 1.0 else number * fraction
+    return op(operand, accuracy) / fraction
+}
+
+// Add accuracy to number due to floating point calculations causing issues with rounding operators
+fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.round(num + accuracy) + 0.0 })
+fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
+fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 
 /**
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.

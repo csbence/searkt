@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import groovy.json.JsonOutput
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
@@ -9,20 +9,19 @@ import groovyjarjarcommonscli.Option
 import groovyjarjarcommonscli.Options
 import java.io.File
 import java.io.PrintWriter
-import java.net.InetAddress
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.system.exitProcess
 
 class Input
 
 fun main(args: Array<String>) {
-
     if (args.size < 2) {
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
-        val manualConfiguration = ManualConfiguration("grid world", rawDomain, "RTA*", "time", 10)
-        manualConfiguration.setValue("lookahead depth limit", 4)
+        val manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
+        manualConfiguration.set("lookahead depth limit", 4)
+        manualConfiguration.set("action duration", 10L)
+
         val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
         val params: MutableList<String> = arrayListOf()
@@ -93,7 +92,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     }
     /* run the experiment */
     val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
-    val manualConfiguration = ManualConfiguration(domainName, rawDomain, algName,
+    val manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
             termType, termParam.toInt())
     val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 

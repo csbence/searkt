@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.InputStream
 import java.math.BigDecimal
@@ -11,10 +10,10 @@ data class AcrobotStateConfiguration(
         val maxAngularVelocity2: Double = 9.0 * Math.PI,
         val minAngularVelocity1: Double = -(4.0 * Math.PI),
         val minAngularVelocity2: Double = -(9.0 * Math.PI),
-        val positionGranularity1: Double = 0.2992, // 21 positions
-        val positionGranularity2: Double = 0.2992,
-        val velocityGranularity1: Double = 0.1005, // 250 velocities
-        val velocityGranularity2: Double = 0.0754, // 750 velocities
+        val positionGranularity1: Double = 0.2991993003, // 21 positions
+        val positionGranularity2: Double = 0.2991993003,
+        val velocityGranularity1: Double = 0.1045309649, // 250 velocities
+        val velocityGranularity2: Double = 0.0767315570, // 750 velocities
         val timeStep: Double = 0.2) { // Sutton and Boone
 
     companion object {
@@ -47,9 +46,4 @@ data class AcrobotStateConfiguration(
                     (map["timeStep"] as BigDecimal).toDouble())
         }
     }
-
-    /**
-     * Writes the AcrobotStateConfiguration to a string in JSON format
-     */
-    override fun toString(): String = JsonOutput.toJson(this)
 }

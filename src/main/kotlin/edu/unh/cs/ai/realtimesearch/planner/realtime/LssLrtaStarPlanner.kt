@@ -22,10 +22,10 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action<StateType>, val actionCost: Double)
+    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
-                                             var actionCost: Double, var action: Action<StateType>,
+                                             var actionCost: Double, var action: Action,
                                              var iteration: Long,
                                              parent: Node<StateType>? = null) {
 
@@ -113,7 +113,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action<StateType>> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         // Initiate for the first search
 
         if (rootState == null) {
@@ -136,7 +136,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
-        var plan: List<Action<StateType>>? = null
+        var plan: List<Action>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
             plan = extractPlan(targetNode, state)
@@ -157,7 +157,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction<StateType>(), iterationCounter)
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter)
         nodes[state] = node
         //        costTable.put(state, 0.0) TODO
         var currentNode = node
@@ -348,8 +348,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<Action<StateType>> {
-        val actions = arrayListOf<Action<StateType>>()
+    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<Action> {
+        val actions = arrayListOf<Action>()
         var currentNode = targetNode
 
         logger.debug() { "Extracting plan" }

@@ -1,14 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
-import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
-import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ManualConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.error
-import edu.unh.cs.ai.realtimesearch.logging.info
-import groovy.json.JsonOutput
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -23,11 +22,8 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
 import org.slf4j.LoggerFactory
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
-import java.nio.charset.Charset
-import java.util.*
 import kotlin.system.exitProcess
 
 open class AcrobotVisualizer : Application() {
@@ -111,7 +107,7 @@ open class AcrobotVisualizer : Application() {
             if (algorithm == null || terminationType == null || terminationParameters == null)
                 throw IllegalArgumentException("Too few options provided to run algorithm")
 
-            val manualConfiguration = ManualConfiguration("acrobot", acrobotConfiguration.toString(), algorithm,
+            val manualConfiguration = GeneralExperimentConfiguration("acrobot", acrobotConfiguration.toString(), algorithm,
                     terminationType, terminationParameters.toInt())
             experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
             actionListFromResult()
@@ -172,7 +168,7 @@ open class AcrobotVisualizer : Application() {
             animation.play()
     }
 
-    private fun getStateList(actionList: List<Action<AcrobotState>>, acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<AcrobotState> {
+    private fun getStateList(actionList: List<Action>, acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<AcrobotState> {
         val stateList = mutableListOf<AcrobotState>()
         val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
         var currentState = DiscretizedState(acrobotConfiguration.initialState)

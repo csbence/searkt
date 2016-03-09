@@ -19,7 +19,7 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
     /**
      * Applies the action to the environment
      */
-    override fun step(action: Action<AcrobotState>) {
+    override fun step(action: Action) {
         var successorBundle = domain.successors(currentState)
 
         // get the state from the successors by filtering on action

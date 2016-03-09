@@ -1,8 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import java.io.File
 import java.io.InputStream
 
 data class AcrobotConfiguration(
@@ -44,9 +42,4 @@ data class AcrobotConfiguration(
                     AcrobotStateConfiguration.fromMap(stateConfiguration))
         }
     }
-
-    /**
-     * Writes the AcrobotStateConfiguration to a string in JSON format
-     */
-    override fun toString(): String = JsonOutput.toJson(this)
 }

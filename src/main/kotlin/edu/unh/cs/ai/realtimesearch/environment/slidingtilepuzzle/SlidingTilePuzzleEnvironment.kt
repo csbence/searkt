@@ -13,7 +13,7 @@ class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, privat
     private val logger = LoggerFactory.getLogger(SlidingTilePuzzleEnvironment::class.java)
     private var currentState = initialState
 
-    override fun step(action: Action<SlidingTilePuzzleState>) {
+    override fun step(action: Action) {
         val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action

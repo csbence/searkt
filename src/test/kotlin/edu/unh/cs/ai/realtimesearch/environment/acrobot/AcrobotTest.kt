@@ -1,25 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
 
-fun doubleNearEquals(a: Double, b: Double): Boolean {
-    return a == b || Math.abs(a - b) < 0.00001
-}
 
 class AcrobotTest {
 
@@ -78,17 +71,17 @@ class AcrobotTest {
         assertTrue { successors.size == AcrobotAction.values().size }
     }
 
-    @Test
-    fun testAStarDiscretized1() {
-        val domain = DiscretizedDomain(Acrobot())
-        val initialState = DiscretizedState(defaultInitialAcrobotState)
-
-        val aStarAgent = ClassicalAgent(AStarPlanner(domain))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, domain, initialState)
-
-//        aStarExperiment.run()
-        printResults(aStarExperiment.run())
-    }
+//    @Test
+//    fun testAStarDiscretized1() {
+//        val domain = DiscretizedDomain(Acrobot())
+//        val initialState = DiscretizedState(defaultInitialAcrobotState)
+//
+//        val aStarAgent = ClassicalAgent(AStarPlanner(domain))
+//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, domain, initialState)
+//
+////        aStarExperiment.run()
+//        printResults(aStarExperiment.run())
+//    }
 
 //        @Test
 //        fun testLssLrtaStarDiscretized1() {

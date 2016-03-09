@@ -13,13 +13,13 @@ import java.util.*
 
 class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val depthLimit: Int) : RealTimePlanner<StateType>(domain) {
 
-    data class SuccessorHeuristicPair<StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
+    data class SuccessorHeuristicPair<out StateType : State<out StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
 
     private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
 
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action<StateType>> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         val successors = domain.successors(state)
         val sortedSuccessors = evaluateSuccessors(successors, terminationChecker).sortedBy { it.successorBundle.actionCost + it.heuristicLookahead }
 

@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -19,6 +18,7 @@ class VacuumWorld(public val width: Int,
                   public val height: Int,
                   public val blockedCells: Set<Location>,
                   public val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
+
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
 
     /**
@@ -145,10 +145,6 @@ class VacuumWorld(public val width: Int,
                 ThreadLocalRandom.current().nextInt(0, width),
                 ThreadLocalRandom.current().nextInt(0, height)
         )
-    }
-
-    override fun actionDuration(action: Action<VacuumWorldState>): Long {
-        throw UnsupportedOperationException()
     }
 }
 
