@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigurationDto
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
     if (args.size < 2) {
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
-        val manualConfiguration = ExperimentConfigurationDto("grid world", rawDomain, "RTA*", "time", 10)
+        val manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
         manualConfiguration.set("lookahead depth limit", 4)
         manualConfiguration.set("action duration", 10L)
 
@@ -93,7 +93,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     }
     /* run the experiment */
     val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
-    val manualConfiguration = ExperimentConfigurationDto(domainName, rawDomain, algName,
+    val manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
             termType, termParam.toInt())
     val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
