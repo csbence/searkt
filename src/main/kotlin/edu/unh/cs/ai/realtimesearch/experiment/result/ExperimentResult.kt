@@ -1,34 +1,75 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import groovy.json.JsonSlurper
 import java.io.InputStream
 import java.math.BigDecimal
 import java.util.*
 
-data class ExperimentResult(val experimentConfiguration: GeneralExperimentConfiguration?,
-                            val expandedNodes: Int = 0,
-                            val generatedNodes: Int = 0,
-                            val timeInMillis: Long = 0,
-                            val actions: List<Action> = emptyList(),
-                            val pathLength: Double? = null,
-                            val errorMessage: String? = null,
-                            val values: Map<String, Any> = HashMap(),
-                            val timestamp: Long = System.currentTimeMillis(),
-                            val systemProperties: HashMap<String, String> = HashMap()) {
+
+/**
+ * ExperimentResult is a class to store experiment results.
+ *
+ * The systemProperties property is initialized at construction time.
+ */
+@JsonSerialize(`as` = ExperimentData::class)
+class ExperimentResult() : ExperimentData() {
+    constructor(experimentConfiguration: MutableMap<String, Any?>,
+                expandedNodes: Int = 0,
+                generatedNodes: Int = 0,
+                timeInMillis: Long = 0,
+                actions: List<String> = emptyList(),
+                pathLength: Double? = null,
+                errorMessage: String? = null,
+                values: Map<String, Any> = HashMap(),
+                timestamp: Long = System.currentTimeMillis(),
+                systemProperties: HashMap<String, String> = HashMap()) : this() {
+
+        this.experimentConfiguration = experimentConfiguration
+        this.expandedNodes = expandedNodes
+        this.generatedNodes = generatedNodes
+        this.timeInMillis = timeInMillis
+        this.actions = actions
+        this.pathLength = pathLength
+        this.errorMessage = errorMessage
+        this.values = values
+        this.timestamp = timestamp
+
+        if (systemProperties.isNotEmpty()) {
+            this.systemProperties = systemProperties
+        }
+    }
+
+    var experimentConfiguration: MutableMap<String, Any?> by valueStore
+    var pathLength: Double? by valueStore
+    var errorMessage: String? by valueStore
+    var expandedNodes: Int by valueStore
+    var generatedNodes: Int by valueStore
+    var timeInMillis: Long by valueStore
+    var actions: List<String> by valueStore
+    var values: Map<String, Any> by valueStore
+    var timestamp: Long by valueStore
+    var systemProperties: MutableMap<String, String> by valueStore
+
     companion object {
         fun fromStream(stream: InputStream): ExperimentResult = fromMap(JsonSlurper().parse(stream) as Map<*,*>)
         fun fromString(string: String): ExperimentResult = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
 
         fun fromMap(map: Map<*,*>): ExperimentResult {
-            val experimentConfiguration = map["experimentConfiguration"]
+            val rawExperimentConfiguration = map["experimentConfiguration"]
+            val experimentConfiguration = mutableMapOf<String,Any?>()
+            if (rawExperimentConfiguration != null) {
+                for ((key, value) in rawExperimentConfiguration as Map<*,*>) {
+                    experimentConfiguration.put(key.toString(), value as Any)
+                }
+            }
 
-//            val actions = map["actions"] as List<*>// TODO Can't currently convert strings to actions
-//            val actionList: MutableList<String> = mutableListOf()
-//            for (action in actions) {
-//                actionList.add(action as String)
-//            }
+            val actions = map["actions"] as List<*>
+            val actionList: MutableList<String> = mutableListOf()
+            for (action in actions) {
+                actionList.add(action as String)
+            }
 
             val rawSystemProperties = map["systemProperties"]
             val systemProperties = HashMap<String, String>()
@@ -42,11 +83,11 @@ data class ExperimentResult(val experimentConfiguration: GeneralExperimentConfig
             val rawTimestamp = map["timestamp"]
 
             return ExperimentResult(
-                    GeneralExperimentConfiguration.fromMap(experimentConfiguration as? Map<*,*>),
+                    experimentConfiguration,
                     map["expandedNodes"] as Int,
                     map["generatedNodes"] as Int,
                     (map["timeInMillis"] as Int).toLong(),
-                    /*actionList,*/
+                    actionList,
                     pathLength = (map["pathLength"] as BigDecimal?)?.toDouble(),
                     errorMessage = map["errorMessage"] as String?,
                     values = if (rawValues != null) rawValues as Map<String, Any> else HashMap(),
@@ -56,11 +97,10 @@ data class ExperimentResult(val experimentConfiguration: GeneralExperimentConfig
     }
 
     init {
-        // Only initialize if empty
-        if (systemProperties.isEmpty()) {
-            System.getProperties().forEach {
-                systemProperties.put(it.key.toString(), it.value.toString())
-            }
+        // Initialize the system properties
+        systemProperties = hashMapOf<String, String>()
+        System.getProperties().forEach {
+            systemProperties.put(it.key.toString(), it.value.toString())
         }
     }
 }

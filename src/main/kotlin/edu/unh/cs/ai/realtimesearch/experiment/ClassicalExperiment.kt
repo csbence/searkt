@@ -45,7 +45,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
 
-        return ExperimentResult(experimentConfiguration, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions)
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions.map { it.toString() })
 
     }
 }

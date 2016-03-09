@@ -36,7 +36,7 @@ object ConfigurationExecutor {
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
             "acrobot" -> executeAcrobot(experimentConfiguration)
-            else -> ExperimentResult(experimentConfiguration, errorMessage = "Unknown domain type: $domainName")
+            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
     }
 
@@ -83,7 +83,7 @@ object ConfigurationExecutor {
             "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState, environment)
             "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState, environment)
 
-            else -> ExperimentResult(experimentConfiguration, errorMessage = "Unknown algorithm: $algorithmName")
+            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
 
@@ -93,7 +93,7 @@ object ConfigurationExecutor {
         val state: StateType = environment.getState()
         aStarPlanner.search(state)
 
-        return ExperimentResult(experimentConfiguration, errorMessage = "Incompatible output format.")
+        return ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Incompatible output format.")
     }
 
     private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {

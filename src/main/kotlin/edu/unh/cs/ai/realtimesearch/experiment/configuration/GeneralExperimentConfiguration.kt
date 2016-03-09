@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import groovy.json.JsonSlurper
 
 @JsonSerialize(`as` = ExperimentData::class)
-open class GeneralExperimentConfiguration(map: MutableMap<String, Any> = hashMapOf()) : ExperimentData(map) {
+open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(domainName: String,
                 rawDomain: String,
                 algorithmName: String,
