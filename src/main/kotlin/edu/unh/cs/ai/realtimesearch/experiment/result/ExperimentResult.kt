@@ -1,10 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import java.util.*
 
-data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
+data class ExperimentResult(val experimentConfiguration: GeneralExperimentConfiguration?,
                             val expandedNodes: Int = 0,
                             val generatedNodes: Int = 0,
                             val timeInMillis: Long = 0,

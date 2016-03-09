@@ -26,7 +26,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
  * Configuration executor to execute experiment configurations.
  */
 object ConfigurationExecutor {
-    fun executeConfiguration(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+    fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val domainName: String = experimentConfiguration.domainName
 
         return when (domainName) {
@@ -37,7 +37,7 @@ object ConfigurationExecutor {
         }
     }
 
-    private fun executeVacuumWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+    private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(rawDomain.byteInputStream())
         val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
@@ -45,7 +45,7 @@ object ConfigurationExecutor {
         return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState, vacuumWorldEnvironment)
     }
 
-    private fun executeGridWorld(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+    private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
         val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it the the experiment configuration.")
         val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream(), actionDuration)
@@ -54,7 +54,7 @@ object ConfigurationExecutor {
         return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState, gridWorldEnvironment)
     }
 
-    private fun executeSlidingTilePuzzle(experimentConfiguration: ExperimentConfiguration): ExperimentResult {
+    private fun executeSlidingTilePuzzle(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(rawDomain.byteInputStream())
         val slidingTilePuzzleEnvironment = SlidingTilePuzzleEnvironment(slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
@@ -62,7 +62,7 @@ object ConfigurationExecutor {
         return executeDomain(experimentConfiguration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState, slidingTilePuzzleEnvironment)
     }
 
-    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val algorithmName = experimentConfiguration.algorithmName
 
         return when (algorithmName) {
@@ -76,7 +76,7 @@ object ConfigurationExecutor {
         }
     }
 
-    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val aStarPlanner = SimpleAStar(domain)
 
         val state: StateType = environment.getState()
@@ -85,7 +85,7 @@ object ConfigurationExecutor {
         return ExperimentResult(experimentConfiguration, errorMessage = "Incompatible output format.")
     }
 
-    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val aStarPlanner = ClassicalAStarPlanner(domain)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -93,7 +93,7 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val aStarPlanner = ClassicalAStarPlanner(domain)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -101,7 +101,7 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
@@ -109,7 +109,7 @@ object ConfigurationExecutor {
         return rtsExperiment.run()
     }
 
-    private fun getTerminationChecker(experimentConfiguration: ExperimentConfiguration): TerminationChecker {
+    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {
         val terminationCheckerType = experimentConfiguration.terminationCheckerType
         val terminationCheckerParameter = experimentConfiguration.terminationCheckerParameter
 
@@ -121,7 +121,7 @@ object ConfigurationExecutor {
         }
     }
 
-    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
         val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)

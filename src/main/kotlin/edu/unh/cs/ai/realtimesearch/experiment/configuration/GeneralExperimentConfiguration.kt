@@ -1,9 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 
-class ExperimentConfigurationDto() : ExperimentConfiguration {
-
+@JsonSerialize(`as` = ExperimentData::class)
+open class GeneralExperimentConfiguration(map: MutableMap<String, Any> = hashMapOf()) : ExperimentData(map) {
     constructor(domainName: String,
                 rawDomain: String,
                 algorithmName: String,
@@ -16,17 +16,11 @@ class ExperimentConfigurationDto() : ExperimentConfiguration {
         this.terminationCheckerParameter = terminationCheckerParameter
     }
 
-    private @JsonUnwrapped val valueStore = hashMapOf<String, Any>()
-
-    override var domainName: String by valueStore
-    override var rawDomain: String by valueStore
-    override var algorithmName: String by valueStore
-    override var terminationCheckerType: String by valueStore
-    override var terminationCheckerParameter: Int by valueStore
+    var domainName: String by valueStore
+    var rawDomain: String by valueStore
+    var algorithmName: String by valueStore
+    var terminationCheckerType: String by valueStore
+    var terminationCheckerParameter: Int by valueStore
 
     override fun contains(key: String) = valueStore.containsKey(key)
-    override fun get(key: String) = valueStore[key]
-    override fun set(key: String, value: Any) {
-        valueStore[key] = value
-    }
 }
