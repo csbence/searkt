@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
 import groovy.json.JsonSlurper
 import java.io.InputStream
@@ -21,13 +21,13 @@ data class AcrobotStateConfiguration(
          * Returns an AcrobotStateConfiguration from the given string contents.
          * @param string a string in JSON format representing an AcrobotStateConfiguration
          */
-        fun fromString(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
+        fun fromString(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
 
         /**
          * Returns an AcrobotStateConfiguration from the given stream contents.
          * @param stream a stream with JSON format content representing an AcrobotStateConfiguration
          */
-        fun fromSteam(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*,*>)
+        fun fromSteam(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
 
         /**
          * Returns an AcrobotStateConfiguration from the given map.

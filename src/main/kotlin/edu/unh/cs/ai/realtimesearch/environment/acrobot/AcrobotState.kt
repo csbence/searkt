@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
 

@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
