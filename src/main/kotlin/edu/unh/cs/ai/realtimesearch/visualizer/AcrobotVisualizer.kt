@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import groovyjarjarcommonscli.GnuParser
@@ -98,7 +99,7 @@ open class AcrobotVisualizer : Application() {
         if (resultFile != null) {
             // Need to read twice so can't use a stream
             val text = File(resultFile).readText()
-            experimentResult = ExperimentResult.fromString(text)
+            experimentResult = experimentResultFromJson(text)
             copyActionList(AcrobotAction.fromResultString(text))
         } else {
             // Run the specified algorithm to retrieve path

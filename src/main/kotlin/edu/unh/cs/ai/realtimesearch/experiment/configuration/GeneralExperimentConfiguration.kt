@@ -24,19 +24,4 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
     var terminationCheckerParameter: Int by valueStore
 
     override fun contains(key: String) = valueStore.containsKey(key)
-
-    companion object {
-        fun fromString(string: String): GeneralExperimentConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
-
-        fun fromMap(map: Map<*,*>?): GeneralExperimentConfiguration {
-            if (map == null) return GeneralExperimentConfiguration()
-            return GeneralExperimentConfiguration(
-                    map["domainName"] as String,
-                    map["rawDomain"] as String,
-                    map["algorithmName"] as String,
-                    map["terminationCheckerType"] as String,
-                    map["terminationCheckerParameter"] as Int
-            )
-        }
-    }
 }

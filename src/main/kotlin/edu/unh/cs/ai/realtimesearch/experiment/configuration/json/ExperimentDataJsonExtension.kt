@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 
 fun <T : ExperimentData> T.toJson(): String {
     val mapper = ObjectMapper()
@@ -24,8 +25,14 @@ fun experimentDataFromJson(jsonExperimentConfiguration: String): ExperimentData 
     return mapper.readValue<ExperimentData>(jsonExperimentConfiguration)
 }
 
-fun experimentConfiurationFromJson(jsonExperimentConfiguration: String): GeneralExperimentConfiguration {
+fun experimentConfigurationFromJson(jsonExperimentConfiguration: String): GeneralExperimentConfiguration {
     val mapper = ObjectMapper().registerKotlinModule()
     val experimentData = mapper.readValue<ExperimentData>(jsonExperimentConfiguration)
     return GeneralExperimentConfiguration(experimentData.valueStore)
+}
+
+fun experimentResultFromJson(jsonExperimentResult: String): ExperimentResult {
+    val mapper = ObjectMapper().registerKotlinModule()
+    val experimentData = mapper.readValue<ExperimentData>(jsonExperimentResult)
+    return ExperimentResult(experimentData.valueStore)
 }
