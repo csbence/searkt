@@ -53,7 +53,8 @@ class ExperimentResult() : ExperimentData() {
         // Initialize the system properties
         systemProperties = hashMapOf<String, String>()
         System.getProperties().forEach {
-            systemProperties.put(it.key.toString(), it.value.toString())
+            // MongoDB cannot handle . in keys
+            systemProperties.put(it.key.toString().replace('.', '_'), it.value.toString())
         }
     }
 
