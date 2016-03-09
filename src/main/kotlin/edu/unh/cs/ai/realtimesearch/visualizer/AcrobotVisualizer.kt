@@ -10,6 +10,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.info
+import groovy.json.JsonOutput
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -26,6 +28,7 @@ import javafx.util.Duration
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
+import java.io.PrintWriter
 import kotlin.system.exitProcess
 
 open class AcrobotVisualizer : Application() {
@@ -40,6 +43,7 @@ open class AcrobotVisualizer : Application() {
         assert(experimentResult != null)
         assert(actionList.isEmpty())
         for (action in experimentResult!!.actions) {
+            logger.info { "$action" }
             actionList.add(AcrobotAction.valueOf(action))
         }
     }
@@ -97,23 +101,22 @@ open class AcrobotVisualizer : Application() {
         }
 
         if (resultFile != null) {
-            // Need to read twice so can't use a stream
             val text = File(resultFile).readText()
             experimentResult = experimentResultFromJson(text)
-            copyActionList(AcrobotAction.fromResultString(text))
         } else {
             // Run the specified algorithm to retrieve path
             val algorithm = cmd.getOptionValue(algorithmOption.opt)
             val terminationType = cmd.getOptionValue(terminationTypeOption.opt)
-            val terminationParameters = cmd.getOptionValue(terminationParameterOption.opt)
-            if (algorithm == null || terminationType == null || terminationParameters == null)
+            val terminationParameter = cmd.getOptionValue(terminationParameterOption.opt)
+            if (algorithm == null || terminationType == null || terminationParameter == null)
                 throw IllegalArgumentException("Too few options provided to run algorithm")
 
-            val manualConfiguration = GeneralExperimentConfiguration("acrobot", acrobotConfiguration.toString(), algorithm,
-                    terminationType, terminationParameters.toInt())
+            val manualConfiguration = GeneralExperimentConfiguration("acrobot", JsonOutput.toJson(acrobotConfiguration), algorithm,
+                    terminationType, terminationParameter.toInt())
             experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-            actionListFromResult()
         }
+
+        actionListFromResult()
     }
 
     override fun start(primaryStage: Stage) {
