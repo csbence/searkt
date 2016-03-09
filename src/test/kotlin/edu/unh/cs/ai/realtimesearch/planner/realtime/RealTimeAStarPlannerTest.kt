@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import org.junit.Ignore
 import org.junit.Test
@@ -19,7 +20,7 @@ class RealTimeAStarPlannerTest {
         val realTimeAStarAgent = RTSAgent(realTimeAStarPlanner)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 
-        val rtsExperiment = RTSExperiment(null, realTimeAStarAgent, gridWorldEnvironment, FakeTerminationChecker())
+        val rtsExperiment = RTSExperiment(GeneralExperimentConfiguration(), realTimeAStarAgent, gridWorldEnvironment, FakeTerminationChecker())
         /*val experimentResults = */rtsExperiment.run()
     }
 }

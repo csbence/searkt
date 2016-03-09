@@ -194,6 +194,5 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun randomState(): PointRobotWithInertiaState {
         throw UnsupportedOperationException()
     }
-
 }
 

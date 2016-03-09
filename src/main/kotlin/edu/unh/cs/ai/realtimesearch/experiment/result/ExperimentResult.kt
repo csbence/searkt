@@ -57,5 +57,4 @@ class ExperimentResult() : ExperimentData() {
             systemProperties.put(it.key.toString().replace('.', '_'), it.value.toString())
         }
     }
-
 }

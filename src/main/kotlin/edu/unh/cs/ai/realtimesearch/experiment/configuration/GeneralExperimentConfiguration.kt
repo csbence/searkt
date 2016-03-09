@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import groovy.json.JsonSlurper
 
 @JsonSerialize(`as` = ExperimentData::class)
 open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {

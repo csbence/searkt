@@ -2,6 +2,8 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentDataFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import groovy.json.JsonOutput
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -11,7 +13,7 @@ import kotlin.test.assertTrue
 class ExperimentDataTest {
 
     @Test
-    fun testJsonSerialization() {
+    fun testJsonSerialization1() {
 
         val experimentData = ExperimentData()
         experimentData["terminationCheckerParameter"] = 4
@@ -28,4 +30,19 @@ class ExperimentDataTest {
         assertTrue(experimentDataFromJson["X"] == null)
     }
 
+//    @Test
+//    fun testJsonSerialization2() {
+//
+//        val experimentData = ExperimentData()
+//        experimentData["actions"] = listOf("POSITIVE", "POSITIVE", "NEGATIVE", "NONE")
+//
+//        val json = experimentData.toJson()
+//        val experimentDataFromJson = experimentDataFromJson(json)
+//
+//        val experimentResult = ExperimentResult(experimentDataFromJson.valueStore)
+//
+//        assertTrue { experimentResult.actions.size == 4 }
+//        assertTrue { experimentResult.actions.first().equals("POSITIVE") }
+//        assertTrue { experimentResult.actions.last().equals("NONE") }
+//    }
 }

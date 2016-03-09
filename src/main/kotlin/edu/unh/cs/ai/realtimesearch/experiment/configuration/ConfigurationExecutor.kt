@@ -2,9 +2,11 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
@@ -33,6 +35,7 @@ object ConfigurationExecutor {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
+            "acrobot" -> executeAcrobot(experimentConfiguration)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
     }
@@ -60,6 +63,14 @@ object ConfigurationExecutor {
         val slidingTilePuzzleEnvironment = SlidingTilePuzzleEnvironment(slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
 
         return executeDomain(experimentConfiguration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState, slidingTilePuzzleEnvironment)
+    }
+
+    private fun executeAcrobot(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val acrobotInstance = AcrobotIO.parseFromStream(rawDomain.byteInputStream())
+        val acrobotEnvironment = DiscretizedEnvironment(acrobotInstance.domain, acrobotInstance.initialState)
+
+        return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState, acrobotEnvironment)
     }
 
     private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
