@@ -40,7 +40,7 @@ open class AcrobotVisualizer : Application() {
         assert(experimentResult != null)
         assert(actionList.isEmpty())
         for (action in experimentResult!!.actions) {
-            actionList.add(action as AcrobotAction)
+            actionList.add(AcrobotAction.valueOf(action))
         }
     }
 
