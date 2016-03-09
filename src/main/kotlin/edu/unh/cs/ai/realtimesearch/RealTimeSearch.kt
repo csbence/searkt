@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigurationDto
-import edu.unh.cs.ai.realtimesearch.experiment.local.toIndentedJson
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -20,22 +19,19 @@ fun main(args: Array<String>) {
     if (args.size < 2) {
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
-        val manualConfiguration: ExperimentConfigurationDto = ExperimentConfigurationDto("grid world", rawDomain, "RTA*", "time", 10)
+        val manualConfiguration = ExperimentConfigurationDto("grid world", rawDomain, "RTA*", "time", 10)
         manualConfiguration.set("lookahead depth limit", 4)
+        manualConfiguration.set("action duration", 10L)
 
-        val message = manualConfiguration.toIndentedJson()
-        println(message)
-//        println(fromJson(message).toIndentedJson())
+        val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
-//        val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-//
-//        val params: MutableList<String> = arrayListOf()
-//        val actionList = experimentResult.actions
-//
-//        params.add(rawDomain)
-//        for (action in actionList) {
-//            params.add(action.toString())
-//        }
+        val params: MutableList<String> = arrayListOf()
+        val actionList = experimentResult.actions
+
+        params.add(rawDomain)
+        for (action in actionList) {
+            params.add(action.toString())
+        }
 
         //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
         //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
