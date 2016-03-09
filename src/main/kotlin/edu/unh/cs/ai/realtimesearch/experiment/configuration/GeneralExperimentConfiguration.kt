@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 
 @JsonSerialize(`as` = ExperimentData::class)
-open class GeneralExperimentConfiguration(map: MutableMap<String, Any> = hashMapOf()) : ExperimentData(map) {
+open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(domainName: String,
                 rawDomain: String,
                 algorithmName: String,

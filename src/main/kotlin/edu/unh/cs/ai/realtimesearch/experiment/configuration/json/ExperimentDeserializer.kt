@@ -6,10 +6,13 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 
+/**
+ * Json deserializer for ExperimentData.
+ */
 class ExperimentDeserializer() : JsonDeserializer<ExperimentData>() {
 
     override fun deserialize(parser: JsonParser, context: DeserializationContext): ExperimentData? {
-        val valueStore: MutableMap<String, Any?> = readObject(parser, context)
+        val valueStore: MutableMap<String, Any?> = readObject(parser, context) // Assume that the top level item is an object.
         return ExperimentData(valueStore)
     }
 

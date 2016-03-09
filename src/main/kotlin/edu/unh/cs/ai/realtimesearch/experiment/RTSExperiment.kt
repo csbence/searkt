@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
  * @param world is the environment
  * @param terminationChecker controls the constraint put upon the agent
  */
-class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration? = null,
+class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                   val agent: RTSAgent<StateType>,
                                                   val world: Environment<StateType>,
                                                   val terminationChecker: TerminationChecker) : Experiment() {
@@ -59,10 +59,10 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
             }
 
             totalTimeInMillis += timeInMillis
-            System.gc()
+//            System.gc()
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
-        return ExperimentResult(experimentConfiguration, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions)
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
     }
 }
