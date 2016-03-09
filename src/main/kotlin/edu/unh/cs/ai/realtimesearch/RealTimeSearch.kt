@@ -28,8 +28,6 @@ fun main(args: Array<String>) {
         val params: MutableList<String> = arrayListOf()
         val actionList = experimentResult.actions
 
-        println("Value store before submit")
-        println(experimentResult.valueStore)
         params.add(rawDomain)
         for (action in actionList) {
             params.add(action.toString())
