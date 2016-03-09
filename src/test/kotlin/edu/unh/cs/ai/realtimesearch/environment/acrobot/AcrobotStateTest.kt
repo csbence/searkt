@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import edu.unh.cs.ai.realtimesearch.logging.info
 import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
@@ -49,11 +50,15 @@ class AcrobotStateTest {
         val state2 = lowerBound + state1
         val state3 = upperBound - state1
 
-        assertTrue { state2.inBounds(lowerBound, upperBound) }
-        assertTrue { state3.inBounds(lowerBound, upperBound) }
+        logger.info { "state3: $state3" }
+        logger.info { "lowerB: $lowerBound" }
+        logger.info { "upperB: $upperBound" }
+
+        assertTrue  { state2.inBounds(lowerBound, upperBound) }
+        assertTrue  { state3.inBounds(lowerBound, upperBound) }
         assertFalse { state1.inBounds(lowerBound, upperBound) }
-        assertTrue { lowerBound.inBounds(lowerBound, upperBound) }
-        assertTrue { upperBound.inBounds(lowerBound, upperBound) }
+        assertTrue  { lowerBound.inBounds(lowerBound, upperBound) }
+        assertTrue  { upperBound.inBounds(lowerBound, upperBound) }
     }
 
     @Test

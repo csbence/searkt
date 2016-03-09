@@ -10,11 +10,17 @@ class AcrobotConfigurationTest {
 
     @Test
     fun testJSON1() {
-        assertTrue { AcrobotStateConfiguration().equals(AcrobotStateConfiguration.fromString(JsonOutput.toJson(AcrobotStateConfiguration()))) }
+        val json = JsonOutput.toJson(AcrobotStateConfiguration())
+        val parsed = AcrobotStateConfiguration.fromString(json)
+
+        assertTrue { AcrobotStateConfiguration().equals(parsed) }
     }
 
     @Test
     fun testJSON2() {
-        assertTrue { AcrobotConfiguration().equals(AcrobotConfiguration.fromString(JsonOutput.toJson(AcrobotConfiguration()))) }
+        val json = JsonOutput.toJson(AcrobotConfiguration())
+        val parsed = AcrobotConfiguration.fromString(json)
+
+        assertTrue { AcrobotConfiguration().equals(parsed) }
     }
 }

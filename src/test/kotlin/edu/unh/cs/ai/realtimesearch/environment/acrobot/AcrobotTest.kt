@@ -38,9 +38,9 @@ class AcrobotTest {
     @Test
     fun testGoalHeuristic() {
         val acrobot = Acrobot()
-        val heuristic1 = acrobot.heuristic(acrobot.configuration.endStateLowerBound)
-        val heuristic2 = acrobot.heuristic(acrobot.configuration.endStateUpperBound)
-        val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.linkPosition1, acrobot.configuration.endState.linkPosition2, 0.0, 0.0))
+        val heuristic1 = acrobot.heuristic(acrobot.endStateLowerBound)
+        val heuristic2 = acrobot.heuristic(acrobot.endStateUpperBound)
+        val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.link1.position, acrobot.configuration.endState.link2.position, 0.0, 0.0))
 
         assertTrue { doubleNearEquals(heuristic1, 0.0) }
         assertTrue { doubleNearEquals(heuristic2, 0.0) }
@@ -50,7 +50,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic1() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(acrobot.configuration.endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(acrobot.endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
 
         assertTrue { heuristic > 0.0 }
     }
@@ -58,7 +58,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic2() {
         val acrobot = Acrobot()
-        val heuristic = acrobot.heuristic(acrobot.configuration.endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+        val heuristic = acrobot.heuristic(acrobot.endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
         assertTrue { heuristic > 0.0 }
     }
 
@@ -71,17 +71,17 @@ class AcrobotTest {
         assertTrue { successors.size == AcrobotAction.values().size }
     }
 
-//    @Test
-//    fun testAStarDiscretized1() {
-//        val domain = DiscretizedDomain(Acrobot())
-//        val initialState = DiscretizedState(defaultInitialAcrobotState)
-//
-//        val aStarAgent = ClassicalAgent(AStarPlanner(domain))
-//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, domain, initialState)
-//
-////        aStarExperiment.run()
-//        printResults(aStarExperiment.run())
-//    }
+    @Test
+    fun testAStarDiscretized1() {
+        val domain = DiscretizedDomain(Acrobot())
+        val initialState = DiscretizedState(defaultInitialAcrobotState)
+
+        val aStarAgent = ClassicalAgent(AStarPlanner(domain))
+        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, domain, initialState)
+
+//        aStarExperiment.run()
+        printResults(aStarExperiment.run())
+    }
 
 //        @Test
 //        fun testLssLrtaStarDiscretized1() {

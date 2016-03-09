@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 
@@ -33,6 +32,12 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
  * vertically from a downward facing position.
  */
 class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
+    internal val endStateLowerBound = AcrobotState(configuration.endLink1LowerBound, configuration.endLink2LowerBound, configuration.stateConfiguration)
+    internal val endStateUpperBound = AcrobotState(configuration.endLink1UpperBound, configuration.endLink2UpperBound, configuration.stateConfiguration)
+
+    /**
+     * Calculate the next state given the current state and an action
+     */
     internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
         return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
     }
@@ -62,7 +67,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * @param state the state to provide a heuristic for
      */
     override fun heuristic(state: AcrobotState): Double {
-        if (state.totalEnergy < configuration.endStateLowerBound.totalEnergy && state.totalEnergy < configuration.endStateUpperBound.totalEnergy)
+        if (state.totalEnergy < endStateLowerBound.totalEnergy && state.totalEnergy < endStateUpperBound.totalEnergy)
             return energyHeuristic(state)
         else
             return distanceHeuristic(state)
@@ -78,10 +83,10 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
         // Dumb heuristic 1 (distance over velocity)
         if (isGoal(state))
             return 0.0
-        val distance1 = Math.min(angleDistance(state.linkPosition1, configuration.endStateLowerBound.linkPosition1), angleDistance(state.linkPosition1, configuration.endStateUpperBound.linkPosition1))
-        val distance2 = Math.min(angleDistance(state.linkPosition2, configuration.endStateLowerBound.linkPosition2), angleDistance(state.linkPosition2, configuration.endStateUpperBound.linkPosition2))
+        val distance1 = Math.min(angleDistance(state.link1.position, endStateLowerBound.link1.position), angleDistance(state.link1.position, endStateUpperBound.link1.position))
+        val distance2 = Math.min(angleDistance(state.link2.position, endStateLowerBound.link2.position), angleDistance(state.link2.position, endStateUpperBound.link2.position))
 
-        return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(state.linkVelocity1)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(state.linkVelocity2))
+        return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(state.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(state.link2.velocity))
     }
 
     /**
@@ -98,27 +103,27 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
      */
     override fun distance(state: AcrobotState): Double {
-        return angleDistance(state.linkPosition1, configuration.endState.linkPosition1) +
-                angleDistance(state.linkPosition2, configuration.endState.linkPosition2)
+        return angleDistance(state.link1.position, configuration.endState.link1.position) +
+               angleDistance(state.link2.position, configuration.endState.link2.position)
     }
 
     /**
      * Returns whether the given state is a goal state.
      * @return true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(configuration.endStateLowerBound, configuration.endStateUpperBound)
+    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(endStateLowerBound, endStateUpperBound)
 
     /**
-     * Simply prints the state values.  TODO would be nice to have some rough ASCII art
+     * Simply prints the state values.
      *
      * @param state the state whose values should be printed
      */
     override fun print(state: AcrobotState): String {
         val description = StringBuilder()
-        description.append("linkPosition1=").appendln(state.linkPosition1)
-        description.append("linkPosition2=").appendln(state.linkPosition2)
-        description.append("linkVelocity1=").appendln(state.linkVelocity1)
-        description.append("linkVelocity2=").appendln(state.linkVelocity2)
+        description.append("linkPosition1=").appendln(state.link1.position)
+        description.append("linkPosition2=").appendln(state.link2.position)
+        description.append("linkVelocity1=").appendln(state.link1.velocity)
+        description.append("linkVelocity2=").appendln(state.link2.velocity)
         return description.toString()
     }
 

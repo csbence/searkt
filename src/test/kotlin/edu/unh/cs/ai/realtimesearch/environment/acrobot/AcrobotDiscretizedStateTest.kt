@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
-import edu.unh.cs.ai.realtimesearch.logging.info
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
@@ -25,10 +24,10 @@ class AcrobotDiscretizedStateTest {
                 acrobotConfiguration.stateConfiguration.velocityGranularity1 + acrobotConfiguration.stateConfiguration.velocityGranularity1,
                 acrobotConfiguration.stateConfiguration.velocityGranularity2 + acrobotConfiguration.stateConfiguration.velocityGranularity2))
 
-        assertTrue { doubleNearEquals(state.state.linkPosition1, state.discretizedState.linkPosition1) }
-        assertTrue { doubleNearEquals(state.state.linkPosition2, state.discretizedState.linkPosition2) }
-        assertTrue { doubleNearEquals(state.state.linkVelocity1, state.discretizedState.linkVelocity1) }
-        assertTrue { doubleNearEquals(state.state.linkVelocity2, state.discretizedState.linkVelocity2) }
+        assertTrue { doubleNearEquals(state.state.link1.position, state.discretizedState.link1.position) }
+        assertTrue { doubleNearEquals(state.state.link2.position, state.discretizedState.link2.position) }
+        assertTrue { doubleNearEquals(state.state.link1.velocity, state.discretizedState.link1.velocity) }
+        assertTrue { doubleNearEquals(state.state.link2.velocity, state.discretizedState.link2.velocity) }
     }
 
     @Test
@@ -39,10 +38,10 @@ class AcrobotDiscretizedStateTest {
                 acrobotConfiguration.stateConfiguration.velocityGranularity1 * 3 + velocityIncrement1,
                 acrobotConfiguration.stateConfiguration.velocityGranularity2 * 4 + velocityIncrement2))
 
-        assertTrue { doubleNearEquals(state.discretizedState.linkPosition1, acrobotConfiguration.stateConfiguration.positionGranularity1) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkPosition2, acrobotConfiguration.stateConfiguration.positionGranularity2 * 2) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkVelocity1, acrobotConfiguration.stateConfiguration.velocityGranularity1 * 3) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkVelocity2, acrobotConfiguration.stateConfiguration.velocityGranularity2 * 4) }
+        assertTrue { doubleNearEquals(state.discretizedState.link1.position, acrobotConfiguration.stateConfiguration.positionGranularity1) }
+        assertTrue { doubleNearEquals(state.discretizedState.link2.position, acrobotConfiguration.stateConfiguration.positionGranularity2 * 2) }
+        assertTrue { doubleNearEquals(state.discretizedState.link1.velocity, acrobotConfiguration.stateConfiguration.velocityGranularity1 * 3) }
+        assertTrue { doubleNearEquals(state.discretizedState.link2.velocity, acrobotConfiguration.stateConfiguration.velocityGranularity2 * 4) }
         assertTrue { state.state != state.discretizedState }
     }
 
@@ -54,10 +53,10 @@ class AcrobotDiscretizedStateTest {
                 acrobotConfiguration.stateConfiguration.velocityGranularity1 * 2 - velocityIncrement1,
                 acrobotConfiguration.stateConfiguration.velocityGranularity2 * 2 - velocityIncrement2))
 
-        assertTrue { doubleNearEquals(state.discretizedState.linkPosition1, acrobotConfiguration.stateConfiguration.positionGranularity1) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkPosition2, acrobotConfiguration.stateConfiguration.positionGranularity2) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkVelocity1, acrobotConfiguration.stateConfiguration.velocityGranularity1) }
-        assertTrue { doubleNearEquals(state.discretizedState.linkVelocity2, acrobotConfiguration.stateConfiguration.velocityGranularity2) }
+        assertTrue { doubleNearEquals(state.discretizedState.link1.position, acrobotConfiguration.stateConfiguration.positionGranularity1) }
+        assertTrue { doubleNearEquals(state.discretizedState.link2.position, acrobotConfiguration.stateConfiguration.positionGranularity2) }
+        assertTrue { doubleNearEquals(state.discretizedState.link1.velocity, acrobotConfiguration.stateConfiguration.velocityGranularity1) }
+        assertTrue { doubleNearEquals(state.discretizedState.link2.velocity, acrobotConfiguration.stateConfiguration.velocityGranularity2) }
         assertTrue { state.state != state.discretizedState }
     }
 

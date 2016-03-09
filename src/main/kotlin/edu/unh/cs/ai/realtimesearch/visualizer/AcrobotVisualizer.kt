@@ -125,8 +125,8 @@ open class AcrobotVisualizer : Application() {
         /* Graphical parameters */
         val stageBorder = 100.0
         val linkScale = 175.0 // pixel size per meter
-        val linkScaledLength1 = linkLength1 * linkScale
-        val linkScaledLength2 = linkLength2 * linkScale
+        val linkScaledLength1 = AcrobotState.linkLength1 * linkScale
+        val linkScaledLength2 = AcrobotState.linkLength2 * linkScale
         val linkWidth = linkScaledLength1 / 7.5
         val WIDTH = (linkScaledLength1 + linkScaledLength2) * 2 + stageBorder * 2
         val HEIGHT = WIDTH
@@ -200,8 +200,8 @@ open class AcrobotVisualizer : Application() {
         while (iterator.hasNext()) {
             val newState = iterator.next()
 
-            val diff1 = Math.toDegrees(angleDifference(previousState.linkPosition1, newState.linkPosition1))
-            val diff2 = Math.toDegrees(angleDifference(previousState.linkPosition2, newState.linkPosition2)) + diff1
+            val diff1 = Math.toDegrees(angleDifference(previousState.link1.position, newState.link1.position))
+            val diff2 = Math.toDegrees(angleDifference(previousState.link2.position, newState.link2.position)) + diff1
 
             val newRotate1 = acrobotView.addRotate1()
             val newRotate2 = acrobotView.addRotate2()

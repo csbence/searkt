@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.linkLength1
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.linkLength2
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.paint.Color
@@ -13,8 +12,8 @@ import javafx.scene.transform.Rotate
 import javafx.scene.transform.TransformChangedEvent
 
 data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val linkScale: Double, val linkWidth: Double) {
-    val linkScaledLength1 = linkLength1 * linkScale
-    val linkScaledLength2 = linkLength2 * linkScale
+    val linkScaledLength1 = AcrobotState.linkLength1 * linkScale
+    val linkScaledLength2 = AcrobotState.linkLength2 * linkScale
     val linkStartX2 = linkStartX1
     val linkStartY2 = linkStartY1 + linkScaledLength1
 

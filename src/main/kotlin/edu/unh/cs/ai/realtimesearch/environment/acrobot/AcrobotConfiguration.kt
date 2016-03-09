@@ -6,8 +6,10 @@ import java.io.InputStream
 data class AcrobotConfiguration(
         val initialState: AcrobotState = defaultInitialAcrobotState,
         val endState: AcrobotState = verticalUpAcrobotState,
-        val endStateLowerBound: AcrobotState = verticalUpAcrobotState - AcrobotState(0.3, 0.3, 0.3, 0.3), /*Boone*/
-        val endStateUpperBound: AcrobotState = verticalUpAcrobotState + AcrobotState(0.3, 0.3, 0.3, 0.3), /*Boone*/
+        val endLink1LowerBound: AcrobotLink = verticalUpAcrobotState.link1 - AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink2LowerBound: AcrobotLink = verticalUpAcrobotState.link2 - AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink1UpperBound: AcrobotLink = verticalUpAcrobotState.link1 + AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink2UpperBound: AcrobotLink = verticalUpAcrobotState.link2 + AcrobotLink(0.3, 0.3), /*Boone*/
         val stateConfiguration: AcrobotStateConfiguration = AcrobotStateConfiguration()) {
 
     companion object {
@@ -30,15 +32,19 @@ data class AcrobotConfiguration(
         fun fromMap(map: Map<*,*>): AcrobotConfiguration {
             val initialState = map["initialState"] as Map<*,*>
             val endState = map["endState"] as Map<*,*>
-            val endStateLowerBound = map["endStateLowerBound"] as Map<*,*>
-            val endStateUpperBound = map["endStateUpperBound"] as Map<*,*>
+            val endLink1LowerBound = map["endLink1LowerBound"] as Map<*,*>
+            val endLink2LowerBound = map["endLink2LowerBound"] as Map<*,*>
+            val endLink1UpperBound = map["endLink1UpperBound"] as Map<*,*>
+            val endLink2UpperBound = map["endLink2UpperBound"] as Map<*,*>
             val stateConfiguration = map["stateConfiguration"] as Map<*,*>
 
             return AcrobotConfiguration(
                     AcrobotState.fromMap(initialState),
                     AcrobotState.fromMap(endState),
-                    AcrobotState.fromMap(endStateLowerBound),
-                    AcrobotState.fromMap(endStateUpperBound),
+                    AcrobotLink.fromMap(endLink1LowerBound),
+                    AcrobotLink.fromMap(endLink2LowerBound),
+                    AcrobotLink.fromMap(endLink1UpperBound),
+                    AcrobotLink.fromMap(endLink2UpperBound),
                     AcrobotStateConfiguration.fromMap(stateConfiguration))
         }
     }

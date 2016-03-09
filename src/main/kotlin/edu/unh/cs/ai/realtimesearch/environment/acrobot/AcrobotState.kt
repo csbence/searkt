@@ -4,23 +4,11 @@ import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
 
-// Constants
-// Given in Sutton and Barto 1998 as well as Boone 1997
-val linkMass1: Double = 1.0
-val linkMass2: Double = 1.0
-val linkLength1: Double = 1.0
-val linkLength2: Double = 1.0
-val linkCenterOfMass1: Double = 0.5
-val linkCenterOfMass2: Double = 0.5
-val linkMomentOfInertia1: Double = 1.0
-val linkMomentOfInertia2: Double = 1.0
-val gravity: Double = 9.8
-
-val verticalUpAcrobotState = AcrobotState(Math.PI / 2, 0.0, 0.0, 0.0)
-val verticalDownAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
+val verticalUpAcrobotState = AcrobotState(AcrobotLink(Math.PI / 2, 0.0), AcrobotLink.ZERO)
+val verticalDownAcrobotState = AcrobotState(AcrobotLink(3 * Math.PI / 2, 0.0), AcrobotLink.ZERO)
 
 // Initial state with both links pointed down
-val defaultInitialAcrobotState = AcrobotState(3 * Math.PI / 2, 0.0, 0.0, 0.0)
+val defaultInitialAcrobotState = verticalDownAcrobotState
 
 val defaultFloatAccuracy = 0.00001
 
@@ -40,40 +28,75 @@ fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation
 fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 
 /**
- * A state in the Acrobot domain consists of the positions and angular velocities of each link.
- * Instances of this class are immutable.
+ * Represents one link of an Acrobot.
  */
-data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, val linkVelocity1: Double, val linkVelocity2: Double, val configuration: AcrobotStateConfiguration = AcrobotStateConfiguration()) : DiscretizableState<AcrobotState> {
-
-    override fun copy() = copy(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
-
+data class AcrobotLink(val position: Double, val velocity: Double) {
     companion object {
         // Angles naturally restricted to [0,2\pi)
         val minAngle = 0.0
         val maxAngle = 2 * Math.PI
 
+        fun fromMap(map: Map<*,*>): AcrobotLink {
+            val position = (map["position"] as BigDecimal).toDouble()
+            val velocity = (map["velocity"] as BigDecimal).toDouble()
+            return AcrobotLink(position, velocity)
+        }
+
+        val ZERO = AcrobotLink(0.0, 0.0)
+    }
+
+    operator fun plus(rhs: AcrobotLink): AcrobotLink = AcrobotLink(position + rhs.position, velocity + rhs.velocity)
+    operator fun minus(rhs: AcrobotLink): AcrobotLink = AcrobotLink(position - rhs.position, velocity - rhs.velocity)
+
+    fun inBounds(lowerBound: AcrobotLink, upperBound: AcrobotLink): Boolean {
+        val positionCondition = position >= lowerBound.position && position <= upperBound.position
+        val velocityCondition = velocity >= lowerBound.velocity && velocity <= upperBound.velocity
+        return positionCondition && velocityCondition
+    }
+}
+
+/**
+ * A state in the Acrobot domain consists of the positions and angular velocities of each link.
+ * Instances of this class are immutable.
+ */
+data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val configuration: AcrobotStateConfiguration = AcrobotStateConfiguration()) : DiscretizableState<AcrobotState> {
+
+    constructor(linkPosition1: Double, linkPosition2: Double, linkVelocity1: Double, linkVelocity2: Double, configuration: AcrobotStateConfiguration = AcrobotStateConfiguration())
+         : this(AcrobotLink(linkPosition1, linkVelocity1), AcrobotLink(linkPosition2, linkVelocity2), configuration)
+
+    override fun copy() = copy(link1, link2, configuration)
+
+    companion object {
+        // Constants
+        // Given in Sutton and Barto 1998 as well as Boone 1997
+        val linkMass1: Double = 1.0
+        val linkMass2: Double = 1.0
+        val linkLength1: Double = 1.0
+        val linkLength2: Double = 1.0
+        val linkCenterOfMass1: Double = 0.5
+        val linkCenterOfMass2: Double = 0.5
+        val linkMomentOfInertia1: Double = 1.0
+        val linkMomentOfInertia2: Double = 1.0
+        val gravity: Double = 9.8
+
         fun fromString(string: String): AcrobotState = fromMap(JsonSlurper().parseText(string) as Map<*,*>)
 
         fun fromMap(map: Map<*,*>): AcrobotState {
-            val linkPosition1 = (map["linkPosition1"] as BigDecimal).toDouble()
-            val linkPosition2 = (map["linkPosition2"] as BigDecimal).toDouble()
-            val linkVelocity1 = (map["linkVelocity1"] as BigDecimal).toDouble()
-            val linkVelocity2 = (map["linkVelocity2"] as BigDecimal).toDouble()
+            val link1 = map["link1"] as Map<*,*>
+            val link2 = map["link2"] as Map<*,*>
             val configurationObject = map["configuration"]
 
             if (configurationObject != null)
-                return AcrobotState(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2, AcrobotStateConfiguration.fromMap(configurationObject as Map<*,*>))
+                return AcrobotState(AcrobotLink.fromMap(link1), AcrobotLink.fromMap(link2), AcrobotStateConfiguration.fromMap(configurationObject as Map<*,*>))
             else
-                return AcrobotState(linkPosition1, linkPosition2, linkVelocity1, linkVelocity2)
+                return AcrobotState(AcrobotLink.fromMap(link1), AcrobotLink.fromMap(link2))
         }
     }
 
     override fun discretize(): AcrobotState {
         return AcrobotState(
-                roundDownToDecimal(linkPosition1, configuration.positionGranularity1),
-                roundDownToDecimal(linkPosition2, configuration.positionGranularity2),
-                roundDownToDecimal(linkVelocity1, configuration.velocityGranularity1),
-                roundDownToDecimal(linkVelocity2, configuration.velocityGranularity2),
+                AcrobotLink(roundDownToDecimal(link1.position, configuration.positionGranularity1), roundDownToDecimal(link1.velocity, configuration.velocityGranularity1)),
+                AcrobotLink(roundDownToDecimal(link2.position, configuration.positionGranularity2), roundDownToDecimal(link2.velocity, configuration.velocityGranularity2)),
                 configuration)
     }
 
@@ -81,30 +104,33 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     fun calculateNextState(accelerations: Accelerations): AcrobotState {
-        var newLinkPosition1 = linkPosition1 + calculateDisplacement(accelerations.linkAcceleration1, linkVelocity1, configuration.timeStep)
-        var newLinkPosition2 = linkPosition2 + calculateDisplacement(accelerations.linkAcceleration2, linkVelocity2, configuration.timeStep)
-        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, linkVelocity1, configuration.timeStep)
-        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, linkVelocity2, configuration.timeStep)
+        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, configuration.timeStep)
+        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, configuration.timeStep)
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, configuration.timeStep)
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, configuration.timeStep)
 
-        return AcrobotState(newLinkPosition1, newLinkPosition2, newLinkVelocity1, newLinkVelocity2, configuration).adjustLimits()
+        return AcrobotState(
+                AcrobotLink(newLinkPosition1, newLinkVelocity1),
+                AcrobotLink(newLinkPosition2, newLinkVelocity2),
+                configuration).adjustLimits()
     }
 
-    operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 + rhs.linkPosition1, linkPosition2 + rhs.linkPosition2, linkVelocity1 + rhs.linkVelocity1, linkVelocity2 + rhs.linkVelocity2, configuration)
-    operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(linkPosition1 - rhs.linkPosition1, linkPosition2 - rhs.linkPosition2, linkVelocity1 - rhs.linkVelocity1, linkVelocity2 - rhs.linkVelocity2, configuration)
+    operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 + rhs.link1, link2 + rhs.link2, configuration)
+    operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 - rhs.link1, link2 - rhs.link2, configuration)
 
     // Inertial acceleration matrix equations
-    private val d11 = linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) + linkMass2 * ((linkLength1 * linkLength1) + (linkCenterOfMass2 * linkCenterOfMass2) + 2 * linkLength1 * linkCenterOfMass2 * Math.cos(linkPosition2)) + linkMomentOfInertia1 + linkMomentOfInertia2
+    private val d11 = linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) + linkMass2 * ((linkLength1 * linkLength1) + (linkCenterOfMass2 * linkCenterOfMass2) + 2 * linkLength1 * linkCenterOfMass2 * Math.cos(link2.position)) + linkMomentOfInertia1 + linkMomentOfInertia2
     private val d22 = linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) + linkMomentOfInertia2
-    private val d12 = linkMass2 * ((linkCenterOfMass2 * linkCenterOfMass2) + linkLength1 * linkCenterOfMass2 * Math.cos(linkPosition2)) + linkMomentOfInertia2
+    private val d12 = linkMass2 * ((linkCenterOfMass2 * linkCenterOfMass2) + linkLength1 * linkCenterOfMass2 * Math.cos(link2.position)) + linkMomentOfInertia2
     private val d21 = d12
 
     // Coriolis and centrifugal force vector equations
-    private val c1 = -1.0 * linkMass2 * linkLength1 * linkCenterOfMass2 * (linkVelocity2 * linkVelocity2) * Math.sin(linkPosition2) - 2 * linkMass2 * linkLength1 * linkCenterOfMass2 * linkVelocity1 * linkVelocity2 * Math.sin(linkPosition2)
-    private val c2 = linkMass2 * linkLength1 * linkCenterOfMass2 * (linkVelocity1 * linkVelocity1) * Math.sin(linkPosition2)
+    private val c1 = -1.0 * linkMass2 * linkLength1 * linkCenterOfMass2 * (link2.velocity * link2.velocity) * Math.sin(link2.position) - 2 * linkMass2 * linkLength1 * linkCenterOfMass2 * link1.velocity * link2.velocity * Math.sin(link2.position)
+    private val c2 = linkMass2 * linkLength1 * linkCenterOfMass2 * (link1.velocity * link1.velocity) * Math.sin(link2.position)
 
     // Gravitational loading force vector equations
-    private val phi1 = (linkMass1 * linkCenterOfMass1 + linkMass2 * linkLength1) * gravity * Math.cos(linkPosition1) + linkMass2 * linkCenterOfMass2 * gravity * Math.cos(linkPosition1 + linkPosition2)
-    private val phi2 = linkMass2 * linkCenterOfMass2 * gravity * Math.cos(linkPosition1 + linkPosition2)
+    private val phi1 = (linkMass1 * linkCenterOfMass1 + linkMass2 * linkLength1) * gravity * Math.cos(link1.position) + linkMass2 * linkCenterOfMass2 * gravity * Math.cos(link1.position + link2.position)
+    private val phi2 = linkMass2 * linkCenterOfMass2 * gravity * Math.cos(link1.position + link2.position)
 
     // Acceleration equations
     data class Accelerations(val linkAcceleration1: Double, val linkAcceleration2: Double)
@@ -113,18 +139,14 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
     fun calculateLinkAccelerations(torque: AcrobotAction): Accelerations = Accelerations(calculateLinkAcceleration1(torque), calculateLinkAcceleration2(torque))
 
     // Energy equations
-    val kineticEnergy = 0.5 * linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) * (linkVelocity1 * linkVelocity1) + 0.5 * linkMomentOfInertia1 * (linkVelocity1 * linkVelocity1) + 0.5 * linkMass2 * (linkLength1 * linkLength1) * (linkVelocity1 * linkVelocity1) + 0.5 * linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) * ((linkVelocity1 * linkVelocity1) + 2 * linkVelocity1 * linkVelocity2 + (linkVelocity2 * linkVelocity2)) + linkMass2 * linkLength1 * linkCenterOfMass2 * ((linkVelocity1 * linkVelocity1) + linkVelocity1 * linkVelocity2) * Math.cos(linkPosition2) + 0.5 * linkMomentOfInertia2 * ((linkVelocity1 * linkVelocity1) + 2 * linkVelocity1 * linkVelocity2 + (linkVelocity2 * linkVelocity2))
-    val potentialEnergy = linkMass1 * gravity * linkCenterOfMass1 * Math.sin(linkPosition1) + linkMass2 * gravity * linkLength1 * Math.sin(linkPosition1) + linkMass2 * gravity * linkCenterOfMass2 * Math.sin(linkPosition1 + linkPosition2)
+    val kineticEnergy = 0.5 * linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) * (link1.velocity * link1.velocity) + 0.5 * linkMomentOfInertia1 * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkLength1 * linkLength1) * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity)) + linkMass2 * linkLength1 * linkCenterOfMass2 * ((link1.velocity * link1.velocity) + link1.velocity * link2.velocity) * Math.cos(link2.position) + 0.5 * linkMomentOfInertia2 * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity))
+    val potentialEnergy = linkMass1 * gravity * linkCenterOfMass1 * Math.sin(link1.position) + linkMass2 * gravity * linkLength1 * Math.sin(link1.position) + linkMass2 * gravity * linkCenterOfMass2 * Math.sin(link1.position + link2.position)
     val totalEnergy = kineticEnergy + potentialEnergy
 
     /**
      * Returns whether this state is within the given bounds for each link position and velocity.
      */
-    fun inBounds(lowerBound: AcrobotState, upperBound: AcrobotState): Boolean {
-        val positionCondition = linkPosition1 >= lowerBound.linkPosition1 && linkPosition1 <= upperBound.linkPosition1 && linkPosition2 >= lowerBound.linkPosition2 && linkPosition2 <= upperBound.linkPosition2
-        val velocityCondition = linkVelocity1 >= lowerBound.linkVelocity1 && linkVelocity1 <= upperBound.linkVelocity1 && linkVelocity2 >= lowerBound.linkVelocity2 && linkVelocity2 <= upperBound.linkVelocity2
-        return positionCondition && velocityCondition
-    }
+    fun inBounds(lowerBound: AcrobotState, upperBound: AcrobotState): Boolean = link1.inBounds(lowerBound.link1, upperBound.link1) && link2.inBounds(lowerBound.link2, upperBound.link2)
 
     /**
      * Adjust a value according to the given limits.
@@ -154,11 +176,10 @@ data class AcrobotState(val linkPosition1: Double, val linkPosition2: Double, va
      * returns a new state with any values that are outside of their limits adjusted to their closest limit.
      */
     fun adjustLimits(): AcrobotState {
-        val position1 = adjustCircularLimit(linkPosition1, minAngle, maxAngle)
-        val position2 = adjustCircularLimit(linkPosition2, minAngle, maxAngle)
-        val velocity1 = snapToLimit(linkVelocity1, configuration.minAngularVelocity1, configuration.maxAngularVelocity1)
-        val velocity2 = snapToLimit(linkVelocity2, configuration.minAngularVelocity2, configuration.maxAngularVelocity2)
-        return AcrobotState(position1, position2, velocity1, velocity2, configuration)
+        val position1 = adjustCircularLimit(link1.position, AcrobotLink.minAngle, AcrobotLink.maxAngle)
+        val position2 = adjustCircularLimit(link2.position, AcrobotLink.minAngle, AcrobotLink.maxAngle)
+        val velocity1 = snapToLimit(link1.velocity, configuration.minAngularVelocity1, configuration.maxAngularVelocity1)
+        val velocity2 = snapToLimit(link2.velocity, configuration.minAngularVelocity2, configuration.maxAngularVelocity2)
+        return AcrobotState(AcrobotLink(position1, velocity1), AcrobotLink(position2, velocity2), configuration)
     }
 }
-
