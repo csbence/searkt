@@ -47,6 +47,9 @@ public class Visualizer {
                 "race track" -> {
                     Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
                 }
+                "acrobot" -> {
+                    /* :) */
+                }
                 else -> {
                     println("Error: Domain not recognized! Aborting")
                     exitProcess(1)
