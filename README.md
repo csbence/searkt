@@ -68,5 +68,28 @@ Stochasticity:  p: with probability p the system will ignore the action: (m(x,t)
 
 [1] Barto, Andrew G., Steven J. Bradtke, and Satinder P. Singh. "Learning to act using real-time dynamic programming." Artificial Intelligence 72.1 (1995): 81-138.
  
+## Benchmark configuration
 
+### General
 
+ * algorithm name ("algorithmName" : String)
+ * domain name ("domainName" : String) 
+ * serialized domain ("rawDomain" : String)
+
+### Real-time search
+
+### Anytime search
+
+### Algorithm
+
+#### A*
+
+No extra parameter required
+
+#### ARA*
+
+#### RTA*
+
+#### LSS-LRTA*
+
+#### Dynamic f-hat
