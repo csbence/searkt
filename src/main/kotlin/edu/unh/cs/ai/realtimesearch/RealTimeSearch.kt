@@ -2,7 +2,8 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import groovy.json.JsonOutput
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -19,8 +20,8 @@ fun main(args: Array<String>) {
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
         val manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
-        manualConfiguration.set("lookahead depth limit", 4)
-        manualConfiguration.set("action duration", 10L)
+        manualConfiguration["lookahead depth limit"] = 4
+        manualConfiguration["action duration"] = 10L
 
         val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
@@ -55,6 +56,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val terminationTypeOption = Option("t", "term-type", true, "The termination type")
     val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
+    val actionDurationOption = Option ("l", "length", true, "Length of action durations")
 
     // Set required options
     mapFileOption.isRequired = true
@@ -72,6 +74,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     options.addOption(terminationTypeOption)
     options.addOption(terminationParameterOption)
     options.addOption(outFileOption)
+    options.addOption(actionDurationOption)
 
     /* parse command line arguments */
     val parser = GnuParser()
@@ -83,6 +86,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val termType = cmd.getOptionValue(terminationTypeOption.opt)
     val termParam = cmd.getOptionValue(terminationParameterOption.opt)
     val outFile = cmd.getOptionValue(outFileOption.opt)
+    val actionDuration = cmd.getOptionValue(actionDurationOption.opt)
 
     /* print help if help option was specified*/
     val formatter = HelpFormatter()
@@ -90,14 +94,17 @@ private fun createCommandLineMenu(args: Array<String>) {
         formatter.printHelp(appName, options)
         exitProcess(1)
     }
+
     /* run the experiment */
     val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
     val manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
             termType, termParam.toInt())
+    if (actionDuration != null)
+        manualConfiguration["action duration"] = actionDuration.toLong()
     val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* output the results */
     PrintWriter(outFile, "UTF-8").use {
-        it.print(JsonOutput.toJson(result))
+        it.write(result.toIndentedJson())
     }
 }

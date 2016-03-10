@@ -50,7 +50,7 @@ object ConfigurationExecutor {
 
     private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it the the experiment configuration.")
+        val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it to the experiment configuration.")
         val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream(), actionDuration)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 

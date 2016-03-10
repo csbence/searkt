@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:t:p:vi:o:DgG:"
+OPTIONS=":hd:m:a:n:l:t:p:vi:o:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -23,6 +23,7 @@ usage() {
   echo "  a <name>     specify the algorithm to run"
   echo "  m <file>     specify a map input file"
   echo "  n <num>      specify the number of experiment runs"
+  echo "  l <length>   specify the length of action durations"
   echo "  t <type>     specify the termination type"
   echo "  p <param>    specify the termination parameter to provide"
   echo "  v            visualize the experiment (currently not supported)"
@@ -144,6 +145,9 @@ while getopts $OPTIONS arg; do
     n)
       NUM_RUNS=$OPTARG
       ;;
+    l)
+      ACT_LEN=$OPTARG
+      ;;
     t)
       TERM_TYPE=$OPTARG
       ;;
@@ -225,6 +229,10 @@ fi
   
 if [ -n "$MAP" ]; then
   EXPERIMENT_ARGS=$(add_arg "-m" "$MAP")
+fi
+
+if [ -n "$ACT_LEN" ]; then
+  EXPERIMENT_ARGS=$(add_arg "-l" "$ACT_LEN")
 fi
 
 # if [ -n "$VISUALIZE" ]; then
