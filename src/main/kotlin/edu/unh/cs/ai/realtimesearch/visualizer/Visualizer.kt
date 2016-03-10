@@ -23,11 +23,11 @@ public class Visualizer {
             val fileName = args.first()
             val fileString = Files.readAllLines(Paths.get(fileName)).first()
             val experimentResult = experimentResultFromJson(fileString)
-            val domainName = experimentResult.experimentConfiguration["domainName"]
-            val rawDomain = experimentResult.experimentConfiguration["rawDomain"]
+            val domainName = experimentResult!!.experimentConfiguration["domainName"]
+            val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"]
 
             val params: MutableList<String> = arrayListOf()
-            val actionList = experimentResult.actions
+            val actionList = experimentResult!!.actions
 
             params.add(rawDomain.toString())
             for (action in actionList) {
