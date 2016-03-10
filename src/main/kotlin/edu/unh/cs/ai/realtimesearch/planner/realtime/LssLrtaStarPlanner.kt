@@ -31,6 +31,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>
+        val f: Double
+            get() = cost + heuristic
 
         init {
             this.parent = parent ?: this
@@ -196,16 +198,19 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * it will add it to the open list and store it's g value, as long as the
      * state has not been seen before, or is found with a lower g value
      */
-    private fun expandFromNode(node: Node<StateType>) {
+    private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(node)
+        closedList.add(sourceNode)
 
-        val currentGValue = node.cost
-        for (successor in domain.successors(node.state)) {
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
-            val successorNode = getNode(node, successor)
+            val successorNode = getNode(sourceNode, successor)
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -217,8 +222,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             }
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = node, action = successor.action, actionCost = successor.actionCost))
+            // Skip if we got back to the parent
+            if (successorState == sourceNode.parent.state) {
+                continue
+            }
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValue = successorNode.cost
@@ -229,12 +236,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
                     cost = successorGValueFromCurrent
-                    parent = node
+                    parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
                 }
 
-                logger.debug { "Expanding from $node --> $successorState :: open list size: ${openList.size}" }
+                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!inOpenList(successorNode)) {
@@ -242,7 +249,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             } else {
                 logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${node.cost}), and action cost ${successor.actionCost}"
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
         }

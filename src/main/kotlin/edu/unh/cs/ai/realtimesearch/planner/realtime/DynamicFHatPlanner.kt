@@ -32,6 +32,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>
+        val f: Double
+            get() = cost + heuristic
 
         init {
             this.parent = parent ?: this
@@ -85,6 +87,9 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private var heuristicError = 0.0
     private var distanceError = 0.0
+
+    private var nextHeuristicError = 0.0
+    private var nextDistanceError = 0.0
 
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
@@ -205,19 +210,22 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * During the expansion the child with the minimum f value is selected and used to update the distance and heuristic error.
      *
      */
-    private fun expandFromNode(parentNode: Node<StateType>) {
+    private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(parentNode)
+        closedList.add(sourceNode)
 
         // Select the best children to update the distance and heuristic error
         var bestChildNode: Node<StateType>? = null
 
-        val currentGValue = parentNode.cost
-        for (successor in domain.successors(parentNode.state)) {
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
-            val successorNode = getNode(parentNode, successor)
+            val successorNode = getNode(sourceNode, successor)
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -229,8 +237,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             }
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = parentNode, action = successor.action, actionCost = successor.actionCost))
+            // Skip if we got back to the parent
+            if (successorState == sourceNode.parent.state) {
+                continue
+            }
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValue = successorNode.cost
@@ -239,14 +249,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 generatedNodeCount++
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
+                // Initially the cost is going to be higher, thus we encounter each (local) state at least once in the LSS
                 successorNode.apply {
                     cost = successorGValueFromCurrent
-                    parent = parentNode
+                    parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
                 }
 
-                logger.debug { "Expanding from $parentNode --> $successorState :: open list size: ${openList.size}" }
+                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!inOpenList(successorNode)) {
@@ -254,18 +265,19 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             } else {
                 logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${parentNode.cost}), and action cost ${successor.actionCost}"
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
         }
 
         if (bestChildNode != null) {
-            val localHeuristicError = max(0.0, bestChildNode.heuristic - parentNode.heuristic) // should be f - f
-            val localDistanceError = max(0.0, bestChildNode.distance - parentNode.distance + 1) //
+            // Local error values (min 0.0)
+            val localHeuristicError = max(0.0, bestChildNode.f - sourceNode.f)
+            val localDistanceError = max(0.0, bestChildNode.distance - sourceNode.distance + 1)
 
-            // TODO update error
-
-
+            // The next error values are the weighted average of the local error and the previous error
+            nextHeuristicError += (localHeuristicError - nextHeuristicError) / expandedNodeCount
+            nextDistanceError += (localDistanceError - nextDistanceError) / expandedNodeCount
         }
     }
 
