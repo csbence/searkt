@@ -40,6 +40,8 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
             // Get configuration
             val experimentConfiguration = realTimeSearchClient.getExperimentConfiguration()
             if (experimentConfiguration != null) {
+                System.gc()
+
                 // Execute configuration
                 val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration)
 
