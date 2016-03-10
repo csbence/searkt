@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidConfigurationException
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
@@ -30,6 +31,9 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                                                   val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
+    private val singleStepLookahead by lazy {
+        experimentConfiguration.getTypedValue<Boolean>("singleStepCommitment") ?: throw InvalidConfigurationException("Missing commitment strategy. Please define \"singleStepCommitment\" in your configuration.")
+    }
 
     /**
      * Runs the experiment
@@ -37,8 +41,10 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
 
-        // init for this run
-        agent.reset()
+        experimentConfiguration.getTypedValue<Boolean>("singleStepCommitment") ?:
+
+                // init for this run
+                agent.reset()
         world.reset()
 
         logger.info { "Starting experiment from state ${world.getState()}" }
@@ -47,9 +53,12 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         while (!world.isGoal()) {
             val timeInMillis = kotlin.system.measureTimeMillis {
                 terminationChecker.init()
-                //                    System.gc() // Hint garbage collection to improve real time performance
 
-                val actionList = agent.selectAction(world.getState(), terminationChecker);
+                var actionList = agent.selectAction(world.getState(), terminationChecker);
+
+                if (actionList.size > 1 && singleStepLookahead) {
+                    actionList = listOf(actionList.first()) // Trim the action list to one item
+                }
 
                 actions.addAll(actionList)
 
@@ -59,7 +68,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
             }
 
             totalTimeInMillis += timeInMillis
-//            System.gc()
+            //            System.gc()
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
