@@ -10,7 +10,7 @@ interface TerminationChecker {
      * Called just before an experiment starts,
      * allows for any initiation of the checker
      */
-    public fun init()
+    fun init()
 
     /**
      * Checks whether the termination criteria has been reached
@@ -18,5 +18,5 @@ interface TerminationChecker {
      * @param: Still unsure what the parameter should be. A whole agent, or should it be templated?
      * @return True if the the criteria has been reached
      */
-    public fun reachedTermination(): Boolean
+    fun reachedTermination(): Boolean
 }
