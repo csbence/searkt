@@ -41,10 +41,8 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
 
-        experimentConfiguration.getTypedValue<Boolean>("singleStepCommitment") ?:
-
-                // init for this run
-                agent.reset()
+        // init for this run
+        agent.reset()
         world.reset()
 
         logger.info { "Starting experiment from state ${world.getState()}" }
