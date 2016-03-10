@@ -51,8 +51,8 @@ class VacuumVisualizer : Application() {
         val root = Pane()
 
         /* Graphical parameters */
-        val WIDTH = 1700.0
-        val HEIGHT = 1400.0
+        val WIDTH = 1600.0
+        val HEIGHT = 800.0
         val TILE_WIDTH: Double = (WIDTH / columnCount)
         val TILE_HEIGHT: Double = (HEIGHT / rowCount)
         var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)

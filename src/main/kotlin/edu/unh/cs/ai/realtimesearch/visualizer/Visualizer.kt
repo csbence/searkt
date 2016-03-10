@@ -22,20 +22,19 @@ public class Visualizer {
             }
             val fileName = args.first()
             val fileString = Files.readAllLines(Paths.get(fileName)).first()
-            val experimentConfig = experimentConfigurationFromJson(fileString)
             val experimentResult = experimentResultFromJson(fileString)
-            println(experimentResult["actions"])
-            println(experimentResult["experimentConfiguration"])
+            val domainName = experimentResult.experimentConfiguration["domainName"]
+            val rawDomain = experimentResult.experimentConfiguration["rawDomain"]
 
-            /*val params: MutableList<String> = arrayListOf()
+            val params: MutableList<String> = arrayListOf()
             val actionList = experimentResult.actions
 
-            params.add(experimentConfig.rawDomain)
+            params.add(rawDomain.toString())
             for (action in actionList) {
                 params.add(action.toString())
             }
 
-            when (experimentConfig.domainName){
+            when (domainName){
                 "grid world" -> {
                     Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
                 }
@@ -52,7 +51,7 @@ public class Visualizer {
                     println("Error: Domain not recognized! Aborting")
                     exitProcess(1)
                 }
-            }*/
+            }
         }
     }
 }
