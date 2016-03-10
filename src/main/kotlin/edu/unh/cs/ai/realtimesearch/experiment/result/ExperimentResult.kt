@@ -11,15 +11,20 @@ import java.util.*
  * The systemProperties property is initialized at construction time.
  */
 @JsonSerialize(`as` = ExperimentData::class)
-class ExperimentResult() : ExperimentData() {
-    constructor(experimentConfiguration: MutableMap<String, Any?>,
-                expandedNodes: Int = 0,
-                generatedNodes: Int = 0,
-                timeInMillis: Long = 0,
-                actions: List<String> = emptyList(),
+class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
+    constructor(experimentConfiguration: Map<String, Any?>,
+                errorMessage: String?) : this() {
+        this.experimentConfiguration = experimentConfiguration
+        this.errorMessage = errorMessage
+    }
+
+    constructor(experimentConfiguration: Map<String, Any?>,
+                expandedNodes: Int,
+                generatedNodes: Int,
+                timeInMillis: Long,
+                actions: List<String>,
                 pathLength: Double? = null,
                 errorMessage: String? = null,
-                values: Map<String, Any> = HashMap(),
                 timestamp: Long = System.currentTimeMillis(),
                 systemProperties: HashMap<String, String> = HashMap()) : this() {
 
@@ -30,7 +35,6 @@ class ExperimentResult() : ExperimentData() {
         this.actions = actions
         this.pathLength = pathLength
         this.errorMessage = errorMessage
-        this.values = values
         this.timestamp = timestamp
 
         if (systemProperties.isNotEmpty()) {
@@ -38,14 +42,13 @@ class ExperimentResult() : ExperimentData() {
         }
     }
 
-    var experimentConfiguration: MutableMap<String, Any?> by valueStore
+    var experimentConfiguration: Map<String, Any?> by valueStore
     var pathLength: Double? by valueStore
     var errorMessage: String? by valueStore
     var expandedNodes: Int by valueStore
     var generatedNodes: Int by valueStore
     var timeInMillis: Long by valueStore
     var actions: List<String> by valueStore
-    var values: Map<String, Any> by valueStore
     var timestamp: Long by valueStore
     var systemProperties: MutableMap<String, String> by valueStore
 
