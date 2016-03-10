@@ -4,7 +4,8 @@ import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import org.slf4j.LoggerFactory
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory
  * @param runs is the amount of runs you want the experiment to do
  *
  */
-class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: ExperimentConfiguration,
+class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                         val agent: ClassicalAgent<StateType>,
                                                         val domain: Domain<StateType>,
                                                         val initState: State<StateType>? = null) : Experiment() {
@@ -44,7 +45,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
 
-        return ExperimentResult(experimentConfiguration, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions)
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions.map { it.toString() })
 
     }
 }

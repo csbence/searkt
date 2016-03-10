@@ -71,6 +71,4 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
     override fun randomState(): SlidingTilePuzzleState {
         throw UnsupportedOperationException()
     }
-
-
 }

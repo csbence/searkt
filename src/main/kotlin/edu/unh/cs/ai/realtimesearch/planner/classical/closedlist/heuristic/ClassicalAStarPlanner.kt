@@ -12,8 +12,8 @@ import java.util.*
  *
  * @param domain is the domain to plan in
  */
-class ClassicalAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : ClassicalHeuristicPlanner<StateType>(domain,
-        PriorityQueue(ClassicalAStarPlanner.AStarNodeComparator(domain))) {
+class ClassicalAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, weight: Double) : ClassicalHeuristicPlanner<StateType>(domain,
+        PriorityQueue(ClassicalAStarPlanner.AStarNodeComparator(domain, weight))) {
 
     /**
      * Compares to node purely by their cost. Returns the difference between
@@ -21,11 +21,11 @@ class ClassicalAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTy
      *
      * In a priority queue the least element will be at the head.
      */
-    public class AStarNodeComparator<State>(val domain: Domain<State>) : Comparator<Node<State>> {
+    public class AStarNodeComparator<State>(val domain: Domain<State>, val weight: Double) : Comparator<Node<State>> {
         override fun compare(node1: Node<State>?, n2: Node<State>?): Int {
             if (node1 != null && n2 != null) {
-                val node1Value = domain.heuristic(node1.state) + node1.cost
-                val node2Value = domain.heuristic(n2.state) + n2.cost
+                val node1Value = (domain.heuristic(node1.state) * weight) + node1.cost
+                val node2Value = (domain.heuristic(n2.state) * weight) + n2.cost
                 val value = node1Value.compareTo(node2Value)
 
                 if (value == 0) {

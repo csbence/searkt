@@ -119,5 +119,4 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     override fun randomState(): PointRobotState {
         throw UnsupportedOperationException()
     }
-
 }

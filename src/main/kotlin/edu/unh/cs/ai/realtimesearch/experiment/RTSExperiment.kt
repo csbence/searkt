@@ -4,7 +4,8 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
 
@@ -22,9 +23,8 @@ import org.slf4j.LoggerFactory
  * @param agent is a RTS agent that will supply the actions
  * @param world is the environment
  * @param terminationChecker controls the constraint put upon the agent
- * @param runs is the amount of runs you want the experiment to do
  */
-class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: ExperimentConfiguration? = null,
+class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                   val agent: RTSAgent<StateType>,
                                                   val world: Environment<StateType>,
                                                   val terminationChecker: TerminationChecker) : Experiment() {
@@ -59,10 +59,10 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: E
             }
 
             totalTimeInMillis += timeInMillis
-            System.gc()
+//            System.gc()
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
-        return ExperimentResult(experimentConfiguration, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions)
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
     }
 }
