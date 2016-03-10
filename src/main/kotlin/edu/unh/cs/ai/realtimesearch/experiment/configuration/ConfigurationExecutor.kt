@@ -77,6 +77,7 @@ object ConfigurationExecutor {
         val algorithmName = experimentConfiguration.algorithmName
 
         return when (algorithmName) {
+            "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState, environment)
             "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
             "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, initialState, environment)
             "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
@@ -97,15 +98,25 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val aStarPlanner = ClassicalAStarPlanner(domain)
+        val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
 
         return classicalExperiment.run()
     }
 
+    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+        val weight = experimentConfiguration.getTypedValue<Double>("weight") ?: throw InvalidConfigurationException("\"weight\" is not found. Please add it the the experiment configuration.")
+        val aStarPlanner = ClassicalAStarPlanner(domain, weight)
+        val classicalAgent = ClassicalAgent(aStarPlanner)
+        val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
+
+        return classicalExperiment.run()
+    }
+
+
     private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val aStarPlanner = ClassicalAStarPlanner(domain)
+        val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
 
