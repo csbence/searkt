@@ -43,19 +43,17 @@ The aim to have multiple domains to test on, currently the following are impleme
 
 #### VacuumWorld
 
-A 2D grid with with dirty and blocked cells. The agent aims to clean all dirty spots
-by vacuuming those cells.
+A 2D grid with with dirty and blocked cells. The agent aims to clean all dirty spots by vacuuming those cells.
 
 State space: (x,y, {dirty locations})
 Actions: up, down, left, right, vacuum 
 
-### RaceTrack (from [1])
+#### RaceTrack ([from [1]](#ref-1))
 
 A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a 
 starting and finish line. The goal is for the car to reach the finish line from the start location.
 
 Whenever the car hits a track boundary, it will be put back on a random position on the starting line with 0 velocity.
-
 
 State space: (x, y, x. [-1,0,1], y. [-1,0,1])
 Actions: Acceleration in x and y (x. and y.) of [-1,0,1]
@@ -65,9 +63,13 @@ Dynamics:       x(t+1) = x(t) + x.(t) + m(x,t)
                 y.(t+1) = y.(t) + m(y,t)
 Stochasticity:  p: with probability p the system will ignore the action: (m(x,t),m(y,t)) = (0,0) with probability p 
 
+#### Acrobot  ([from [2]](#ref-2))
 
-[1] Barto, Andrew G., Steven J. Bradtke, and Satinder P. Singh. "Learning to act using real-time dynamic programming." Artificial Intelligence 72.1 (1995): 81-138.
- 
+The Acrobot is a two link planar robot arm.  The system is underactuated and torque may be applied to the middle joint in order to move the two links.
+
+State space: (\theta_1, \theta_2, \dot\theta_1, \dot\theta_2)
+Actions: Torque applied to joint 2
+
 ## Benchmark configuration
 
 ### General
@@ -93,3 +95,10 @@ No extra parameter required
 #### LSS-LRTA*
 
 #### Dynamic f-hat
+
+## References
+
+<a name="ref-1"></a>[1] Barto, Andrew G., Steven J. Bradtke, and Satinder P. Singh. "Learning to act using real-time dynamic programming." Artificial Intelligence 72.1 (1995): 81-138.
+
+<a name="ref-2"></a>[2] R.M. Murray and J. Hauser, “A Case Study in Approximate Linearization:
+The Acrobot Example,” Proc. American Control Conference, 1990.
