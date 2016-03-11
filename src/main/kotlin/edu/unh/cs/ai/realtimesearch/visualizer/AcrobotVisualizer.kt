@@ -44,38 +44,14 @@ open class AcrobotVisualizer : Application() {
     private val actionList: MutableList<AcrobotAction> = mutableListOf()
     private var experimentResult: ExperimentResult? = null
 
-    /**
-     * Retrieve the action list from the experiment results.  Should not be called if the experiment results have not
-     * been retrieved or if the action list has already been written.
-     */
-    private fun actionListFromResult() {
-        assert(experimentResult != null)
-        assert(actionList.isEmpty())
-        for (action in experimentResult!!.actions) {
-            actionList.add(AcrobotAction.valueOf(action))
-        }
-    }
-
     private fun processCommandLine(args: Array<String>) {
         val options = Options()
 
         val helpOption = Option("h", "help", false, "Print help and exit")
         val ghostOption = Option("g", "ghost", false, "Display ghost animation")
-        val pathOption = Option("r", "result", true, "Read result from file")
-        val configurationFileOption = Option("c", "config", true, "Read Acrobot configuration from file")
-        val configurationOption = Option("C", "Config", true, "Read Acrobot configuration from string; overwrites -${configurationFileOption.opt}")
-        val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
-        val terminationTypeOption = Option("t", "term-type", true, "The termination type")
-        val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
 
         options.addOption(helpOption)
         options.addOption(ghostOption)
-        options.addOption(pathOption)
-        options.addOption(configurationFileOption) // TODO OptionGroup
-        options.addOption(configurationOption)
-        options.addOption(algorithmOption)
-        options.addOption(terminationTypeOption)
-        options.addOption(terminationParameterOption)
 
         /* parse command line arguments */
         val parser = GnuParser()
@@ -88,37 +64,18 @@ open class AcrobotVisualizer : Application() {
             exitProcess(1)
         }
 
+        if(cmd.args.size < 1){
+            throw IllegalArgumentException("Error: Must pass results to visualizer")
+        }
+
         ghost = cmd.hasOption(ghostOption.opt)
-        val resultFile = cmd.getOptionValue(pathOption.opt)
 
-        // Get configuration options
-        if (cmd.hasOption(configurationOption.opt)) {
-            val configurationJSON = cmd.getOptionValue(configurationOption.opt)
-            acrobotConfiguration = AcrobotConfiguration.fromString(configurationJSON)
-        } else {
-            val configurationPath = cmd.getOptionValue(configurationFileOption.opt)
-            if (configurationPath != null)
-                acrobotConfiguration = AcrobotConfiguration.fromStream(FileInputStream(configurationPath))
+        experimentResult = experimentResultFromJson(cmd.args.first())
+        acrobotConfiguration = AcrobotConfiguration.fromString(experimentResult!!.experimentConfiguration["rawDomain"] as String)
+
+        for (action in experimentResult!!.actions) {
+            actionList.add(AcrobotAction.valueOf(action))
         }
-
-        if (resultFile != null) {
-            val text = File(resultFile).readText()
-            experimentResult = experimentResultFromJson(text)
-        } else {
-            // Run the specified algorithm to retrieve path
-            val algorithm = cmd.getOptionValue(algorithmOption.opt)
-            val terminationType = cmd.getOptionValue(terminationTypeOption.opt)
-            val terminationParameter = cmd.getOptionValue(terminationParameterOption.opt)
-            if (algorithm == null || terminationType == null || terminationParameter == null)
-                throw IllegalArgumentException("Too few options provided to run algorithm")
-
-            val manualConfiguration = GeneralExperimentConfiguration("acrobot", JsonOutput.toJson(acrobotConfiguration), algorithm,
-                    terminationType, terminationParameter.toInt())
-
-            experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-        }
-
-        actionListFromResult()
     }
 
     override fun start(primaryStage: Stage) {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:l:t:p:i:o:DgG:"
+OPTIONS=":hd:m:a:n:l:t:p:i:Io:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -13,6 +13,7 @@ RUN_SCRIPT="$BIN/$PROJECT_NAME"
 NUM_RUNS=1
 RUN_NUM=0
 OUT_EXT=.json
+IGNORE_ERR=false
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -28,6 +29,7 @@ usage() {
   echo "  t <type>     specify the termination type"
   echo "  p <param>    specify the termination parameter to provide"
   echo "  i <name>     specify an instance name for the configuration"
+  echo "  I            ignore errors in results when performing multiple runs"
   echo "  o <file>     specify an output file name"
   echo "  D            run the experiments via installed distribution"
   echo "  g            run gradle to install the distribution"
@@ -41,7 +43,8 @@ usage() {
 
 add_dir() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to add_dir"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
     NEW_DIR=$(echo $1 | sed -e 's/[^A-Za-z0-9._-\*]/_/g')
     DIR="$DIR/$NEW_DIR"
@@ -53,7 +56,8 @@ add_dir() {
 
 add_arg() {
   if [ -z "$1" ] || [ -z "$2" ]; then
-    >&2 echo "Internal script error: missing parameter to add_arg"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
     if [ -n "$DIST" ] && [ "$DIST" = true ]; then
       echo "$EXPERIMENT_ARGS $1 \"$2\""
@@ -65,7 +69,8 @@ add_arg() {
 
 get_file_num() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to get_file_num"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
     if [ $1 -lt 10 ]; then
       echo "_0$1"
@@ -77,7 +82,8 @@ get_file_num() {
 
 get_unique_filename() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to get_file_num"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
     CURRENT=_00
     COUNTER=0
@@ -89,34 +95,63 @@ get_unique_filename() {
   fi
 }
 
+check_error() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
+  else
+    # Read output file to check for errors
+ERR=$(python <(cat <<EOF
+import json
+msg = json.loads(open('$NEW_OUT', 'r').read())['errorMessage']
+if msg != None:
+  print msg
+EOF
+))
+    if [ -n "$ERR" ]; then
+      echo "Detected error in file '$NEW_OUT': $ERR"
+      if [ "$IGNORE_ERR" = false ]; then
+        echo "Terminating..."
+        exit 1
+      fi
+    fi
+  fi
+}
+
 run_gradle() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run_gradle"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
-    $GRADLE run $GRADLE_PARAMS -PappArgs="[$(add_arg "-o" "$1$OUT_EXT")]"
+    $GRADLE run $GRADLE_PARAMS -PappArgs="[$(add_arg "-o" "$1")]"
   fi
 }
 
 run_dest() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run_dest"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
-    eval $RUN_SCRIPT $(add_arg "-o" "$1$OUT_EXT")
+    eval $RUN_SCRIPT $(add_arg "-o" "$1")
   fi
 }
 
 run() {
   if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run"
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
   else
     EXP_SCRIPT="$1"
     if [ "$NUM_RUNS" -eq 1 ]; then
-      $EXP_SCRIPT "$OUT_FILE"
+      NEW_OUT="$OUT_FILE$OUT_EXT"
+      $EXP_SCRIPT "$NEW_OUT"
+      check_error "$NEW_OUT"
     else
       for ((i=0; i < $NUM_RUNS; i++)); do
         RUN_NUM=$i
-        NEW_OUT="$OUT_FILE$(get_file_num $i)"
+        NEW_OUT="$OUT_FILE$(get_file_num $i)$OUT_EXT"
         $EXP_SCRIPT "$NEW_OUT"
+        check_error "$NEW_OUT"
       done
     fi
   fi
@@ -156,6 +191,9 @@ while getopts $OPTIONS arg; do
       ;;
     i)
       INSTANCE_NAME=$OPTARG
+      ;;
+    I)
+      IGNORE_ERR=true
       ;;
     o)
       OUT_FILE=$OPTARG

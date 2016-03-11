@@ -1,5 +1,11 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import groovyjarjarcommonscli.GnuParser
+import groovyjarjarcommonscli.HelpFormatter
+import groovyjarjarcommonscli.Option
+import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
@@ -17,28 +23,48 @@ import kotlin.system.exitProcess
 /**
  * Created by Stephen on 2/29/16.
  */
-
-var xDot = 0
-var yDot = 0
-
 class RacetrackVisualizer : Application() {
+    private var xDot = 0
+    private var yDot = 0
+
+    private var experimentResult: ExperimentResult? = null
+
+    private fun processCommandLine(args: Array<String>) {
+        val options = Options()
+
+        val helpOption = Option("h", "help", false, "Print help and exit")
+
+        options.addOption(helpOption)
+
+        /* parse command line arguments */
+        val parser = GnuParser()
+        val cmd = parser.parse(options, args)
+
+        /* print help if help option was specified*/
+        val formatter = HelpFormatter()
+        if (cmd.hasOption("h")) {
+            formatter.printHelp("real-time-search", options)
+            exitProcess(1)
+        }
+
+        if (cmd.args.size < 1) {
+            throw IllegalArgumentException("Error: Must pass results to visualizer")
+        }
+
+        experimentResult = experimentResultFromJson(cmd.args.first())
+    }
+
     override fun start(primaryStage: Stage) {
+        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        /* Get domain from Application */
-        val parameters = getParameters()!!
-        val raw = parameters.getRaw()!!
-        if (raw.isEmpty()) {
-            println("Cannot visualize without a domain!")
-            exitProcess(1)
-        }
-        val rawDomain = raw.first()
+        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1) {
-            actionList.add(raw.get(i))
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
 
         primaryStage.title = "RTS Visualizer"

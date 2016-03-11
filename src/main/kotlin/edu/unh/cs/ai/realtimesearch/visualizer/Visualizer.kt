@@ -1,40 +1,32 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentDataFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import javafx.application.Application
-import java.nio.file.Files
-import java.nio.file.Paths
-import kotlin.system.exitProcess
+import java.io.File
 
 /**
  * Created by Stephen on 3/10/16.
  */
-public class Visualizer {
+class Visualizer {
     companion object {
-        @JvmStatic public fun main(args: Array<String>) {
-            if(args.size != 1){
-                println("Error: Visualizer takes one argument which is the result file. Aborting.")
-                exitProcess(1)
+        @JvmStatic fun main(args: Array<String>) {
+            if (args.size < 1){
+                throw IllegalArgumentException("Error: Visualizer takes one argument which is the result file. Aborting.")
             }
             val fileName = args.first()
-            val fileString = Files.readAllLines(Paths.get(fileName)).first()
+            val fileString = File(fileName).readText()
             val experimentResult = experimentResultFromJson(fileString)
-            val domainName = experimentResult!!.experimentConfiguration["domainName"]
-            val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"]
+            val domainName = experimentResult.experimentConfiguration["domainName"]
 
-            val params: MutableList<String> = arrayListOf()
-            val actionList = experimentResult!!.actions
-
-            params.add(rawDomain.toString())
-            for (action in actionList) {
-                params.add(action.toString())
-            }
+            val params: MutableList<String> = mutableListOf()
+            params.add(fileString)
+            for (arg in args)
+                params.add(arg)
 
             when (domainName){
+                "vacuum world" -> {
+                    Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+                }
                 "grid world" -> {
                     Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
                 }
@@ -48,11 +40,10 @@ public class Visualizer {
                     Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
                 }
                 "acrobot" -> {
-                    /* :) */
+                    Application.launch(AcrobotVisualizer::class.java, *params.toTypedArray())
                 }
                 else -> {
-                    println("Error: Domain not recognized! Aborting")
-                    exitProcess(1)
+                    throw IllegalArgumentException("Error: Domain '$domainName' not recognized! Aborting")
                 }
             }
         }
