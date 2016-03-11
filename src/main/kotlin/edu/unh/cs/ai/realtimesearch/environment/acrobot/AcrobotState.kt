@@ -103,6 +103,8 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 + rhs.link1, link2 + rhs.link2, configuration)
     operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 - rhs.link1, link2 - rhs.link2, configuration)
 
+    // Implementation note: Changing the properties to lazy actually decreases A* planner time significantly.
+
     // Inertial acceleration matrix equations
     private val d11 = linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) + linkMass2 * ((linkLength1 * linkLength1) + (linkCenterOfMass2 * linkCenterOfMass2) + 2 * linkLength1 * linkCenterOfMass2 * Math.cos(link2.position)) + linkMomentOfInertia1 + linkMomentOfInertia2
     private val d22 = linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) + linkMomentOfInertia2

@@ -12,6 +12,7 @@ BIN="$BUILD_DIR/install/$PROJECT_NAME/bin"
 RUN_SCRIPT="$BIN/$PROJECT_NAME"
 NUM_RUNS=1
 RUN_NUM=0
+OUT_EXT=.json
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -80,7 +81,7 @@ get_unique_filename() {
   else
     CURRENT=_00
     COUNTER=0
-    while [ -f "$1$CURRENT" ] || [ -f "$1${CURRENT}_$RUN_NUM" ] || [ -f "$1${CURRENT}_0$RUN_NUM" ]; do
+    while [ -f "$1$CURRENT$OUT_EXT" ] || [ -f "$1${CURRENT}_$RUN_NUM$OUT_EXT" ] || [ -f "$1${CURRENT}_0$RUN_NUM$OUT_EXT" ]; do
       let COUNTER+=1
       CURRENT=$(get_file_num $COUNTER)
     done
@@ -92,7 +93,7 @@ run_gradle() {
   if [ -z "$1" ]; then
     >&2 echo "Internal script error: missing parameter to run_gradle"
   else
-    $GRADLE run $GRADLE_PARAMS -PappArgs="[$(add_arg "-o" "$1")]"
+    $GRADLE run $GRADLE_PARAMS -PappArgs="[$(add_arg "-o" "$1$OUT_EXT")]"
   fi
 }
 
@@ -100,7 +101,7 @@ run_dest() {
   if [ -z "$1" ]; then
     >&2 echo "Internal script error: missing parameter to run_dest"
   else
-    eval $RUN_SCRIPT $(add_arg "-o" "$1")
+    eval $RUN_SCRIPT $(add_arg "-o" "$1$OUT_EXT")
   fi
 }
 
