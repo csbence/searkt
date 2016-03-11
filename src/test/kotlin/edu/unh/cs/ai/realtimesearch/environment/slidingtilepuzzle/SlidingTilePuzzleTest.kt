@@ -181,7 +181,9 @@ class SlidingTilePuzzleTest {
         val lsslrtaStarPlanner = LssLrtaStarPlanner(slidingTilePuzzle)
 
         val lssRTAAgent = RTSAgent(lsslrtaStarPlanner)
-        val lssRTAExperiment = RTSExperiment(GeneralExperimentConfiguration(), lssRTAAgent, environment, terminalCondition)
+        val lssConfiguration = GeneralExperimentConfiguration()
+        lssConfiguration["singleStepCommitment"] = false
+        val lssRTAExperiment = RTSExperiment(lssConfiguration, lssRTAAgent, environment, terminalCondition)
 
         lssRTAExperiment.run()
     }
