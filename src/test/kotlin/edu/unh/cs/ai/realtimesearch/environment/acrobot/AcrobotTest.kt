@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue

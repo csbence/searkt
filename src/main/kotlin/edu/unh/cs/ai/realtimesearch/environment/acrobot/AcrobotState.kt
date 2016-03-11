@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import groovy.json.JsonSlurper
@@ -10,23 +11,6 @@ val verticalDownAcrobotState = AcrobotState(AcrobotLink(3 * Math.PI / 2, 0.0), A
 
 // Initial state with both links pointed down
 val defaultInitialAcrobotState = verticalDownAcrobotState
-
-val defaultFloatAccuracy = 0.00001
-
-fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean {
-    return a == b || Math.abs(a - b) < accuracy
-}
-
-fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Double, accuracy: Double = defaultFloatAccuracy): Double {
-    val fraction = 1.0 / decimal
-    val operand = if (doubleNearEquals(decimal, number)) 1.0 else number * fraction
-    return op(operand, accuracy) / fraction
-}
-
-// Add accuracy to number due to floating point calculations causing issues with rounding operators
-fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.round(num + accuracy) + 0.0 })
-fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
-fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 
 /**
  * Represents one link of an Acrobot.

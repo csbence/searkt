@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.logging.info
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
