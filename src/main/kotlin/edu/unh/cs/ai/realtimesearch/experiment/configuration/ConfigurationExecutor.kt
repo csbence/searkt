@@ -2,11 +2,11 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
@@ -15,9 +15,10 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironme
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
@@ -50,7 +51,7 @@ object ConfigurationExecutor {
 
     private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidConfigurationException("\"action duration\" is not found. Please add it to the experiment configuration.")
+        val actionDuration = experimentConfiguration.getTypedValue<Long>("action duration") ?: throw InvalidFieldException("\"action duration\" is not found. Please add it to the experiment configuration.")
         val gridWorldInstance = GridWorldIO.parseFromStream(rawDomain.byteInputStream(), actionDuration)
         val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
 
@@ -106,7 +107,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val weight = experimentConfiguration.getTypedValue<Double>("weight") ?: throw InvalidConfigurationException("\"weight\" is not found. Please add it the the experiment configuration.")
+        val weight = experimentConfiguration.getTypedValue<Double>("weight") ?: throw InvalidFieldException("\"weight\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = ClassicalAStarPlanner(domain, weight)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -131,20 +132,19 @@ object ConfigurationExecutor {
         return rtsExperiment.run()
     }
 
-    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {
-        val terminationCheckerType = experimentConfiguration.terminationCheckerType
+    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
+        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("Time bound type is not found. Please add it to the configuration.")
+        val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
         val terminationCheckerParameter = experimentConfiguration.terminationCheckerParameter
 
-        return when (terminationCheckerType) {
-            "time" -> TimeTerminationChecker(terminationCheckerParameter.toDouble())
-            "calls" -> CallsTerminationChecker(terminationCheckerParameter)
-
-            else -> throw RuntimeException("Invalid termination checker: $terminationCheckerType")
+        return when (timeBoundType) {
+            TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
+            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>("staticStepDuration") ?: throw  InvalidFieldException("\"staticStepDuration\" is not found. Please add it the the experiment configuration."))
         }
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidConfigurationException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
+        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
