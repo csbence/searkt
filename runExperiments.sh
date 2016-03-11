@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:l:t:p:vi:o:DgG:"
+OPTIONS=":hd:m:a:n:l:t:p:i:o:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -26,7 +26,6 @@ usage() {
   echo "  l <length>   specify the length of action durations"
   echo "  t <type>     specify the termination type"
   echo "  p <param>    specify the termination parameter to provide"
-  echo "  v            visualize the experiment (currently not supported)"
   echo "  i <name>     specify an instance name for the configuration"
   echo "  o <file>     specify an output file name"
   echo "  D            run the experiments via installed distribution"
@@ -154,9 +153,6 @@ while getopts $OPTIONS arg; do
     p)
       TERM_PARAM=$OPTARG
       ;;
-    v)
-      VISUALIZE=true
-      ;;
     i)
       INSTANCE_NAME=$OPTARG
       ;;
@@ -234,10 +230,6 @@ fi
 if [ -n "$ACT_LEN" ]; then
   EXPERIMENT_ARGS=$(add_arg "-l" "$ACT_LEN")
 fi
-
-# if [ -n "$VISUALIZE" ]; then
-#   EXPERIMENT_ARGS=$(add_arg "-v" "$VISUALIZE")
-# fi
 
 # Setup out file
 OUT_FILE=$(get_unique_filename "$DIR/$OUT_FILE")
