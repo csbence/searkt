@@ -14,7 +14,7 @@ import java.util.*
  *
  * Requires a domain with an admissible heuristic function.
  */
-class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double) : ClassicalPlanner<StateType> {
+class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double = 0.0) : ClassicalPlanner<StateType> {
 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
 
@@ -39,7 +39,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         internal val f: Double
 
         init {
-            f = cost + (domain.heuristic(state) * weight)
+            f = cost + domain.heuristic(state) * weight
         }
     }
 
