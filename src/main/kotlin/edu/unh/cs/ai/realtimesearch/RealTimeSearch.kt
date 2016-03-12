@@ -1,14 +1,11 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
-import groovyjarjarcommonscli.GnuParser
-import groovyjarjarcommonscli.HelpFormatter
-import groovyjarjarcommonscli.Option
-import groovyjarjarcommonscli.Options
+import groovyjarjarcommonscli.*
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
@@ -44,12 +41,32 @@ fun main(args: Array<String>) {
     }
 }
 
+private fun readConfig(fileConfig: String?, stringConfig: String?): Boolean {
+    val config: String
+    if (fileConfig != null) {
+        config = File(fileConfig).readText()
+    } else if (stringConfig != null) {
+        config = stringConfig
+    } else {
+        return false
+    }
+
+    manualConfiguration = experimentConfigurationFromJson(config)
+
+    return true
+}
+
 private fun createCommandLineMenu(args: Array<String>) {
-    val options = Options()
+    val mainOptions = Options()
+    val fileOptions = Options()
+    val separateOptions = Options()
+
     val appName = "real-time-search"
 
     // Setup the options
     val helpOption = Option("h", "help", false, "Print help and exit")
+
+    // Separated options
     val mapFileOption = Option("m", "map", true, "The path to map file")
     val domainOption = Option("d", "domain", true, "The domain name")
     val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
@@ -58,74 +75,104 @@ private fun createCommandLineMenu(args: Array<String>) {
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
     val extraOption = Option ("e", "extra", true, "Extra configuration option key/value pairs")
 
+    // Configuration file options
+    val fileOptionGroup = OptionGroup()
+    val fileOption = Option("f", "file", true, "The path to configuration file")
+    val stringOption = Option("c", "config", true, "The configuration as a string")
+    fileOptionGroup.addOption(fileOption)
+    fileOptionGroup.addOption(stringOption)
+
     // Set required options
     mapFileOption.isRequired = true
     domainOption.isRequired = true
     algorithmOption.isRequired = true
     terminationTypeOption.isRequired = true
     terminationParameterOption.isRequired = true
-    outFileOption.isRequired = true
 
     // Add the options
-    options.addOption(helpOption)
-    options.addOption(mapFileOption)
-    options.addOption(domainOption)
-    options.addOption(algorithmOption)
-    options.addOption(terminationTypeOption)
-    options.addOption(terminationParameterOption)
-    options.addOption(outFileOption)
-    options.addOption(extraOption)
+    // Separate options
+    separateOptions.addOption(helpOption)
+    separateOptions.addOptionGroup(fileOptionGroup)
+    separateOptions.addOption(mapFileOption)
+    separateOptions.addOption(domainOption)
+    separateOptions.addOption(algorithmOption)
+    separateOptions.addOption(terminationTypeOption)
+    separateOptions.addOption(terminationParameterOption)
+    separateOptions.addOption(outFileOption)
+    separateOptions.addOption(extraOption)
+
+    // File options
+    fileOptions.addOptionGroup(fileOptionGroup)
+
+    // Main options
+    for (option in separateOptions.options)
+        mainOptions.addOption(option as Option)
+    for (option in fileOptions.options)
+        mainOptions.addOption(option as Option)
+
+    // Common options
+    fileOptions.addOption(helpOption)
+    fileOptions.addOption(outFileOption)
 
     /* parse command line arguments */
-    val parser = GnuParser()
-    val cmd = parser.parse(options, args)
-
-    val domainName = cmd.getOptionValue(domainOption.opt)
-    val mapFile = cmd.getOptionValue(mapFileOption.opt)
-    val algName = cmd.getOptionValue(algorithmOption.opt)
-    val termType = cmd.getOptionValue(terminationTypeOption.opt)
-    val termParam = cmd.getOptionValue(terminationParameterOption.opt)
-    outFile = cmd.getOptionValue(outFileOption.opt)
-    val extras = cmd.getOptionValues(extraOption.opt)
+    val fileCmd = GnuParser().parse(fileOptions, args, true)
 
     /* print help if help option was specified*/
     val formatter = HelpFormatter()
-    if (cmd.hasOption(helpOption.opt)) {
-        formatter.printHelp(appName, options)
+    if (fileCmd.hasOption(helpOption.opt)) {
+        formatter.printHelp(appName, mainOptions)
         exitProcess(1)
     }
 
-    /* run the experiment */
-    val rawDomain = File(mapFile).readText()
-    manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
-            termType, termParam.toInt())
+    val fileConfig = fileCmd.getOptionValue(fileOption.opt)
+    val stringConfig = fileCmd.getOptionValue(stringOption.opt)
+    val haveConfig = readConfig(fileConfig, stringConfig)
 
-    for (extra in extras) {
-        val values = extra.split('=', limit=2)
-        if (values.size != 2) {
-            System.err.println("Extra value '$extra' formatted incorrectly")
-            continue
-        }
-        var key: String = values[0]
-        val value = values[1]
+    if (haveConfig) {
+        outFile = fileCmd.getOptionValue(outFileOption.opt, "out.json")
+    } else {
+        val separateCmd = GnuParser().parse(separateOptions, args)
 
-        // Check for type
-        val keyVals = key.split('(', ')')
-        if (keyVals.size > 1) {
-            key = keyVals[0]
-            val type = keyVals[1]
-            when (type.toLowerCase()) {
-                "long"      -> manualConfiguration[key] = value.toLong()
-                "int"       -> manualConfiguration[key] = value.toInt()
-                "boolean"   -> manualConfiguration[key] = value.toBoolean()
-                "double"    -> manualConfiguration[key] = value.toDouble()
-                "float"     -> manualConfiguration[key] = value.toFloat()
-                "byte"      -> manualConfiguration[key] = value.toByte()
-                "short"     -> manualConfiguration[key] = value.toShort()
-                else        -> System.err.println("Extra value '$extra' formatted incorrectly")
+        val domainName = separateCmd.getOptionValue(domainOption.opt)
+        val mapFile = separateCmd.getOptionValue(mapFileOption.opt)
+        val algName = separateCmd.getOptionValue(algorithmOption.opt)
+        val termType = separateCmd.getOptionValue(terminationTypeOption.opt)
+        val termParam = separateCmd.getOptionValue(terminationParameterOption.opt)
+        outFile = separateCmd.getOptionValue(outFileOption.opt, "out.json")
+        val extras = separateCmd.getOptionValues(extraOption.opt)
+
+        /* run the experiment */
+        val rawDomain = File(mapFile).readText()
+        manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
+                termType, termParam.toInt())
+
+        for (extra in extras) {
+            val values = extra.split('=', limit=2)
+            if (values.size != 2) {
+                System.err.println("Extra value '$extra' formatted incorrectly")
+                continue
             }
-        } else {
-            manualConfiguration[key] = value
+            var key: String = values[0]
+            val value = values[1]
+
+            // Check for type
+            val keyVals = key.split('(', ')')
+            if (keyVals.size > 1) {
+                key = keyVals[0]
+                val type = keyVals[1]
+                when (type.toLowerCase()) {
+                    "long"      -> manualConfiguration[key] = value.toLong()
+                    "int"       -> manualConfiguration[key] = value.toInt()
+                    "boolean"   -> manualConfiguration[key] = value.toBoolean()
+                    "double"    -> manualConfiguration[key] = value.toDouble()
+                    "float"     -> manualConfiguration[key] = value.toFloat()
+                    "byte"      -> manualConfiguration[key] = value.toByte()
+                    "short"     -> manualConfiguration[key] = value.toShort()
+                    else        -> System.err.println("Extra value '$extra' formatted incorrectly")
+                }
+            } else {
+                manualConfiguration[key] = value
+            }
         }
     }
 }

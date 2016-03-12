@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:t:p:e:i:Io:DgG:"
+OPTIONS=":hf:c:d:m:a:n:t:p:e:i:Io:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -21,19 +21,24 @@ usage() {
   echo "$SCRIPT [options]"
   echo "options:"
   echo "  h                  show this usage info"
+  echo "  o <file>           specify an output file name"
+  echo "  i <name>           specify an instance name for the configuration"
+  echo "  I                  ignore errors in results when performing multiple runs"
+  echo "  n <num>            specify the number of experiment runs"
+  echo "file options: (overwrite separate options)"
+  echo "  f <file>           specify configuration file"
+  echo "  c <config>         specify configuration string"
+  echo "separate options:"
   echo "  d <domain>         specify the domain to run against"
   echo "  a <name>           specify the algorithm to run"
   echo "  m <file>           specify a map input file"
-  echo "  n <num>            specify the number of experiment runs"
   echo "  t <type>           specify the termination type"
   echo "  p <param>          specify the termination parameter to provide"
   echo "  e <key(type)=val>  specify key/value pair for extra parameters"
-  echo "  i <name>           specify an instance name for the configuration"
-  echo "  I                  ignore errors in results when performing multiple runs"
-  echo "  o <file>           specify an output file name"
+  echo "distribution options:"
   echo "  D                  run the experiments via installed distribution"
-  echo "  g                  run gradle to install the distribution"
-  echo "  G <args>           run gradle with custom arguments"
+  echo "  g                  run experiments using 'gradle run'"
+  echo "  G <args>           run experiments using 'gradle run' with custom arguments"
   echo "Results will be placed in separate files with the following directory structure:"
   echo "  results/algorithm/domain/params/[instance]/out"
   echo "If a parameter is not given then the directory name will be '$DEFAULT_DIR'."
@@ -49,7 +54,7 @@ add_dir() {
     NEW_DIR=$(echo $1 | sed -e 's/[^A-Za-z0-9._-\*]/_/g')
     DIR="$DIR/$NEW_DIR"
     if [ ! -d "$DIR" ]; then
-      mkdir "$DIR"
+      mkdir -p "$DIR"
     fi
   fi
 }
@@ -92,6 +97,27 @@ get_unique_filename() {
       CURRENT=$(get_file_num $COUNTER)
     done
     echo "$1$CURRENT"
+  fi
+}
+
+# results/algorithm/domain/params/instance/out
+get_dirs_from_config() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to $FUNCNAME"
+    exit 1
+  else
+    CONFIG=$(echo $CONFIG | sed -re 's/\\/\\\\/g')
+SUB_DIRS=$(python <(cat <<EOF
+import json
+config = json.loads('$CONFIG')
+algorithm = config['algorithmName']
+domain = config['domainName']
+termType = config['terminationCheckerType']
+termParam = config['terminationCheckerParameter']
+print algorithm, '/', domain, '/', termType, '-', termParam
+EOF
+))
+    add_dir "$SUB_DIRS"
   fi
 }
 
@@ -166,6 +192,12 @@ while getopts $OPTIONS arg; do
       usage
       exit 0
       ;;
+    f)
+      FILE_CONFIG="$OPTARG"
+      ;;
+    c)
+      FILE_CONFIG="$OPTARG"
+      ;;
     d)
       DOMAIN=$OPTARG
       ;;
@@ -236,30 +268,41 @@ if [ -z "$OUT_FILE" ]; then
   OUT_FILE="out"
 fi
 
-# Translate to experiment expected args and build directory structure
-if [ -n "$ALG" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-a" "$ALG")
-  add_dir "$ALG"
+if [ -n "$FILE_CONFIG" ]; then
+  EXPERIMENT_ARGS=""
+  if [ -f "$FILE_CONFIG" ]; then
+    CONFIG="$(cat $FILE_CONFIG)"
+  else
+    CONFIG="$FILE_CONFIG"
+  fi
+  get_dirs_from_config "$CONFIG"
+  EXPERIMENT_ARGS=$(add_arg "-c" "$CONFIG")
 else
-  add_dir "$DEFAULT_DIR"
-fi
+  # Translate to experiment expected args and build directory structure
+  if [ -n "$ALG" ]; then
+    EXPERIMENT_ARGS=$(add_arg "-a" "$ALG")
+    add_dir "$ALG"
+  else
+    add_dir "$DEFAULT_DIR"
+  fi
 
-if [ -n "$DOMAIN" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-d" "$DOMAIN")
-  add_dir "$DOMAIN"
-else
-  add_dir "$DEFAULT_DIR"
-fi
+  if [ -n "$DOMAIN" ]; then
+    EXPERIMENT_ARGS=$(add_arg "-d" "$DOMAIN")
+    add_dir "$DOMAIN"
+  else
+    add_dir "$DEFAULT_DIR"
+  fi
 
-if [ -n "$TERM_TYPE" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-t" "$TERM_TYPE")
-  PARAM_DIR="$TERM_TYPE"
+  if [ -n "$TERM_TYPE" ]; then
+    EXPERIMENT_ARGS=$(add_arg "-t" "$TERM_TYPE")
+    PARAM_DIR="$TERM_TYPE"
+  fi
+  if [ -n "$TERM_PARAM" ]; then
+    EXPERIMENT_ARGS=$(add_arg "-p" "$TERM_PARAM")
+    PARAM_DIR="$PARAM_DIR-$TERM_PARAM"
+  fi
+  add_dir "$PARAM_DIR"
 fi
-if [ -n "$TERM_PARAM" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-p" "$TERM_PARAM")
-  PARAM_DIR="$PARAM_DIR-$TERM_PARAM"
-fi
-add_dir "$PARAM_DIR"
 
 if [ -n "$INSTANCE_NAME" ]; then
   add_dir "$INSTANCE_NAME"
