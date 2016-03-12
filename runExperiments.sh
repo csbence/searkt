@@ -191,7 +191,6 @@ while getopts $OPTIONS arg; do
       TERM_PARAM=$OPTARG
       ;;
     e)
-echo "Extra: $OPTARG"
       EXPERIMENT_ARGS=$(add_arg "-e" "$OPTARG")
       ;;
     i)
