@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import groovyjarjarcommonscli.GnuParser
 import groovyjarjarcommonscli.HelpFormatter
 import groovyjarjarcommonscli.Option
@@ -22,6 +21,8 @@ fun main(args: Array<String>) {
         val manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
+        manualConfiguration["timeBoundType"] = "STATIC"
+        manualConfiguration["staticStepDuration"] = 10L
 
         val experimentResult = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
