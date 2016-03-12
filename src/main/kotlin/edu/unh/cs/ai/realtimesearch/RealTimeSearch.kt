@@ -24,6 +24,8 @@ fun main(args: Array<String>) {
         manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
+        manualConfiguration["timeBoundType"] = "STATIC"
+        manualConfiguration["staticStepDuration"] = 10L
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)

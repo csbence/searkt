@@ -5,8 +5,9 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidConfigurationException
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
 
@@ -28,12 +29,11 @@ import org.slf4j.LoggerFactory
 class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                   val agent: RTSAgent<StateType>,
                                                   val world: Environment<StateType>,
-                                                  val terminationChecker: TerminationChecker) : Experiment() {
+                                                  val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
-    private val singleStepLookahead by lazy {
-        experimentConfiguration.getTypedValue<Boolean>("singleStepCommitment") ?: throw InvalidConfigurationException("Missing commitment strategy. Please define \"singleStepCommitment\" in your configuration.")
-    }
+    private val singleStepLookahead by lazyData<Boolean>(experimentConfiguration, "singleStepLookahead")
+    private val staticStepDuration by lazyData<Long>(experimentConfiguration, "staticStepDuration")
 
     /**
      * Runs the experiment
@@ -41,16 +41,13 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
 
-        // init for this run
-        agent.reset()
-        world.reset()
-
         logger.info { "Starting experiment from state ${world.getState()}" }
         var totalTimeInMillis = 0L
+        var timeBound = staticStepDuration
 
         while (!world.isGoal()) {
             val timeInMillis = kotlin.system.measureTimeMillis {
-                terminationChecker.init()
+                terminationChecker.init(timeBound)
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
 
@@ -58,11 +55,15 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
 
-                actions.addAll(actionList)
-
                 logger.info { "Agent return action $actionList to state ${world.getState()}" }
 
-                actionList.forEach { world.step(it) }
+                timeBound = 0
+                actionList.forEach {
+                    world.step(it.action) // Move the agent
+                    actions.add(it.action) // Save the action
+                    timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
+                }
+
             }
 
             totalTimeInMillis += timeInMillis
@@ -73,3 +74,4 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
     }
 }
+

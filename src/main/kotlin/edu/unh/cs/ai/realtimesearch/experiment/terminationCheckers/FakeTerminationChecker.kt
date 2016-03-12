@@ -1,20 +1,20 @@
 package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
 
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
-
 /**
  * Will never fail the test, for debugging purposes
  */
-class FakeTerminationChecker : TerminationChecker {
+class FakeTerminationChecker() : TimeTerminationChecker {
+    override var startTime: Long = 0
+    override var timeLimit: Long = 0
 
     /**
-     * Nothing to init
+     * Does nothing.
      */
-    override fun init() {
+    override fun init(timeBound: Long) {
     }
 
     /**
-     * Will never terminate
+     * Will never terminate.
      *
      * @return false
      */
