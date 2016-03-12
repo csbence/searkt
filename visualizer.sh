@@ -3,7 +3,7 @@
 SCRIPT=$(basename $0)
 OPTIONS=":hG:"
 GRADLE_ARGS=
-MAIN_CLASS="edu.unh.cs.ai.realtimesearch.visualizer.VisualizerApplication"
+MAIN_CLASS="edu.unh.cs.ai.realtimesearch.visualizer.VisualizerApplicationKt"
 
 usage() {
   echo "usage:"

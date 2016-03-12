@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:l:t:p:i:Io:DgG:"
+OPTIONS=":hd:m:a:n:t:p:e:i:Io:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
@@ -20,20 +20,20 @@ usage() {
   echo "usage:"
   echo "$SCRIPT [options]"
   echo "options:"
-  echo "  h            show this usage info"
-  echo "  d <domain>   specify the domain to run against"
-  echo "  a <name>     specify the algorithm to run"
-  echo "  m <file>     specify a map input file"
-  echo "  n <num>      specify the number of experiment runs"
-  echo "  l <length>   specify the length of action durations"
-  echo "  t <type>     specify the termination type"
-  echo "  p <param>    specify the termination parameter to provide"
-  echo "  i <name>     specify an instance name for the configuration"
-  echo "  I            ignore errors in results when performing multiple runs"
-  echo "  o <file>     specify an output file name"
-  echo "  D            run the experiments via installed distribution"
-  echo "  g            run gradle to install the distribution"
-  echo "  G <args>     run gradle with custom arguments"
+  echo "  h                  show this usage info"
+  echo "  d <domain>         specify the domain to run against"
+  echo "  a <name>           specify the algorithm to run"
+  echo "  m <file>           specify a map input file"
+  echo "  n <num>            specify the number of experiment runs"
+  echo "  t <type>           specify the termination type"
+  echo "  p <param>          specify the termination parameter to provide"
+  echo "  e <key(type)=val>  specify key/value pair for extra parameters"
+  echo "  i <name>           specify an instance name for the configuration"
+  echo "  I                  ignore errors in results when performing multiple runs"
+  echo "  o <file>           specify an output file name"
+  echo "  D                  run the experiments via installed distribution"
+  echo "  g                  run gradle to install the distribution"
+  echo "  G <args>           run gradle with custom arguments"
   echo "Results will be placed in separate files with the following directory structure:"
   echo "  results/algorithm/domain/params/[instance]/out"
   echo "If a parameter is not given then the directory name will be '$DEFAULT_DIR'."
@@ -103,9 +103,12 @@ check_error() {
     # Read output file to check for errors
 ERR=$(python <(cat <<EOF
 import json
-msg = json.loads(open('$NEW_OUT', 'r').read())['errorMessage']
-if msg != None:
-  print msg
+try:
+  msg = json.loads(open('$NEW_OUT', 'r').read())['errorMessage']
+  if msg != None:
+    print msg
+except IOError as e:
+  print "I/O error({0}): {1}".format(e.errno, e.strerror)
 EOF
 ))
     if [ -n "$ERR" ]; then
@@ -173,6 +176,7 @@ while getopts $OPTIONS arg; do
         usage
         exit 1
       fi
+      EXPERIMENT_ARGS=$(add_arg "-m" "$MAP")
       ;;
     a)
       ALG=$OPTARG
@@ -180,14 +184,15 @@ while getopts $OPTIONS arg; do
     n)
       NUM_RUNS=$OPTARG
       ;;
-    l)
-      ACT_LEN=$OPTARG
-      ;;
     t)
       TERM_TYPE=$OPTARG
       ;;
     p)
       TERM_PARAM=$OPTARG
+      ;;
+    e)
+echo "Extra: $OPTARG"
+      EXPERIMENT_ARGS=$(add_arg "-e" "$OPTARG")
       ;;
     i)
       INSTANCE_NAME=$OPTARG
@@ -233,7 +238,6 @@ if [ -z "$OUT_FILE" ]; then
 fi
 
 # Translate to experiment expected args and build directory structure
-EXPERIMENT_ARGS=""
 if [ -n "$ALG" ]; then
   EXPERIMENT_ARGS=$(add_arg "-a" "$ALG")
   add_dir "$ALG"
@@ -260,14 +264,6 @@ add_dir "$PARAM_DIR"
 
 if [ -n "$INSTANCE_NAME" ]; then
   add_dir "$INSTANCE_NAME"
-fi
-  
-if [ -n "$MAP" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-m" "$MAP")
-fi
-
-if [ -n "$ACT_LEN" ]; then
-  EXPERIMENT_ARGS=$(add_arg "-l" "$ACT_LEN")
 fi
 
 # Setup out file
