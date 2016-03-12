@@ -1,11 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import groovyjarjarcommonscli.GnuParser
-import groovyjarjarcommonscli.HelpFormatter
-import groovyjarjarcommonscli.Option
-import groovyjarjarcommonscli.Options
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.*
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
@@ -23,36 +21,13 @@ import kotlin.system.exitProcess
 /**
  * Created by Stephen on 2/29/16.
  */
-class RacetrackVisualizer : Application() {
+class RacetrackVisualizer : BaseVisualizer() {
     private var xDot = 0
     private var yDot = 0
 
-    private var experimentResult: ExperimentResult? = null
+    override fun getOptions(): Options = Options()
 
-    private fun processCommandLine(args: Array<String>) {
-        val options = Options()
-
-        val helpOption = Option("h", "help", false, "Print help and exit")
-
-        options.addOption(helpOption)
-
-        /* parse command line arguments */
-        val parser = GnuParser()
-        val cmd = parser.parse(options, args)
-
-        /* print help if help option was specified*/
-        val formatter = HelpFormatter()
-        if (cmd.hasOption("h")) {
-            formatter.printHelp("real-time-search", options)
-            exitProcess(1)
-        }
-
-        if (cmd.args.size < 1) {
-            throw IllegalArgumentException("Error: Must pass results to visualizer")
-        }
-
-        experimentResult = experimentResultFromJson(cmd.args.first())
-    }
+    override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
         processCommandLine(parameters.raw.toTypedArray())
@@ -105,13 +80,13 @@ class RacetrackVisualizer : Application() {
             for (x in 0..columnCount - 1) {
                 when (line[x]) {
                     '#' -> {
-                        val blocked = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val blocked = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         blocked.fill = Color.BLACK
                         blocked.stroke = Color.BLACK
                         root.children.add(blocked)
                     }
                     '_' -> {
-                        val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val free = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
                         free.opacity = 0.5

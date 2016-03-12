@@ -1,16 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import groovyjarjarcommonscli.GnuParser
-import groovyjarjarcommonscli.HelpFormatter
-import groovyjarjarcommonscli.Option
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
-import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -18,39 +14,17 @@ import javafx.scene.shape.*
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.*
-import kotlin.system.exitProcess
 
 /**
  * Created by Stephen on 2/29/16.
  */
-class PointVisualizer : Application() {
+class PointInertiaVisualizer : BaseVisualizer() {
+    private var xDot = 0.0
+    private var yDot = 0.0
 
-    private var experimentResult: ExperimentResult? = null
+    override fun getOptions(): Options = Options()
 
-    private fun processCommandLine(args: Array<String>) {
-        val options = Options()
-
-        val helpOption = Option("h", "help", false, "Print help and exit")
-
-        options.addOption(helpOption)
-
-        /* parse command line arguments */
-        val parser = GnuParser()
-        val cmd = parser.parse(options, args)
-
-        /* print help if help option was specified*/
-        val formatter = HelpFormatter()
-        if (cmd.hasOption("h")) {
-            formatter.printHelp("real-time-search", options)
-            exitProcess(1)
-        }
-
-        if (cmd.args.size < 1) {
-            throw IllegalArgumentException("Error: Must pass results to visualizer")
-        }
-
-        experimentResult = experimentResultFromJson(cmd.args.first())
-    }
+    override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
         processCommandLine(parameters.raw.toTypedArray())
@@ -62,6 +36,8 @@ class PointVisualizer : Application() {
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
         for (action in experimentResult!!.actions) {
+            actionList.add(action)
+
             var xStart = action.indexOf('(') + 1
             var xEnd = action.indexOf(',')
             var yStart = xEnd + 2
@@ -103,7 +79,7 @@ class PointVisualizer : Application() {
         var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
 
         while(((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)){
-           TILE_SIZE /= 1.05
+            TILE_SIZE /= 1.05
         }
 
         /* The robot */
@@ -115,6 +91,7 @@ class PointVisualizer : Application() {
         /* the dirty cell */
         val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
         dirtyCell.fill = Color.BLUE
+        dirtyCell.toFront()
         root.children.add(dirtyCell)
 
         /* the goal radius */
@@ -172,38 +149,56 @@ class PointVisualizer : Application() {
         while (count != actionList.size) {
             val x = actionList.get(count)
             val y = actionList.get(count + 1)
-            var pt = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
-            sq.children.add(pt)
+            val ptList = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
+            for(pt in ptList)
+                sq.children.add(pt)
             count+=2
         }
         sq.setCycleCount(Timeline.INDEFINITE);
         sq.play()
     }
 
-    private fun animate(root: Pane, x: String, y: String, dispLine: Boolean, robot: Rectangle, width: Double): PathTransition {
-        val path = Path()
 
-        val xDot = x.toDouble() * width
-        val yDot = y.toDouble() * width
+    private fun animate(root: Pane, x: String, y: String, dispLine: Boolean, robot: Rectangle, width: Double): MutableList<PathTransition> {
+        val retval: MutableList<PathTransition> = arrayListOf()
 
-        path.elements.add(MoveTo(robot.translateX, robot.translateY))
-        path.elements.add(LineTo(robot.translateX + xDot, robot.translateY + yDot))
-        robot.translateX += xDot
-        robot.translateY += yDot
+        val xDDot = x.toDouble() * width
+        val yDDot = y.toDouble() * width
 
-        if(dispLine){
-            path.stroke = Color.RED
-            root.children.add(path)
-            val action = Circle(robot.translateX, robot.translateY, width/10.0)
-            root.children.add(action)
+        val nSteps = 100
+        val dt = 1.0 / nSteps
+
+        for (i in 0..nSteps-1) {
+            val path = Path()
+            path.elements.add(MoveTo(robot.translateX, robot.translateY))
+
+            var xdot = xDot + xDDot * (dt * i)
+            var ydot = yDot + yDDot * (dt * i)
+
+            path.elements.add(LineTo(robot.translateX + (xdot * dt), robot.translateY + (ydot * dt)))
+            robot.translateX += xdot * dt;
+            robot.translateY += ydot * dt;
+
+            if(dispLine){
+                path.stroke = Color.RED
+                root.children.add(path)
+            }
+            /* Animate the robot */
+            val pathTransition = PathTransition()
+            pathTransition.setDuration(Duration.millis(10.0))
+            pathTransition.setPath(path)
+            pathTransition.setNode(robot)
+            pathTransition.setInterpolator(Interpolator.LINEAR);
+            retval.add(pathTransition)
         }
 
-        /* Animate the robot */
-        val pathTransition = PathTransition()
-        pathTransition.setDuration(Duration.millis(2000.0))
-        pathTransition.setPath(path)
-        pathTransition.setNode(robot)
-        pathTransition.setInterpolator(Interpolator.LINEAR);
-        return pathTransition
+        xDot += xDDot
+        yDot += yDDot
+
+        if(dispLine){
+            val action = Circle(robot.translateX, robot.translateY, width / 10.0)
+            root.children.add(action)
+        }
+        return retval
     }
 }

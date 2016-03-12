@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
@@ -13,11 +13,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import groovy.json.JsonOutput
-import groovyjarjarcommonscli.GnuParser
-import groovyjarjarcommonscli.HelpFormatter
-import groovyjarjarcommonscli.Option
-import groovyjarjarcommonscli.Options
+import groovyjarjarcommonscli.*
 import javafx.animation.*
 import javafx.application.Application
 import javafx.beans.value.WritableValue
@@ -36,52 +34,35 @@ import kotlin.system.exitProcess
  * Visualizer for the Acrobot domain.  Given a set of results, produces and runs an animation of the Acrobot domain
  * execution.
  */
-open class AcrobotVisualizer : Application() {
+open class AcrobotVisualizer : BaseVisualizer() {
     private val logger = LoggerFactory.getLogger(AcrobotVisualizer::class.java)
 
     private var acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()
     private var ghost: Boolean = false
     private val actionList: MutableList<AcrobotAction> = mutableListOf()
-    private var experimentResult: ExperimentResult? = null
 
-    private fun processCommandLine(args: Array<String>) {
+    private val ghostOption = Option("g", "ghost", false, "Display ghost animation")
+
+    override fun getOptions(): Options {
         val options = Options()
-
-        val helpOption = Option("h", "help", false, "Print help and exit")
-        val ghostOption = Option("g", "ghost", false, "Display ghost animation")
-
-        options.addOption(helpOption)
         options.addOption(ghostOption)
+        return options
+    }
 
-        /* parse command line arguments */
-        val parser = GnuParser()
-        val cmd = parser.parse(options, args)
-
-        /* print help if help option was specified*/
-        val formatter = HelpFormatter()
-        if (cmd.hasOption("h")) {
-            formatter.printHelp("real-time-search", options)
-            exitProcess(1)
-        }
-
-        if(cmd.args.size < 1){
-            throw IllegalArgumentException("Error: Must pass results to visualizer")
-        }
-
+    override fun processOptions(cmd: CommandLine) {
         ghost = cmd.hasOption(ghostOption.opt)
-
-        experimentResult = experimentResultFromJson(cmd.args.first())
-        acrobotConfiguration = AcrobotConfiguration.fromString(experimentResult!!.experimentConfiguration["rawDomain"] as String)
-
-        for (action in experimentResult!!.actions) {
-            actionList.add(AcrobotAction.valueOf(action))
-        }
     }
 
     override fun start(primaryStage: Stage) {
         primaryStage.title = "Acrobot Visualizer"
 
         processCommandLine(parameters.raw.toTypedArray())
+
+        acrobotConfiguration = AcrobotConfiguration.fromString(experimentResult!!.experimentConfiguration["rawDomain"] as String)
+
+        for (action in experimentResult!!.actions) {
+            actionList.add(AcrobotAction.valueOf(action))
+        }
 
         val stateList = getStateList(actionList, acrobotConfiguration)
         assert(stateList.size > 0, {"Must have at least one state to animate"})

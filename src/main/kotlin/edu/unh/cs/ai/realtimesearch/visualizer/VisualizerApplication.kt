@@ -1,17 +1,22 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
+import edu.unh.cs.ai.realtimesearch.visualizer.acrobot.AcrobotVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.RacetrackVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import javafx.application.Application
 import java.io.File
 
 /**
  * Created by Stephen on 3/10/16.
  */
-class Visualizer {
+class VisualizerApplication {
     companion object {
         @JvmStatic fun main(args: Array<String>) {
             if (args.size < 1){
-                throw IllegalArgumentException("Error: Visualizer takes one argument which is the result file. Aborting.")
+                throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
             }
             val fileName = args.first()
             val fileString = File(fileName).readText()
@@ -34,7 +39,7 @@ class Visualizer {
                     Application.launch(PointVisualizer::class.java, *params.toTypedArray())
                 }
                 "point robot with inertia" -> {
-                    Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
+                    Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
                 }
                 "race track" -> {
                     Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())

@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import javafx.event.EventHandler
@@ -11,6 +11,9 @@ import javafx.scene.shape.StrokeLineCap
 import javafx.scene.transform.Rotate
 import javafx.scene.transform.TransformChangedEvent
 
+/**
+ * Visual components of an Acrobot for animation.
+ */
 data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val linkScale: Double, val linkWidth: Double) {
     val linkScaledLength1 = AcrobotState.linkLength1 * linkScale
     val linkScaledLength2 = AcrobotState.linkLength2 * linkScale
@@ -24,7 +27,6 @@ data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val lin
     // Joint setup
     val joint1 = Circle(linkStartX1, linkStartY1, linkWidth * 0.6)
     val joint2 = Circle(linkStartX2, linkStartY2, joint1.radius)
-
 
     // Rotation setup
     val linkRotate1 = Rotate(0.0, linkStartX1, linkStartY1, 0.0, Rotate.Z_AXIS)
