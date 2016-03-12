@@ -1,22 +1,28 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hd:m:a:n:t:p:vi:o:DgG:"
-PROJECT_NAME="real-time-search"
-GRADLE=./gradlew
-BUILD_DIR=build
-DEFAULT_DIR="unknown"
-RESULTS_TOP_DIR="results"
-DIR=$RESULTS_TOP_DIR
-BIN="$BUILD_DIR/install/$PROJECT_NAME/bin"
-RUN_SCRIPT="$BIN/$PROJECT_NAME"
-NUM_RUNS=1
-RUN_NUM=0
+OPTIONS=":hG:"
+GRADLE_ARGS=
+MAIN_CLASS="edu.unh.cs.ai.realtimesearch.visualizer.VisualizerApplicationKt"
 
 usage() {
-# lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   echo "usage:"
-  echo "$SCRIPT filename"
+  echo "$SCRIPT [options] resultFile [visualizerOptions]"
+  echo "options:"
+  echo "  h           show this usage info"
+  echo "  G <params>  specify gradle parameters"
+}
+
+add_single_arg() {
+  if [ -z "$1" ]; then
+    >&2 echo "Internal script error: missing parameter to add_single_arg"
+  else
+    if [ -n "$DIST" ] && [ "$DIST" = true ]; then
+      echo "$ARGS \"$1\""
+    else
+      echo "$ARGS'$1',"
+    fi
+  fi
 }
 
 add_arg() {
@@ -24,77 +30,41 @@ add_arg() {
     >&2 echo "Internal script error: missing parameter to add_arg"
   else
     if [ -n "$DIST" ] && [ "$DIST" = true ]; then
-      echo "$EXPERIMENT_ARGS $1 \"$2\""
+      echo "$ARGS $1 \"$2\""
     else
-      echo "$EXPERIMENT_ARGS'$1','$2',"
+      echo "$ARGS'$1','$2',"
     fi
   fi
 }
 
-get_file_num() {
-  if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to get_file_num"
-  else
-    if [ $1 -lt 10 ]; then
-      echo "_0$1"
-    else
-      echo "_$1"
-    fi
-  fi
-}
+while getopts $OPTIONS arg; do
+  case $arg in
+    h)
+      usage
+      exit 0
+      ;;
+    G)
+      GRADLE_ARGS="$OPTARG"
+      ;;
+    \?)
+      echo "Invalid argument given: '$OPTARG'" >&2
+      usage
+      exit 1
+      ;;
+    :)
+      echo "Option '$OPTARG' requires a parameter" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
 
-get_unique_filename() {
-  if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to get_file_num"
-  else
-    CURRENT=_00
-    COUNTER=0
-    while [ -f "$1$CURRENT" ] || [ -f "$1${CURRENT}_$RUN_NUM" ] || [ -f "$1${CURRENT}_0$RUN_NUM" ]; do
-      let COUNTER+=1
-      CURRENT=$(get_file_num $COUNTER)
-    done
-    echo "$1$CURRENT"
-  fi
-}
+shift $((OPTIND-1))
+# Add remaining arguments to ARGS to forward to application
+for arg in "$@"; do
+  ARGS=$(add_single_arg "$arg")
+done
 
-run_gradle() {
-  if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run_gradle"
-  else
-    $GRADLE run $GRADLE_PARAMS -PmainClass="edu.unh.cs.ai.realtimesearch.visualizer.Visualizer" -PappArgs="['$1',]"
-  fi
-}
-
-run_dest() {
-  if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run_dest"
-  else
-    eval $RUN_SCRIPT $(add_arg "-o" "$1")
-  fi
-}
-
-run() {
-  if [ -z "$1" ]; then
-    >&2 echo "Internal script error: missing parameter to run"
-  else
-      EXP_SCRIPT=$1
-      $EXP_SCRIPT $2
-  fi
-}
-
-if [ -n "$DIST" ] && [ "$DIST" = true ]; then
-  # Run it
-  if [ -n "$RUN_GRADLE" ] && [ "$RUN_GRADLE" = true ]; then
-    $GRADLE installDist $GRADLE_PARAMS
-  fi
-
-  if [ ! -d "$BIN" ]; then
-    >&2 echo "'$BIN' directory does not exist; build first or run with gradle"
-    usage
-    exit 1
-  fi
-
-  run run_dest
-else
-  run run_gradle $1
-fi
+echo "Running gradle with '$GRADLE_ARGS'"
+echo "Running with args [$ARGS]"
+./gradlew run $GRADLE_ARGS -PappArgs="[$ARGS]" -PmainClass="$MAIN_CLASS"

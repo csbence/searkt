@@ -1,5 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.*
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
@@ -17,28 +21,25 @@ import kotlin.system.exitProcess
 /**
  * Created by Stephen on 2/29/16.
  */
+class RacetrackVisualizer : BaseVisualizer() {
+    private var xDot = 0
+    private var yDot = 0
 
-var xDot = 0
-var yDot = 0
+    override fun getOptions(): Options = Options()
 
-class RacetrackVisualizer : Application() {
+    override fun processOptions(cmd: CommandLine) {}
+
     override fun start(primaryStage: Stage) {
+        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        /* Get domain from Application */
-        val parameters = getParameters()!!
-        val raw = parameters.getRaw()!!
-        if (raw.isEmpty()) {
-            println("Cannot visualize without a domain!")
-            exitProcess(1)
-        }
-        val rawDomain = raw.first()
+        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1) {
-            actionList.add(raw.get(i))
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
 
         primaryStage.title = "RTS Visualizer"
@@ -79,13 +80,13 @@ class RacetrackVisualizer : Application() {
             for (x in 0..columnCount - 1) {
                 when (line[x]) {
                     '#' -> {
-                        val blocked = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val blocked = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         blocked.fill = Color.BLACK
                         blocked.stroke = Color.BLACK
                         root.children.add(blocked)
                     }
                     '_' -> {
-                        val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val free = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
                         free.opacity = 0.5

@@ -57,7 +57,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val terminationTypeOption = Option("t", "term-type", true, "The termination type")
     val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
-    val actionDurationOption = Option ("l", "length", true, "Length of action durations")
+    val extraOption = Option ("e", "extra", true, "Extra configuration option key/value pairs")
 
     // Set required options
     mapFileOption.isRequired = true
@@ -75,7 +75,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     options.addOption(terminationTypeOption)
     options.addOption(terminationParameterOption)
     options.addOption(outFileOption)
-    options.addOption(actionDurationOption)
+    options.addOption(extraOption)
 
     /* parse command line arguments */
     val parser = GnuParser()
@@ -87,7 +87,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val termType = cmd.getOptionValue(terminationTypeOption.opt)
     val termParam = cmd.getOptionValue(terminationParameterOption.opt)
     val outFile = cmd.getOptionValue(outFileOption.opt)
-    val actionDuration = cmd.getOptionValue(actionDurationOption.opt)
+    val extras = cmd.getOptionValues(extraOption.opt)
 
     /* print help if help option was specified*/
     val formatter = HelpFormatter()
@@ -100,8 +100,35 @@ private fun createCommandLineMenu(args: Array<String>) {
     val rawDomain = Scanner(File(mapFile)).useDelimiter("\\Z").next();
     val manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
             termType, termParam.toInt())
-    if (actionDuration != null)
-        manualConfiguration["action duration"] = actionDuration.toLong()
+
+    for (extra in extras) {
+        val valuess = extra.split('=', limit=2)
+        if (valuess.size != 2) {
+            System.err.println("Extra value '$extra' formatted incorrectly")
+            continue
+        }
+        var key: String = valuess[0]
+        val value = valuess[1]
+
+        // Check for type
+        val keyVals = key.split('(', ')')
+        if (keyVals.size > 1) {
+            key = keyVals[0]
+            val type = keyVals[1]
+            when (type.toLowerCase()) {
+                "long"      -> manualConfiguration[key] = value.toLong()
+                "int"       -> manualConfiguration[key] = value.toInt()
+                "boolean"   -> manualConfiguration[key] = value.toBoolean()
+                "double"    -> manualConfiguration[key] = value.toDouble()
+                "float"     -> manualConfiguration[key] = value.toFloat()
+                "byte"      -> manualConfiguration[key] = value.toByte()
+                "short"     -> manualConfiguration[key] = value.toShort()
+                else        -> System.err.println("Extra value '$extra' formatted incorrectly")
+            }
+        } else {
+            manualConfiguration[key] = value
+        }
+    }
     val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
 
     /* output the results */

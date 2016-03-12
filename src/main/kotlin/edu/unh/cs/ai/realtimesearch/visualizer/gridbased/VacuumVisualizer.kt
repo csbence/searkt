@@ -1,41 +1,42 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 /**
  * Created by Stephen on 2/11/16.
  */
 
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.CommandLine
+import groovyjarjarcommonscli.Options
+import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.Timeline
-import javafx.application.Application
-import javafx.animation.Interpolator
 import javafx.scene.Scene
-import javafx.stage.Stage
-import javafx.scene.paint.Color
-import java.util.*
 import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
 import javafx.scene.shape.*
+import javafx.stage.Stage
 import javafx.util.Duration
+import java.util.*
 import kotlin.system.exitProcess
 
-class VacuumVisualizer : Application() {
+class VacuumVisualizer : BaseVisualizer() {
+    override fun getOptions(): Options = Options()
+
+    override fun processOptions(cmd: CommandLine) {}
+
     override fun start(primaryStage: Stage) {
+        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        /* Get domain from Application */
-        val parameters = getParameters()!!
-        val raw = parameters.getRaw()!!
-        if (raw.isEmpty()) {
-            println("Cannot visualize without a domain!")
-            exitProcess(1)
-        }
-        val rawDomain = raw.first()
+        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1) {
-            actionList.add(raw.get(i))
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
+
         val TIME_TO_RUN = actionList.size * 200.0
 
         /* Assuming the domain is correct because the experiment was already run */
@@ -77,14 +78,14 @@ class VacuumVisualizer : Application() {
             for (x in 0..columnCount - 1) {
                 when (line[x]) {
                     '#' -> {
-                        val blocked = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val blocked = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         blocked.fill = Color.BLACK
                         blocked.stroke = Color.BLACK
 
                         root.children.add(blocked)
                     }
                     '_' -> {
-                        val free = Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        val free = Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         free.fill = Color.LIGHTSLATEGRAY
                         free.stroke = Color.WHITE
                         free.opacity = 0.5

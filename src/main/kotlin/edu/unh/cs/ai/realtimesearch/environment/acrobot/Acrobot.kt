@@ -68,9 +68,9 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * @param state the state to provide a heuristic for
      */
     override fun heuristic(state: AcrobotState): Double {
-        if (state.totalEnergy < endStateLowerBound.totalEnergy && state.totalEnergy < endStateUpperBound.totalEnergy)
-            return energyHeuristic(state)
-        else
+//        if (state.totalEnergy < endStateLowerBound.totalEnergy && state.totalEnergy < endStateUpperBound.totalEnergy)
+//            return energyHeuristic(state)
+//        else
             return distanceHeuristic(state)
     }
 

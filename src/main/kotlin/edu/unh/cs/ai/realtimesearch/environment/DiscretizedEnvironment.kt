@@ -3,8 +3,12 @@ package edu.unh.cs.ai.realtimesearch.environment
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 
-class DiscretizedEnvironment<StateType : DiscretizableState<StateType>,
-        DomainType : Domain<DiscretizedState<StateType>>>(private val domain: DomainType, private val initialState: DiscretizedState<StateType>? = null) : Environment<DiscretizedState<StateType>> {
+/**
+ * Wrapper around a discretized domain.
+ */
+class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainType : Domain<DiscretizedState<StateType>>>(
+        private val domain: DomainType, private val initialState: DiscretizedState<StateType>? = null) :
+        Environment<DiscretizedState<StateType>> {
     private val logger = LoggerFactory.getLogger(DiscretizedEnvironment::class.java)
     private var currentState: DiscretizedState<StateType> = initialState ?: domain.randomState()
 
