@@ -68,9 +68,6 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * @param state the state to provide a heuristic for
      */
     override fun heuristic(state: AcrobotState): Double {
-//        if (state.totalEnergy < endStateLowerBound.totalEnergy && state.totalEnergy < endStateUpperBound.totalEnergy)
-//            return energyHeuristic(state)
-//        else
             return distanceHeuristic(state)
     }
 
@@ -88,16 +85,6 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
         val distance2 = Math.min(angleDistance(state.link2.position, endStateLowerBound.link2.position), angleDistance(state.link2.position, endStateUpperBound.link2.position))
 
         return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(state.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(state.link2.velocity))
-    }
-
-    /**
-     * Returns a heuristic based on the energy of a state.  Equal to the inverse of the state's energy in order to give
-     * states with high energy a low heuristic value.
-     *
-     * @param state the state to provide a heuristic for
-     */
-    private fun energyHeuristic(state: AcrobotState): Double {
-        return 1.0 / state.totalEnergy
     }
 
     /**
@@ -134,6 +121,4 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
     override fun randomState(): AcrobotState {
         return AcrobotState(0.0, 0.0, 0.0, 0.0, configuration.stateConfiguration)
     }
-
 }
-
