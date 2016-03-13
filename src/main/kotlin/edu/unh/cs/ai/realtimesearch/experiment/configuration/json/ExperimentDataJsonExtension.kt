@@ -16,7 +16,6 @@ fun <T : ExperimentData> T.toJson(): String {
 fun <T : ExperimentData> T.toIndentedJson(): String {
     val mapper = ObjectMapper()
     mapper.enable(SerializationFeature.INDENT_OUTPUT)
-
     return mapper.writeValueAsString(this)
 }
 
@@ -26,13 +25,11 @@ fun experimentDataFromJson(jsonExperimentConfiguration: String): ExperimentData 
 }
 
 fun experimentConfigurationFromJson(jsonExperimentConfiguration: String): GeneralExperimentConfiguration {
-    val mapper = ObjectMapper().registerKotlinModule()
-    val experimentData = mapper.readValue<ExperimentData>(jsonExperimentConfiguration)
+    val experimentData = experimentDataFromJson(jsonExperimentConfiguration)
     return GeneralExperimentConfiguration(experimentData.valueStore)
 }
 
 fun experimentResultFromJson(jsonExperimentResult: String): ExperimentResult {
-    val mapper = ObjectMapper().registerKotlinModule()
-    val experimentData = mapper.readValue<ExperimentData>(jsonExperimentResult)
+    val experimentData = experimentDataFromJson(jsonExperimentResult)
     return ExperimentResult(experimentData.valueStore)
 }
