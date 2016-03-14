@@ -24,16 +24,21 @@ import kotlin.system.measureTimeMillis
 class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double, var distance: Double,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var distance: Double, var correctedDistance: Double,
                                              var actionCost: Double, var action: Action,
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
+                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) {
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>
         val f: Double
             get() = cost + heuristic
+
+        val fHat: Double
+            get() = cost + correctedHeuristic
 
         init {
             this.parent = parent ?: this
@@ -71,6 +76,30 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 lhs.f > rhs.f -> 1
                 else -> 0
             }
+        }
+    }
+
+    private val fHatComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        if (lhs.fHat == rhs.fHat) {
+            when {
+                lhs.cost > rhs.cost -> -1
+                lhs.cost < rhs.cost -> 1
+                else -> 0
+            }
+        } else {
+            when {
+                lhs.fHat < rhs.fHat -> -1
+                lhs.fHat > rhs.fHat -> 1
+                else -> 0
+            }
+        }
+    }
+
+    private val correctedHeuristicComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.correctedHeuristic < rhs.correctedHeuristic -> -1
+            lhs.correctedHeuristic > rhs.correctedHeuristic -> 1
+            else -> 0
         }
     }
 
@@ -165,6 +194,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
+            // Update error estimates
+            distanceError = nextDistanceError
+            heuristicError = nextHeuristicError
+
             plan = extractPlan(targetNode, state)
             rootState = targetNode.state
         }
@@ -183,7 +216,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), domain.distance(state), 0.0, 0.0, NoOperationAction, iterationCounter, domain.heuristic(state)) // Create root node
+        val node = Node(state, domain.heuristic(state), 0.0, domain.distance(state), domain.distance(state), 0.0, NoOperationAction, iterationCounter, domain.heuristic(state)) // Create root node
         nodes[state] = node // Add root node to the node table
         var currentNode = node
         addToOpenList(node)
@@ -263,11 +296,13 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 // Initially the cost is going to be higher, thus we encounter each (local) state at least once in the LSS
                 successorNode.apply {
+                    val currentDistanceEstimate = correctedDistance / (1.0 - distanceError) // Dionne 2011 (3.8)
+
                     cost = successorGValueFromCurrent
                     parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
-                    correctedHeuristic = heuristicError * distance + heuristic
+                    correctedHeuristic = heuristicError * currentDistanceEstimate + heuristic
                 }
 
                 logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
@@ -307,7 +342,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             generatedNodeCount++
 
             val distance = domain.distance(successorState)
-            val correctedDistance = distance / (1.0 - distanceError) // TODO validate and use
             val heuristic = domain.heuristic(successorState)
 
             val undiscoveredNode = Node(
@@ -319,6 +353,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     action = successor.action,
                     parent = parent,
                     iteration = iterationCounter,
+                    correctedDistance = distance,
                     correctedHeuristic = distance * heuristicError + heuristic)
 
             nodes[successorState] = undiscoveredNode
@@ -339,9 +374,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * This increases the stored heuristic values, ensuring that A* won't go in circles, and in general generating
      * a better table of heuristics.
      *
-     * When first called (mode == NEW_DIJKSTRA), this will set the cost of all states in the closed list to infinity.
-     * We then update
-     *
      */
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
         logger.info { "Start: Dijkstra" }
@@ -351,38 +383,27 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // change openList ordering to heuristic only`
         reorderOpenListBy(heuristicComparator)
 
-        var counter = 0 // TODO
-        var removedCounter = 0;
-        logger.info { "\nOpen list: ${openSet.size} - ${openList.size}" }
-        openSet.forEach { logger.debug("$it") }
-
-        logger.info { "\nClosed list: ${closedList.size}" }
-        closedList.forEach { logger.debug("$it") }
-
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
-            dijkstraPopCounter++ // TODO remove
 
-            val removed = closedList.remove(node)
-            logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${node.predecessors.size} :: $node      Removed: $removed - $removedCounter" }
+            closedList.remove(node)
 
             val currentHeuristicValue = node.heuristic
-            //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
 
             // update heuristic value for each predecessor
             node.predecessors.forEach { predecessor ->
+                // Update if the node is outdated
                 if (predecessor.node.iteration != iterationCounter) {
                     predecessor.node.heuristic = POSITIVE_INFINITY
                     predecessor.node.iteration = iterationCounter
-                    logger.debug { "Update node: Change heuristic to infinity." }
                 }
 
                 val predecessorHeuristicValue = predecessor.node.heuristic
 
-                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
+                //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
+                //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
                 // only update those that we found in the closed list and whose are lower than new found heuristic
                 if (predecessor.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
@@ -431,25 +452,19 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
         openList.clear()
-        openSet.clear()
     }
 
-    private fun inOpenList(node: Node<StateType>) = openSet.contains(node)
+    private fun inOpenList(node: Node<StateType>) = node.open
 
     private fun popOpenList(): Node<StateType> {
-        val state = openList.remove()
-        openSet.remove(state)
-
-        assert(openList.size == openSet.size)
-        return state
+        val node = openList.remove()
+        node.open = false
+        return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        openSet.add(node)
-
-        assert(openList.size == openSet.size)
-
+        node.open = true
     }
 
     private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
