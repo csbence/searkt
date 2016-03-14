@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import org.junit.Test
@@ -176,12 +176,14 @@ class SlidingTilePuzzleTest {
 
     private fun runLssLrtaStart(initialState: SlidingTilePuzzleState, slidingTilePuzzle: SlidingTilePuzzle) {
         val environment = SlidingTilePuzzleEnvironment(slidingTilePuzzle, initialState)
-        val terminalCondition = CallsTerminationChecker(10)
+        val terminalCondition = StaticTimeTerminationChecker(50)
 
         val lsslrtaStarPlanner = LssLrtaStarPlanner(slidingTilePuzzle)
 
         val lssRTAAgent = RTSAgent(lsslrtaStarPlanner)
-        val lssRTAExperiment = RTSExperiment(GeneralExperimentConfiguration(), lssRTAAgent, environment, terminalCondition)
+        val lssConfiguration = GeneralExperimentConfiguration()
+        lssConfiguration["singleStepCommitment"] = false
+        val lssRTAExperiment = RTSExperiment(lssConfiguration, lssRTAAgent, environment, terminalCondition)
 
         lssRTAExperiment.run()
     }

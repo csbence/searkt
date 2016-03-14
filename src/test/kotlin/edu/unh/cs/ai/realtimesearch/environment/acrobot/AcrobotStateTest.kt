@@ -1,6 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.logging.info
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
@@ -11,19 +11,19 @@ class AcrobotStateTest {
 
     private val logger = LoggerFactory.getLogger(AcrobotStateTest::class.java)
 
-    @Test
-    fun testEnergy1() {
-        val state = AcrobotState(0.0, 0.0, 0.0, 0.0)
-        assertTrue { doubleNearEquals(state.kineticEnergy, 0.0) }
-        assertTrue { doubleNearEquals(state.potentialEnergy, 0.0) }
-        assertTrue { doubleNearEquals(state.totalEnergy, 0.0) }
-    }
-
-    @Test
-    fun testEnergy2() {
-        val state = AcrobotState(2.0, 1.0, 0.0, 0.0)
-        assertTrue { doubleNearEquals(state.kineticEnergy, 0.0) }
-    }
+//    @Test
+//    fun testEnergy1() {
+//        val state = AcrobotState(0.0, 0.0, 0.0, 0.0)
+//        assertTrue { doubleNearEquals(state.kineticEnergy, 0.0) }
+//        assertTrue { doubleNearEquals(state.potentialEnergy, 0.0) }
+//        assertTrue { doubleNearEquals(state.totalEnergy, 0.0) }
+//    }
+//
+//    @Test
+//    fun testEnergy2() {
+//        val state = AcrobotState(2.0, 1.0, 0.0, 0.0)
+//        assertTrue { doubleNearEquals(state.kineticEnergy, 0.0) }
+//    }
 
     @Test
     fun testAcceleration() {
@@ -50,10 +50,6 @@ class AcrobotStateTest {
         val state2 = lowerBound + state1
         val state3 = upperBound - state1
 
-        logger.info { "state3: $state3" }
-        logger.info { "lowerB: $lowerBound" }
-        logger.info { "upperB: $upperBound" }
-
         assertTrue  { state2.inBounds(lowerBound, upperBound) }
         assertTrue  { state3.inBounds(lowerBound, upperBound) }
         assertFalse { state1.inBounds(lowerBound, upperBound) }
@@ -63,8 +59,6 @@ class AcrobotStateTest {
 
     @Test
     fun testJSON1() {
-        println("State1: ${JsonOutput.toJson(defaultInitialAcrobotState)}")
-        println("State2: ${JsonOutput.toJson(AcrobotState.fromString(JsonOutput.toJson(defaultInitialAcrobotState)))}")
         assertTrue { defaultInitialAcrobotState.equals(AcrobotState.fromString(JsonOutput.toJson(defaultInitialAcrobotState))) }
     }
 }

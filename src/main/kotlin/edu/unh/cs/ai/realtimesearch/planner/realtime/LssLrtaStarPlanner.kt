@@ -1,8 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
@@ -115,7 +115,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
+    override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
@@ -138,7 +138,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
-        var plan: List<Action>? = null
+        var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
             plan = extractPlan(targetNode, state)
@@ -155,7 +155,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TimeTerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
@@ -291,7 +291,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * We then update
      *
      */
-    private fun dijkstra(terminationChecker: TerminationChecker) {
+    private fun dijkstra(terminationChecker: TimeTerminationChecker) {
         logger.info { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
@@ -355,8 +355,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<Action> {
-        val actions = arrayListOf<Action>()
+    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
+        val actions = arrayListOf<ActionBundle>()
         var currentNode = targetNode
 
         logger.debug() { "Extracting plan" }
@@ -367,7 +367,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // keep on pushing actions to our queue until source state (our root) is reached
         do {
-            actions.add(currentNode.action)
+            actions.add(ActionBundle(currentNode.action, currentNode.actionCost))
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 

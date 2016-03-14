@@ -1,8 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter
-import com.fasterxml.jackson.annotation.JsonAnySetter
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.ExperimentDeserializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
@@ -20,6 +18,11 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
  */
 @JsonDeserialize(using = ExperimentDeserializer::class)
 open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> = hashMapOf()) {
+    init {
+        valueStore.remove("valueStore")
+        valueStore.remove("properties")
+    }
+
     operator fun get(key: String): Any? {
         return valueStore[key]
     }

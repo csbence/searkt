@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
+import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import groovy.json.JsonSlurper
@@ -10,23 +11,6 @@ val verticalDownAcrobotState = AcrobotState(AcrobotLink(3 * Math.PI / 2, 0.0), A
 
 // Initial state with both links pointed down
 val defaultInitialAcrobotState = verticalDownAcrobotState
-
-val defaultFloatAccuracy = 0.00001
-
-fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean {
-    return a == b || Math.abs(a - b) < accuracy
-}
-
-fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Double, accuracy: Double = defaultFloatAccuracy): Double {
-    val fraction = 1.0 / decimal
-    val operand = if (doubleNearEquals(decimal, number)) 1.0 else number * fraction
-    return op(operand, accuracy) / fraction
-}
-
-// Add accuracy to number due to floating point calculations causing issues with rounding operators
-fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.round(num + accuracy) + 0.0 })
-fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
-fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 
 /**
  * Represents one link of an Acrobot.
@@ -119,6 +103,8 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 + rhs.link1, link2 + rhs.link2, configuration)
     operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 - rhs.link1, link2 - rhs.link2, configuration)
 
+    // Implementation note: Changing the properties to lazy actually decreases A* planner time significantly.
+
     // Inertial acceleration matrix equations
     private val d11 = linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) + linkMass2 * ((linkLength1 * linkLength1) + (linkCenterOfMass2 * linkCenterOfMass2) + 2 * linkLength1 * linkCenterOfMass2 * Math.cos(link2.position)) + linkMomentOfInertia1 + linkMomentOfInertia2
     private val d22 = linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) + linkMomentOfInertia2
@@ -140,9 +126,9 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     fun calculateLinkAccelerations(torque: AcrobotAction): Accelerations = Accelerations(calculateLinkAcceleration1(torque), calculateLinkAcceleration2(torque))
 
     // Energy equations
-    val kineticEnergy = 0.5 * linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) * (link1.velocity * link1.velocity) + 0.5 * linkMomentOfInertia1 * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkLength1 * linkLength1) * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity)) + linkMass2 * linkLength1 * linkCenterOfMass2 * ((link1.velocity * link1.velocity) + link1.velocity * link2.velocity) * Math.cos(link2.position) + 0.5 * linkMomentOfInertia2 * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity))
-    val potentialEnergy = linkMass1 * gravity * linkCenterOfMass1 * Math.sin(link1.position) + linkMass2 * gravity * linkLength1 * Math.sin(link1.position) + linkMass2 * gravity * linkCenterOfMass2 * Math.sin(link1.position + link2.position)
-    val totalEnergy = kineticEnergy + potentialEnergy
+//    val kineticEnergy = 0.5 * linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) * (link1.velocity * link1.velocity) + 0.5 * linkMomentOfInertia1 * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkLength1 * linkLength1) * (link1.velocity * link1.velocity) + 0.5 * linkMass2 * (linkCenterOfMass2 * linkCenterOfMass2) * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity)) + linkMass2 * linkLength1 * linkCenterOfMass2 * ((link1.velocity * link1.velocity) + link1.velocity * link2.velocity) * Math.cos(link2.position) + 0.5 * linkMomentOfInertia2 * ((link1.velocity * link1.velocity) + 2 * link1.velocity * link2.velocity + (link2.velocity * link2.velocity))
+//    val potentialEnergy = linkMass1 * gravity * linkCenterOfMass1 * Math.sin(link1.position) + linkMass2 * gravity * linkLength1 * Math.sin(link1.position) + linkMass2 * gravity * linkCenterOfMass2 * Math.sin(link1.position + link2.position)
+//    val totalEnergy = kineticEnergy + potentialEnergy
 
     /**
      * Returns whether this state is within the given bounds for each link position and velocity.

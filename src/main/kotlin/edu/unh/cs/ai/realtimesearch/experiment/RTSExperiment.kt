@@ -5,7 +5,9 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
 
@@ -27,9 +29,11 @@ import org.slf4j.LoggerFactory
 class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                   val agent: RTSAgent<StateType>,
                                                   val world: Environment<StateType>,
-                                                  val terminationChecker: TerminationChecker) : Experiment() {
+                                                  val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
+    private val singleStepLookahead by lazyData<Boolean>(experimentConfiguration, "singleStepLookahead")
+    private val staticStepDuration by lazyData<Long>(experimentConfiguration, "staticStepDuration")
 
     /**
      * Runs the experiment
@@ -37,32 +41,37 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
 
-        // init for this run
-        agent.reset()
-        world.reset()
-
         logger.info { "Starting experiment from state ${world.getState()}" }
         var totalTimeInMillis = 0L
+        var timeBound = staticStepDuration
 
         while (!world.isGoal()) {
             val timeInMillis = kotlin.system.measureTimeMillis {
-                terminationChecker.init()
-                //                    System.gc() // Hint garbage collection to improve real time performance
+                terminationChecker.init(timeBound)
 
-                val actionList = agent.selectAction(world.getState(), terminationChecker);
+                var actionList = agent.selectAction(world.getState(), terminationChecker);
 
-                actions.addAll(actionList)
+                if (actionList.size > 1 && singleStepLookahead) {
+                    actionList = listOf(actionList.first()) // Trim the action list to one item
+                }
 
                 logger.info { "Agent return action $actionList to state ${world.getState()}" }
 
-                actionList.forEach { world.step(it) }
+                timeBound = 0
+                actionList.forEach {
+                    world.step(it.action) // Move the agent
+                    actions.add(it.action) // Save the action
+                    timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
+                }
+
             }
 
             totalTimeInMillis += timeInMillis
-//            System.gc()
+            //            System.gc()
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
         return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
     }
 }
+

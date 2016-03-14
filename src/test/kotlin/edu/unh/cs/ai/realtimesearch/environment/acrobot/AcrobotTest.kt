@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
@@ -17,23 +18,6 @@ import kotlin.test.assertTrue
 class AcrobotTest {
 
     private val logger = LoggerFactory.getLogger(AcrobotTest::class.java)
-
-    private fun printResults(result: ExperimentResult) {
-        val domain = DiscretizedDomain(Acrobot())
-        val environment = DiscretizedEnvironment(domain)
-//        for (action in result.actions) {
-////            logger.debug { "Accelerations: ${environment.getState().state.calculateLinkAccelerations(action as AcrobotAction)}" }
-//            environment.step(action)
-//            logger.debug { "$action: ${environment.getState()}" }
-//        }
-
-        logger.debug { "Final state: ${environment.getState()} (goal:${environment.isGoal()})" }
-
-        logger.debug { "Expanded nodes: ${result.expandedNodes}" }
-        logger.debug { "Generated nodes: ${result.generatedNodes}" }
-        logger.debug { "Path length: ${result.pathLength} (alt: ${result.actions.size})" }
-        logger.debug { "Runtime (ms): ${result.timeInMillis}" }
-    }
 
     @Test
     fun testGoalHeuristic() {
@@ -79,8 +63,7 @@ class AcrobotTest {
         val aStarAgent = ClassicalAgent(AStarPlanner(domain))
         val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, domain, initialState)
 
-//        aStarExperiment.run()
-        printResults(aStarExperiment.run())
+        aStarExperiment.run()
     }
 
 //        @Test
