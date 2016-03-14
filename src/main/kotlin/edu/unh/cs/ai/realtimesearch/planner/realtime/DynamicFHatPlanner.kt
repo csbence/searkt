@@ -1,23 +1,14 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
-<<<<<<< Updated upstream
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-=======
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
->>>>>>> Stashed changes
 import edu.unh.cs.ai.realtimesearch.logging.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.lang.Math.max
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
-<<<<<<< Updated upstream
-import kotlin.comparisons.compareBy
-=======
->>>>>>> Stashed changes
 import kotlin.system.measureTimeMillis
 
 /**
@@ -36,10 +27,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double, var distance: Double,
                                              var actionCost: Double, var action: Action,
                                              var iteration: Long,
-<<<<<<< Updated upstream
-=======
                                              var correctedHeuristic: Double,
->>>>>>> Stashed changes
                                              parent: Node<StateType>? = null) {
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
@@ -70,16 +58,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private val logger = LoggerFactory.getLogger(DynamicFHatPlanner::class.java)
     private var iterationCounter = 0L
 
-<<<<<<< Updated upstream
-    private val fValueComparator = compareBy<Node<StateType>> { node ->
-        val state = node.state
-        nodes[state]?.let { it.heuristic + it.cost } ?: domain.heuristic(state)
-    }
-
-    private val heuristicComparator = compareBy<Node<StateType>> { node ->
-        val state = node.state
-        nodes[state]?.heuristic ?: domain.heuristic(state) // TODO
-=======
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         if (lhs.f == rhs.f) {
             when {
@@ -102,7 +80,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             lhs.heuristic > rhs.heuristic -> 1
             else -> 0
         }
->>>>>>> Stashed changes
     }
 
     private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
@@ -161,11 +138,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-<<<<<<< Updated upstream
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action> {
-=======
     override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
->>>>>>> Stashed changes
         // Initiate for the first search
 
         if (rootState == null) {
@@ -189,11 +162,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         // Exploration phase
-<<<<<<< Updated upstream
-        var plan: List<Action>? = null
-=======
         var plan: List<ActionBundle>? = null
->>>>>>> Stashed changes
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
             plan = extractPlan(targetNode, state)
@@ -210,19 +179,11 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-<<<<<<< Updated upstream
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
-        // actual core steps of A*, building the tree
-        initializeAStar()
-
-        val node = Node(state, domain.heuristic(state), domain.distance(state), 0.0, 0.0, NoOperationAction, iterationCounter) // Create root node
-=======
     private fun aStar(state: StateType, terminationChecker: TimeTerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
         val node = Node(state, domain.heuristic(state), domain.distance(state), 0.0, 0.0, NoOperationAction, iterationCounter, domain.heuristic(state)) // Create root node
->>>>>>> Stashed changes
         nodes[state] = node // Add root node to the node table
         var currentNode = node
         addToOpenList(node)
@@ -296,15 +257,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
-<<<<<<< Updated upstream
-            val successorGValue = successorNode.cost
-            val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorGValue > successorGValueFromCurrent) {
-                generatedNodeCount++
-=======
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
->>>>>>> Stashed changes
 
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 // Initially the cost is going to be higher, thus we encounter each (local) state at least once in the LSS
@@ -313,10 +267,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
-<<<<<<< Updated upstream
-=======
                     correctedHeuristic = heuristicError * distance + heuristic
->>>>>>> Stashed changes
                 }
 
                 logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
@@ -343,25 +294,16 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-<<<<<<< Updated upstream
-=======
     /**
      * Get a node for the state if exists, else create a new node.
      *
      * @return node corresponding to the given state.
      */
->>>>>>> Stashed changes
     private fun getNode(parent: Node<StateType>, successor: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
         return if (tempSuccessorNode == null) {
-<<<<<<< Updated upstream
-            val undiscoveredNode = Node(
-                    state = successorState,
-                    heuristic = domain.heuristic(successorState),
-                    distance = domain.distance(successorState),
-=======
             generatedNodeCount++
 
             val distance = domain.distance(successorState)
@@ -372,17 +314,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     state = successorState,
                     heuristic = heuristic,
                     distance = distance,
->>>>>>> Stashed changes
                     cost = POSITIVE_INFINITY,
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
-<<<<<<< Updated upstream
-                    iteration = iterationCounter)
-=======
                     iteration = iterationCounter,
                     correctedHeuristic = distance * heuristicError + heuristic)
->>>>>>> Stashed changes
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -406,11 +343,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * We then update
      *
      */
-<<<<<<< Updated upstream
-    private fun dijkstra(terminationChecker: TerminationChecker) {
-=======
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
->>>>>>> Stashed changes
         logger.info { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
@@ -474,13 +407,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-<<<<<<< Updated upstream
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<Action> {
-        val actions = arrayListOf<Action>()
-=======
     private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
         val actions = arrayListOf<ActionBundle>()
->>>>>>> Stashed changes
         var currentNode = targetNode
 
         logger.debug() { "Extracting plan" }
@@ -491,11 +419,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // keep on pushing actions to our queue until source state (our root) is reached
         do {
-<<<<<<< Updated upstream
-            actions.add(currentNode.action)
-=======
             actions.add(ActionBundle(currentNode.action, currentNode.actionCost))
->>>>>>> Stashed changes
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
