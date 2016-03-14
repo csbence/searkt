@@ -8,7 +8,6 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Double.Companion.POSITIVE_INFINITY
-import kotlin.comparisons.compareBy
 import kotlin.system.measureTimeMillis
 
 /**
@@ -55,14 +54,28 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
-    private val fValueComparator = compareBy<Node<StateType>> { node ->
-        val state = node.state
-        nodes[state]?.let { it.heuristic + it.cost } ?: domain.heuristic(state)
+    private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        if (lhs.f == rhs.f) {
+            when {
+                lhs.cost > rhs.cost -> -1
+                lhs.cost < rhs.cost -> 1
+                else -> 0
+            }
+        } else {
+            when {
+                lhs.f < rhs.f -> -1
+                lhs.f > rhs.f -> 1
+                else -> 0
+            }
+        }
     }
 
-    private val heuristicComparator = compareBy<Node<StateType>> { node ->
-        val state = node.state
-        nodes[state]?.heuristic ?: domain.heuristic(state) // TODO
+    private val heuristicComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
     }
 
     private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
@@ -221,11 +234,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             successorNode.predecessors.add(Edge(node = node, action = successor.action, actionCost = successor.actionCost))
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
-            val successorGValue = successorNode.cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorGValue > successorGValueFromCurrent) {
-                generatedNodeCount += 1
-
+            if (successorNode.cost > successorGValueFromCurrent) {
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
                     cost = successorGValueFromCurrent
@@ -248,11 +258,18 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
+    /**
+     * Get a node for the state if exists, else create a new node.
+     *
+     * @return node corresponding to the given state.
+     */
     private fun getNode(parent: Node<StateType>, successor: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
         return if (tempSuccessorNode == null) {
+            generatedNodeCount++
+
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),

@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import groovyjarjarcommonscli.*
 import java.io.File
 import java.io.PrintWriter
@@ -19,12 +18,13 @@ private var outFile: String = ""
 fun main(args: Array<String>) {
     if (args.size < 2) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")!!
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "RTA*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "LSS-LRTA*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
+        manualConfiguration["singleStepLookahead"] = false
         manualConfiguration["staticStepDuration"] = 10L
     } else {
         // Read configuration from command line
@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
             it.write(result.toIndentedJson())
         }
     } else {
-        println(result.toJson())
+//        println(result.toIndentedJson()
     }
 }
 
