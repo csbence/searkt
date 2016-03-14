@@ -85,6 +85,9 @@ Actions: Torque applied to joint 2
 
 ### Real-time search
 
+ * Time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" } 
+ * Static step duration ("staticStepDuration", Long) 
+
 ### Anytime search
 
 ### Algorithm
