@@ -26,6 +26,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              var iteration: Long,
+                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) {
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
@@ -49,7 +50,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}  ]"
+            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
         }
     }
 
@@ -86,9 +87,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
     private var openList = PriorityQueue<Node<StateType>>(fValueComparator)
-
-    // for fast lookup we maintain a set in parallel
-    private val openSet = hashSetOf<Node<StateType>>()
 
     private var rootState: StateType? = null
 
@@ -172,7 +170,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter)
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter, false)
         nodes[state] = node
         //        costTable.put(state, 0.0) TODO
         var currentNode = node
@@ -254,7 +252,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
-                if (!inOpenList(successorNode)) {
+                if (!successorNode.open) {
                     addToOpenList(successorNode)
                 }
             } else {
@@ -284,7 +282,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
-                    iteration = iterationCounter)
+                    iteration = iterationCounter,
+                    open = false)
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -304,9 +303,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * This increases the stored heuristic values, ensuring that A* won't go in circles, and in general generating
      * a better table of heuristics.
      *
-     * When first called (mode == NEW_DIJKSTRA), this will set the cost of all states in the closed list to infinity.
-     * We then update
-     *
      */
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
         logger.info { "Start: Dijkstra" }
@@ -316,47 +312,45 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // change openList ordering to heuristic only`
         reorderOpenListBy(heuristicComparator)
 
-        var counter = 0 // TODO
-        var removedCounter = 0;
-        logger.info { "\nOpen list: ${openSet.size} - ${openList.size}" }
-        openSet.forEach { logger.debug("$it") }
-
-        logger.info { "\nClosed list: ${closedList.size}" }
-        closedList.forEach { logger.debug("$it") }
+        // LSS-LRTA addition
+//        openList.toTypedArray().forEach {
+//            it.iteration = iterationCounter
+//        }
 
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
             val node = popOpenList()
-            node.iteration = iterationCounter
-            dijkstraPopCounter++ // TODO remove
+//            node.iteration = iterationCounter
 
-            val removed = closedList.remove(node)
-            logger.debug { "Dijkstra step: ${counter++} :: open list size: ${openList.size} :: closed list size: ${closedList.size} :: #succ: ${node.predecessors.size} :: $node      Removed: $removed - $removedCounter" }
+            if (!closedList.remove(node) /*&& iterationCounter != node.iteration*/) {
+                continue // Already explored, skip.
+            }
 
             val currentHeuristicValue = node.heuristic
             //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
 
             // update heuristic value for each predecessor
             node.predecessors.forEach { predecessor ->
-                if (predecessor.node.iteration != iterationCounter) {
-                    predecessor.node.heuristic = POSITIVE_INFINITY
-                    predecessor.node.iteration = iterationCounter
-                    logger.debug { "Update node: Change heuristic to infinity." }
-                }
+                // Update if the node is outdated
+                //                if (predecessor.node.iteration != iterationCounter) {
+                //                    predecessor.node.heuristic = POSITIVE_INFINITY
+                //                    predecessor.node.iteration = iterationCounter
+                //                }
 
                 val predecessorHeuristicValue = predecessor.node.heuristic
 
-                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
+                //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
+                //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
                 // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessor.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                if (predecessor.node in closedList ) {
 
-                    predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
-                    logger.debug { "Updated to ${predecessor.node.heuristic}" }
+                    if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                        predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
+                    }
+                    if (!predecessor.node.open)
+                    addToOpenList(predecessor.node)
 
-                    if (!inOpenList(predecessor.node))
-                        addToOpenList(predecessor.node)
                 }
             }
         }
@@ -396,25 +390,17 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
         openList.clear()
-        openSet.clear()
     }
 
-    private fun inOpenList(node: Node<StateType>) = openSet.contains(node)
-
     private fun popOpenList(): Node<StateType> {
-        val state = openList.remove()
-        openSet.remove(state)
-
-        assert(openList.size == openSet.size)
-        return state
+        val node = openList.remove()
+        node.open = false
+        return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        openSet.add(node)
-
-        assert(openList.size == openSet.size)
-
+        node.open = true
     }
 
     private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
