@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import groovyjarjarcommonscli.*
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
@@ -16,11 +17,13 @@ private var manualConfiguration: GeneralExperimentConfiguration = GeneralExperim
 private var outFile: String = ""
 
 fun main(args: Array<String>) {
+    val logger = LoggerFactory.getLogger("Real-time search")
+
     if (args.size < 2) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
+        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/87")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "LSS-LRTA*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
@@ -39,7 +42,7 @@ fun main(args: Array<String>) {
             it.write(result.toIndentedJson())
         }
     } else {
-//        println(result.toIndentedJson()
+        logger.info(result.toIndentedJson())
     }
 }
 
