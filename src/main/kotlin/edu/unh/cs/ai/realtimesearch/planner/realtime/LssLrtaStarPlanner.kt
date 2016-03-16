@@ -30,6 +30,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>
+        val f: Double
+            get() = cost + heuristic
 
         init {
             this.parent = parent ?: this
