@@ -55,7 +55,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
 
-                logger.info { "Agent return action $actionList to state ${world.getState()}" }
+                logger.info { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
                 timeBound = 0
                 actionList.forEach {
