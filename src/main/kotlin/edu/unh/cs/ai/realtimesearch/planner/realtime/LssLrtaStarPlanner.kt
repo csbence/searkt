@@ -348,9 +348,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
                         predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
                     }
+
                     if (!predecessor.node.open)
                     addToOpenList(predecessor.node)
-
                 }
             }
         }
