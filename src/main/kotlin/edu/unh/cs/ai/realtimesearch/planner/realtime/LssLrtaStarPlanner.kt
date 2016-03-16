@@ -313,14 +313,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         reorderOpenListBy(heuristicComparator)
 
         // LSS-LRTA addition
-//        openList.toTypedArray().forEach {
-//            it.iteration = iterationCounter
-//        }
+        //        openList.toTypedArray().forEach {
+        //            it.iteration = iterationCounter
+        //        }
 
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
             val node = popOpenList()
-//            node.iteration = iterationCounter
+            //            node.iteration = iterationCounter
 
             if (!closedList.remove(node) /*&& iterationCounter != node.iteration*/) {
                 continue // Already explored, skip.
@@ -350,7 +350,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     }
 
                     if (!predecessor.node.open)
-                    addToOpenList(predecessor.node)
+                        addToOpenList(predecessor.node)
                 }
             }
         }
