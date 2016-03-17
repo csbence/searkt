@@ -5,9 +5,13 @@ import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.util.OneWayObjectPool
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.Double.Companion.POSITIVE_INFINITY
+import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 /**
@@ -21,11 +25,12 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
+    data class Edge<StateType : State<StateType>>(var node: Node<StateType>?, var action: Action?, var actionCost: Double?)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    class Node<StateType : State<StateType>>(var state: StateType?, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              var iteration: Long,
+                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) {
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
@@ -38,12 +43,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         override fun hashCode(): Int {
-            return state.hashCode()
+            return state!!.hashCode()
         }
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
-                return state.equals(other.state)
+                return state!!.equals(other.state)
             }
             return false
         }
@@ -97,6 +102,31 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var aStarTimer = 0L
     private var dijkstraTimer = 0L
 
+    // Object pools
+    private lateinit var nodePool: OneWayObjectPool<Node<StateType>>
+    private lateinit var edgePool: OneWayObjectPool<Edge<StateType>>
+
+    /**
+     * Allocate memory for nodes.
+     */
+    override fun init() {
+        super.init()
+
+        val maxNodeCount = 10000000
+        val expectedBranchingFactor = 5
+
+        val nanoInitTime = measureNanoTime {
+            val nodeFactory: () -> Node<StateType> = { Node(null, 0.0, 0.0, 0.0, NoOperationAction, 0, false) }
+            nodePool = OneWayObjectPool(maxNodeCount, nodeFactory)
+
+            val edgeFactory: () -> Edge<StateType> = { Edge(null, null, 0.0) }
+            edgePool = OneWayObjectPool(maxNodeCount * expectedBranchingFactor, edgeFactory)
+        }
+
+        logger.info { "Initialization time: ${MILLISECONDS.convert(nanoInitTime, NANOSECONDS)}ms" }
+        System.gc()
+    }
+
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
@@ -144,7 +174,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             return emptyList()
         }
 
-        logger.info { "Root state: $state" }
+        logger.debug() { "Root state: $state" }
         // Every turn learn then A* until time expires
 
         if (closedList.isNotEmpty()) {
@@ -158,8 +188,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = targetNode.state
         }
 
-        logger.info { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.info { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug() { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.debug() { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -180,20 +210,23 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state!!)) {
                 aStarPopCounter++
+                if (openList.isEmpty()) {
+                    logger.error("Solution not found! (Open list is empty)")
+                }
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
             }
         }
 
-        if (node == currentNode && !domain.isGoal(currentNode.state)) {
+        if (node == currentNode && !domain.isGoal(currentNode.state!!)) {
             //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
-            logger.info { "A* : expanded $expandedNodes nodes" }
+            logger.debug { "A* : expanded $expandedNodes nodes" }
         }
 
-        logger.info { "Done with AStar at $currentNode" }
+        logger.debug { "Done with AStar at $currentNode" }
 
         return currentNode
     }
@@ -211,16 +244,25 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * it will add it to the open list and store it's g value, as long as the
      * state has not been seen before, or is found with a lower g value
      */
-    private fun expandFromNode(node: Node<StateType>) {
+    private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(node)
+        closedList.add(sourceNode)
 
-        val currentGValue = node.cost
-        for (successor in domain.successors(node.state)) {
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state!!)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
-            val successorNode = getNode(node, successor)
+            val successorNode = getNode(sourceNode, successor)
+
+            // Add the current state as the predecessor of the child state
+            val edge = edgePool.getObject()
+            edge.apply {
+                node = sourceNode
+                action = successor.action
+                actionCost = successor.actionCost
+            }
+            successorNode.predecessors.add(edge)
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -233,7 +275,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = node, action = successor.action, actionCost = successor.actionCost))
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -241,12 +283,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
                     cost = successorGValueFromCurrent
-                    parent = node
+                    parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
                 }
 
-                logger.debug { "Expanding from $node --> $successorState :: open list size: ${openList.size}" }
+                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!inOpenList(successorNode)) {
@@ -254,7 +296,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             } else {
                 logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${node.cost}), and action cost ${successor.actionCost}"
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
         }
@@ -272,17 +314,21 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
 
-            val undiscoveredNode = Node(
-                    state = successorState,
-                    heuristic = domain.heuristic(successorState),
-                    cost = POSITIVE_INFINITY,
-                    actionCost = successor.actionCost,
-                    action = successor.action,
-                    parent = parent,
-                    iteration = iterationCounter)
+            val node = nodePool.getObject()
 
-            nodes[successorState] = undiscoveredNode
-            undiscoveredNode
+            node.apply {
+                state = successorState
+                heuristic = domain.heuristic(successorState)
+                cost = POSITIVE_INFINITY
+                actionCost = successor.actionCost
+                action = successor.action
+                node.parent = parent
+                iteration = iterationCounter
+                open = false
+            }
+
+            nodes[successorState] = node
+            node
         } else {
             tempSuccessorNode
         }
@@ -304,7 +350,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      *
      */
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
-        logger.info { "Start: Dijkstra" }
+        logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
@@ -333,32 +379,33 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             // update heuristic value for each predecessor
             node.predecessors.forEach { predecessor ->
-                if (predecessor.node.iteration != iterationCounter) {
-                    predecessor.node.heuristic = POSITIVE_INFINITY
-                    predecessor.node.iteration = iterationCounter
-                    logger.debug { "Update node: Change heuristic to infinity." }
+                // Update if the node is outdated
+                if (predecessor.node!!.iteration != iterationCounter) {
+                    predecessor.node!!.heuristic = POSITIVE_INFINITY
+                    predecessor.node!!.iteration = iterationCounter
                 }
 
-                val predecessorHeuristicValue = predecessor.node.heuristic
+                val predecessorHeuristicValue = predecessor.node!!.heuristic
 
                 logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
+//                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
                 // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessor.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                if (predecessor!!.node in closedList ) {
 
-                    predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
-                    logger.debug { "Updated to ${predecessor.node.heuristic}" }
+                    if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost!!)) {
+                        predecessor.node!!.heuristic = currentHeuristicValue + predecessor.actionCost!!
+                    }
 
-                    if (!inOpenList(predecessor.node))
-                        addToOpenList(predecessor.node)
+                    if (!predecessor.node!!.open)
+                        addToOpenList(predecessor.node!!)
                 }
             }
         }
 
         // update mode if done
         if (openList.isEmpty()) {
-            logger.info { "Done with Dijkstra" }
+            logger.debug { "Done with Dijkstra" }
         } else {
             logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
         }
@@ -409,7 +456,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         openSet.add(node)
 
         assert(openList.size == openSet.size)
-
     }
 
     private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
