@@ -33,6 +33,9 @@ object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val domainName: String = experimentConfiguration.domainName
 
+        // Execute the gc before every experiment.
+        System.gc()
+
         return when (domainName) {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
