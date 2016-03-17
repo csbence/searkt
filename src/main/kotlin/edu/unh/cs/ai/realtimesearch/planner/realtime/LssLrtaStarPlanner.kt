@@ -95,17 +95,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var aStarTimer = 0L
     private var dijkstraTimer = 0L
 
-
-    /**
-     * Allocate memory for nodes.
-     */
-    override fun init() {
-        super.init()
-
-
-
-    }
-
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
      * When a new action is selected, all members that persist during selection action phase are cleared
