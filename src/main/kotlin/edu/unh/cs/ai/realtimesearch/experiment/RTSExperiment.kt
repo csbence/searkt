@@ -8,6 +8,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
 
@@ -55,7 +56,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
 
-                logger.info { "Agent return action $actionList to state ${world.getState()}" }
+                logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
                 timeBound = 0
                 actionList.forEach {

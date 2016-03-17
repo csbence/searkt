@@ -21,7 +21,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
 
-    private val openList = PriorityQueue { lhs: Node, rhs: Node ->
+    private val openList = PriorityQueue { lhs: Node<StateType>, rhs: Node<StateType> ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -31,31 +31,21 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
     }
 
-    private val closedList: HashSet<StateType> = hashSetOf()
-    private var generatedNodes = 0
-    private var expandedNodes = 0
+    private val closedList: HashSet<StateType> = HashSet()
 
-    inner class Node(val parent: Node?, val state: StateType, val action: Action?, val cost: Double) {
-        internal val f: Double
-
-        init {
-            f = cost + (domain.heuristic(state) * weight)
-        }
-    }
+    class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
 
     override fun plan(state: StateType): List<Action> {
-        generatedNodes = 0
-        expandedNodes = 0
         openList.clear();
         closedList.clear();
 
-        openList.add(Node(null, state, null, 0.0))
+        openList.add(Node(null, state, null, 0.0, 0.0))
         closedList.add(state)
-        generatedNodes += 1
+        generatedNodeCount++
 
         while (openList.isNotEmpty()) {
             val node = openList.remove()
-            expandedNodes += 1
+            expandedNodeCount++
 
             if (domain.isGoal(node.state)) {
                 return extractPlan(node)
@@ -64,24 +54,22 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             // expand (only those not visited yet)
             for (successor in domain.successors(node.state)) {
                 if (successor.state !in closedList) {
-                    generatedNodes += 1
+                    generatedNodeCount++
 
                     // generate the node with correct cost
                     val nodeCost = successor.actionCost + node.cost
 
-                    val successorNode = Node(node, successor.state,
-                            successor.action, nodeCost)
+                    val successorNode = Node(node, successor.state, successor.action, nodeCost, nodeCost + domain.heuristic(successor.state))
                     openList.add(successorNode)
                     closedList.add(successorNode.state)
                 }
             }
-
         }
 
         throw GoalNotReachableException()
     }
 
-    protected fun extractPlan(leave: Node): List<Action> {
+    fun extractPlan(leave: Node<StateType>): List<Action> {
         val actions: MutableList<Action> = arrayListOf()
 
         var node = leave
