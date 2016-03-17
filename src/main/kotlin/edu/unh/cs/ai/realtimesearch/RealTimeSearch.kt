@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import groovyjarjarcommonscli.*
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
@@ -16,6 +17,8 @@ private var manualConfiguration: GeneralExperimentConfiguration = GeneralExperim
 private var outFile: String = ""
 
 fun main(args: Array<String>) {
+    val logger = LoggerFactory.getLogger("Real-time search")
+
     if (args.size < 2) {
         // Default configuration
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
