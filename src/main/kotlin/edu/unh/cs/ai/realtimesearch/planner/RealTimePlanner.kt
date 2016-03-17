@@ -46,10 +46,11 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
 
     /**
      * Called before the first [selectAction] call.
+     *
+     * This call does not count towards the planning time.
      */
     open fun init() {
 
     }
-
 }
 
