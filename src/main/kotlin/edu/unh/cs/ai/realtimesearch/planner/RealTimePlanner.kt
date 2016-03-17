@@ -16,7 +16,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
     /**
      * Data class to store [Action]s along with their execution time.
      *
-     * The [duration] is measured in milliseconds.
+     * The [duration] is measured in nanoseconds.
      */
     data class ActionBundle(val action: Action, val duration: Double)
 

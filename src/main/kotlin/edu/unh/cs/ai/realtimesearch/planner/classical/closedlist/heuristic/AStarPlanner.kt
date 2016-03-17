@@ -4,10 +4,10 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
-import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlannerBase
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.system.measureNanoTime
 
 /**
  * Standalone A* implementation.
@@ -16,10 +16,11 @@ import java.util.*
  */
 class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double = 1.0) : ClassicalPlanner<StateType> {
 
-    private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
+    private val logger = LoggerFactory.getLogger(AStarPlanner::class.java)
 
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
+    override var executionNanoTime = 0L
 
     private val openList = PriorityQueue { lhs: Node<StateType>, rhs: Node<StateType> ->
         when {
@@ -36,33 +37,43 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
     class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
 
     override fun plan(state: StateType): List<Action> {
-        openList.clear();
-        closedList.clear();
+        executionNanoTime += measureNanoTime {
+            openList.clear();
+            closedList.clear();
 
-        openList.add(Node(null, state, null, 0.0, 0.0))
-        closedList.add(state)
-        generatedNodeCount++
+            openList.add(Node(null, state, null, 0.0, 0.0))
+            closedList.add(state)
+            generatedNodeCount++
+        }
 
         while (openList.isNotEmpty()) {
-            val node = openList.remove()
-            expandedNodeCount++
+            executionNanoTime += measureNanoTime {
 
-            if (domain.isGoal(node.state)) {
-                return extractPlan(node)
+                val node = openList.remove()
+                expandedNodeCount++
+
+                if (domain.isGoal(node.state)) {
+                    return extractPlan(node)
+                }
+
+                // expand (only those not visited yet)
+                for (successor in domain.successors(node.state)) {
+                    if (successor.state !in closedList) {
+                        generatedNodeCount++
+
+                        // generate the node with correct cost
+                        val nodeCost = successor.actionCost + node.cost
+
+                        val successorNode = Node(node, successor.state, successor.action, nodeCost, nodeCost + domain.heuristic(successor.state))
+                        openList.add(successorNode)
+                        closedList.add(successorNode.state)
+                    }
+                }
+
             }
 
-            // expand (only those not visited yet)
-            for (successor in domain.successors(node.state)) {
-                if (successor.state !in closedList) {
-                    generatedNodeCount++
-
-                    // generate the node with correct cost
-                    val nodeCost = successor.actionCost + node.cost
-
-                    val successorNode = Node(node, successor.state, successor.action, nodeCost, nodeCost + domain.heuristic(successor.state))
-                    openList.add(successorNode)
-                    closedList.add(successorNode.state)
-                }
+            if (expandedNodeCount % 100000 == 0) {
+                System.gc()
             }
         }
 

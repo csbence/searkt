@@ -9,7 +9,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import org.slf4j.LoggerFactory
-import kotlin.system.measureTimeMillis
 
 /**
  * An experiments meant for classical search, such as depth first search.
@@ -42,13 +41,12 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         // Execute the gc before running the experiment
         System.gc()
 
-        val timeInMillis = measureTimeMillis { actions = agent.plan(state) }
+        actions = agent.plan(state)
 
         // log results
-        logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
+        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
-
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions.map { it.toString() })
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, agent.planner.executionNanoTime, actions.map { it.toString() })
 
     }
 }

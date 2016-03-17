@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.system.exitProcess
 
 class Input
@@ -23,7 +25,7 @@ fun main(args: Array<String>) {
         // Default configuration
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "LSS-LRTA*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "A*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
@@ -42,8 +44,8 @@ fun main(args: Array<String>) {
             it.write(result.toIndentedJson())
         }
     } else {
-        logger.info("Execution time: ${result.timeInMillis}")
-//        logger.info(result.toIndentedJson())
+        logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
+        //        logger.info(result.toIndentedJson())
     }
 }
 
@@ -153,7 +155,7 @@ private fun createCommandLineMenu(args: Array<String>) {
                 termType, termParam.toInt())
 
         for (extra in extras) {
-            val values = extra.split('=', limit=2)
+            val values = extra.split('=', limit = 2)
             if (values.size != 2) {
                 System.err.println("Extra value '$extra' formatted incorrectly")
                 continue
@@ -167,14 +169,14 @@ private fun createCommandLineMenu(args: Array<String>) {
                 key = keyVals[0]
                 val type = keyVals[1]
                 when (type.toLowerCase()) {
-                    "long"      -> manualConfiguration[key] = value.toLong()
-                    "int"       -> manualConfiguration[key] = value.toInt()
-                    "boolean"   -> manualConfiguration[key] = value.toBoolean()
-                    "double"    -> manualConfiguration[key] = value.toDouble()
-                    "float"     -> manualConfiguration[key] = value.toFloat()
-                    "byte"      -> manualConfiguration[key] = value.toByte()
-                    "short"     -> manualConfiguration[key] = value.toShort()
-                    else        -> System.err.println("Extra value '$extra' formatted incorrectly")
+                    "long" -> manualConfiguration[key] = value.toLong()
+                    "int" -> manualConfiguration[key] = value.toInt()
+                    "boolean" -> manualConfiguration[key] = value.toBoolean()
+                    "double" -> manualConfiguration[key] = value.toDouble()
+                    "float" -> manualConfiguration[key] = value.toFloat()
+                    "byte" -> manualConfiguration[key] = value.toByte()
+                    "short" -> manualConfiguration[key] = value.toShort()
+                    else -> System.err.println("Extra value '$extra' formatted incorrectly")
                 }
             } else {
                 manualConfiguration[key] = value

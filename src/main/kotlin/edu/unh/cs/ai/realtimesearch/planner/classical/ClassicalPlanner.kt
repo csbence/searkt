@@ -7,6 +7,11 @@ import edu.unh.cs.ai.realtimesearch.planner.Planner
 interface ClassicalPlanner<StateType : State<StateType>> : Planner {
 
     /**
+     * Plan execution time not including the garbage collection time.
+     */
+    val executionNanoTime: Long
+
+    /**
      * Returns a plan for a given initial state. A plan consists of a list of actions
      *
      * @param state is the initial state

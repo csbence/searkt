@@ -3,8 +3,8 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.planner.Planner
 import org.slf4j.LoggerFactory
+import kotlin.system.measureNanoTime
 
 /**
  * The abstract class for classical planners. Assume fully observable, deterministic nature.
@@ -18,6 +18,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
+    override var executionNanoTime: Long = 0
 
     data class Node<State>(val parent: Node<State>?, val state: State,
                            val action: Action?, val cost: Double)
@@ -65,7 +66,13 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
         // main loop
         var currentNode = Node<StateType>(null, state, null, 0.0)
         while (!domain.isGoal(currentNode.state)) {
-            currentNode = expandNode(currentNode)
+            executionNanoTime += measureNanoTime {
+                currentNode = expandNode(currentNode)
+            }
+
+            if (expandedNodeCount % 100000 == 0) {
+                System.gc()
+            }
         }
 
         return extractPlan(currentNode)
@@ -82,10 +89,6 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      */
     fun expandNode(node: Node<StateType>): Node<StateType> {
         expandedNodeCount += 1
-        if (expandedNodeCount % 100000 == 0) {
-            println(System.currentTimeMillis() - timestamp)
-            timestamp = System.currentTimeMillis()
-        }
 
         // expand (only those not visited yet)
         for (successor in domain.successors(node.state)) {

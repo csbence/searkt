@@ -11,6 +11,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
+import kotlin.system.measureNanoTime
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -43,11 +44,11 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         val actions: MutableList<Action> = arrayListOf()
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var totalTimeInMillis = 0L
+        var totalNanoTime = 0L
         var timeBound = staticStepDuration
 
         while (!world.isGoal()) {
-            val timeInMillis = kotlin.system.measureTimeMillis {
+            totalNanoTime += measureNanoTime {
                 terminationChecker.init(timeBound)
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
@@ -67,12 +68,11 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
 
             }
 
-            totalTimeInMillis += timeInMillis
-            //            System.gc()
+            System.gc()
         }
 
-        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
+        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalNanoTime, actions.map { it.toString() })
     }
 }
 
