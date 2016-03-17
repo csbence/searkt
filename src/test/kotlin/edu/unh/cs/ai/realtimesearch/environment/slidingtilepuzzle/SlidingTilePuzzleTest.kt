@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
@@ -78,7 +77,7 @@ class SlidingTilePuzzleTest {
         val slidingTilePuzzle = SlidingTilePuzzle(3)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
 
-        val state = SlidingTilePuzzleState(Location(2, 0), tiles, heuristic)
+        val state = SlidingTilePuzzleState(2, 0, tiles, heuristic)
 
         val successors = slidingTilePuzzle.successors(state)
 
@@ -94,7 +93,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
         val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
@@ -111,7 +110,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(1, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(1, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
         val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
@@ -128,7 +127,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
         val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
@@ -145,7 +144,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
     }
@@ -159,7 +158,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
     }
