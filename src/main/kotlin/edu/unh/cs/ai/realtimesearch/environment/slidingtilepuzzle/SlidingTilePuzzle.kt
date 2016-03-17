@@ -40,7 +40,7 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         return state.heuristic
     }
 
-    private fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
+    fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
         var manhattanSum = 0.0
         var zero: Byte = 0
 

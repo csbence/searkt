@@ -25,8 +25,8 @@ class SlidingTilePuzzleStateTest {
         val location1 = Location(2, 0)
         val location2 = Location(2, 0)
 
-        val state1 = SlidingTilePuzzleState(location1, tiles1, slidingTilePuzzle.heuristic(tiles1))
-        val state2 = SlidingTilePuzzleState(location2, tiles2, slidingTilePuzzle.heuristic(tiles2))
+        val state1 = SlidingTilePuzzleState(location1.x, location1.y, tiles1, slidingTilePuzzle.heuristic(tiles1))
+        val state2 = SlidingTilePuzzleState(location2.x, location2.y, tiles2, slidingTilePuzzle.heuristic(tiles2))
 
         assertTrue(location1 == location2)
         assertTrue(location1.hashCode() == location2.hashCode())

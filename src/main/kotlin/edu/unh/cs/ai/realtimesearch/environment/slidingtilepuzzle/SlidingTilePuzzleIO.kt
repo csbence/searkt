@@ -46,7 +46,7 @@ object SlidingTilePuzzleIO {
                 }
             }
 
-            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzleState(zeroLocation!!, tiles, slidingTilePuzzle.heuristic(tiles)))
+            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzleState(zeroLocation!!.x, zeroLocation!!.y, tiles, slidingTilePuzzle.heuristic(tiles)))
         } catch (e: NumberFormatException) {
             throw InvalidSlidingTilePuzzleException("Tile must be a number.", e)
         }
