@@ -75,31 +75,29 @@ object ConfigurationExecutor {
         return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState, acrobotEnvironment)
     }
 
-    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType, environment: Environment<StateType>): ExperimentResult {
         val algorithmName = experimentConfiguration.algorithmName
 
         return when (algorithmName) {
-            "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState, environment)
-            "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
-            "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, initialState, environment)
-            "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
-            "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState, environment)
-            "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState, environment)
+            "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState)
+            "A*" -> executeAStar(experimentConfiguration, domain, initialState)
+            "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, environment)
+            "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, environment)
+            "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState)
+            "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState)
 
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
 
-    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = SimpleAStar(domain)
-
-        val state: StateType = environment.getState()
-        aStarPlanner.search(state)
+        aStarPlanner.search(initialState)
 
         return ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Incompatible output format.")
     }
 
-    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
         val aStarPlanner = AStarPlanner(domain, 1.0)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -107,7 +105,7 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
         val weight = experimentConfiguration.getTypedValue<Double>("weight") ?: throw InvalidFieldException("\"weight\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = ClassicalAStarPlanner(domain, weight)
         val classicalAgent = ClassicalAgent(aStarPlanner)
@@ -116,8 +114,7 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-
-    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
         val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -125,7 +122,7 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
@@ -136,7 +133,6 @@ object ConfigurationExecutor {
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
         val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("Time bound type is not found. Please add it to the configuration.")
         val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
-        val terminationCheckerParameter = experimentConfiguration.terminationCheckerParameter
 
         return when (timeBoundType) {
             TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
@@ -144,7 +140,7 @@ object ConfigurationExecutor {
         }
     }
 
-    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
         val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
