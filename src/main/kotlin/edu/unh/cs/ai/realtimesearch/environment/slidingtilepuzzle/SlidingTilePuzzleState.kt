@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.*
 
 /**
@@ -19,16 +18,16 @@ import java.util.*
  * (0, 1) == 3
  *
  */
-data class SlidingTilePuzzleState(val zeroLocation: Location, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
+data class SlidingTilePuzzleState(val zeroX: Int, val zeroY: Int, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
         var hashCode: Int = tiles.hashCode()
-        return hashCode xor zeroLocation.hashCode()
+        return hashCode xor zeroX xor zeroY
     }
 
     override fun copy(): SlidingTilePuzzleState {
-        return SlidingTilePuzzleState(zeroLocation.copy(), tiles.copy(), heuristic)
+        return SlidingTilePuzzleState(zeroX, zeroY, tiles.copy(), heuristic)
     }
 
     class Tiles(val dimension: Int, tiles: ByteArray? = null) {
@@ -38,7 +37,7 @@ data class SlidingTilePuzzleState(val zeroLocation: Location, val tiles: Sliding
             this.tiles = tiles ?: ByteArray(dimension * dimension)
         }
 
-        public fun copy(): Tiles {
+        fun copy(): Tiles {
             return Tiles(dimension, tiles.clone())
         }
 
@@ -61,25 +60,33 @@ data class SlidingTilePuzzleState(val zeroLocation: Location, val tiles: Sliding
             }
         }
 
-        public fun getIndex(x: Int, y: Int): Int {
+        fun getIndex(x: Int, y: Int): Int {
             return dimension * y + x
         }
 
-        public operator fun get(index: Int): Byte {
+        operator fun get(index: Int): Byte {
             return tiles[index]
         }
 
-        public operator fun set(index: Int, value: Byte) {
+        operator fun set(index: Int, value: Byte) {
             tiles[index] = value
         }
 
-        public operator fun get(location: Location): Byte {
-            return tiles[location.y * dimension + location.x]
+        fun get(x: Int, y: Int): Byte {
+            return tiles[y * dimension + x]
         }
 
-        public operator fun set(location: Location, value: Byte) {
-            tiles[location.y * dimension + location.x] = value
+        fun set(x: Int, y: Int, value: Byte) {
+            tiles[y * dimension + x] = value
         }
+
+//        operator fun get(location: Location): Byte {
+//            return tiles[location.y * dimension + location.x]
+//        }
+//
+//        operator fun set(location: Location, value: Byte) {
+//            tiles[location.y * dimension + location.x] = value
+//        }
 
         override fun toString(): String {
             return "Tiles(dimension = $dimension)"
@@ -95,10 +102,9 @@ data class SlidingTilePuzzleState(val zeroLocation: Location, val tiles: Sliding
             other == null -> false
             other === this -> true
             other !is SlidingTilePuzzleState -> false
-            else -> zeroLocation == other.zeroLocation && tiles == other.tiles
+            else -> zeroX == other.zeroX && zeroY == other.zeroY && tiles == other.tiles
         }
     }
-
 }
 
 fun tiles(size: Int, init: SlidingTilePuzzleState.Tiles.() -> Unit): SlidingTilePuzzleState.Tiles {
