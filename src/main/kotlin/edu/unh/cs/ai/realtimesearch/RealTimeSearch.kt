@@ -39,7 +39,8 @@ fun main(args: Array<String>) {
             it.write(result.toIndentedJson())
         }
     } else {
-//        println(result.toIndentedJson()
+        logger.info("Execution time: ${result.timeInMillis}")
+//        logger.info(result.toIndentedJson())
     }
 }
 
