@@ -13,7 +13,7 @@ class Result:
         self.generatedNodes = 10
         self.expandedNodes = 12
         self.actions = ['1', '2']
-        self.timeInMillis = time
+        self.nanoTime = time
 
 
 script = os.path.basename(sys.argv[0])
@@ -78,7 +78,7 @@ def get_filename(outFile, count, extension, directory=None):
 
 
 for i in range(0, number):
-    time = numpy.random.random_integers(1, 100000)
+    time = numpy.random.random_integers(1, 100000000000)
     result = Result(algorithm, domain, time)
 
     # Get unique file name
