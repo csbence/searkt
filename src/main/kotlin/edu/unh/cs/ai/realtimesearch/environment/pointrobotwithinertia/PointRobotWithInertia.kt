@@ -57,7 +57,9 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 }
             }
 
+
             if (valid) {
+//                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(DoubleLocation(x, y), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),

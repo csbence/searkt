@@ -9,9 +9,9 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * @param index: the type of action, each return different relative locations
  */
-class PointRobotAction(val xdot : Double, val ydot : Double) : Action {
+data class PointRobotAction(val xdot : Double, val ydot : Double) : Action {
 
     override fun toString(): String{
-        return "(" + xdot + ", " + ydot + ")"
+        return "($xdot, $ydot)"
     }
 }

@@ -136,10 +136,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
+
         var plan: List<Action>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
             plan = extractPlan(targetNode, state)
+            println("selectAction: " + rootState + " " + targetNode.state)
             rootState = targetNode.state
         }
 
@@ -363,6 +365,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             actions.add(currentNode.action)
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
+
+        println("extractPlan: " + currentNode.state + " " + sourceState)
+        println("extractPlan: " + actions.reversed())
 
         logger.debug() { "Plan extracted" }
 

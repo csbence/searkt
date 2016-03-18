@@ -17,7 +17,8 @@ class PointRobotEnvironment(private val domain: PointRobot, private val initialS
         val successorBundles = domain.successors(currentState)
 
         // get the state from the successors by filtering on action
-        currentState = successorBundles.first { it.action == action }.state
+        val first = successorBundles.first { it.action == action }
+        currentState = first.state
         logger.trace { "Action $action leads to state $currentState" }
     }
 

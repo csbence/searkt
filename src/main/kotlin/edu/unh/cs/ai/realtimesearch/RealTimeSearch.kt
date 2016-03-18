@@ -21,9 +21,9 @@ class Input
 
 fun main(args: Array<String>) {
     if (args.size < 2) {
-        val input = Input::class.java.classLoader.getResourceAsStream("input/racetrack/barto-big.track")!!
+        val input = Input::class.java.classLoader.getResourceAsStream("input/pointrobot/smallmaze2.pr")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next();
-        val manualConfiguration = ExperimentConfigurationDto("race track", rawDomain, "A*", "time", 10)
+        val manualConfiguration = ExperimentConfigurationDto("point robot with inertia", rawDomain, "LSS-LRTA*", "time", 1000)
         manualConfiguration.set("lookahead depth limit", 4)
         manualConfiguration.set("action duration", 10L)
 
@@ -37,10 +37,10 @@ fun main(args: Array<String>) {
             params.add(action.toString())
         }
 
-        //Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
+        Application.launch(PointIntertiaVisualizer::class.java, *params.toTypedArray())
         //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
         //        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
-        Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 
     } else {
         /* create options */
