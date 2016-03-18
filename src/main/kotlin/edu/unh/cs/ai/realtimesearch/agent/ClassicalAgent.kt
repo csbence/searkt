@@ -14,6 +14,6 @@ class ClassicalAgent<StateType : State<StateType>>(val planner: ClassicalPlanner
      * @param state: initial state
      * @return a plan, consisting of a list of actions
      */
-    public fun plan(state: StateType) = planner.plan(state)
+    fun plan(state: StateType) = planner.plan(state)
 
 }

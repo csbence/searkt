@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -13,6 +13,12 @@ import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
  * @param domain: The domain to plan in
  */
 abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
+    /**
+     * Data class to store [Action]s along with their execution time.
+     *
+     * The [duration] is measured in nanoseconds.
+     */
+    data class ActionBundle(val action: Action, val duration: Double)
 
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
@@ -24,7 +30,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * @param terminationChecker provides the termination criteria
      * @return an action for current state
      */
-    abstract fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action>
+    abstract fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle>
 
     /**
      * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare
@@ -38,4 +44,13 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
         expandedNodeCount = 0
     }
 
+    /**
+     * Called before the first [selectAction] call.
+     *
+     * This call does not count towards the planning time.
+     */
+    open fun init() {
+
+    }
 }
+

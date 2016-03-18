@@ -1,5 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.*
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
@@ -17,32 +21,25 @@ import kotlin.system.exitProcess
 /**
  * Created by Stephen on 2/29/16.
  */
-class PointVisualizer : Application() {
+class RacetrackVisualizer : BaseVisualizer() {
+    private var xDot = 0
+    private var yDot = 0
+
+    override fun getOptions(): Options = Options()
+
+    override fun processOptions(cmd: CommandLine) {}
+
     override fun start(primaryStage: Stage) {
+        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        /* Get domain from Application */
-        val parameters = getParameters()!!
-        val raw = parameters.getRaw()!!
-        if (raw.isEmpty()) {
-            println("Cannot visualize without a domain!")
-            exitProcess(1)
-        }
-        val rawDomain = raw.first()
+        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1) {
-            var xStart = raw.get(i).indexOf('(') + 1
-            var xEnd = raw.get(i).indexOf(',')
-            var yStart = xEnd + 2
-            var yEnd = raw.get(i).indexOf(')')
-
-            val x = raw.get(i).substring(xStart, xEnd)
-            val y = raw.get(i).substring(yStart, yEnd)
-            actionList.add(x)
-            actionList.add(y)
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
 
         primaryStage.title = "RTS Visualizer"
@@ -50,20 +47,9 @@ class PointVisualizer : Application() {
 
         val rowCount: Int
         val columnCount: Int
-        val startX: Double
-        val startY: Double
-        val goalX: Double
-        val goalY: Double
-        val goalRadius: Double
 
         columnCount = inputScanner.nextLine().toInt()
         rowCount = inputScanner.nextLine().toInt()
-        startX = inputScanner.nextLine().toDouble()
-        startY = inputScanner.nextLine().toDouble()
-        goalX = inputScanner.nextLine().toDouble()
-        goalY = inputScanner.nextLine().toDouble()
-        goalRadius = inputScanner.nextLine().toDouble()
-
 
         val root = Pane()
 
@@ -75,7 +61,7 @@ class PointVisualizer : Application() {
         var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
 
         while(((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)){
-           TILE_SIZE /= 1.05
+            TILE_SIZE /= 1.05
         }
 
         /* The robot */
@@ -84,17 +70,9 @@ class PointVisualizer : Application() {
         robot.fill = Color.ORANGE
         root.children.add(robot)
 
-        /* the dirty cell */
-        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
-        dirtyCell.fill = Color.BLUE
-        root.children.add(dirtyCell)
-
-        /* the goal radius */
-        val goalCircle = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, goalRadius * TILE_SIZE)
-        goalCircle.stroke = Color.BLUE
-        goalCircle.fill = Color.WHITE
-        goalCircle.opacity = 0.5
-        root.children.add(goalCircle)
+        /* The robots starting location, needs to be drawn later */
+        var startX: Double? = null
+        var startY: Double? = null
 
 
         for (y in 0..rowCount - 1) {
@@ -114,8 +92,26 @@ class PointVisualizer : Application() {
                         free.opacity = 0.5
                         root.children.add(free)
                     }
+                    '*' -> {
+                        val radius = TILE_WIDTH / 10.0
+                        val dirtyLocX = x * TILE_SIZE + ((TILE_SIZE) / 2.0)
+                        val dirtyLocY = y * TILE_SIZE + ((TILE_SIZE) / 2.0)
+
+                        val dirtyCell = Circle(dirtyLocX, dirtyLocY, radius)
+                        dirtyCell.fill = Color.BLUE
+                        root.children.add(dirtyCell)
+                    }
+                    '@' -> {
+                        startX = x * 1.0
+                        startY = y * 1.0
+                    }
                 }
             }
+        }
+
+        if (startX == null || startY == null) {
+            println("Start location must be defined")
+            exitProcess(1)
         }
 
         primaryStage.scene = Scene(root, TILE_SIZE * columnCount, TILE_SIZE * rowCount)
@@ -126,8 +122,8 @@ class PointVisualizer : Application() {
         /* Create the path that the robot will travel */
         robot.toFront()
         val path = Path()
-        val xLoc = startX * TILE_SIZE
-        val yLoc = startY * TILE_SIZE
+        val xLoc = startX * TILE_SIZE + (TILE_SIZE / 2.0)
+        val yLoc = startY * TILE_SIZE + (TILE_SIZE / 2.0)
         robot.x = xLoc
         robot.y = yLoc
         robot.translateX = xLoc
@@ -140,39 +136,65 @@ class PointVisualizer : Application() {
             root.children.add(path)
 
         val sq = SequentialTransition()
-        var count = 0
-        while (count != actionList.size) {
-            val x = actionList.get(count)
-            val y = actionList.get(count + 1)
-            var pt = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
+        for(action in actionList){
+            var pt = animate(root, action, DISPLAY_LINE, robot, TILE_SIZE)
             sq.children.add(pt)
-            count+=2
         }
         sq.setCycleCount(Timeline.INDEFINITE);
         sq.play()
     }
 
-    private fun animate(root: Pane, x: String, y: String, dispLine: Boolean, robot: Rectangle, width: Double): PathTransition {
+    private fun animate(root: Pane, action: String, dispLine: Boolean, robot: Rectangle, width: Double): PathTransition {
         val path = Path()
 
-        val xDot = x.toDouble() * width
-        val yDot = y.toDouble() * width
+        when (action){
+            "UP" -> {
+                yDot++
+            }
+            "RIGHT" -> {
+                xDot++
+            }
+            "DOWN" -> {
+                yDot--
+            }
+            "LEFT" -> {
+                xDot--
+            }
+            "RIGHTUP" -> {
+                xDot++
+                yDot++
+            }
+            "RIGHTDOWN" -> {
+                xDot++
+                yDot--
+            }
+            "LEFTDOWN" -> {
+                xDot--
+                yDot--
+            }
+            "LEFTUP" -> {
+                xDot--
+                yDot++
+            }
+            "NOOP" -> {
 
+            }
+        }
         path.elements.add(MoveTo(robot.translateX, robot.translateY))
-        path.elements.add(LineTo(robot.translateX + xDot, robot.translateY + yDot))
-        robot.translateX += xDot
-        robot.translateY += yDot
+        path.elements.add(LineTo(robot.translateX + (xDot * width), robot.translateY + (yDot * width)))
+        robot.translateX += xDot * width
+        robot.translateY += yDot * width
 
         if(dispLine){
             path.stroke = Color.RED
             root.children.add(path)
-            val action = Circle(robot.translateX, robot.translateY, width/10.0)
+            val action = Circle(robot.translateX, robot.translateY, width / 10.0)
             root.children.add(action)
         }
 
         /* Animate the robot */
         val pathTransition = PathTransition()
-        pathTransition.setDuration(Duration.millis(2000.0))
+        pathTransition.setDuration(Duration.millis(1000.0))
         pathTransition.setPath(path)
         pathTransition.setNode(robot)
         pathTransition.setInterpolator(Interpolator.LINEAR);

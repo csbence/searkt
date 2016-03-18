@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.network
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpEntity
@@ -43,8 +43,14 @@ class RealTimeSearchClient(val url: String) {
      *
      * @return true if the notification was successful, else false.
      */
-    fun connect(): Boolean {
-        val responseEntity = restTemplate.exchange(url + "/connect", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), String::class.java)
+    fun checkIn(): Boolean {
+        val checkInUrl = if (connectionId == null) {
+            "$url/checkIn"
+        } else {
+            "$url/checkIn/$connectionId"
+        }
+
+        val responseEntity = restTemplate.exchange(checkInUrl, HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), String::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Connection successful")
             connectionId = responseEntity.body
@@ -72,8 +78,8 @@ class RealTimeSearchClient(val url: String) {
      *
      * @return ExperimentConfiguration if available, else null.
      */
-    fun getExperimentConfiguration(): ExperimentConfiguration? {
-        val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), ExperimentConfiguration::class.java)
+    fun getExperimentConfiguration(): GeneralExperimentConfiguration? {
+        val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), GeneralExperimentConfiguration::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Get configuration: successful")
             responseEntity.body
@@ -88,8 +94,8 @@ class RealTimeSearchClient(val url: String) {
      *
      * @return true if the submission was successful, else false.
      */
-    fun submitResultConfiguration(experimentConfiguration: ExperimentConfiguration): Boolean {
-        val responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), Nothing::class.java)
+    fun submitResult(experimentConfiguration: ExperimentResult): Boolean {
+        val responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(experimentConfiguration), Nothing::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Submit result: successful")
             true

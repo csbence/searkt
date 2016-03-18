@@ -1,5 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment
 
-interface State<State> {
-    open fun copy(): State
+interface State<out StateType: State<StateType>> {
+    open fun copy(): StateType
 }

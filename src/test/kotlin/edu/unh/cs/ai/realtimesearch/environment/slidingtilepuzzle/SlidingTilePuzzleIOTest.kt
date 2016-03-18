@@ -1,8 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import org.junit.Test
-import java.io.File
-import java.io.FileInputStream
 import kotlin.test.assertTrue
 
 class SlidingTilePuzzleIOTest {
@@ -15,7 +13,7 @@ class SlidingTilePuzzleIOTest {
         val startState = slidingTilePuzzleInstance.initialState
 
         assertTrue(slidingTilePuzzle.size == 5)
-        assertTrue(startState.zeroLocation.x == 2)
-        assertTrue(startState.zeroLocation.y == 3)
+        assertTrue(startState.zeroX == 2)
+        assertTrue(startState.zeroY == 3)
     }
 }

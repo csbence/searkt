@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.agent
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 
 /**
@@ -18,12 +18,12 @@ class RTSAgent<StateType : State<StateType>>(val planner: RealTimePlanner<StateT
      * @param terminationChecker is the object that returns whether the agent should terminate
      * @return an action, given current state and termination check
      */
-    public fun selectAction(state: StateType, terminationChecker: TerminationChecker) = planner.selectAction(state, terminationChecker)
+    fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker) = planner.selectAction(state, terminationChecker)
 
     /**
      * Resets the agent for a new run. This function is called whenever a new run starts. This should prepare
      * the agent for a new experiment, clearing out any experience or data from previous searches. This function
      * is necessary for the agent to understand that the next selectAction is unrelated to previous action selection.
      */
-    public fun reset() = planner.reset()
+    fun reset() = planner.reset()
 }

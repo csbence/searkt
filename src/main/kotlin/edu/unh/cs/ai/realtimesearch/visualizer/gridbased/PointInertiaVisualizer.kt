@@ -1,10 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.visualizer
+package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import groovyjarjarcommonscli.CommandLine
+import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
-import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -12,38 +14,37 @@ import javafx.scene.shape.*
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.*
-import kotlin.system.exitProcess
 
 /**
  * Created by Stephen on 2/29/16.
  */
-class PointIntertiaVisualizer : Application() {
-    var xDot = 0.0
-    var yDot = 0.0
+class PointInertiaVisualizer : BaseVisualizer() {
+    private var xDot = 0.0
+    private var yDot = 0.0
+
+    override fun getOptions(): Options = Options()
+
+    override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
+        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        /* Get domain from Application */
-        val parameters = getParameters()!!
-        val raw = parameters.getRaw()!!
-        if (raw.isEmpty()) {
-            println("Cannot visualize without a domain!")
-            exitProcess(1)
-        }
-        val rawDomain = raw.first()
+        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1) {
-            var xStart = raw.get(i).indexOf('(') + 1
-            var xEnd = raw.get(i).indexOf(',')
-            var yStart = xEnd + 2
-            var yEnd = raw.get(i).indexOf(')')
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
 
-            val x = raw.get(i).substring(xStart, xEnd)
-            val y = raw.get(i).substring(yStart, yEnd)
+            var xStart = action.indexOf('(') + 1
+            var xEnd = action.indexOf(',')
+            var yStart = xEnd + 2
+            var yEnd = action.indexOf(')')
+
+            val x = action.substring(xStart, xEnd)
+            val y = action.substring(yStart, yEnd)
             actionList.add(x)
             actionList.add(y)
         }

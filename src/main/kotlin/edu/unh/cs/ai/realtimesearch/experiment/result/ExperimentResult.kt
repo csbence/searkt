@@ -1,30 +1,63 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import java.util.*
 
-data class ExperimentResult(val experimentConfiguration: ExperimentConfiguration?,
-                            val expandedNodes: Int = 0,
-                            val generatedNodes: Int = 0,
-                            val timeInMillis: Long = 0,
-                            val actions: List<Action> = emptyList(),
-                            val pathLength: Double? = null,
-                            val errorMessage: String? = null,
-                            val values: Map<String, Any> = HashMap(),
-                            val timestamp: Long = System.currentTimeMillis(),
-                            val systemProperties: HashMap<String, String> = HashMap()) {
+
+/**
+ * ExperimentResult is a class to store experiment results.
+ *
+ * The systemProperties property is initialized at construction time.
+ */
+@JsonSerialize(`as` = ExperimentData::class)
+class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
+    constructor(experimentConfiguration: Map<String, Any?>,
+                errorMessage: String?) : this() {
+        this.experimentConfiguration = experimentConfiguration
+        this.errorMessage = errorMessage
+    }
+
+    constructor(experimentConfiguration: Map<String, Any?>,
+                expandedNodes: Int,
+                generatedNodes: Int,
+                nanoTime: Long,
+                actions: List<String>,
+                pathLength: Double? = null,
+                errorMessage: String? = null,
+                timestamp: Long = System.currentTimeMillis(),
+                systemProperties: HashMap<String, String> = HashMap()) : this() {
+
+        this.experimentConfiguration = experimentConfiguration
+        this.expandedNodes = expandedNodes
+        this.generatedNodes = generatedNodes
+        this.nanoTime = nanoTime
+        this.actions = actions
+        this.pathLength = pathLength
+        this.errorMessage = errorMessage
+        this.timestamp = timestamp
+
+        if (systemProperties.isNotEmpty()) {
+            this.systemProperties = systemProperties
+        }
+    }
+
+    var experimentConfiguration: Map<String, Any?> by valueStore
+    var pathLength: Double? by valueStore
+    var errorMessage: String? by valueStore
+    var expandedNodes: Int by valueStore
+    var generatedNodes: Int by valueStore
+    var nanoTime: Long by valueStore
+    var actions: List<String> by valueStore
+    var timestamp: Long by valueStore
+    var systemProperties: MutableMap<String, String> by valueStore
 
     init {
-        // Only initialize if empty
-        if (systemProperties.isEmpty()) {
-            System.getProperties().forEach {
-                systemProperties.put(it.key.toString(), it.value.toString())
-            }
+        // Initialize the system properties
+        systemProperties = hashMapOf<String, String>()
+        System.getProperties().forEach {
+            // MongoDB cannot handle . in keys
+            systemProperties.put(it.key.toString().replace('.', '_'), it.value.toString())
         }
     }
 }
-
-/*
-    algName/domain/paramter-set-name/instance.output
- */

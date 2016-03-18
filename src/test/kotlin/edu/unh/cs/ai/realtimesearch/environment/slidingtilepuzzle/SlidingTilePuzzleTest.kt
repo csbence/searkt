@@ -2,11 +2,10 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.EmptyConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.CallsTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import org.junit.Test
@@ -78,7 +77,7 @@ class SlidingTilePuzzleTest {
         val slidingTilePuzzle = SlidingTilePuzzle(3)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
 
-        val state = SlidingTilePuzzleState(Location(2, 0), tiles, heuristic)
+        val state = SlidingTilePuzzleState(2, 0, tiles, heuristic)
 
         val successors = slidingTilePuzzle.successors(state)
 
@@ -94,10 +93,10 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
+        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -111,10 +110,10 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(1, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(1, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
+        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -128,10 +127,10 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
+        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
@@ -145,7 +144,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 0), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
     }
@@ -159,7 +158,7 @@ class SlidingTilePuzzleTest {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(3)
-        val initialState = SlidingTilePuzzleState(Location(2, 2), tiles, slidingTilePuzzle.heuristic(tiles))
+        val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
     }
@@ -176,12 +175,14 @@ class SlidingTilePuzzleTest {
 
     private fun runLssLrtaStart(initialState: SlidingTilePuzzleState, slidingTilePuzzle: SlidingTilePuzzle) {
         val environment = SlidingTilePuzzleEnvironment(slidingTilePuzzle, initialState)
-        val terminalCondition = CallsTerminationChecker(10)
+        val terminalCondition = StaticTimeTerminationChecker(50)
 
         val lsslrtaStarPlanner = LssLrtaStarPlanner(slidingTilePuzzle)
 
         val lssRTAAgent = RTSAgent(lsslrtaStarPlanner)
-        val lssRTAExperiment = RTSExperiment(EmptyConfiguration, lssRTAAgent, environment, terminalCondition)
+        val lssConfiguration = GeneralExperimentConfiguration()
+        lssConfiguration["singleStepCommitment"] = false
+        val lssRTAExperiment = RTSExperiment(lssConfiguration, lssRTAAgent, environment, terminalCondition)
 
         lssRTAExperiment.run()
     }
@@ -223,7 +224,7 @@ class SlidingTilePuzzleTest {
         val initialState = slidingTilePuzzleInstance.initialState
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-        val aStarExperiment = ClassicalExperiment(EmptyConfiguration, aStarAgent, slidingTilePuzzle, initialState)
+        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 
         aStarExperiment.run()
     }
