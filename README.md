@@ -75,12 +75,23 @@ State space: (\theta_1, \theta_2, \dot\theta_1, \dot\theta_2)
 
 Actions: Torque applied to joint 2
 
-## Benchmark configuration
+## Benchmark configuration and results
+
+### Type and unit information
+
+ * The default time unit for every value is nanoseconds.
+ * Numbers are represented as 64 bit values. (Long/Double)
 
 ### General
 
  * algorithm name ("algorithmName" : String)
+ 
+    Name of the algorithm.
+    
  * domain name ("domainName" : String) 
+ 
+    Name of the domain.
+    
  * serialized domain ("rawDomain" : String)
 
 ### Real-time search
