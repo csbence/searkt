@@ -38,14 +38,15 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         val state: StateType = initState?.copy() ?: domain.randomState()
         logger.warn { "Starting experiment with state $state on agent $agent" }
 
-        // TODO: complains should be from kotlin.system, but does not seem to exist
-        val timeInMillis = kotlin.system.measureTimeMillis { actions = agent.plan(state) }
+        // Execute the gc before running the experiment
+        System.gc()
+
+        actions = agent.plan(state)
 
         // log results
-        logger.info { "Path: [${actions.size}] $actions\nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
+        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
-
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, timeInMillis, actions.map { it.toString() })
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, agent.planner.executionNanoTime, actions.map { it.toString() })
 
     }
 }

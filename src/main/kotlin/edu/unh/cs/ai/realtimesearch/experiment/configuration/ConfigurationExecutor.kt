@@ -20,6 +20,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
@@ -31,6 +32,9 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val domainName: String = experimentConfiguration.domainName
+
+        // Execute the gc before every experiment.
+        System.gc()
 
         return when (domainName) {
             "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)

@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.system.exitProcess
 
 class Input
@@ -45,7 +47,8 @@ fun main(args: Array<String>) {
             it.write(result.toIndentedJson())
         }
     } else {
-        logger.info(result.toIndentedJson())
+        logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
+        //        logger.info(result.toIndentedJson())
     }
 }
 

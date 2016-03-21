@@ -8,8 +8,10 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import org.slf4j.LoggerFactory
+import kotlin.system.measureNanoTime
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -42,14 +44,14 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         val actions: MutableList<Action> = arrayListOf()
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var totalTimeInMillis = 0L
+        var totalNanoTime = 0L
         var timeBound = staticStepDuration
 
         var interationCount = 0L
 
         while (!world.isGoal()) {
-            val timeInMillis = kotlin.system.measureTimeMillis {
-                terminationChecker.init(Math.max(timeBound, staticStepDuration))
+            totalNanoTime += measureNanoTime {
+                terminationChecker.init(timeBound)
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
 
@@ -57,7 +59,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
 
-                logger.info { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+                logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
                 timeBound = 0
                 actionList.forEach {
@@ -68,16 +70,15 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
 
             }
 
-            println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}" )
+            println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}")
 
-            totalTimeInMillis += timeInMillis
             if (interationCount++ % 100 == 0L) {
                 System.gc()
             }
         }
 
-        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalTimeInMillis, actions.map { it.toString() })
+        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalNanoTime, actions.map { it.toString() })
     }
 }
 

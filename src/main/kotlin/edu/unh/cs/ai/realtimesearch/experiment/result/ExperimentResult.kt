@@ -21,7 +21,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
     constructor(experimentConfiguration: Map<String, Any?>,
                 expandedNodes: Int,
                 generatedNodes: Int,
-                timeInMillis: Long,
+                nanoTime: Long,
                 actions: List<String>,
                 pathLength: Double? = null,
                 errorMessage: String? = null,
@@ -31,7 +31,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         this.experimentConfiguration = experimentConfiguration
         this.expandedNodes = expandedNodes
         this.generatedNodes = generatedNodes
-        this.timeInMillis = timeInMillis
+        this.nanoTime = nanoTime
         this.actions = actions
         this.pathLength = pathLength
         this.errorMessage = errorMessage
@@ -47,7 +47,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
     var errorMessage: String? by valueStore
     var expandedNodes: Int by valueStore
     var generatedNodes: Int by valueStore
-    var timeInMillis: Long by valueStore
+    var nanoTime: Long by valueStore
     var actions: List<String> by valueStore
     var timestamp: Long by valueStore
     var systemProperties: MutableMap<String, String> by valueStore
