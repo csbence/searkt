@@ -23,7 +23,7 @@ class Results:
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
-        self.time = parsedJson['timeInMillis']
+        self.time = parsedJson['nanoTime']
 
 
 script = os.path.basename(sys.argv[0])
@@ -136,12 +136,12 @@ if numDomains != 1:
                 del times[key]
                 numDomains -= 1
 
-print times
+# print times
 # data = numpy.concatenate(times.values())
 data = times.values()
-print data
+# print data
 
-plt.ylabel("Goal Achievement Time (ms)")
+plt.ylabel("Goal Achievement Time (ns)")
 labels = []
 if domainGroups:
     assert numDomains == 1
