@@ -93,6 +93,8 @@ Actions: Torque applied to joint 2
     Name of the domain.
     
  * serialized domain ("rawDomain" : String)
+ 
+ * time limit ("timeLimit" : Long)
 
 ### Real-time search
 
