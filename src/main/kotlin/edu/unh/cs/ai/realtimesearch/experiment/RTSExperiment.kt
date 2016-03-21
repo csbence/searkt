@@ -73,7 +73,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
             println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}")
 
             if (interationCount++ % 100 == 0L) {
-                System.gc()
+//                System.gc()
             }
         }
 
