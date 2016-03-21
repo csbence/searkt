@@ -4,21 +4,22 @@ version '1.0-SNAPSHOT'
 apply plugin: 'kotlin'
 apply plugin: 'application'
 
-applicationDefaultJvmArgs = ["-Xloggc:/Users/bencecserna/Documents/Development/projects/real-time-search/gc.log",
-                             "-XX:+PrintGC",
-                             "-server", "-XX:+AggressiveOpts",
+//applicationDefaultJvmArgs = [
+//                                "-Xloggc:/Users/bencecserna/Documents/Development/projects/real-time-search/gc.log",
+//                             "-XX:+PrintGC",
+//                             "-server", "-XX:+AggressiveOpts",
 //                             "-XX:+UseConcMarkSweepGC",
-                             "-XX:+UseG1GC",
+//                             "-XX:+UseG1GC",
 //                             "-XX:+UnlockDiagnosticVMOptions", "-XX:+G1PrintRegionLivenessInfo",
 //                             "-XX:MaxGCPauseMillis=80",
 //                             "-XX:MaxGCMinorPauseMillis=50",
 //                             "-XX:GCPauseIntervalMillis=300",
-                             "-XX:NewSize=50m", "-XX:MaxNewSize=50m",
+//                             "-XX:NewSize=1g", "-XX:MaxNewSize=1g",
 //                             "-XX:SurvivorRatio=1",
 //                             "-XX:+DoEscapeAnalysis",
-                             "-Xms6g",
-                             "-Xmx6g"
-]
+//                             "-Xms6g",
+//                             "-Xmx6g"
+//]
 
 //-server -Xms512m -Xmx3076m -XX:NewRatio=50 -XX:+HeapDumpOnOutOfMemoryError -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:+UseCompressedOops -XX:MaxGCPauseMillis=400 -XX:GCPauseIntervalMillis=8000 -XX:+PrintGCTimeStamps -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime
 

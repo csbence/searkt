@@ -45,9 +45,11 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         var totalTimeInMillis = 0L
         var timeBound = staticStepDuration
 
+        var interationCount = 0L
+
         while (!world.isGoal()) {
             val timeInMillis = kotlin.system.measureTimeMillis {
-                terminationChecker.init(timeBound)
+                terminationChecker.init(Math.max(timeBound, staticStepDuration))
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
 
@@ -66,8 +68,12 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
 
             }
 
+            println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}" )
+
             totalTimeInMillis += timeInMillis
-            //            System.gc()
+            if (interationCount++ % 100 == 0L) {
+                System.gc()
+            }
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalTimeInMillis. (${agent.planner.expandedNodeCount * 1000 / totalTimeInMillis})" }
