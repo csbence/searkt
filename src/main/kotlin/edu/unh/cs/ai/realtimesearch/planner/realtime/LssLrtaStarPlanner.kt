@@ -172,7 +172,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter, false)
         nodes[state] = node
-        //        costTable.put(state, 0.0) TODO
         var currentNode = node
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
@@ -320,7 +319,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
             val node = popOpenList()
-            //            node.iteration = iterationCounter
+            node.iteration = iterationCounter
 
             if (!closedList.remove(node) /*&& iterationCounter != node.iteration*/) {
                 continue // Already explored, skip.
@@ -332,10 +331,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             // update heuristic value for each predecessor
             node.predecessors.forEach { predecessor ->
                 // Update if the node is outdated
-                //                if (predecessor.node.iteration != iterationCounter) {
-                //                    predecessor.node.heuristic = POSITIVE_INFINITY
-                //                    predecessor.node.iteration = iterationCounter
-                //                }
+                if (predecessor.node.iteration != iterationCounter) {
+                    predecessor.node.heuristic = POSITIVE_INFINITY
+                    predecessor.node.iteration = iterationCounter
+                }
 
                 val predecessorHeuristicValue = predecessor.node.heuristic
 
@@ -389,6 +388,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
+        openList.forEach { it.open = false }
         openList.clear()
     }
 
