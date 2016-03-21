@@ -21,14 +21,17 @@ fun main(args: Array<String>) {
 
     if (args.size < 2) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/87")!!
+        //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/2") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
         manualConfiguration["singleStepLookahead"] = false
         manualConfiguration["staticStepDuration"] = 10L
+        manualConfiguration["timeLimit"] = 10000000
+
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
@@ -152,7 +155,7 @@ private fun createCommandLineMenu(args: Array<String>) {
                 termType, termParam.toInt())
 
         for (extra in extras) {
-            val values = extra.split('=', limit=2)
+            val values = extra.split('=', limit = 2)
             if (values.size != 2) {
                 System.err.println("Extra value '$extra' formatted incorrectly")
                 continue
@@ -166,14 +169,14 @@ private fun createCommandLineMenu(args: Array<String>) {
                 key = keyVals[0]
                 val type = keyVals[1]
                 when (type.toLowerCase()) {
-                    "long"      -> manualConfiguration[key] = value.toLong()
-                    "int"       -> manualConfiguration[key] = value.toInt()
-                    "boolean"   -> manualConfiguration[key] = value.toBoolean()
-                    "double"    -> manualConfiguration[key] = value.toDouble()
-                    "float"     -> manualConfiguration[key] = value.toFloat()
-                    "byte"      -> manualConfiguration[key] = value.toByte()
-                    "short"     -> manualConfiguration[key] = value.toShort()
-                    else        -> System.err.println("Extra value '$extra' formatted incorrectly")
+                    "long" -> manualConfiguration[key] = value.toLong()
+                    "int" -> manualConfiguration[key] = value.toInt()
+                    "boolean" -> manualConfiguration[key] = value.toBoolean()
+                    "double" -> manualConfiguration[key] = value.toDouble()
+                    "float" -> manualConfiguration[key] = value.toFloat()
+                    "byte" -> manualConfiguration[key] = value.toByte()
+                    "short" -> manualConfiguration[key] = value.toShort()
+                    else -> System.err.println("Extra value '$extra' formatted incorrectly")
                 }
             } else {
                 manualConfiguration[key] = value
