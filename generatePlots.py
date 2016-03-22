@@ -13,13 +13,14 @@ import json
 import matplotlib.pyplot as plt
 import numpy
 
-ALGORITHM=0
-DOMAIN=1
+ALGORITHM = 0
+DOMAIN = 1
+
 
 class Results:
     def __init__(self, parsedJson):
-        self.configuration = (
-            parsedJson['experimentConfiguration']['algorithmName'], parsedJson['experimentConfiguration']['domainName'])
+        self.configuration = (parsedJson['experimentConfiguration']['algorithmName'],
+                              parsedJson['experimentConfiguration']['domainName'])
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
@@ -80,7 +81,7 @@ for jsonFile in args:
             domainCounts[results.configuration[DOMAIN]] += 1
 
         # Checking for common algorithms
-        if results.configuration[ALGORITHM] not in domainCounts:
+        if results.configuration[ALGORITHM] not in algorithmCounts:
             algorithmCounts[results.configuration[ALGORITHM]] = 0
             numAlgorithms += 1
         else:
@@ -95,7 +96,7 @@ for jsonFile in args:
         print "Generated Nodes: ", results.generatedNodes
         print "Expanded Nodes: ", results.expandedNodes
         print "Path length: ", len(results.actions)
-        print "Time (ms): ", results.time
+        print "Time (ns): ", results.time
 
         print
     else:
@@ -132,7 +133,7 @@ if numDomains != 1:
                 maxDomain = key
         # Remove data from other domains
         for key, value in times.items():
-            if key.domain != maxDomain:
+            if key[DOMAIN] != maxDomain:
                 del times[key]
                 numDomains -= 1
 
