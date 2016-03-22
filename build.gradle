@@ -21,15 +21,12 @@ apply plugin: 'application'
 //                             "-Xmx6g"
 //]
 
-//-server -Xms512m -Xmx3076m -XX:NewRatio=50 -XX:+HeapDumpOnOutOfMemoryError -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:+UseCompressedOops -XX:MaxGCPauseMillis=400 -XX:GCPauseIntervalMillis=8000 -XX:+PrintGCTimeStamps -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime
 applicationDefaultJvmArgs = [
                              "-server", "-XX:+AggressiveOpts",
                              "-XX:NewSize=512m", "-XX:MaxNewSize=512m",
                              "-Xms6g",
                              "-Xmx6g"
 ]
-
-
 
 if (project.hasProperty("mainClass")) {
     mainClassName = mainClass
