@@ -145,10 +145,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.info { "Root state: $state" }
         // Every turn learn then A* until time expires
 
+        // Learning phase
         if (closedList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
+        // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)

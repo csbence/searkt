@@ -451,6 +451,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
+        openList.forEach { it.open = false }
         openList.clear()
     }
 
