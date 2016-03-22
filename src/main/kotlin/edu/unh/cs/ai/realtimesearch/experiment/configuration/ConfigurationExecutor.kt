@@ -20,9 +20,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
+import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 
@@ -85,6 +85,7 @@ object ConfigurationExecutor {
             "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState, environment)
             "A*" -> executeAStar(experimentConfiguration, domain, initialState, environment)
             "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, initialState, environment)
+            "Dynamic-fhat" -> executeDynamicFHat(experimentConfiguration, domain, initialState, environment)
             "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, initialState, environment)
             "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState, environment)
             "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState, environment)
@@ -136,10 +137,17 @@ object ConfigurationExecutor {
         return rtsExperiment.run()
     }
 
+    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>, environment: Environment<StateType>): ExperimentResult {
+        val dynamicFHatPlanner = DynamicFHatPlanner(domain)
+        val rtsAgent = RTSAgent(dynamicFHatPlanner)
+        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+
+        return rtsExperiment.run()
+    }
+
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
         val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("Time bound type is not found. Please add it to the configuration.")
         val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
-        val terminationCheckerParameter = experimentConfiguration.terminationCheckerParameter
 
         return when (timeBoundType) {
             TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
