@@ -24,22 +24,29 @@ class PointVisualizer : BaseVisualizer() {
     override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
-        processCommandLine(parameters.raw.toTypedArray())
+//        processCommandLine(parameters.raw.toTypedArray())
 
         val DISPLAY_LINE = true
 
-        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
+        val parameters = getParameters()
+        val raw = parameters.raw
+        if(raw.isEmpty()){
+            println("Cannot visualize without a domain!")
+            //exitProcess(1);
+        }
+
+        val rawDomain = raw.first()//experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (action in experimentResult!!.actions) {
-            var xStart = action.indexOf('(') + 1
-            var xEnd = action.indexOf(',')
+        for (i in 1..raw.size - 1){//experimentResult!!.actions) {
+            var xStart = raw.get(i).indexOf('(') + 1
+            var xEnd = raw.get(i).indexOf(',')
             var yStart = xEnd + 2
-            var yEnd = action.indexOf(')')
+            var yEnd = raw.get(i).indexOf(')')
 
-            val x = action.substring(xStart, xEnd)
-            val y = action.substring(yStart, yEnd)
+            val x = raw.get(i).substring(xStart, xEnd)
+            val y = raw.get(i).substring(yStart, yEnd)
             actionList.add(x)
             actionList.add(y)
         }

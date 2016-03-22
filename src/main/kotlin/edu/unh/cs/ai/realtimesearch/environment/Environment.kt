@@ -17,6 +17,7 @@ interface Environment<StateType : State<StateType>> {
      * @return the current state of the environment
      */
     public fun getState(): StateType
+    public fun getGoal(): StateType
 
     /**
      * Returns whether world has been solved

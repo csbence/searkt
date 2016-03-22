@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import java.lang.Math.abs
 
 class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
@@ -40,6 +41,11 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         return state.heuristic
     }
 
+    //TODO: add new heuristic between two points for the sliding tile puzzle
+    override fun heuristic(startState: SlidingTilePuzzleState, endState: SlidingTilePuzzleState): Double {
+        return 0.0
+    }
+
     fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
         var manhattanSum = 0.0
         var zero: Byte = 0
@@ -65,6 +71,14 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
     }
 
     override fun randomState(): SlidingTilePuzzleState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun getGoal(): SlidingTilePuzzleState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
         throw UnsupportedOperationException()
     }
 }

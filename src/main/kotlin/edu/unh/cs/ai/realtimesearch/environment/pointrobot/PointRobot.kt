@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
 import java.util.*
 
 /**
@@ -83,6 +84,12 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         //Distance Formula
         return distance(state) / 3
     }
+    override fun heuristic(startState: PointRobotState, endState: PointRobotState): Double {
+        //Distance Formula
+        return (Math.sqrt(
+                Math.pow((endState.loc.x) - startState.loc.x, 2.0)
+                        + Math.pow((endState.loc.y) - startState.loc.y, 2.0)) - goalRadius) / 3
+    }
 
     override fun distance(state: PointRobotState): Double {
         //Distance Formula
@@ -117,6 +124,14 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     }
 
     override fun randomState(): PointRobotState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun getGoal(): PointRobotState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: PointRobotState): List<SuccessorBundle<PointRobotState>> {
         throw UnsupportedOperationException()
     }
 }

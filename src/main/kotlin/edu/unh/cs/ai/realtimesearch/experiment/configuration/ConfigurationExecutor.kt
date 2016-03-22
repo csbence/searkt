@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
+import edu.unh.cs.ai.realtimesearch.agent.ATSAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.Environment
@@ -9,17 +10,25 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.ATSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
@@ -41,8 +50,27 @@ object ConfigurationExecutor {
             "vacuum world" -> executeVacuumWorld(experimentConfiguration)
             "grid world" -> executeGridWorld(experimentConfiguration)
             "acrobot" -> executeAcrobot(experimentConfiguration)
+            "point robot" -> executePointRobot(experimentConfiguration)
+            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
+            "race track" -> executeRaceTrack(experimentConfiguration)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
+    }
+
+    private fun executePointRobot(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val pointRobotInstance = PointRobotIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
+    }
+
+    private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
@@ -51,6 +79,14 @@ object ConfigurationExecutor {
         val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
 
         return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState, vacuumWorldEnvironment)
+    }
+
+    private fun executeRaceTrack(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val raceTrackInstance = RaceTrackIO.parseFromStream(rawDomain.byteInputStream())
+        val raceTrackEnvironment = RaceTrackEnvironment(raceTrackInstance.domain, raceTrackInstance.initialState)
+
+        return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState, raceTrackEnvironment)
     }
 
     private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
@@ -88,6 +124,7 @@ object ConfigurationExecutor {
             "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, environment)
             "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState)
             "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState)
+            "ARA*" -> executeAnytimeRepairingAStar(experimentConfiguration, domain, environment)
 
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
@@ -150,6 +187,15 @@ object ConfigurationExecutor {
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
+    }
+
+    private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+        //val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
+        val anytimeRepairingAStarPlanner = AnytimeRepairingAStar(domain)
+        /*val atsAgent = ATSAgent(anytimeRepairingAStarPlanner)*/
+        val atsExperiment = ATSExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
+
+        return atsExperiment.run()
     }
 
 }

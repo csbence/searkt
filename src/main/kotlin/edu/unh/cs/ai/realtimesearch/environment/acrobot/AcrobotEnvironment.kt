@@ -31,6 +31,7 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
      * Returns current state of the world
      */
     override fun getState(): AcrobotState = currentState
+    override fun getGoal() = domain.getGoal()
 
     /**
      * Returns wHether current state is the goal

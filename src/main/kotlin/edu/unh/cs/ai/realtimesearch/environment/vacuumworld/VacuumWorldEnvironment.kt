@@ -33,6 +33,8 @@ class VacuumWorldEnvironment(private val domain: VacuumWorld, private var initia
      */
     override fun getState() = currentState
 
+    override fun getGoal() = domain.getGoal()
+
     /**
      * Returns whether current state is the goal
      */

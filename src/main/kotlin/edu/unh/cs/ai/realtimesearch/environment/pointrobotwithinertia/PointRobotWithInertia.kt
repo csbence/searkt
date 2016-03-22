@@ -119,6 +119,41 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         return retval
     }
 
+
+    override fun heuristic(startState: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double {
+        //Distance Formula
+        var bx = startState.xdot
+        var cx = startState.loc.x - endState.loc.x
+
+        var by = startState.ydot
+        var cy = startState.loc.y - endState.loc.y
+
+        var resultx1 = quadraticFormula(0.5, bx, cx)
+        var resultx2 = quadraticFormula(-0.5, bx, cx)
+
+        var resulty1 = quadraticFormula(0.5, by, cy)
+        var resulty2 = quadraticFormula(-0.5, by, cy)
+
+        //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
+        //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
+
+        var minx = Math.min(resultx1, resultx2)
+        var miny = Math.min(resulty1, resulty2)
+
+        var retval : Double
+
+        if(minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
+            retval = miny;
+        else if(minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+            retval = minx
+        else if(minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
+            retval = 0.0;
+        else
+            retval = Math.max(minx, miny)
+        //        println(retval)
+        return retval
+    }
+
     fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
         if(Math.pow(b, 2.0) - 4 * a * c < 0.0)
             return Double.MAX_VALUE
@@ -167,6 +202,14 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     override fun randomState(): PointRobotWithInertiaState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun getGoal(): PointRobotWithInertiaState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         throw UnsupportedOperationException()
     }
 }

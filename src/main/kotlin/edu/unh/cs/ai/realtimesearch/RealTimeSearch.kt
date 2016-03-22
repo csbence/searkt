@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import groovyjarjarcommonscli.*
+import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
@@ -12,6 +13,10 @@ import java.util.*
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.system.exitProcess
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.RacetrackVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 
 class Input
 
@@ -20,12 +25,12 @@ private var outFile: String = ""
 
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
-
+    var rawDomain = ""
     if (args.size < 2) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
-        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "A*", "time", 10)
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/wall.vw")!!
+        rawDomain = Scanner(input).useDelimiter("\\Z").next()
+        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "ARA*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
@@ -47,6 +52,16 @@ fun main(args: Array<String>) {
         logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
         //        logger.info(result.toIndentedJson())
     }
+
+    val params: MutableList<String> = arrayListOf()
+    params.add(rawDomain)
+    for(action in result.actions)
+            params.add(action.toString())
+
+    //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
+    //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+            Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+    //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 }
 
 private fun readConfig(fileConfig: String?, stringConfig: String?): Boolean {

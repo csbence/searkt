@@ -75,6 +75,11 @@ class VacuumWorld(public val width: Int,
         return state.dirtyCells.size.toDouble()
     }
 
+    //TODO: Create heuristic between two states for vacuumworld
+    override fun heuristic(startState: VacuumWorldState, endState: VacuumWorldState): Double {
+        return 0.0
+    }
+
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
@@ -145,6 +150,14 @@ class VacuumWorld(public val width: Int,
                 ThreadLocalRandom.current().nextInt(0, width),
                 ThreadLocalRandom.current().nextInt(0, height)
         )
+    }
+
+    override fun getGoal(): VacuumWorldState{
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: VacuumWorldState): List<SuccessorBundle<VacuumWorldState>> {
+        throw UnsupportedOperationException()
     }
 }
 

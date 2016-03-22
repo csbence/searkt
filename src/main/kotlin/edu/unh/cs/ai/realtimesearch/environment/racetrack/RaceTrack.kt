@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotAction
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
+import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleState
 import java.util.*
 
 /**
@@ -86,6 +87,7 @@ class RaceTrack(val width: Int,
     * Heuristic is the distance divided by the max speed
     * */
     override fun heuristic(state: RaceTrackState) = 0.0 //distance(state) / 2
+    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = 0.0
 
 
     // Distance is the max(min(dx), min(dy))
@@ -140,5 +142,13 @@ class RaceTrack(val width: Int,
      */
     override fun randomState(): RaceTrackState {
         throw UnsupportedOperationException("Random state not implemented for racetrack domain")
+    }
+
+    override fun getGoal(): RaceTrackState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
+        throw UnsupportedOperationException()
     }
 }

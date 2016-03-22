@@ -57,6 +57,11 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
     }
 
+    override fun heuristic(startState: GridWorldState, endState: GridWorldState): Double {
+        return Math.abs(startState.agentLocation.x - endState.agentLocation.x) + Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
+//        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+    }
+
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
@@ -104,6 +109,27 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      */
     override fun randomState(): GridWorldState {
         throw UnsupportedOperationException("not implemented")
+    }
+
+    override fun getGoal(): GridWorldState {
+        return GridWorldState(targetLocation)
+    }
+
+    override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
+        val predecessors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
+
+        for (action in GridWorldAction.values()) {
+            val newLocation = state.agentLocation - action.getRelativeLocation()
+
+            if (isLegalLocation(newLocation)) {
+                predecessors.add(SuccessorBundle(
+                        GridWorldState(newLocation),
+                        action,
+                        actionCost = 1.0))
+            }
+        }
+
+        return predecessors
     }
 }
 

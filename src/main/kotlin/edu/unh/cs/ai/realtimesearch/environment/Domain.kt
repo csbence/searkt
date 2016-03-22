@@ -6,12 +6,14 @@ package edu.unh.cs.ai.realtimesearch.environment
  */
 interface Domain<State> {
     public fun successors(state: State): List<SuccessorBundle<State>>
-//    public fun predecessors(state: State): List<SuccessorBundle<State>>
+    public fun predecessors(state: State): List<SuccessorBundle<State>>
     public fun heuristic(state: State): Double
+    public fun heuristic(startState: State, endState: State): Double
     public fun distance(state: State): Double
     public fun isGoal(state: State): Boolean
     public fun print(state: State): String
     public fun randomState(): State
+    public fun getGoal(): State
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Double)

@@ -22,6 +22,7 @@ class GridWorldEnvironment(private val domain: GridWorld, private val initialSta
     }
 
     override fun getState() = currentState
+    override fun getGoal() = domain.getGoal()
 
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)

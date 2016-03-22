@@ -19,6 +19,7 @@ class RaceTrackEnvironment(private val domain: RaceTrack, private val initialSta
     }
 
     override fun getState() = currentState
+    override fun getGoal() = domain.getGoal()
 
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)

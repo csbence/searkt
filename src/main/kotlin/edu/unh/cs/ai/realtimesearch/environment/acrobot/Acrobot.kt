@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
@@ -71,6 +72,16 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
             return distanceHeuristic(state)
     }
 
+    override fun heuristic(startState: AcrobotState, endState: AcrobotState): Double {
+        if (startState.equals(endState))
+            return 0.0
+        val distance1 = Math.min(angleDistance(startState.link1.position, endState.link1.position), angleDistance(startState.link1.position, endState.link1.position))
+        val distance2 = Math.min(angleDistance(startState.link2.position, endState.link2.position), angleDistance(startState.link2.position, endState.link2.position))
+
+        return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(startState.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(startState.link2.velocity))
+
+    }
+
     /**
      * Returns a heuristic for a Acrobot state: the distance over the max velocities.  Also factors in the state's
      * velocity since we want to have very low velocity at goal.
@@ -120,5 +131,13 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      */
     override fun randomState(): AcrobotState {
         return AcrobotState(0.0, 0.0, 0.0, 0.0, configuration.stateConfiguration)
+    }
+
+    override fun getGoal(): AcrobotState {
+        throw UnsupportedOperationException()
+    }
+
+    override fun predecessors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {
+        throw UnsupportedOperationException()
     }
 }

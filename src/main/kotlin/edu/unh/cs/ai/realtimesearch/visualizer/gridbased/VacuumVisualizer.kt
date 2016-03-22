@@ -25,16 +25,32 @@ class VacuumVisualizer : BaseVisualizer() {
     override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
-        processCommandLine(parameters.raw.toTypedArray())
-
+//        processCommandLine(parameters.raw.toTypedArray())
+//
+//        val DISPLAY_LINE = true
+//
+//        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
+//
+//        /* Get action list from Application */
+//        val actionList: MutableList<String> = arrayListOf()
+//        for (action in experimentResult!!.actions) {
+//            actionList.add(action)
+//        }
         val DISPLAY_LINE = true
 
-        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
+        val parameters = getParameters()
+        val raw = parameters.raw
+        if(raw.isEmpty()){
+            println("Cannot visualize without a domain!")
+            //exitProcess(1);
+        }
+
+        val rawDomain = raw.first()//experimentResult!!.experimentConfiguration["rawDomain"] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (action in experimentResult!!.actions) {
-            actionList.add(action)
+        for (i in 1..raw.size - 1){
+            actionList.add(raw.get(i))
         }
 
         val TIME_TO_RUN = actionList.size * 200.0

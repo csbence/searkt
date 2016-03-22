@@ -19,6 +19,17 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
         }
         return successors
     }
+    override fun predecessors(state: DiscretizedState<StateType>): List<SuccessorBundle<DiscretizedState<StateType>>> {
+        // to return
+        val predecessors : MutableList<SuccessorBundle<DiscretizedState<StateType>>> = arrayListOf()
+        val indiscretePredecessors = domain.predecessors(state.state)
+
+        for (successor in indiscretePredecessors) {
+            predecessors.add(SuccessorBundle(DiscretizedState(successor.state),
+                    successor.action, successor.actionCost))
+        }
+        return predecessors
+    }
 
     /**
      * Returns a heuristic for a state.
@@ -27,6 +38,8 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      */
     override fun heuristic(state: DiscretizedState<StateType>): Double = domain.heuristic(state.state)
 
+
+    override fun heuristic(startState: DiscretizedState<StateType>, endState: DiscretizedState<StateType>): Double = domain.heuristic(startState.state, endState.state)
     /**
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
      */
@@ -54,4 +67,6 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      * Retrieve a random state
      */
     override fun randomState(): DiscretizedState<StateType> = DiscretizedState(domain.randomState())
+
+    override fun getGoal(): DiscretizedState<StateType> = DiscretizedState(domain.getGoal())
 }

@@ -22,6 +22,7 @@ class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, privat
     }
 
     override fun getState() = currentState
+    override fun getGoal() = domain.getGoal()
 
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)
