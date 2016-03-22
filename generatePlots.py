@@ -11,15 +11,17 @@ import os
 import getopt
 import json
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
+from scipy import stats
 
-ALGORITHM=0
-DOMAIN=1
+ALGORITHM = 0
+DOMAIN = 1
+
 
 class Results:
     def __init__(self, parsedJson):
-        self.configuration = (
-            parsedJson['experimentConfiguration']['algorithmName'], parsedJson['experimentConfiguration']['domainName'])
+        self.configuration = (parsedJson['experimentConfiguration']['algorithmName'],
+                              parsedJson['experimentConfiguration']['domainName'])
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
@@ -80,7 +82,7 @@ for jsonFile in args:
             domainCounts[results.configuration[DOMAIN]] += 1
 
         # Checking for common algorithms
-        if results.configuration[ALGORITHM] not in domainCounts:
+        if results.configuration[ALGORITHM] not in algorithmCounts:
             algorithmCounts[results.configuration[ALGORITHM]] = 0
             numAlgorithms += 1
         else:
@@ -95,7 +97,7 @@ for jsonFile in args:
         print "Generated Nodes: ", results.generatedNodes
         print "Expanded Nodes: ", results.expandedNodes
         print "Path length: ", len(results.actions)
-        print "Time (ms): ", results.time
+        print "Time (ns): ", results.time
 
         print
     else:
@@ -132,14 +134,19 @@ if numDomains != 1:
                 maxDomain = key
         # Remove data from other domains
         for key, value in times.items():
-            if key.domain != maxDomain:
+            if key[DOMAIN] != maxDomain:
                 del times[key]
                 numDomains -= 1
 
 # print times
-# data = numpy.concatenate(times.values())
+# data = np.concatenate(times.values())
 data = times.values()
 # print data
+datadata = np.array(data)
+
+# print data
+# print datadata
+# print datadata.reshape(len(data[0]), len(data))
 
 plt.ylabel("Goal Achievement Time (ns)")
 labels = []
@@ -156,5 +163,28 @@ else:
     for key in times.keys():
         labels.append(key[DOMAIN])
 
-plt.boxplot(data, notch=True, labels=labels)
+# print len(data)
+# x = np.arange(1, 5)
+# y = np.random.randn(20, 4)
+x = np.arange(1, len(data) + 1)
+y = data
+# print x
+# print y
+
+
+# low, high = bootstrap(y, 100000, np.median, 0.05)
+med = np.median(y, axis=1)
+print 'median', med
+
+CI = stats.t.interval(0.95, len(y)-1, loc=np.median(y, axis=1), scale=stats.sem(y, axis=1))
+# print 'CI',CI
+# print CI[0]
+# print CI[1]
+
+plt.boxplot(y, notch=False)
+plt.errorbar(x, np.median(y, axis=1), yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
+# plt.errorbar(x, np.median(y, axis=0), yerr=CI)
+
+# plt.boxplot(data, notch=True, labels=labels)
+# plt.errorbar(np.arange(len(data)), data, yerr=np.std(data,axis=0))
 plt.show()
