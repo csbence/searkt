@@ -24,9 +24,9 @@ fun main(args: Array<String>) {
     if (args.size < 2) {
         // Default configuration
         //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
-        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/2") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "LSS-LRTA*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
