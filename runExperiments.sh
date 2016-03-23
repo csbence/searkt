@@ -1,19 +1,22 @@
 #!/bin/bash
 
 SCRIPT=$(basename $0)
-OPTIONS=":hf:c:d:m:a:n:t:p:e:i:Io:DgG:"
+OPTIONS=":hf:c:d:m:a:n:t:p:e:i:Ib:o:DgG:"
 PROJECT_NAME="real-time-search"
 GRADLE=./gradlew
 BUILD_DIR=build
 DEFAULT_DIR="unknown"
 RESULTS_TOP_DIR="results"
 DIR=$RESULTS_TOP_DIR
-BIN="$BUILD_DIR/install/$PROJECT_NAME/bin"
+INSTALL_DIR="$BUILD_DIR/install/$PROJECT_NAME"
+BIN="$INSTALL_DIR/bin"
+JAR="$INSTALL_DIR/lib/$PROJECT_NAME*.jar"
 RUN_SCRIPT="$BIN/$PROJECT_NAME"
 NUM_RUNS=1
 RUN_NUM=0
 OUT_EXT=.json
 IGNORE_ERR=false
+IBM_PATH=/opt/ibm/java-x86_64-80/bin/java
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -24,6 +27,7 @@ usage() {
   echo "  o <file>           specify an output file name"
   echo "  i <name>           specify an instance name for the configuration"
   echo "  I                  ignore errors in results when performing multiple runs"
+  echo "  b <path>           provide path to IBM jdk; default $IBM_PATH"
   echo "  n <num>            specify the number of experiment runs"
   echo "file options: (overwrite separate options)"
   echo "  f <file>           specify configuration file"
@@ -37,8 +41,11 @@ usage() {
   echo "  e <key(type)=val>  specify key/value pair for extra parameters"
   echo "distribution options:"
   echo "  D                  run the experiments via installed distribution"
-  echo "  g                  run experiments using 'gradle run'"
-  echo "  G <args>           run experiments using 'gradle run' with custom arguments"
+  echo "  g                  install the dist with gradle before running"
+  echo "  G <args>           install the dist with gradle before running with parameters"
+  echo "Default running will be done with 'gradle run' unless -D parameter is given in "
+  echo "  which case the installed jar will be used from 'gradle installDist'.  The IBM "
+  echo "  JDK will be used if found; otherwise default JDK."
   echo "Results will be placed in separate files with the following directory structure:"
   echo "  results/algorithm/domain/params/[instance]/out"
   echo "If a parameter is not given then the directory name will be '$DEFAULT_DIR'."
@@ -106,15 +113,15 @@ get_dirs_from_config() {
     >&2 echo "Internal script error: missing parameter to $FUNCNAME"
     exit 1
   else
-    CONFIG=$(echo $CONFIG | sed -re 's/\\/\\\\/g')
+    PCONFIG=$(echo $1 | sed -re 's/\\/\\\\/g')
 SUB_DIRS=$(python <(cat <<EOF
 import json
-config = json.loads('$CONFIG')
+config = json.loads('$PCONFIG')
 algorithm = config['algorithmName']
 domain = config['domainName']
 termType = config['terminationCheckerType']
 termParam = config['terminationCheckerParameter']
-print algorithm, '/', domain, '/', termType, '-', termParam
+print algorithm + "/" + domain + "/" + termType + "-" + str(termParam)
 EOF
 ))
     add_dir "$SUB_DIRS"
@@ -156,12 +163,16 @@ run_gradle() {
   fi
 }
 
-run_dest() {
+run_dist() {
   if [ -z "$1" ]; then
     >&2 echo "Internal script error: missing parameter to $FUNCNAME"
     exit 1
   else
-    eval $RUN_SCRIPT $(add_arg "-o" "$1")
+    if [ "$USE_IBM" = true ]; then
+      eval $IBM_PATH -Xgc:targetPauseTime=20 -Xverbosegclog -Xgc:nosynchronousGCOnOOM -verbose:gc -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xmx8g -Xgcpolicy:metronome -jar $JAR $(add_arg "-o" "$1")
+    else
+      eval $RUN_SCRIPT $(add_arg "-o" "$1")
+    fi
   fi
 }
 
@@ -231,6 +242,9 @@ while getopts $OPTIONS arg; do
     I)
       IGNORE_ERR=true
       ;;
+    b)
+      IBM_PATH=$OPTARG
+      ;;
     o)
       OUT_FILE=$OPTARG
       ;;
@@ -268,15 +282,30 @@ if [ -z "$OUT_FILE" ]; then
   OUT_FILE="out"
 fi
 
+# Process config from file or separate run parameters
 if [ -n "$FILE_CONFIG" ]; then
   EXPERIMENT_ARGS=""
   if [ -f "$FILE_CONFIG" ]; then
     CONFIG="$(cat $FILE_CONFIG)"
+    get_dirs_from_config "$CONFIG"
+    EXPERIMENT_ARGS=$(add_arg "-f" "$FILE_CONFIG")
   else
     CONFIG="$FILE_CONFIG"
+    get_dirs_from_config "$CONFIG"
+
+    # Fix escapes for passing to application
+    CONFIG=$(echo $CONFIG | sed -re 's/(\\n)/ /g')
+    CONFIG=$(echo $CONFIG | sed -re 's/\\"/\\\\\\"/g')
+CONFIG=$(python <(cat <<EOF
+import re
+config = '$CONFIG'
+config = re.sub('(\\\\\\)"','\\\\\\\\\\\\\\\\"',config)
+config = re.sub('"','\\\\"',config)
+print config
+EOF
+))
+    EXPERIMENT_ARGS=$(add_arg "-c" "$CONFIG")
   fi
-  get_dirs_from_config "$CONFIG"
-  EXPERIMENT_ARGS=$(add_arg "-c" "$CONFIG")
 else
   # Translate to experiment expected args and build directory structure
   if [ -n "$ALG" ]; then
@@ -304,26 +333,35 @@ else
   add_dir "$PARAM_DIR"
 fi
 
+# Instance name separate from configuration
 if [ -n "$INSTANCE_NAME" ]; then
   add_dir "$INSTANCE_NAME"
+fi
+
+# Detect if the IBM path exists
+if [ ! -f "$IBM_PATH" ]; then
+  >&2 echo "Could not find IBM JDK at '$IBM_PATH'; using default JDK:"
+  which java
+else
+  USE_IBM=true
 fi
 
 # Setup out file
 OUT_FILE=$(get_unique_filename "$DIR/$OUT_FILE")
 
+# Run it
 if [ -n "$DIST" ] && [ "$DIST" = true ]; then
-  # Run it
   if [ -n "$RUN_GRADLE" ] && [ "$RUN_GRADLE" = true ]; then
     $GRADLE installDist $GRADLE_PARAMS
   fi
 
-  if [ ! -d "$BIN" ]; then
-    >&2 echo "'$BIN' directory does not exist; build first or run with gradle"
+  if [ ! -d "$INSTALL_DIR" ]; then
+    >&2 echo "'$INSTALL_DIR' directory does not exist; build first or run with gradle"
     usage
     exit 1
   fi
 
-  run run_dest
+  run run_dist
 else
   run run_gradle
 fi

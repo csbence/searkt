@@ -21,7 +21,7 @@ private var outFile: String = ""
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
-    if (args.size < 2) {
+    if (args.size == 0) {
         // Default configuration
         val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
