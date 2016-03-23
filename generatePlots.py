@@ -174,14 +174,14 @@ y = data
 
 # low, high = bootstrap(y, 100000, np.median, 0.05)
 med = np.median(y, axis=1)
-print 'median', med
+# print 'median', med
 
 CI = stats.t.interval(0.95, len(y)-1, loc=np.median(y, axis=1), scale=stats.sem(y, axis=1))
 # print 'CI',CI
 # print CI[0]
 # print CI[1]
 
-plt.boxplot(y, notch=False)
+plt.boxplot(y, notch=False, labels=labels)
 plt.errorbar(x, np.median(y, axis=1), yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
 # plt.errorbar(x, np.median(y, axis=0), yerr=CI)
 
