@@ -295,15 +295,8 @@ if [ -n "$FILE_CONFIG" ]; then
 
     # Fix escapes for passing to application
     CONFIG=$(echo $CONFIG | sed -re 's/(\\n)/ /g')
-    CONFIG=$(echo $CONFIG | sed -re 's/\\"/\\\\\\"/g')
-CONFIG=$(python <(cat <<EOF
-import re
-config = '$CONFIG'
-config = re.sub('(\\\\\\)"','\\\\\\\\\\\\\\\\"',config)
-config = re.sub('"','\\\\"',config)
-print config
-EOF
-))
+    CONFIG=$(echo $CONFIG | sed -re 's/\\"/\\\\"/g')
+    CONFIG=$(echo $CONFIG | sed -re 's/"/\\"/g')
     EXPERIMENT_ARGS=$(add_arg "-c" "$CONFIG")
   fi
 else
