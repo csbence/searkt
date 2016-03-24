@@ -21,6 +21,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
     var algorithmName: String by valueStore
     var terminationCheckerType: String by valueStore
     var terminationCheckerParameter: Int by valueStore
+    var actionDuration: Long by valueStore
 
     override fun contains(key: String) = valueStore.containsKey(key)
 }
