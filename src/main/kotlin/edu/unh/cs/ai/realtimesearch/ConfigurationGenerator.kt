@@ -1,9 +1,8 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import org.springframework.http.HttpEntity
@@ -15,16 +14,8 @@ import java.util.concurrent.TimeUnit
 val terminationType = "time"
 val timeLimit = TimeUnit.SECONDS.convert(300, TimeUnit.NANOSECONDS)
 val timeBoundTypes = listOf("STATIC", "DYNAMIC")
-val actionDurations = listOf(
-        TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(100, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(500, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(1000, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(1500, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(2000, TimeUnit.MILLISECONDS),
-        TimeUnit.NANOSECONDS.convert(2500, TimeUnit.MILLISECONDS)
-)
+val actionDurationRange = 1..5
+val actionDurations = actionDurationRange.map { Math.pow(10.0, it.toDouble()) * 100 }
 val lookaheadLimits = 1..10
 
 fun main(args: Array<String>) {
@@ -55,7 +46,7 @@ fun main(args: Array<String>) {
         println(configuration)
     }
 
-//    uploadConfigurations(configurations)
+    //    uploadConfigurations(configurations)
 }
 
 fun domainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
@@ -82,7 +73,7 @@ fun domainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>>
 fun realTimePlanners(planner: Planners): MutableList<MutableMap<String, Any?>> {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
-    when(planner) {
+    when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
             for (timeBoundType in timeBoundTypes) {
                 configurations.add(mutableMapOf<String, Any?>(
