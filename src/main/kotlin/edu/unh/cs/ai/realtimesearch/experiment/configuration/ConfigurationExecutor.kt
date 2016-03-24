@@ -26,32 +26,29 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.Simpl
 import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
+import java.util.concurrent.Executors
 
 /**
  * Configuration executor to execute experiment configurations.
  */
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
-        val domainName: String = experimentConfiguration.domainName
+        val executor = Executors.newSingleThreadExecutor()
+        val experimentResult = executor.submit<ExperimentResult>({
+            val domainName: String = experimentConfiguration.domainName
 
-        // Execute the gc before every experiment.
-        System.gc()
+            // Execute the gc before every experiment.
+            System.gc()
 
-        try {
-            return when (domainName) {
+            when (domainName) {
                 "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
                 "vacuum world" -> executeVacuumWorld(experimentConfiguration)
                 "grid world" -> executeGridWorld(experimentConfiguration)
                 "acrobot" -> executeAcrobot(experimentConfiguration)
                 else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
             }
-        } catch (e: OutOfMemoryError) {
-            System.gc()
-            return ExperimentResult(experimentConfiguration.valueStore, "OutOfMemory")
-        } catch (e: Exception) {
-            return ExperimentResult(experimentConfiguration.valueStore, e.message)
-        }
-
+        }).get()
+        return experimentResult
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
