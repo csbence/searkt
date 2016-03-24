@@ -4,7 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import java.lang.Math.abs
 
-class SlidingTilePuzzle(val size: Int, val actionDuration: Double = 10.0) : Domain<SlidingTilePuzzleState> {
+class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzleState> {
     override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
         val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzleState>> = arrayListOf()
 

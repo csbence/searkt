@@ -24,8 +24,8 @@ apply plugin: 'application'
 applicationDefaultJvmArgs = [
                              "-server", "-XX:+AggressiveOpts",
                              "-XX:NewSize=512m", "-XX:MaxNewSize=512m",
-                             "-Xms6g",
-                             "-Xmx6g"
+                             "-Xms1g",
+                             "-Xmx1g"
 ]
 
 if (project.hasProperty("mainClass")) {

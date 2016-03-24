@@ -37,13 +37,21 @@ object ConfigurationExecutor {
         // Execute the gc before every experiment.
         System.gc()
 
-        return when (domainName) {
-            "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
-            "vacuum world" -> executeVacuumWorld(experimentConfiguration)
-            "grid world" -> executeGridWorld(experimentConfiguration)
-            "acrobot" -> executeAcrobot(experimentConfiguration)
-            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+        try {
+            return when (domainName) {
+                "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
+                "vacuum world" -> executeVacuumWorld(experimentConfiguration)
+                "grid world" -> executeGridWorld(experimentConfiguration)
+                "acrobot" -> executeAcrobot(experimentConfiguration)
+                else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+            }
+        } catch (e: OutOfMemoryError) {
+            System.gc()
+            return ExperimentResult(experimentConfiguration.valueStore, "OutOfMemory")
+        } catch (e: Exception) {
+            return ExperimentResult(experimentConfiguration.valueStore, e.message)
         }
+
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {

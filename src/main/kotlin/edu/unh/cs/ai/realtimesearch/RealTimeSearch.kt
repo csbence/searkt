@@ -46,6 +46,8 @@ fun main(args: Array<String>) {
         PrintWriter(outFile, "UTF-8").use {
             it.write(result.toIndentedJson())
         }
+    } else if (result.errorMessage != null) {
+        logger.error("Something went wrong: ${result.errorMessage}")
     } else {
         logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
         //        logger.info(result.toIndentedJson())
