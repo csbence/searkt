@@ -1,9 +1,13 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.RestTemplate
 import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
@@ -64,5 +68,21 @@ fun realTimePlanners(planner: Planners): MutableList<MutableMap<String, Any?>> {
 }
 
 fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
-    throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    val restTemplate = RestTemplate()
+    val serverUrl = "http://aerials.cs.unh.edu:3824"
+    var successCounter = 0
+    var failCounter = 0
+
+    for (configuration in configurations) {
+        val configurationData = ExperimentData(configuration)
+
+        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurationData), Nothing::class.java)
+        if (responseEntity.statusCode == HttpStatus.OK) {
+            successCounter++
+        } else {
+            failCounter++
+        }
+    }
+
+    println("Upload completed! Successfully uploaded: $successCounter Failed to upload: $failCounter")
 }
