@@ -20,7 +20,7 @@ class SlidingTilePuzzleStateTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
 
         val location1 = Location(2, 0)
         val location2 = Location(2, 0)
