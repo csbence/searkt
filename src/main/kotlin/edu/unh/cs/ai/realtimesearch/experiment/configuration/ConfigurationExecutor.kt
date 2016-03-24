@@ -23,6 +23,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
+import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 
@@ -36,13 +37,21 @@ object ConfigurationExecutor {
         // Execute the gc before every experiment.
         System.gc()
 
-        return when (domainName) {
-            "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
-            "vacuum world" -> executeVacuumWorld(experimentConfiguration)
-            "grid world" -> executeGridWorld(experimentConfiguration)
-            "acrobot" -> executeAcrobot(experimentConfiguration)
-            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+        try {
+            return when (domainName) {
+                "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
+                "vacuum world" -> executeVacuumWorld(experimentConfiguration)
+                "grid world" -> executeGridWorld(experimentConfiguration)
+                "acrobot" -> executeAcrobot(experimentConfiguration)
+                else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+            }
+        } catch (e: OutOfMemoryError) {
+            System.gc()
+            return ExperimentResult(experimentConfiguration.valueStore, "OutOfMemory")
+        } catch (e: Exception) {
+            return ExperimentResult(experimentConfiguration.valueStore, e.message)
         }
+
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
@@ -85,6 +94,7 @@ object ConfigurationExecutor {
             "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState)
             "A*" -> executeAStar(experimentConfiguration, domain, initialState)
             "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, environment)
+            "Dynamic-fhat" -> executeDynamicFHat(experimentConfiguration, domain, environment)
             "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, environment)
             "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState)
             "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState)
@@ -128,6 +138,14 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
+        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+
+        return rtsExperiment.run()
+    }
+
+    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+        val dynamicFHatPlanner = DynamicFHatPlanner(domain)
+        val rtsAgent = RTSAgent(dynamicFHatPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()

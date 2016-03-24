@@ -4,14 +4,29 @@ version '1.0-SNAPSHOT'
 apply plugin: 'kotlin'
 apply plugin: 'application'
 
+//applicationDefaultJvmArgs = [
+//                                "-Xloggc:/Users/bencecserna/Documents/Development/projects/real-time-search/gc.log",
+//                             "-XX:+PrintGC",
+//                             "-server", "-XX:+AggressiveOpts",
+//                             "-XX:+UseConcMarkSweepGC",
+//                             "-XX:+UseG1GC",
+//                             "-XX:+UnlockDiagnosticVMOptions", "-XX:+G1PrintRegionLivenessInfo",
+//                             "-XX:MaxGCPauseMillis=80",
+//                             "-XX:MaxGCMinorPauseMillis=50",
+//                             "-XX:GCPauseIntervalMillis=300",
+//                             "-XX:NewSize=1g", "-XX:MaxNewSize=1g",
+//                             "-XX:SurvivorRatio=1",
+//                             "-XX:+DoEscapeAnalysis",
+//                             "-Xms6g",
+//                             "-Xmx6g"
+//]
+
 applicationDefaultJvmArgs = [
                              "-server", "-XX:+AggressiveOpts",
                              "-XX:NewSize=512m", "-XX:MaxNewSize=512m",
-                             "-Xms6g",
-                             "-Xmx6g"
+                             "-Xms1g",
+                             "-Xmx1g"
 ]
-
-
 
 if (project.hasProperty("mainClass")) {
     mainClassName = mainClass
@@ -50,7 +65,7 @@ dependencies {
 }
 
 sourceSets {
-    main.java.srcDirs += 'src/main/kotlin'
+    main.java.srcDirs += 'src/ main / kotlin '
     test.java.srcDirs += 'src/test/kotlin'
 }
 

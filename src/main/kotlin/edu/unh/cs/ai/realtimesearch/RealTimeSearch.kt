@@ -23,14 +23,17 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw")!!
+        //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "A*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
         manualConfiguration["lookahead depth limit"] = 4
         manualConfiguration["action duration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
         manualConfiguration["singleStepLookahead"] = false
         manualConfiguration["staticStepDuration"] = 10L
+        manualConfiguration["timeLimit"] = 10000000
+
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
@@ -43,6 +46,8 @@ fun main(args: Array<String>) {
         PrintWriter(outFile, "UTF-8").use {
             it.write(result.toIndentedJson())
         }
+    } else if (result.errorMessage != null) {
+        logger.error("Something went wrong: ${result.errorMessage}")
     } else {
         logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
         //        logger.info(result.toIndentedJson())

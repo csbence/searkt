@@ -72,9 +72,6 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
             }
 
-            if (expandedNodeCount % 100000 == 0) {
-                System.gc()
-            }
         }
 
         throw GoalNotReachableException()

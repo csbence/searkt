@@ -47,6 +47,8 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         var totalNanoTime = 0L
         var timeBound = staticStepDuration
 
+        var interationCount = 0L
+
         while (!world.isGoal()) {
             totalNanoTime += measureNanoTime {
                 terminationChecker.init(timeBound)
@@ -68,7 +70,11 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
 
             }
 
-            System.gc()
+            println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}")
+
+            if (interationCount++ % 100 == 0L) {
+//                System.gc()
+            }
         }
 
         logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
