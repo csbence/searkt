@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -42,16 +43,18 @@ fun main(args: Array<String>) {
                     }
                     realTimePlannerConfiguration.putAll(configuration)
                 }
-                configurations.addAll(realTimePlannerConfigurations)
+                // TODO integrate acrobot configurations
+                if (!domain.equals(ACROBOT))
+                    configurations.addAll(realTimePlannerConfigurations)
             }
         }
     }
 
-    for (configuration in configurations) {
-        println(configuration)
-    }
+//    for (configuration in configurations) {
+//        println(configuration)
+//    }
 
-    //    uploadConfigurations(configurations)
+    uploadConfigurations(configurations)
 }
 
 fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
