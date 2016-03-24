@@ -3,9 +3,6 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotAction
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
-import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -65,7 +62,7 @@ class RaceTrack(val width: Int,
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
                         action,
-                        actionCost = 1.0))
+                        actionCost = 1))
             }
         }
 

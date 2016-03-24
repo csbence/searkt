@@ -6,7 +6,7 @@ import java.util.*
 
 object SlidingTilePuzzleIO {
 
-    fun parseFromStream(input: InputStream): SlidingTilePuzzleInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long): SlidingTilePuzzleInstance {
         val inputScanner = Scanner(input)
         inputScanner.useDelimiter("\n")
 
@@ -30,7 +30,7 @@ object SlidingTilePuzzleIO {
             throw InvalidSlidingTilePuzzleException("SlidingTilePuzzle's dimensions must be numbers.", e)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(dimension)
+        val slidingTilePuzzle = SlidingTilePuzzle(dimension, actionDuration)
         val tiles = SlidingTilePuzzleState.Tiles(dimension)
 
         try {
