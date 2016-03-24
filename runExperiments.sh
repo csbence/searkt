@@ -17,6 +17,7 @@ RUN_NUM=0
 OUT_EXT=.json
 IGNORE_ERR=false
 IBM_PATH=/opt/ibm/java-x86_64-80/bin/java
+IBM_ARGS="-Xgc:targetPauseTime=20 -Xverbosegclog -Xgc:nosynchronousGCOnOOM -verbose:gc -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xmx8g -Xgcpolicy:metronome -Dorg.slf4j.simpleLogger.defaultLogLevel=trace"
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -169,7 +170,7 @@ run_dist() {
     exit 1
   else
     if [ "$USE_IBM" = true ]; then
-      eval $IBM_PATH -Xgc:targetPauseTime=20 -Xverbosegclog -Xgc:nosynchronousGCOnOOM -verbose:gc -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xmx8g -Xgcpolicy:metronome -jar $JAR $(add_arg "-o" "$1")
+      eval $IBM_PATH $IBM_ARGS -jar $JAR $(add_arg "-o" "$1")
     else
       eval $RUN_SCRIPT $(add_arg "-o" "$1")
     fi
@@ -282,6 +283,7 @@ if [ -z "$OUT_FILE" ]; then
   OUT_FILE="out"
 fi
 
+#TODO change to allow overriding config file with arguments
 # Process config from file or separate run parameters
 if [ -n "$FILE_CONFIG" ]; then
   EXPERIMENT_ARGS=""
@@ -345,7 +347,9 @@ OUT_FILE=$(get_unique_filename "$DIR/$OUT_FILE")
 # Run it
 if [ -n "$DIST" ] && [ "$DIST" = true ]; then
   if [ -n "$RUN_GRADLE" ] && [ "$RUN_GRADLE" = true ]; then
+    echo "Running gradle with parameters '$GRADLE_PARAMS'..."
     $GRADLE installDist $GRADLE_PARAMS
+    echo "Gradle finished"
   fi
 
   if [ ! -d "$INSTALL_DIR" ]; then
