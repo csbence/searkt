@@ -21,7 +21,7 @@ private var outFile: String = ""
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
-    if (args.size < 2) {
+    if (args.size == 0) {
         // Default configuration
         //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
         val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")

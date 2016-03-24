@@ -152,7 +152,7 @@ object ConfigurationExecutor {
     }
 
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
-        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("Time bound type is not found. Please add it to the configuration.")
+        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("timeBoundType is not found. Please add it to the configuration.")
         val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
 
         return when (timeBoundType) {
@@ -162,8 +162,8 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
-        val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit)
+        val depthLimit = experimentConfiguration.getTypedValue<Long>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
+        val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
