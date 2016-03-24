@@ -22,7 +22,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
         assertTrue { heuristic == 0.0 }
     }
@@ -35,7 +35,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
         assertTrue { heuristic == 1.0 }
     }
@@ -48,7 +48,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
         assertTrue { heuristic == 1.0 }
     }
@@ -61,7 +61,7 @@ class SlidingTilePuzzleTest {
             row (7, 6, 5)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
         assertTrue { heuristic == 8.0 }
     }
@@ -74,7 +74,7 @@ class SlidingTilePuzzleTest {
             row (7, 6, 5)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val heuristic = slidingTilePuzzle.heuristic(tiles)
 
         val state = SlidingTilePuzzleState(2, 0, tiles, heuristic)
@@ -92,7 +92,7 @@ class SlidingTilePuzzleTest {
             row (2, 7, 0)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
@@ -109,7 +109,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val initialState = SlidingTilePuzzleState(1, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
@@ -126,7 +126,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
@@ -143,7 +143,7 @@ class SlidingTilePuzzleTest {
             row (6, 7, 8)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val initialState = SlidingTilePuzzleState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
@@ -157,7 +157,7 @@ class SlidingTilePuzzleTest {
             row (2, 7, 0)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(3)
+        val slidingTilePuzzle = SlidingTilePuzzle(3, 0)
         val initialState = SlidingTilePuzzleState(2, 2, tiles, slidingTilePuzzle.heuristic(tiles))
 
         runLssLrtaStart(initialState, slidingTilePuzzle)
@@ -166,7 +166,7 @@ class SlidingTilePuzzleTest {
     @Test
     fun testLssLrtaStarOnFileInput() {
         val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1")
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(stream)
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(stream, 10000)
         val slidingTilePuzzle = slidingTilePuzzleInstance.domain
         val initialState = slidingTilePuzzleInstance.initialState
 
@@ -219,7 +219,7 @@ class SlidingTilePuzzleTest {
     //    }
 
     private fun runAStarOnSlidingTilePuzzleFileInput(stream: InputStream) {
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(stream)
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(stream, 10000)
         val slidingTilePuzzle = slidingTilePuzzleInstance.domain
         val initialState = slidingTilePuzzleInstance.initialState
 
