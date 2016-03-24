@@ -9,10 +9,11 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.RestTemplate
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
-val timeLimit = TimeUnit.SECONDS.convert(300, TimeUnit.NANOSECONDS)
+val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
 val timeBoundTypes = listOf("STATIC", "DYNAMIC")
 val actionDurationRange = 1..5
 val actionDurations = actionDurationRange.map { Math.pow(10.0, it.toDouble()) * 100 }
@@ -33,11 +34,15 @@ fun main(args: Array<String>) {
                         "terminationType" to terminationType
                 )
 
-                val realTimePlanners = realTimePlanners(planner)
-                for (realTimePlanner in realTimePlanners) {
-                    realTimePlanner.putAll(configuration)
-                    configurations.add(realTimePlanner)
+                val realTimePlannerConfigurations = realTimePlanners(planner)
+                for (realTimePlannerConfiguration in realTimePlannerConfigurations) {
+                    val domainConfigurations = getDomainConfigurations(domain)
+                    for (domainConfiguration in domainConfigurations) {
+                        realTimePlannerConfiguration.putAll(domainConfiguration)
+                    }
+                    realTimePlannerConfiguration.putAll(configuration)
                 }
+                configurations.addAll(realTimePlannerConfigurations)
             }
         }
     }
@@ -49,21 +54,66 @@ fun main(args: Array<String>) {
     //    uploadConfigurations(configurations)
 }
 
-fun domainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
+fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
+
+    val gridMaps = listOf(
+            "input/vacuum/dylan/cups.vw",
+            "input/vacuum/dylan/slalom.vw",
+            "input/vacuum/dylan/uniform.vw",
+            "input/vacuum/dylan/wall.vw"
+    )
+
+    val racetrackMaps = listOf(
+            "input/racetrack/barto-big.track",
+            "input/racetrack/barto-small.track"
+    )
+
+    val pointRobotMaps = listOf(
+            "input/pointrobot/empty.pr",
+            "input/pointrobot/smallmaze.pr",
+            "input/pointrobot/uniform.pr",
+            "input/pointrobot/wall.pr",
+            "input/pointrobot/wall2.pr"
+    )
+
+    val slidingTileMaps = "input/tiles/korf/4/"
 
     when (domain) {
         ACROBOT -> {
 
         }
         GRID_WORLD, VACUUM_WORLD, POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
-            GRID_WORLD.javaClass.classLoader.getResource("input/vacuum/dylan")
+            for (map in gridMaps) {
+                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+                configurations.add(mutableMapOf(
+                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next()
+                ))
+            }
         }
         RACETRACK -> {
-
+            for (map in racetrackMaps) {
+                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+                configurations.add(mutableMapOf(
+                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next()
+                ))
+            }
         }
         SLIDING_TILE_PUZZLE -> {
-
+            for (i in 1..100) {
+                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream("$slidingTileMaps$i")
+                configurations.add(mutableMapOf(
+                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next()
+                ))
+            }
+        }
+        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+            for (map in pointRobotMaps) {
+                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+                configurations.add(mutableMapOf(
+                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next()
+                ))
+            }
         }
     }
 
