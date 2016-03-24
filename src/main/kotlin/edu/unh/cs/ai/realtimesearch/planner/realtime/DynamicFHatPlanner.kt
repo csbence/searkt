@@ -22,11 +22,11 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
+    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var distance: Double, var correctedDistance: Double,
-                                             var actionCost: Double, var action: Action,
+                                             var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
                                              var open: Boolean = false,
@@ -216,7 +216,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0.0, domain.distance(state), domain.distance(state), 0.0, NoOperationAction, iterationCounter, domain.heuristic(state)) // Create root node
+        val node = Node(state, domain.heuristic(state), 0, domain.distance(state), domain.distance(state), 0, NoOperationAction, iterationCounter, domain.heuristic(state)) // Create root node
         nodes[state] = node // Add root node to the node table
         var currentNode = node
         addToOpenList(node)
@@ -279,7 +279,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 successorNode.apply {
                     iteration = iterationCounter
                     predecessors.clear()
-                    cost = POSITIVE_INFINITY
+                    cost = Long.MAX_VALUE
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -348,7 +348,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     state = successorState,
                     heuristic = heuristic,
                     distance = distance,
-                    cost = POSITIVE_INFINITY,
+                    cost = Long.MAX_VALUE,
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,

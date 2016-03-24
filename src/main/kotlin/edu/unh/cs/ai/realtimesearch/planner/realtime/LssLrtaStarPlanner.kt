@@ -7,7 +7,7 @@ import edu.unh.cs.ai.realtimesearch.logging.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.Double.Companion.POSITIVE_INFINITY
+import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 
 /**
@@ -21,10 +21,10 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Double)
+    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
-                                             var actionCost: Double, var action: Action,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
+                                             var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var open: Boolean = false,
                                              parent: Node<StateType>? = null) {
@@ -172,7 +172,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, iterationCounter, false)
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
         nodes[state] = node
         var currentNode = node
         addToOpenList(node)
@@ -229,7 +229,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 successorNode.apply {
                     iteration = iterationCounter
                     predecessors.clear()
-                    cost = POSITIVE_INFINITY
+                    cost = MAX_VALUE
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -279,7 +279,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    cost = POSITIVE_INFINITY,
+                    cost = MAX_VALUE,
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
@@ -334,7 +334,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             node.predecessors.forEach { predecessor ->
                 // Update if the node is outdated
                 if (predecessor.node.iteration != iterationCounter) {
-                    predecessor.node.heuristic = POSITIVE_INFINITY
+                    predecessor.node.heuristic = Double.POSITIVE_INFINITY
                     predecessor.node.iteration = iterationCounter
                 }
 
