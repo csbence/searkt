@@ -85,14 +85,19 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
                 configuration)
     }
 
+    /**
+     * Convert time in ns to double in seconds
+     */
+    fun convertTime (time: Long): Double = time.toDouble() / 1000000000.0
+
     internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     fun calculateNextState(accelerations: Accelerations): AcrobotState {
-        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, configuration.timeStep)
-        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, configuration.timeStep)
-        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, configuration.timeStep)
-        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, configuration.timeStep)
+        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, convertTime(configuration.timeStep))
+        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, convertTime(configuration.timeStep))
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, convertTime(configuration.timeStep))
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, convertTime(configuration.timeStep))
 
         return AcrobotState(
                 AcrobotLink(newLinkPosition1, newLinkVelocity1),
