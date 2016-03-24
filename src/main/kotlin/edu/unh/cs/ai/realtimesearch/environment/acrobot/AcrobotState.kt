@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
+import edu.unh.cs.ai.realtimesearch.util.convertTime
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
 
@@ -84,11 +85,6 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
                 AcrobotLink(roundDownToDecimal(link2.position, configuration.positionGranularity2), roundDownToDecimal(link2.velocity, configuration.velocityGranularity2)),
                 configuration)
     }
-
-    /**
-     * Convert time in ns to double in seconds
-     */
-    fun convertTime (time: Long): Double = time.toDouble() / 1000000000.0
 
     internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
