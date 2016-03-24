@@ -2,6 +2,8 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+import edu.unh.cs.ai.realtimesearch.environment.Domains.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import org.springframework.http.HttpEntity
@@ -13,7 +15,16 @@ import java.util.concurrent.TimeUnit
 val terminationType = "time"
 val timeLimit = TimeUnit.SECONDS.convert(300, TimeUnit.NANOSECONDS)
 val timeBoundTypes = listOf("STATIC", "DYNAMIC")
-val actionDurations = 1..1000000000L step(10000)
+val actionDurations = listOf(
+        TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(100, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(500, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(1000, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(1500, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(2000, TimeUnit.MILLISECONDS),
+        TimeUnit.NANOSECONDS.convert(2500, TimeUnit.MILLISECONDS)
+)
 val lookaheadLimits = 1..10
 
 fun main(args: Array<String>) {
@@ -34,28 +45,52 @@ fun main(args: Array<String>) {
                 val realTimePlanners = realTimePlanners(planner)
                 for (realTimePlanner in realTimePlanners) {
                     realTimePlanner.putAll(configuration)
-
-
+                    configurations.add(realTimePlanner)
                 }
             }
         }
     }
 
-    uploadConfigurations(configurations)
+    for (configuration in configurations) {
+        println(configuration)
+    }
+
+//    uploadConfigurations(configurations)
+}
+
+fun domainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
+    val configurations = mutableListOf<MutableMap<String, Any?>>()
+
+    when (domain) {
+        ACROBOT -> {
+
+        }
+        GRID_WORLD, VACUUM_WORLD, POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+            GRID_WORLD.javaClass.classLoader.getResource("input/vacuum/dylan")
+        }
+        RACETRACK -> {
+
+        }
+        SLIDING_TILE_PUZZLE -> {
+
+        }
+    }
+
+    return configurations
 }
 
 fun realTimePlanners(planner: Planners): MutableList<MutableMap<String, Any?>> {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
-    when {
-        DYNAMIC_F_HAT == planner || LSS_LRTA_STAR == planner -> {
+    when(planner) {
+        DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
             for (timeBoundType in timeBoundTypes) {
                 configurations.add(mutableMapOf<String, Any?>(
                         "timeBoundType" to timeBoundType
                 ))
             }
         }
-        RTA_STAR == planner -> {
+        RTA_STAR -> {
             for (lookaheadDepthLimit in lookaheadLimits) {
                 configurations.add(mutableMapOf<String, Any?>(
                         "lookaheadDepthLimit" to lookaheadDepthLimit

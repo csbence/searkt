@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
@@ -8,6 +9,7 @@ import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
+import java.nio.file.Files
 import java.util.*
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
@@ -21,10 +23,17 @@ private var outFile: String = ""
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
+//    println (Domains.GRID_WORLD.javaClass.classLoader.getResource("input/vacuum/dylan").path)
+//    Domains.GRID_WORLD.javaClass.classLoader.getResourceAsStream("input/vacuum/dylan") ?: throw RuntimeException("Resource not found")
+//    Files.newDirectoryStream()
+//
+//
+//    exitProcess(0)
+
     if (args.size == 0) {
         // Default configuration
-        //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
-        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
+//        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
+                val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time")
         manualConfiguration["lookaheadDepthLimit"] = 4
