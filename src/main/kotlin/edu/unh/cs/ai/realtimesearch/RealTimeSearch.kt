@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
         //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
         val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
+        manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time")
         manualConfiguration["lookaheadDepthLimit"] = 4
         manualConfiguration["actionDuration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
@@ -155,8 +155,7 @@ private fun createCommandLineMenu(args: Array<String>) {
 
         /* run the experiment */
         val rawDomain = File(mapFile).readText()
-        manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
-                termType, termParam.toInt())
+        manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName, termType)
 
         for (extra in extras) {
             val values = extra.split('=', limit = 2)

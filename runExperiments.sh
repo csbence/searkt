@@ -38,7 +38,7 @@ usage() {
   echo "  a <name>           specify the algorithm to run"
   echo "  m <file>           specify a map input file"
   echo "  t <type>           specify the termination type"
-  echo "  p <param>          specify the termination parameter to provide"
+  echo "  p <param>          specify the time limit to provide"
   echo "  e <key(type)=val>  specify key/value pair for extra parameters"
   echo "distribution options:"
   echo "  D                  run the experiments via installed distribution"
@@ -138,8 +138,8 @@ config = json.loads('$PCONFIG')
 algorithm = config['algorithmName']
 domain = config['domainName']
 termType = config['terminationCheckerType']
-termParam = config['terminationCheckerParameter']
-print algorithm + "/" + domain + "/" + termType + "-" + str(termParam)
+timeLimit = config['timeLimit']
+print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit)
 EOF
 ))
     add_dir "$SUB_DIRS"
@@ -264,7 +264,7 @@ while getopts $OPTIONS arg; do
       TERM_TYPE=$OPTARG
       ;;
     p)
-      TERM_PARAM=$OPTARG
+      TIME_LIMIT=$OPTARG
       ;;
     e)
       EXPERIMENT_ARGS=$(add_arg "-e" "$OPTARG")
@@ -353,9 +353,9 @@ else
     EXPERIMENT_ARGS=$(add_arg "-t" "$TERM_TYPE")
     PARAM_DIR="$TERM_TYPE"
   fi
-  if [ -n "$TERM_PARAM" ]; then
-    EXPERIMENT_ARGS=$(add_arg "-p" "$TERM_PARAM")
-    PARAM_DIR="$PARAM_DIR-$TERM_PARAM"
+  if [ -n "$TIME_LIMIT" ]; then
+    EXPERIMENT_ARGS=$(add_arg "-p" "$TIME_LIMIT")
+    PARAM_DIR="$PARAM_DIR-$TIME_LIMIT"
   fi
   add_dir "$PARAM_DIR"
 fi
