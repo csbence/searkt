@@ -156,12 +156,12 @@ object ConfigurationExecutor {
 
         return when (timeBoundType) {
             TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
-            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>("staticStepDuration") ?: throw  InvalidFieldException("\"staticStepDuration\" is not found. Please add it the the experiment configuration."))
+            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>("actionDuration") ?: throw  InvalidFieldException("\"actionDuration\" is not found. Please add it the the experiment configuration."))
         }
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Long>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
+        val depthLimit = experimentConfiguration.getTypedValue<Long>("lookaheadDepthLimit") ?: throw InvalidFieldException("\"lookaheadDepthLimit\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))

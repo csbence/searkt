@@ -27,11 +27,10 @@ fun main(args: Array<String>) {
         val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration("sliding tile puzzle", rawDomain, "A*", "time", 10)
-        manualConfiguration["lookahead depth limit"] = 4
-        manualConfiguration["action duration"] = 10L
+        manualConfiguration["lookaheadDepthLimit"] = 4
+        manualConfiguration["actionDuration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
         manualConfiguration["singleStepLookahead"] = false
-        manualConfiguration["staticStepDuration"] = 10L
         manualConfiguration["timeLimit"] = 10000000
 
     } else {

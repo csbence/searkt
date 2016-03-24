@@ -15,7 +15,7 @@ class ExperimentDataTest {
     fun testJsonSerialization1() {
         val experimentData = ExperimentData()
         experimentData["terminationCheckerParameter"] = 4
-        experimentData["action duration"] = 10
+        experimentData["actionDuration"] = 10
         experimentData["list"] = listOf("A", 1, 1)
 
         val json = experimentData.toJson()
@@ -24,7 +24,7 @@ class ExperimentDataTest {
         val generalExperimentConfiguration = GeneralExperimentConfiguration(experimentDataFromJson.valueStore)
 
         assertTrue(generalExperimentConfiguration.terminationCheckerParameter == 4)
-        assertTrue(experimentDataFromJson["action duration"] == 10L)
+        assertTrue(experimentDataFromJson["actionDuration"] == 10L)
         assertTrue(experimentDataFromJson["X"] == null)
     }
 
