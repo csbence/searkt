@@ -218,7 +218,7 @@ run() {
       $EXP_SCRIPT "$NEW_OUT"
       check_error "$NEW_OUT"
     else
-      for ((i=0; i < $NUM_RUNS; i++)); do
+      for ((i=1; i <= $NUM_RUNS; i++)); do
         RUN_NUM=$i
         NEW_OUT="$OUT_FILE$(get_file_num $i)$OUT_EXT"
         echo "Starting run #$RUN_NUM of $NUM_RUNS..."

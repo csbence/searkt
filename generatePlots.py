@@ -25,7 +25,7 @@ class Results:
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
-        self.time = parsedJson['nanoTime']
+        self.time = parsedJson['nanoTime'] / 1000000 # convert to ms
 
 
 script = os.path.basename(sys.argv[0])
@@ -148,7 +148,7 @@ datadata = np.array(data)
 # print datadata
 # print datadata.reshape(len(data[0]), len(data))
 
-plt.ylabel("Goal Achievement Time (ns)")
+plt.ylabel("Goal Achievement Time (ms)")
 labels = []
 if domainGroups:
     assert numDomains == 1
@@ -170,6 +170,7 @@ x = np.arange(1, len(data) + 1)
 y = data
 # print x
 # print y
+# TODO make work with different amounts of data per category
 
 
 # low, high = bootstrap(y, 100000, np.median, 0.05)
