@@ -18,7 +18,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      *
      * The [duration] is measured in nanoseconds.
      */
-    data class ActionBundle(val action: Action, val duration: Double)
+    data class ActionBundle(val action: Action, val duration: Long)
 
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
