@@ -2,10 +2,8 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
@@ -20,35 +18,57 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
+import org.slf4j.LoggerFactory
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.concurrent.TimeoutException
 
 /**
  * Configuration executor to execute experiment configurations.
  */
 object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val logger = LoggerFactory.getLogger("ConfigurationExecutor")
+
         val executor = Executors.newSingleThreadExecutor()
-        val experimentResult = executor.submit<ExperimentResult>({
-            val domainName: String = experimentConfiguration.domainName
 
-            // Execute the gc before every experiment.
-            System.gc()
+        try {
+            return executor.submit<ExperimentResult>({
+                // Execute the gc before every experiment.
+                System.gc()
 
-            when (domainName) {
-                "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
-                "vacuum world" -> executeVacuumWorld(experimentConfiguration)
-                "grid world" -> executeGridWorld(experimentConfiguration)
-                "acrobot" -> executeAcrobot(experimentConfiguration)
-                else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
-            }
-        }).get()
-        return experimentResult
+                unsafeConfigurationExecution(experimentConfiguration)
+            }).get(experimentConfiguration.timeLimit, NANOSECONDS) // Wait on the future to complete or timeout
+        } catch (e: TimeoutException) {
+            logger.info("Experiment timed out.")
+            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
+        } catch (e: ExecutionException) {
+            logger.info("Experiment failed. ${e.message}")
+            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${e.message}")
+            experimentResult["errorDetails"] = e.stackTrace
+            return experimentResult
+        }
+    }
+
+    private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult? {
+        val domainName: String = experimentConfiguration.domainName
+        val domain = Domains.valueOf(domainName)
+        return when (domain) {
+            SLIDING_TILE_PUZZLE -> executeSlidingTilePuzzle(experimentConfiguration)
+            VACUUM_WORLD -> executeVacuumWorld(experimentConfiguration)
+            GRID_WORLD -> executeGridWorld(experimentConfiguration)
+            ACROBOT -> executeAcrobot(experimentConfiguration)
+            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+        }
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
@@ -86,15 +106,12 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType, environment: Environment<StateType>): ExperimentResult {
         val algorithmName = experimentConfiguration.algorithmName
 
-        return when (algorithmName) {
-            "Weighted-A*" -> executeWeightedAStar(experimentConfiguration, domain, initialState)
-            "A*" -> executeAStar(experimentConfiguration, domain, initialState)
-            "LSS-LRTA*" -> executeLssLrtaStar(experimentConfiguration, domain, environment)
-            "Dynamic-fhat" -> executeDynamicFHat(experimentConfiguration, domain, environment)
-            "RTA*" -> executeRealTimeAStar(experimentConfiguration, domain, environment)
-            "Simple-A*" -> executePureAStar(experimentConfiguration, domain, initialState)
-            "Classical-A*" -> executeClassicalAStar(experimentConfiguration, domain, initialState)
-
+        return when (Planners.valueOf(algorithmName)) {
+            WEIGHTED_A_STAR -> executeWeightedAStar(experimentConfiguration, domain, initialState)
+            A_STAR -> executeAStar(experimentConfiguration, domain, initialState)
+            LSS_LRTA_STAR -> executeLssLrtaStar(experimentConfiguration, domain, environment)
+            DYNAMIC_F_HAT -> executeDynamicFHat(experimentConfiguration, domain, environment)
+            RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, environment)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
