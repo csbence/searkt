@@ -47,8 +47,8 @@ dependencies {
 }
 
 sourceSets {
-    main.java.srcDirs += 'src/ main / kotlin '
-    test.java.srcDirs += 'src/test/kotlin'
+    main.java.srcDirs += file('src/main/kotlin')
+    test.java.srcDirs += file('src/test/kotlin')
 }
 
 task wrapper(type: Wrapper) {
