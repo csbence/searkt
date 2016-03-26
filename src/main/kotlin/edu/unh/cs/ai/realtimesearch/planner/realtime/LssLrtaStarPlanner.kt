@@ -3,7 +3,9 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.*
+import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.trace
+import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -133,16 +135,16 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = state
         } else if (state != rootState) {
             // The given state should be the last target
-            logger.error { "Inconsistent world state. Expected $rootState got $state" }
+            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
         }
 
         if (domain.isGoal(state)) {
             // The start state is the goal state
-            logger.warn { "selectAction: The goal state is already found." }
+            logger.warn() { "selectAction: The goal state is already found." }
             return emptyList()
         }
 
-        logger.info { "Root state: $state" }
+        logger.debug { "Root state: $state" }
         // Every turn learn then A* until time expires
 
         // Learning phase
@@ -158,8 +160,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = targetNode.state
         }
 
-        logger.info { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.info { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -189,10 +191,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         if (node == currentNode && !domain.isGoal(currentNode.state)) {
             //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
-            logger.info { "A* : expanded $expandedNodes nodes" }
+            logger.debug { "A* : expanded $expandedNodes nodes" }
         }
 
-        logger.info { "Done with AStar at $currentNode" }
+        logger.debug { "Done with AStar at $currentNode" }
 
         return currentNode
     }
@@ -306,7 +308,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      *
      */
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
-        logger.info { "Start: Dijkstra" }
+        logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
@@ -358,7 +360,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // update mode if done
         if (openList.isEmpty()) {
-            logger.info { "Done with Dijkstra" }
+            logger.debug { "Done with Dijkstra" }
         } else {
             logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
         }

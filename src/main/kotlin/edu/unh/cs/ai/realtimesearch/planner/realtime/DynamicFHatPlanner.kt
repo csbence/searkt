@@ -3,7 +3,10 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.*
+import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.error
+import edu.unh.cs.ai.realtimesearch.logging.trace
+import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.lang.Math.max
@@ -183,7 +186,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             return emptyList()
         }
 
-        logger.info { "Root state: $state" }
+        logger.debug { "Root state: $state" }
 
         // Learning phase
         if (closedList.isNotEmpty()) {
@@ -202,8 +205,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = targetNode.state
         }
 
-        logger.info { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.info { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -233,10 +236,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         if (node == currentNode && !domain.isGoal(currentNode.state)) {
             //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
-            logger.info { "A* : expanded $expandedNodes nodes" }
+            logger.debug { "A* : expanded $expandedNodes nodes" }
         }
 
-        logger.info { "Done with AStar at $currentNode" }
+        logger.debug { "Done with AStar at $currentNode" }
 
         return currentNode
     }
@@ -376,7 +379,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      *
      */
     private fun dijkstra(terminationChecker: TimeTerminationChecker) {
-        logger.info { "Start: Dijkstra" }
+        logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
@@ -419,7 +422,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // update mode if done
         if (openList.isEmpty()) {
-            logger.info { "Done with Dijkstra" }
+            logger.debug { "Done with Dijkstra" }
         } else {
             logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
         }
