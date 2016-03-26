@@ -69,6 +69,10 @@ sourceSets {
     test.java.srcDirs += 'src/test/kotlin'
 }
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+}
+
 run {
     if (project.hasProperty("appArgs")) {
         args = Eval.me(appArgs)
