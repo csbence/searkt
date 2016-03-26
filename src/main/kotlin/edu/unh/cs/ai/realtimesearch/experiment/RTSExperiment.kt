@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import org.slf4j.LoggerFactory
 import kotlin.system.measureNanoTime
 
@@ -34,20 +35,19 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                                                   val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
-    private val singleStepLookahead by lazyData<Boolean>(experimentConfiguration, "singleStepLookahead")
-    private val staticStepDuration by lazyData<Long>(experimentConfiguration, "staticStepDuration")
+    private val commitmentStrategy by lazyData<String>(experimentConfiguration, "commitmentStrategy")
+    private val actionDuration by lazyData<Long>(experimentConfiguration, "actionDuration")
 
     /**
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var totalNanoTime = 0L
-        var timeBound = staticStepDuration
 
-        var interationCount = 0L
+        var totalNanoTime = 0L
+        var timeBound = actionDuration
+        var singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         while (!world.isGoal()) {
             totalNanoTime += measureNanoTime {
@@ -68,12 +68,6 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
                 }
 
-            }
-
-            println("Next step duration: $timeBound - ${Math.max(timeBound, staticStepDuration)}")
-
-            if (interationCount++ % 100 == 0L) {
-//                System.gc()
             }
         }
 
