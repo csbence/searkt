@@ -27,10 +27,8 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import java.util.concurrent.TimeoutException
 
 /**
  * Configuration executor to execute experiment configurations.
@@ -39,24 +37,85 @@ object ConfigurationExecutor {
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val logger = LoggerFactory.getLogger("ConfigurationExecutor")
 
-        val executor = Executors.newSingleThreadExecutor()
+        var experimentResult: ExperimentResult? = null
+        var executionException: Throwable? = null
 
-        try {
-            return executor.submit<ExperimentResult>({
-                // Execute the gc before every experiment.
-                System.gc()
+        val thread = Thread({
+            experimentResult = unsafeConfigurationExecution(experimentConfiguration)
+        })
 
-                unsafeConfigurationExecution(experimentConfiguration)
-            }).get(experimentConfiguration.timeLimit, NANOSECONDS) // Wait on the future to complete or timeout
-        } catch (e: TimeoutException) {
-            logger.info("Experiment timed out.")
-            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
-        } catch (e: ExecutionException) {
-            logger.info("Experiment failed. ${e.message}")
-            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${e.message}")
-            experimentResult["errorDetails"] = e.stackTrace
+        thread.setUncaughtExceptionHandler { thread, throwable ->
+            executionException = throwable
+            logger.info("Experiment stopped.")
+        }
+
+        thread.start()
+        thread.join(MILLISECONDS.convert(experimentConfiguration.timeLimit, NANOSECONDS))
+
+        if (executionException != null) {
+            System.gc()
+
+            logger.info("Experiment failed. ${executionException!!.message}")
+            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${executionException!!.message}")
+            experimentResult["errorDetails"] = executionException!!.stackTrace
             return experimentResult
         }
+
+        if (experimentResult == null) {
+            logger.info("Experiment timed out.")
+            thread.stop() // This should be replaced with a graceful stop
+            thread.join()
+
+            System.gc()
+            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
+        }
+
+        logger.info("Experiment successful.")
+
+        return experimentResult!!
+
+//        val executor = Executors.newSingleThreadExecutor()
+//                // Execute the gc before every experiment.
+//                System.gc()
+
+//        val future = executor.submit<ExperimentResult>({
+//            unsafeConfigurationExecution(experimentConfiguration)
+//        })
+//
+//        try {
+//            val experimentResult = future.get(1, MINUTES)
+//            System.gc() // Clean up after the experiment
+//
+//            return experimentResult // Wait on the future to complete or timeout
+//        } catch (e: TimeoutException) {
+//            System.gc() // Clean up after the experiment
+//
+//            logger.info("Experiment timed out.")
+//            future.cancel(true)
+//
+//            if (!future.isCancelled && future.isDone) {
+//                logger.info("Experiment completed after the timeout before it was cancelled.")
+//
+//                return future.get()
+//            }
+//
+//            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
+//        } catch (e: ExecutionException) {
+//            System.gc() // Clean up after the experiment
+//
+//            logger.info("Experiment failed. ${e.message}")
+//            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${e.message}")
+//            experimentResult["errorDetails"] = e.stackTrace
+//            return experimentResult
+//        } finally {
+//            executor.shutdownNow()
+//
+//            logger.info("Waiting for termination.")
+//            executor.awaitTermination(1, MINUTES)
+//            logger.info("Terminated.")
+//            System.gc()
+//
+//        }
     }
 
     private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult? {
