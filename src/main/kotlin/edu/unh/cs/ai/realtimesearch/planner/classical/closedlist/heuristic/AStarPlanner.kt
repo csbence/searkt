@@ -32,7 +32,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
     }
 
-    private val closedList: HashSet<StateType> = HashSet()
+    private val closedList: HashSet<StateType> = HashSet(10000000)
 
     class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
 
@@ -45,6 +45,8 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             closedList.add(state)
             generatedNodeCount++
         }
+
+        var time = System.currentTimeMillis()
 
         while (openList.isNotEmpty()) {
             executionNanoTime += measureNanoTime {
@@ -70,6 +72,11 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                     }
                 }
 
+            }
+
+            if (expandedNodeCount % 100000 == 0) {
+                println(time - System.currentTimeMillis())
+                time = System.currentTimeMillis()
             }
 
         }
