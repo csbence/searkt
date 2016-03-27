@@ -7,7 +7,6 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import org.slf4j.LoggerFactory
 
 /**
@@ -36,7 +35,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initState?.copy() ?: domain.randomState()
-        logger.warn { "Starting experiment with state $state on agent $agent" }
+//        logger.warn { "Starting experiment with state $state on agent $agent" }
 
         // Execute the gc before running the experiment
         System.gc()

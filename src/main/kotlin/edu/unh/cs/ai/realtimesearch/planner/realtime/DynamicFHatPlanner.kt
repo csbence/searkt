@@ -424,7 +424,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         if (openList.isEmpty()) {
             logger.debug { "Done with Dijkstra" }
         } else {
-            logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
+            logger.debug { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
         }
     }
 

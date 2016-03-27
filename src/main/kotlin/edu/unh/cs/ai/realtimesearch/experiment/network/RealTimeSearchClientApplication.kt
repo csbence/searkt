@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.network
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import org.apache.commons.cli.*
+import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.concurrent.timerTask
 
@@ -11,6 +12,7 @@ import kotlin.concurrent.timerTask
  */
 class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val checkInInterval: Long = 60000) {
 
+    val logger = LoggerFactory.getLogger(RealTimeSearchClientApplication::class.java)
     private val timer: Timer = Timer()
     private val realTimeSearchClient: RealTimeSearchClient
     private var checkInTask: TimerTask? = null
@@ -41,6 +43,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
             // Get configuration
             val experimentConfiguration = realTimeSearchClient.getExperimentConfiguration()
             if (experimentConfiguration != null) {
+                logger.info("Experiment configuration has been received. [̵̵̵̵domain:${experimentConfiguration.domainName} :: algorithm:${experimentConfiguration.algorithmName} :: instance:${experimentConfiguration["domainInstanceName"]}]")
                 stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
                 System.gc() // Make sure that we have not garbage in the memory
 
@@ -49,8 +52,10 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
 
                 // Submit results
                 realTimeSearchClient.submitResult(experimentResult)
+                logger.info("Result submitted")
                 startPeriodicCheckIn()
             } else {
+                logger.info("No experiment available.")
                 // Failed to get a a configuration wait a second to avoid busy wait
                 Thread.sleep(10000)
             }
