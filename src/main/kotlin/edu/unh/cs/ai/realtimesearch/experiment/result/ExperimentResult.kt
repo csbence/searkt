@@ -41,6 +41,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         this.errorMessage = errorMessage
         this.timestamp = timestamp
         this.success = true
+        this.errorMessage = null
 
         if (systemProperties.isNotEmpty()) {
             this.systemProperties = systemProperties
