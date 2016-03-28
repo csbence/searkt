@@ -20,6 +20,13 @@ import java.util.*
 import kotlin.system.exitProcess
 
 class VacuumVisualizer : BaseVisualizer() {
+    var moverobot = true;
+    var arastarXOrig = 0.0;
+    var arastarYOrig = 0.0;
+    var arastarX = 0.0;
+    var arastarY = 0.0;
+    var count = 0;
+
     override fun getOptions(): Options = Options()
 
     override fun processOptions(cmd: CommandLine) {}
@@ -37,6 +44,9 @@ class VacuumVisualizer : BaseVisualizer() {
 //            actionList.add(action)
 //        }
         val DISPLAY_LINE = true
+        val isARAStar = true;
+        if(isARAStar)
+            moverobot = false
 
         val parameters = getParameters()
         val raw = parameters.raw
@@ -44,6 +54,7 @@ class VacuumVisualizer : BaseVisualizer() {
             println("Cannot visualize without a domain!")
             //exitProcess(1);
         }
+
 
         val rawDomain = raw.first()//experimentResult!!.experimentConfiguration["rawDomain"] as String
 
@@ -139,28 +150,88 @@ class VacuumVisualizer : BaseVisualizer() {
 
         /* Create the path that the robot will travel */
         robot.toFront()
-        val path = Path()
+        //val path = Path()
         val xLoc = startX * TILE_SIZE + ((TILE_SIZE) / 2.0)
         val yLoc = startY * TILE_SIZE + ((TILE_SIZE) / 2.0)
         robot.x = xLoc
         robot.y = yLoc
         robot.translateX = xLoc
         robot.translateY = yLoc
-        path.elements.add(MoveTo(xLoc, yLoc))
-        path.stroke = Color.ORANGE
+        //path.elements.add(MoveTo(xLoc, yLoc))
+        //path.stroke = Color.ORANGE
+        if(isARAStar) {
+            arastarXOrig = xLoc
+            arastarYOrig = yLoc
+            arastarX = xLoc
+            arastarY = yLoc
+        }
 
         /* Display the path */
-        if(DISPLAY_LINE)
-            root.children.add(path)
+        //if(DISPLAY_LINE)
+            //root.children.add(path)
+
+        val paths: MutableList<Path> = arrayListOf()
+        if(isARAStar){
+            val p = Path()
+            p.elements.add(MoveTo(arastarX, arastarY))
+            paths.add(p)
+        }
+        var pIndex = 0;
 
         for (action in actionList) {
-           animate(root, action, path, robot, TILE_SIZE, TILE_SIZE)
+            val p = paths.get(pIndex)
+
+            if(action.contains(".")){
+                arastarX = arastarXOrig
+                arastarY = arastarYOrig
+                //path.stroke = Color.RED
+
+                val newP = Path()
+                //println("" + arastarX + " " + arastarY)
+                newP.elements.add(MoveTo(arastarX, arastarY))
+                paths.add(newP)
+                pIndex++;
+                count = 0;
+            }
+            else if(!action.equals("UP")
+                    && !action.equals("DOWN")
+                    && !action.equals("LEFT")
+                    && !action.equals("RIGHT")){
+                println(action);
+                moverobot = true;
+                val newP = Path()
+                newP.elements.add(MoveTo(xLoc, yLoc))
+                paths.add(newP)
+                pIndex ++
+            }
+            else {
+                //println(action)
+                animate(root, action, p, robot, TILE_SIZE, TILE_SIZE)
+            }
         }
+
+        for(it in paths) {
+            if (DISPLAY_LINE)
+                root.children.add(it)
+        }
+
+        paths.get(0).stroke = Color.RED
+        paths.get(1).stroke = Color.YELLOW
+        paths.get(2).stroke = Color.BLACK
+        paths.get(3).stroke = Color.CYAN
+        paths.get(4).stroke = Color.BLUE
+        paths.get(5).stroke = Color.MAGENTA
+        paths.get(6).stroke = Color.GREEN
+        paths.get(7).stroke = Color.WHITE
+        paths.get(8).stroke = Color.GOLD
+        paths.get(9).stroke = Color.PLUM
+
+        paths.get(pIndex).stroke = Color.ORANGE
 
         /* Animate the robot */
         val pathTransition = PathTransition()
         pathTransition.setDuration(Duration.millis(TIME_TO_RUN))
-        pathTransition.setPath(path)
+        pathTransition.setPath(paths.get(pIndex))
         pathTransition.setNode(robot)
         pathTransition.setInterpolator(Interpolator.LINEAR);
         pathTransition.setCycleCount(Timeline.INDEFINITE);
@@ -170,22 +241,60 @@ class VacuumVisualizer : BaseVisualizer() {
     }
 
     private fun animate(root: Pane, action: String, path: Path, robot: Rectangle, width: Double, height: Double) {
+        //path.elements.add(MoveTo(arastarX, arastarY))
+        count++;
         when (action) {
             "UP" -> {
-                path.elements.add(LineTo(robot.translateX, robot.translateY + height))
-                robot.translateY = robot.translateY + height
+                if(moverobot) {
+                    path.elements.add(LineTo(robot.translateX, robot.translateY + height))
+                    robot.translateY = robot.translateY + height
+                }
+                else {
+                    path.elements.add(LineTo(arastarX, arastarY + height))
+                    arastarY = arastarY + height
+                    if(count <= 3){
+                        arastarYOrig = arastarY
+                    }
+                }
             }
             "RIGHT" -> {
-                path.elements.add(LineTo(robot.translateX + width, robot.translateY))
-                robot.translateX = robot.translateX + width
+                if(moverobot) {
+                    path.elements.add(LineTo(robot.translateX + width, robot.translateY))
+                    robot.translateX = robot.translateX + width
+                }
+                else{
+                    path.elements.add(LineTo(arastarX + width, arastarY))
+                    arastarX = arastarX + width
+                    if(count <= 3){
+                        arastarXOrig = arastarX
+                    }
+                }
             }
             "DOWN" -> {
-                path.elements.add(LineTo(robot.translateX, robot.translateY - height))
-                robot.translateY = robot.translateY - height
+                if(moverobot) {
+                    path.elements.add(LineTo(robot.translateX, robot.translateY - height))
+                    robot.translateY = robot.translateY - height
+                }
+                else {
+                    path.elements.add(LineTo(arastarX, arastarY - height))
+                    arastarY = arastarY - height
+                    if(count <= 3){
+                        arastarYOrig = arastarY
+                    }
+                }
             }
             "LEFT" -> {
-                path.elements.add(LineTo(robot.translateX - width, robot.translateY))
-                robot.translateX = robot.translateX - width
+                if(moverobot) {
+                    path.elements.add(LineTo(robot.translateX - width, robot.translateY))
+                    robot.translateX = robot.translateX - width
+                }
+                else{
+                    path.elements.add(LineTo(arastarX - width, arastarY))
+                    arastarX = arastarX - width
+                    if(count <= 3){
+                        arastarXOrig = arastarX
+                    }
+                }
             }
         }
     }

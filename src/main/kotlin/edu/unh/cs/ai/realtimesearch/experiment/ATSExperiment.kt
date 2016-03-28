@@ -42,7 +42,9 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
-        val actions: MutableList<Action> = arrayListOf()
+        val actions: MutableList<String> = arrayListOf()
+        val actionsLists: MutableList<String> = arrayListOf()
+        val maxCount = 3
 
         logger.info { "Starting experiment from state ${world.getState()}" }
         var totalNanoTime = 0L
@@ -53,11 +55,12 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
             var actionList = alg.solve(world.getState(), world.getGoal());
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
-            if(!alg.update()) {
+            val update = alg.update()
+            if(update < 1.0) {
                 actionList.forEach {
                     if (it.action != null) {
                         world.step(it.action) // Move the agent
-                        actions.add(it.action) // Save the action
+                        actions.add(it.action.toString()) // Save the action
                     }
                 }
             } else {
@@ -66,21 +69,37 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
                 for (it in actionList) {
                     //println(it.action)
                     if (it.action != null) {
-                        world.step(it.action) // Move the agent
-                        actions.add(it.action) // Save the action
+
+
+                        if (count < maxCount) {
+                            world.step(it.action) // Move the agent
+                            actions.add(it.action.toString())
+                        }// Save the action
+                        actionsLists.add(it.action.toString())
                         count++;
                     }
                     //print(world.getState())
-                    if (count > 3)
-                        break;
+                     //   break;
                 }
+            }
+            if(!world.isGoal()) {
+                actionsLists.add("" + update + " ")
+                //actionsLists.add("" + world.getState())
             }
 
             System.gc()
         }
+        actionsLists.add("" + maxCount)
+        for (it in actions) {
+            actionsLists.add(it.toString())
+        }
+        //actionsLists.add(" " + maxCount + " ")
+
+
+        println(actionsLists);
 
         logger.info { "Path length: [${actions.size}] \nAfter ${alg.expandedNodeCount} expanded and ${alg.generatedNodeCount} generated nodes in $totalNanoTime. (${alg.expandedNodeCount * 1000 / totalNanoTime})" }
-        return ExperimentResult(experimentConfiguration.valueStore, alg.expandedNodeCount, alg.generatedNodeCount, totalNanoTime, actions.map { it.toString() })
+        return ExperimentResult(experimentConfiguration.valueStore, alg.expandedNodeCount, alg.generatedNodeCount, totalNanoTime, actionsLists.map { it.toString() })
     }
 }
 
