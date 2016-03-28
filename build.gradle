@@ -6,8 +6,8 @@ apply plugin: 'application'
 
 applicationDefaultJvmArgs = [
         "-server", "-XX:+AggressiveOpts",
-        "-Xms6g",
-        "-Xmx6g"
+        "-Xms1g",
+        "-Xmx1g"
 ]
 
 if (project.hasProperty("mainClass")) {
