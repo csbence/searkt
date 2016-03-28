@@ -44,7 +44,7 @@ class VacuumVisualizer : BaseVisualizer() {
 //            actionList.add(action)
 //        }
         val DISPLAY_LINE = true
-        val isARAStar = true;
+        val isARAStar = false;
         if(isARAStar)
             moverobot = false
 
