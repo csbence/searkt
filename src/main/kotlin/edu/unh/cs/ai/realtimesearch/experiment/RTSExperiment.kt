@@ -67,12 +67,21 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actions.add(it.action) // Save the action
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
                 }
-
             }
         }
 
-        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalNanoTime, actions.map { it.toString() })
+        val pathLength: Long = actions.size.toLong()
+        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+
+        return ExperimentResult(
+                experimentConfiguration.valueStore,
+                agent.planner.expandedNodeCount,
+                agent.planner.generatedNodeCount,
+                totalNanoTime,
+                pathLength * actionDuration,
+                totalNanoTime + pathLength * actionDuration,
+                pathLength,
+                actions.map { it.toString() })
     }
 }
 

@@ -56,7 +56,7 @@ fun main(args: Array<String>) {
     } else if (result.errorMessage != null) {
         logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
+        logger.info("Execution time: ${MILLISECONDS.convert(result.planningTime, NANOSECONDS)}ms")
         //        logger.info(result.toIndentedJson())
     }
 }

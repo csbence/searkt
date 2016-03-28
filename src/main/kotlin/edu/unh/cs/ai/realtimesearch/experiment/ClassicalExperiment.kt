@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory
  * @param agent is the agent that is involved in the experiment
  * @param domain is the domain of the agent. Used for random state generation
  * @param initState is the optional initial state
- * @param runs is the amount of runs you want the experiment to do
  *
  */
 class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
@@ -35,7 +34,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initState?.copy() ?: domain.randomState()
-//        logger.warn { "Starting experiment with state $state on agent $agent" }
+        //        logger.warn { "Starting experiment with state $state on agent $agent" }
 
         // Execute the gc before running the experiment
         System.gc()
@@ -43,9 +42,18 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         actions = agent.plan(state)
 
         // log results
-        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
+        val pathLength = actions.size.toLong()
+        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.generatedNodeCount, agent.planner.generatedNodeCount, agent.planner.executionNanoTime, actions.map { it.toString() })
+        return ExperimentResult(
+                experimentConfiguration.valueStore,
+                agent.planner.expandedNodeCount,
+                agent.planner.generatedNodeCount,
+                agent.planner.executionNanoTime,
+                pathLength * experimentConfiguration.actionDuration,
+                agent.planner.executionNanoTime + pathLength * experimentConfiguration.actionDuration,
+                pathLength,
+                actions.map { it.toString() })
 
     }
 }
