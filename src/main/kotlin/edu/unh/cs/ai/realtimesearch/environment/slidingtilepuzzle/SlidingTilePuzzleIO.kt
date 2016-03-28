@@ -6,7 +6,7 @@ import java.util.*
 
 object SlidingTilePuzzleIO {
 
-    fun parseFromStream(input: InputStream): SlidingTilePuzzleInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long): SlidingTilePuzzleInstance {
         val inputScanner = Scanner(input)
         inputScanner.useDelimiter("\n")
 
@@ -24,14 +24,18 @@ object SlidingTilePuzzleIO {
             }
 
             dimension = dimensions[0]
+            if (dimension != 4) {
+                throw RuntimeException("The dimensions of the sliding tile puzzle must be 4 by 4.")
+            }
+            
         } catch (e: NoSuchElementException) {
             throw InvalidSlidingTilePuzzleException("SlidingTilePuzzle's first line is missing. The first line should contain the dimensions", e)
         } catch (e: NumberFormatException) {
             throw InvalidSlidingTilePuzzleException("SlidingTilePuzzle's dimensions must be numbers.", e)
         }
 
-        val slidingTilePuzzle = SlidingTilePuzzle(dimension)
-        val tiles = SlidingTilePuzzleState.Tiles(dimension)
+        val slidingTilePuzzle = SlidingTilePuzzle(dimension, actionDuration)
+        val slidingTilePuzzleState = SlidingTilePuzzle4State(0, 0, 0.0)
 
         try {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
@@ -40,13 +44,16 @@ object SlidingTilePuzzleIO {
                 val y = i / dimension
                 val x = i % dimension
 
-                tiles[tiles.getIndex(x, y)] = value
+                slidingTilePuzzleState[slidingTilePuzzleState.getIndex(x, y)] = value
                 if (value == 0.toByte()) {
                     zeroLocation = Location(x, y)
                 }
             }
 
-            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzleState(zeroLocation!!.x, zeroLocation!!.y, tiles, slidingTilePuzzle.heuristic(tiles)))
+            val zeroIndex = slidingTilePuzzleState.getIndex(zeroLocation!!.x, zeroLocation!!.y)
+            val heuristic = slidingTilePuzzle.initialHeuristic(slidingTilePuzzleState)
+
+            return SlidingTilePuzzleInstance(slidingTilePuzzle, SlidingTilePuzzle4State(zeroIndex, slidingTilePuzzleState.tiles, heuristic))
         } catch (e: NumberFormatException) {
             throw InvalidSlidingTilePuzzleException("Tile must be a number.", e)
         }
@@ -55,4 +62,4 @@ object SlidingTilePuzzleIO {
 }
 
 class InvalidSlidingTilePuzzleException(message: String, e: Exception? = null) : RuntimeException(message, e)
-data class SlidingTilePuzzleInstance(val domain: SlidingTilePuzzle, val initialState: SlidingTilePuzzleState)
+data class SlidingTilePuzzleInstance(val domain: SlidingTilePuzzle, val initialState: SlidingTilePuzzle4State)

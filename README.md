@@ -75,18 +75,29 @@ State space: (\theta_1, \theta_2, \dot\theta_1, \dot\theta_2)
 
 Actions: Torque applied to joint 2
 
-## Benchmark configuration
+## Benchmark configuration and results
+
+### Type and unit information
+
+ * The default time unit for every value is nanoseconds.
+ * Numbers are represented as 64 bit values. (Long/Double)
 
 ### General
 
  * algorithm name ("algorithmName" : String)
+     - Name of the algorithm.
  * domain name ("domainName" : String) 
+     - Name of the domain.
  * serialized domain ("rawDomain" : String)
+ * time limit ("timeLimit" : Long)
+ * action duration ("actionDuration": Long)
+     - Greater than zero
+     - Experiment Bounds: 1 - 1,000,000,000 (ns) steps of 10,000
 
 ### Real-time search
 
- * Time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" } 
- * Static step duration ("staticStepDuration", Long) 
+ * Time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
+ * Single step lookahead ("singleStepLookeahead" : { true | false })
 
 ### Anytime search
 
@@ -95,6 +106,10 @@ Actions: Torque applied to joint 2
 #### A*
 
 No extra parameter required
+
+#### Weighted A*
+
+* Weight ("weight" : Double)
 
 #### ARA*
 

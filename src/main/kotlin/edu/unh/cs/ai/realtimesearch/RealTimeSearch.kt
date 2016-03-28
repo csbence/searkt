@@ -1,17 +1,19 @@
 package edu.unh.cs.ai.realtimesearch
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import groovyjarjarcommonscli.*
 import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
@@ -25,17 +27,25 @@ private var outFile: String = ""
 
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
-    var rawDomain = ""
-    if (args.size < 2) {
+
+    if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/wall.vw")!!
-        rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration("grid world", rawDomain, "ARA*", "time", 10)
-        manualConfiguration["lookahead depth limit"] = 4
-        manualConfiguration["action duration"] = 10L
+//        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
+        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
+        manualConfiguration = GeneralExperimentConfiguration(
+                Domains.SLIDING_TILE_PUZZLE.toString(),
+//                Domains.GRID_WORLD.toString(),
+                rawDomain,
+                Planners.A_STAR.toString(),
+                "time")
+        manualConfiguration["lookaheadDepthLimit"] = 4L
+        manualConfiguration["actionDuration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
+        manualConfiguration["commitmentStrategy"] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration["singleStepLookahead"] = false
-        manualConfiguration["staticStepDuration"] = 10L
+        manualConfiguration["timeLimit"] = NANOSECONDS.convert(5, MINUTES)
+
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
@@ -48,19 +58,21 @@ fun main(args: Array<String>) {
         PrintWriter(outFile, "UTF-8").use {
             it.write(result.toIndentedJson())
         }
+    } else if (result.errorMessage != null) {
+        logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        logger.info("Execution time: ${MILLISECONDS.convert(result.nanoTime, NANOSECONDS)}ms")
+        logger.info("Execution time: ${MILLISECONDS.convert(result.planningTime, NANOSECONDS)}ms")
         //        logger.info(result.toIndentedJson())
     }
 
-    val params: MutableList<String> = arrayListOf()
-    params.add(rawDomain)
-    for(action in result.actions)
-            params.add(action.toString())
+//    val params: MutableList<String> = arrayListOf()
+//    params.add(rawDomain)
+//    for(action in result.actions)
+//            params.add(action.toString())
 
     //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
     //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-            Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+//            Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
     //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
 }
 
@@ -166,8 +178,7 @@ private fun createCommandLineMenu(args: Array<String>) {
 
         /* run the experiment */
         val rawDomain = File(mapFile).readText()
-        manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName,
-                termType, termParam.toInt())
+        manualConfiguration = GeneralExperimentConfiguration(domainName, rawDomain, algName, termType)
 
         for (extra in extras) {
             val values = extra.split('=', limit = 2)

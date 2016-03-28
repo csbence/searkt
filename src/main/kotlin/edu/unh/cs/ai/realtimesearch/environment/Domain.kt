@@ -5,16 +5,16 @@ package edu.unh.cs.ai.realtimesearch.environment
  * accompanied action and cost
  */
 interface Domain<State> {
-    public fun successors(state: State): List<SuccessorBundle<State>>
-    public fun predecessors(state: State): List<SuccessorBundle<State>>
-    public fun heuristic(state: State): Double
-    public fun heuristic(startState: State, endState: State): Double
-    public fun distance(state: State): Double
-    public fun isGoal(state: State): Boolean
-    public fun print(state: State): String
-    public fun randomState(): State
-    public fun getGoal(): State
+    fun successors(state: State): List<SuccessorBundle<State>>
+    fun predecessors(state: State): List<SuccessorBundle<State>> = TODO()
+    fun heuristic(state: State): Double
+    fun heuristic(startState: State, endState: State): Double = TODO()
+    fun distance(state: State): Double
+    fun isGoal(state: State): Boolean
+    fun print(state: State): String
+    fun randomState(): State = TODO()
+    fun getGoal(): State = TODO()
 }
 
-data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Double)
+data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)
 

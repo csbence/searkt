@@ -14,10 +14,10 @@ import java.util.concurrent.ThreadLocalRandom
  *
  * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
-class VacuumWorld(public val width: Int,
-                  public val height: Int,
-                  public val blockedCells: Set<Location>,
-                  public val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
+class VacuumWorld(val width: Int,
+                  val height: Int,
+                  val blockedCells: Set<Location>,
+                  val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
 
@@ -37,7 +37,7 @@ class VacuumWorld(public val width: Int,
                     successors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells),
                             it,
-                            1.0)) // all actions have cost of 1
+                            1)) // all actions have cost of 1
 
                 }
             } else if (newLocation in state.dirtyCells) {
@@ -46,7 +46,7 @@ class VacuumWorld(public val width: Int,
                         // TODO: inefficient?
                         VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                         it,
-                        1.0))
+                        1))
             }
         }
 

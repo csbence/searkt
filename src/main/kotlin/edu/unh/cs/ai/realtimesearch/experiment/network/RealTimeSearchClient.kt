@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.network
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import org.slf4j.LoggerFactory
@@ -79,10 +80,10 @@ class RealTimeSearchClient(val url: String) {
      * @return ExperimentConfiguration if available, else null.
      */
     fun getExperimentConfiguration(): GeneralExperimentConfiguration? {
-        val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), GeneralExperimentConfiguration::class.java)
+        val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.GET, HttpEntity(ClientInformation(systemProperties)), ExperimentData::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Get configuration: successful")
-            responseEntity.body
+            GeneralExperimentConfiguration(responseEntity.body.valueStore)
         } else {
             logger.warn("Get configuration: failed")
             null

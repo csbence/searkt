@@ -1,19 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import org.slf4j.LoggerFactory
-import kotlin.system.measureNanoTime
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -26,15 +20,13 @@ import kotlin.system.measureNanoTime
  *
  * NOTE: assumes the same domain is used to create both the agent as the world
  *
- * @param agent is a RTS agent that will supply the actions
  * @param world is the environment
- * @param terminationChecker controls the constraint put upon the agent
  */
-class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar<StateType>,
+class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
                                                   val experimentConfiguration: GeneralExperimentConfiguration,
-                                                  /*val agent: RTSAgent<StateType>,
-                                                  */val world: Environment<StateType>
-                                                  /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
+        /*val agent: RTSAgent<StateType>,
+        */val world: Environment<StateType>
+        /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
 
@@ -47,16 +39,16 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
         val maxCount = 3
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var totalNanoTime = 0L
+        var executionNanoTime = 0L
         //var timeBound = staticStepDuration
 
         while (!world.isGoal()) {
             //print("" + world.getState() + " " + world.getGoal() + " ")
-            var actionList = alg.solve(world.getState(), world.getGoal());
+            var actionList = planner.solve(world.getState(), world.getGoal());
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
-            val update = alg.update()
-            if(update < 1.0) {
+            val update = planner.update()
+            if (update < 1.0) {
                 actionList.forEach {
                     if (it.action != null) {
                         world.step(it.action) // Move the agent
@@ -79,10 +71,10 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
                         count++;
                     }
                     //print(world.getState())
-                     //   break;
+                    //   break;
                 }
             }
-            if(!world.isGoal()) {
+            if (!world.isGoal()) {
                 actionsLists.add("" + update + " ")
                 //actionsLists.add("" + world.getState())
             }
@@ -98,8 +90,17 @@ class ATSExperiment<StateType : State<StateType>>(val alg: AnytimeRepairingAStar
 
         println(actionsLists);
 
-        logger.info { "Path length: [${actions.size}] \nAfter ${alg.expandedNodeCount} expanded and ${alg.generatedNodeCount} generated nodes in $totalNanoTime. (${alg.expandedNodeCount * 1000 / totalNanoTime})" }
-        return ExperimentResult(experimentConfiguration.valueStore, alg.expandedNodeCount, alg.generatedNodeCount, totalNanoTime, actionsLists.map { it.toString() })
+        val pathLength = actions.size.toLong()
+        logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes in $executionNanoTime. (${planner.expandedNodeCount * 1000 / executionNanoTime})" }
+        return ExperimentResult(
+                experimentConfiguration.valueStore,
+                planner.expandedNodeCount,
+                planner.generatedNodeCount,
+                executionNanoTime,
+                pathLength * experimentConfiguration.actionDuration,
+                executionNanoTime + pathLength * experimentConfiguration.actionDuration,
+                pathLength,
+                actions.map { it.toString() })
     }
 }
 

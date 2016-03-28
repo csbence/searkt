@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
  * A state in the racetrack domain contains a current location (in a cell, similar to gridworld)
@@ -11,12 +10,12 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * The actual size and shape of the world is state-independent, so not implemented here
  */
-data class RaceTrackState(val x : Int, val y : Int, val x_speed: Int, val y_speed: Int) : State<RaceTrackState> {
+data class RaceTrackState(val x: Int, val y: Int, val x_speed: Int, val y_speed: Int) : State<RaceTrackState> {
 
     override fun equals(other: Any?): Boolean {
-        if(other !is RaceTrackState)
+        if (other !is RaceTrackState)
             return false
-        if(other.x == x && other.y == y) {
+        if (other.x == x && other.y == y) {
             return true;
         }
         return false;

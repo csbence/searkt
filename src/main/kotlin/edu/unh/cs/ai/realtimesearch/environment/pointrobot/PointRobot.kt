@@ -2,9 +2,8 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.*
 
 /**
@@ -13,16 +12,16 @@ import java.util.*
 class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>,
                  val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotState> {
 
-//    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
+    //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
 
-    fun getAllActions() : ArrayList<PointRobotAction>{
+    fun getAllActions(): ArrayList<PointRobotAction> {
         var a = ArrayList<PointRobotAction>()
         for (itX in 0..6) {
             for (itY in 0..6) {
                 var xdot = ((itX) - 3.0);
                 var ydot = ((itY) - 3.0);
-//                println("" + xdot + " " + ydot)
+                //                println("" + xdot + " " + ydot)
                 a.add(PointRobotAction(xdot, ydot))
             }
         }
@@ -39,10 +38,10 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             var valid = true
 
             for (i in 1..nSteps) {
-                var x = state.loc.x + (it.xdot * (dt* i));
-                var y = state.loc.y + (it.ydot * (dt* i));
-//                x += it.xdot * dt;
-//                y += it.ydot * dt;
+                var x = state.loc.x + (it.xdot * (dt * i));
+                var y = state.loc.y + (it.ydot * (dt * i));
+                //                x += it.xdot * dt;
+                //                y += it.ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
                     valid = false;
@@ -52,13 +51,13 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 
             if (valid) {
 
-//                    println("" + state.x + " " + state.y)
-//                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
-//                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
+                //                    println("" + state.x + " " + state.y)
+                //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
+                //                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
                         PointRobotState(DoubleLocation(state.loc.x + it.xdot, state.loc.y + it.ydot)),
                         PointRobotAction(it.xdot, it.ydot),
-                        1.0));
+                        1));
             }
         }
         return successors
@@ -70,7 +69,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
      * @param location the location to test
      * @return true if location is legal
      */
-    fun isLegalLocation( x : Double, y : Double): Boolean {
+    fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
                 y < height && Location(x.toInt(), y.toInt()) !in blockedCells
     }
@@ -84,6 +83,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         //Distance Formula
         return distance(state) / 3
     }
+
     override fun heuristic(startState: PointRobotState, endState: PointRobotState): Double {
         //Distance Formula
         return (Math.sqrt(
@@ -99,15 +99,15 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     }
 
     override fun isGoal(state: PointRobotState): Boolean {
-//        val curXLoc = (state.x * 2).toInt() / 2.0
-//        val curYLoc = (state.y * 2).toInt() / 2.0
-//
-//        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
-//
-//
-//
-//        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
-//        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
+        //        val curXLoc = (state.x * 2).toInt() / 2.0
+        //        val curYLoc = (state.y * 2).toInt() / 2.0
+        //
+        //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+        //
+        //
+        //
+        //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+        //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
         return distance(state) <= 0;
     }
 

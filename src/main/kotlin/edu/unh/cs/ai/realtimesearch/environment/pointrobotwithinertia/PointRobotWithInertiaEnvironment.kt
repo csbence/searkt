@@ -27,6 +27,7 @@ class PointRobotWithInertiaEnvironment(private val domain: PointRobotWithInertia
      * Returns current state of the world
      */
     override fun getState() = currentState
+
     override fun getGoal() = domain.getGoal()
 
     /**

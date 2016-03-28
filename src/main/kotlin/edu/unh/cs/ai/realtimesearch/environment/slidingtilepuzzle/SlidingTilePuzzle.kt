@@ -5,54 +5,55 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import java.lang.Math.abs
 
-class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
-    override fun successors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
-        val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzleState>> = arrayListOf()
+class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
+    override fun successors(state: SlidingTilePuzzle4State): List<SuccessorBundle<SlidingTilePuzzle4State>> {
+        val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzle4State>> = arrayListOf()
 
         for (action in SlidingTilePuzzleAction.values()) {
             val successorState = successorState(state, action.relativeX, action.relativeY)
 
             if (successorState != null) {
-                successorBundles.add(SuccessorBundle(successorState, action, 1.0))
+                successorBundles.add(SuccessorBundle(successorState, action, actionDuration))
             }
         }
 
         return successorBundles
     }
 
-    private fun successorState(state: SlidingTilePuzzleState, relativeX: Int, relativeY: Int): SlidingTilePuzzleState? {
-        val zeroX = state.zeroX + relativeX
-        val zeroY = state.zeroY + relativeY
+    private fun successorState(state: SlidingTilePuzzle4State, relativeX: Int, relativeY: Int): SlidingTilePuzzle4State? {
+        val newZeroIndex = state.zeroIndex + state.getIndex(relativeX, relativeY)
+        val savedTiles = state.tiles
 
-        if (zeroX >= 0 && zeroY >= 0 && zeroX < size && zeroY < size) {
-            val tiles = state.tiles.copy()
+        if (newZeroIndex >= 0 && newZeroIndex < size * size) {
+            state[state.zeroIndex] = state[newZeroIndex]
+            state[newZeroIndex] = 0
 
-            tiles.set(state.zeroX, state.zeroY, tiles.get(zeroX, zeroY))
-            assert(!tiles.tiles.any { it == 0.toByte() })
-            tiles.set(zeroX, zeroY, 0)
+            val modifiedTiles = state.tiles
+            val heuristic = initialHeuristic(state)
 
-            return SlidingTilePuzzleState(zeroX, zeroY, tiles, heuristic(tiles))
+            state.tiles = savedTiles
+
+            return SlidingTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic)
         }
 
         return null
     }
 
-    override fun heuristic(state: SlidingTilePuzzleState): Double {
-        return state.heuristic
+    override fun heuristic(state: SlidingTilePuzzle4State): Double {
+        return state.heuristic * actionDuration
     }
 
-    //TODO: add new heuristic between two points for the sliding tile puzzle
-    override fun heuristic(startState: SlidingTilePuzzleState, endState: SlidingTilePuzzleState): Double {
-        return 0.0
+    override fun heuristic(startState: SlidingTilePuzzle4State, endState: SlidingTilePuzzle4State): Double {
+        TODO("add new heuristic between two points for the sliding tile puzzle")
     }
 
-    fun heuristic(tiles: SlidingTilePuzzleState.Tiles): Double {
+    fun initialHeuristic(state: SlidingTilePuzzle4State): Double {
         var manhattanSum = 0.0
         var zero: Byte = 0
 
         for (x in 0..size - 1) {
             for (y in 0..size - 1) {
-                val value = tiles[tiles.getIndex(x, y)]
+                val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 
                 manhattanSum += abs(value / size - y) + abs(value % size - x)
@@ -62,23 +63,23 @@ class SlidingTilePuzzle(val size: Int) : Domain<SlidingTilePuzzleState> {
         return manhattanSum
     }
 
-    override fun distance(state: SlidingTilePuzzleState) = state.heuristic
+    override fun distance(state: SlidingTilePuzzle4State) = state.heuristic
 
-    override fun isGoal(state: SlidingTilePuzzleState) = state.heuristic == 0.0
+    override fun isGoal(state: SlidingTilePuzzle4State) = state.heuristic == 0.0
 
-    override fun print(state: SlidingTilePuzzleState): String {
+    override fun print(state: SlidingTilePuzzle4State): String {
         throw UnsupportedOperationException()
     }
 
-    override fun randomState(): SlidingTilePuzzleState {
+    override fun randomState(): SlidingTilePuzzle4State {
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): SlidingTilePuzzleState {
+    override fun getGoal(): SlidingTilePuzzle4State {
         throw UnsupportedOperationException()
     }
 
-    override fun predecessors(state: SlidingTilePuzzleState): List<SuccessorBundle<SlidingTilePuzzleState>> {
+    override fun predecessors(state: SlidingTilePuzzle4State): List<SuccessorBundle<SlidingTilePuzzle4State>> {
         throw UnsupportedOperationException()
     }
 }

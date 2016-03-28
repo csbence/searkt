@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import org.slf4j.LoggerFactory
 import kotlin.system.measureNanoTime
 
@@ -34,18 +35,19 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                                                   val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
-    private val singleStepLookahead by lazyData<Boolean>(experimentConfiguration, "singleStepLookahead")
-    private val staticStepDuration by lazyData<Long>(experimentConfiguration, "staticStepDuration")
+    private val commitmentStrategy by lazyData<String>(experimentConfiguration, "commitmentStrategy")
+    private val actionDuration by lazyData<Long>(experimentConfiguration, "actionDuration")
 
     /**
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-
         logger.info { "Starting experiment from state ${world.getState()}" }
+
         var totalNanoTime = 0L
-        var timeBound = staticStepDuration
+        var timeBound = actionDuration
+        var singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         while (!world.isGoal()) {
             totalNanoTime += measureNanoTime {
@@ -65,14 +67,21 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                     actions.add(it.action) // Save the action
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
                 }
-
             }
-
-            System.gc()
         }
 
-        logger.info { "Path length: [${actions.size}] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
-        return ExperimentResult(experimentConfiguration.valueStore, agent.planner.expandedNodeCount, agent.planner.generatedNodeCount, totalNanoTime, actions.map { it.toString() })
+        val pathLength: Long = actions.size.toLong()
+        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+
+        return ExperimentResult(
+                experimentConfiguration.valueStore,
+                agent.planner.expandedNodeCount,
+                agent.planner.generatedNodeCount,
+                totalNanoTime,
+                pathLength * actionDuration,
+                totalNanoTime + pathLength * actionDuration,
+                pathLength,
+                actions.map { it.toString() })
     }
 }
 

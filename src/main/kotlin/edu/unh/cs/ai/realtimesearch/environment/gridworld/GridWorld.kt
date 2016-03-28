@@ -29,7 +29,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 successors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = 1.0))
+                        actionCost = actionDuration))
             }
         }
 
@@ -53,9 +53,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      * @param state is the state to provide a heuristic for
      * @return the # of dirty cells
      */
-    override fun heuristic(state: GridWorldState): Double {
-        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
-    }
+    override fun heuristic(state: GridWorldState) = distance(state) * actionDuration
 
     override fun heuristic(startState: GridWorldState, endState: GridWorldState): Double {
         return Math.abs(startState.agentLocation.x - endState.agentLocation.x) + Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
@@ -65,7 +63,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: GridWorldState) = heuristic(state)
+    override fun distance(state: GridWorldState) = state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
 
     /**
      * Returns whether the current state is a goal state.
@@ -125,7 +123,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 predecessors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = 1.0))
+                        actionCost = 1))
             }
         }
 

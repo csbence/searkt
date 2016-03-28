@@ -14,17 +14,17 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     private var actions = getAllActions()
 
-    fun getAllActions() : ArrayList<PointRobotWithInertiaAction>{
+    fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
         var a = ArrayList<PointRobotWithInertiaAction>()
-//        for (itX in 0..4) {
-//            for (itY in 0..4) {
-//                var xDoubleDot = ((itX) - 2.0) / 4.0;
-//                var yDoubleDot = ((itY) - 2.0) / 4.0;
-            for (itX in 0..2) {
-                for (itY in 0..2) {
+        //        for (itX in 0..4) {
+        //            for (itY in 0..4) {
+        //                var xDoubleDot = ((itX) - 2.0) / 4.0;
+        //                var yDoubleDot = ((itY) - 2.0) / 4.0;
+        for (itX in 0..2) {
+            for (itY in 0..2) {
                 var xDoubleDot = (itX) - 1.0;
                 var yDoubleDot = (itY) - 1.0;
-//                                println("" + xDoubleDot + " " + yDoubleDot)
+                //                                println("" + xDoubleDot + " " + yDoubleDot)
                 a.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
             }
         }
@@ -38,7 +38,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
         for (it in actions) {
             val nSteps = 10
-            val dt = 1.0/nSteps
+            val dt = 1.0 / nSteps
             var valid = true
             var x = state.loc.x
             var y = state.loc.y
@@ -59,11 +59,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
 
             if (valid) {
-//                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
+                //                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(DoubleLocation(x, y), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
-                        1.0));
+                        1));
             }
         }
         return successors
@@ -75,7 +75,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
      * @param location the location to test
      * @return true if location is legal
      */
-    fun isLegalLocation( x : Double, y : Double): Boolean {
+    fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
                 y < height && Location(x.toInt(), y.toInt()) !in blockedCells
     }
@@ -99,23 +99,23 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         var resulty1 = quadraticFormula(0.5, by, cy)
         var resulty2 = quadraticFormula(-0.5, by, cy)
 
-//        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
-//                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
+        //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
+        //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
 
         var minx = Math.min(resultx1, resultx2)
         var miny = Math.min(resulty1, resulty2)
 
-        var retval : Double
+        var retval: Double
 
-        if(minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
+        if (minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
             retval = miny;
-        else if(minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+        else if (minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
             retval = minx
-        else if(minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
+        else if (minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
             retval = 0.0;
         else
             retval = Math.max(minx, miny)
-//        println(retval)
+        //        println(retval)
         return retval
     }
 
@@ -140,13 +140,13 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         var minx = Math.min(resultx1, resultx2)
         var miny = Math.min(resulty1, resulty2)
 
-        var retval : Double
+        var retval: Double
 
-        if(minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
+        if (minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
             retval = miny;
-        else if(minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+        else if (minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
             retval = minx
-        else if(minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
+        else if (minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
             retval = 0.0;
         else
             retval = Math.max(minx, miny)
@@ -154,8 +154,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         return retval
     }
 
-    fun quadraticFormula(a : Double, b : Double, c : Double) : Double{
-        if(Math.pow(b, 2.0) - 4 * a * c < 0.0)
+    fun quadraticFormula(a: Double, b: Double, c: Double): Double {
+        if (Math.pow(b, 2.0) - 4 * a * c < 0.0)
             return Double.MAX_VALUE
 
         var result1 = -1 * b + Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
@@ -163,12 +163,12 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
         var result2 = -1 * b - Math.sqrt(Math.pow(b, 2.0) - 4 * a * c)
         result2 /= (2 * a)
-        if(result1 < 0.0 && result2 >= 0.0)
+        if (result1 < 0.0 && result2 >= 0.0)
             return result2;
-        if(result2 < 0.0 && result1 >= 0.0)
+        if (result2 < 0.0 && result1 >= 0.0)
             return result1;
 
-        if(result1 < 0.0 && result2 < 0.0)
+        if (result1 < 0.0 && result2 < 0.0)
             return Double.MAX_VALUE;
 
         return Math.max(result1, result2)

@@ -14,7 +14,7 @@ data class AcrobotStateConfiguration(
         val positionGranularity2: Double = 0.2991993003,
         val velocityGranularity1: Double = 0.1045309649, // 250 velocities
         val velocityGranularity2: Double = 0.0767315570, // 750 velocities
-        val timeStep: Double = 0.2) { // Sutton and Boone
+        val timeStep: Long = 200000000) { // Sutton and Boone
 
     companion object {
         /**
@@ -43,7 +43,7 @@ data class AcrobotStateConfiguration(
                     (map["positionGranularity2"] as BigDecimal).toDouble(),
                     (map["velocityGranularity1"] as BigDecimal).toDouble(),
                     (map["velocityGranularity2"] as BigDecimal).toDouble(),
-                    (map["timeStep"] as BigDecimal).toDouble())
+                    (map["timeStep"] as Int).toLong())
         }
     }
 }

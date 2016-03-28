@@ -3,10 +3,6 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotAction
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleState
-import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -47,7 +43,7 @@ class RaceTrack(val width: Int,
             val nSteps = 10
             var valid = true
 
-            for (i in 0..nSteps-1) {
+            for (i in 0..nSteps - 1) {
                 x += new_x_speed * dt;
                 y += new_y_speed * dt;
 
@@ -60,12 +56,12 @@ class RaceTrack(val width: Int,
             //filter on legal moves (not too fast and on the track)
             if (/*new_x_speed <= 2 && new_x_speed >= -2 &&
                     new_y_speed <= 2 && new_y_speed >= -2 &&*/
-                    valid) {
+            valid) {
 
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
                         action,
-                        actionCost = 1.0))
+                        actionCost = 1))
             }
         }
 
@@ -78,7 +74,7 @@ class RaceTrack(val width: Int,
      * @param location the location to test
      * @return true if location is legal
      */
-    fun isLegalLocation( x : Double, y : Double): Boolean {
+    fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
                 y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in track
     }
@@ -87,6 +83,7 @@ class RaceTrack(val width: Int,
     * Heuristic is the distance divided by the max speed
     * */
     override fun heuristic(state: RaceTrackState) = 0.0 //distance(state) / 2
+
     override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = 0.0
 
 
@@ -95,12 +92,12 @@ class RaceTrack(val width: Int,
         var dx = Double.MAX_VALUE
         var dy = Double.MAX_VALUE
 
-        for (it in finish_line){
+        for (it in finish_line) {
             val xdist = Math.abs(state.x - it.x)
-            if(xdist < dx)
+            if (xdist < dx)
                 dx = xdist.toDouble()
             val ydist = Math.abs(state.y - it.y)
-            if(ydist < dy)
+            if (ydist < dy)
                 dy = ydist.toDouble()
         }
         val retval = Math.max(dx.toDouble(), dy.toDouble())

@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 /**
  * The SlidingTilePuzzle environment. Contains the domain and a current state.
  */
-class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, private val initialState: SlidingTilePuzzleState) : Environment<SlidingTilePuzzleState> {
+class SlidingTilePuzzleEnvironment(private val domain: SlidingTilePuzzle, private val initialState: SlidingTilePuzzle4State) : Environment<SlidingTilePuzzle4State> {
 
     private val logger = LoggerFactory.getLogger(SlidingTilePuzzleEnvironment::class.java)
     private var currentState = initialState

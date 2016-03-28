@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.io.InputStream
 import java.util.*
 

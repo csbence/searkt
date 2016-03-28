@@ -14,17 +14,15 @@ class ExperimentDataTest {
     @Test
     fun testJsonSerialization1() {
         val experimentData = ExperimentData()
-        experimentData["terminationCheckerParameter"] = 4
-        experimentData["action duration"] = 10
+        experimentData["timeLimit"] = 4
+        experimentData["actionDuration"] = 10
         experimentData["list"] = listOf("A", 1, 1)
 
         val json = experimentData.toJson()
         val experimentDataFromJson = experimentDataFromJson(json)
 
-        val generalExperimentConfiguration = GeneralExperimentConfiguration(experimentDataFromJson.valueStore)
-
-        assertTrue(generalExperimentConfiguration.terminationCheckerParameter == 4)
-        assertTrue(experimentDataFromJson["action duration"] == 10L)
+        assertTrue(experimentDataFromJson["timeLimit"] == 4L)
+        assertTrue(experimentDataFromJson["actionDuration"] == 10L)
         assertTrue(experimentDataFromJson["X"] == null)
     }
 

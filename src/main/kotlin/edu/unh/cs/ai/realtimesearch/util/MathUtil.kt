@@ -26,3 +26,8 @@ fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Doub
 fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.round(num + accuracy) + 0.0 })
 fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
 fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
+
+/**
+ * Convert time in ns to double in seconds
+ */
+fun convertTime (time: Long): Double = time.toDouble() / 1000000000.0

@@ -18,7 +18,7 @@ import java.util.*
  * (0, 1) == 3
  *
  */
-data class SlidingTilePuzzleState(val zeroX: Int, val zeroY: Int, val tiles: SlidingTilePuzzleState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleState> {
+data class SlidingTilePuzzleDynamicState(val zeroX: Int, val zeroY: Int, val tiles: SlidingTilePuzzleDynamicState.Tiles, val heuristic: Double) : State<SlidingTilePuzzleDynamicState> {
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
@@ -26,8 +26,8 @@ data class SlidingTilePuzzleState(val zeroX: Int, val zeroY: Int, val tiles: Sli
         return hashCode xor zeroX xor zeroY
     }
 
-    override fun copy(): SlidingTilePuzzleState {
-        return SlidingTilePuzzleState(zeroX, zeroY, tiles.copy(), heuristic)
+    override fun copy(): SlidingTilePuzzleDynamicState {
+        return SlidingTilePuzzleDynamicState(zeroX, zeroY, tiles.copy(), heuristic)
     }
 
     class Tiles(val dimension: Int, tiles: ByteArray? = null) {
@@ -101,22 +101,22 @@ data class SlidingTilePuzzleState(val zeroX: Int, val zeroY: Int, val tiles: Sli
         return when {
             other == null -> false
             other === this -> true
-            other !is SlidingTilePuzzleState -> false
+            other !is SlidingTilePuzzleDynamicState -> false
             else -> zeroX == other.zeroX && zeroY == other.zeroY && tiles == other.tiles
         }
     }
 }
 
-fun tiles(size: Int, init: SlidingTilePuzzleState.Tiles.() -> Unit): SlidingTilePuzzleState.Tiles {
+fun tiles(size: Int, init: SlidingTilePuzzleDynamicState.Tiles.() -> Unit): SlidingTilePuzzleDynamicState.Tiles {
     val internalTiles = ByteArray(size * size)
     internalTiles.forEachIndexed { i, byte -> internalTiles[i] = -1 }
-    val tiles = SlidingTilePuzzleState.Tiles(size, internalTiles)
+    val tiles = SlidingTilePuzzleDynamicState.Tiles(size, internalTiles)
 
     tiles.init()
     return tiles
 }
 
-fun SlidingTilePuzzleState.Tiles.row(vararg args: Int) {
+fun SlidingTilePuzzleDynamicState.Tiles.row(vararg args: Int) {
     val minusOne: Byte = -1
     val index = tiles.indexOfFirst { it == minusOne }
     val row = args.map { it.toByte() }.toByteArray()

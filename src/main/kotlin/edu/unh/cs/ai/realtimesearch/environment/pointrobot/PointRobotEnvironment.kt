@@ -26,6 +26,7 @@ class PointRobotEnvironment(private val domain: PointRobot, private val initialS
      * Returns current state of the world
      */
     override fun getState() = currentState
+
     override fun getGoal() = domain.getGoal()
 
     /**
