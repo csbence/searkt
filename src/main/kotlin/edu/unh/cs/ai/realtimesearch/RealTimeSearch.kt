@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
@@ -24,17 +25,19 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        //        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
+//        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
         val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
                 Domains.SLIDING_TILE_PUZZLE.toString(),
+//                Domains.GRID_WORLD.toString(),
                 rawDomain,
                 Planners.A_STAR.toString(),
                 "time")
-        manualConfiguration["lookaheadDepthLimit"] = 4
+        manualConfiguration["lookaheadDepthLimit"] = 4L
         manualConfiguration["actionDuration"] = 10L
         manualConfiguration["timeBoundType"] = "STATIC"
+        manualConfiguration["commitmentStrategy"] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration["singleStepLookahead"] = false
         manualConfiguration["timeLimit"] = NANOSECONDS.convert(5, MINUTES)
 
