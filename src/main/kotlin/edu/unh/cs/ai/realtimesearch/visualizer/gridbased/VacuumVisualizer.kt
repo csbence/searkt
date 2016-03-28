@@ -171,11 +171,11 @@ class VacuumVisualizer : BaseVisualizer() {
             //root.children.add(path)
 
         val paths: MutableList<Path> = arrayListOf()
-        if(isARAStar){
+        //if(isARAStar){
             val p = Path()
-            p.elements.add(MoveTo(arastarX, arastarY))
+            p.elements.add(MoveTo(xLoc, yLoc))
             paths.add(p)
-        }
+        //}
         var pIndex = 0;
 
         for (action in actionList) {
@@ -215,16 +215,18 @@ class VacuumVisualizer : BaseVisualizer() {
                 root.children.add(it)
         }
 
-        paths.get(0).stroke = Color.RED
-        paths.get(1).stroke = Color.YELLOW
-        paths.get(2).stroke = Color.BLACK
-        paths.get(3).stroke = Color.CYAN
-        paths.get(4).stroke = Color.BLUE
-        paths.get(5).stroke = Color.MAGENTA
-        paths.get(6).stroke = Color.GREEN
-        paths.get(7).stroke = Color.WHITE
-        paths.get(8).stroke = Color.GOLD
-        paths.get(9).stroke = Color.PLUM
+        if(isARAStar) {
+            paths.get(0).stroke = Color.RED
+            paths.get(1).stroke = Color.YELLOW
+            paths.get(2).stroke = Color.BLACK
+            paths.get(3).stroke = Color.CYAN
+            paths.get(4).stroke = Color.BLUE
+            paths.get(5).stroke = Color.MAGENTA
+            paths.get(6).stroke = Color.GREEN
+            paths.get(7).stroke = Color.WHITE
+            paths.get(8).stroke = Color.GOLD
+            paths.get(9).stroke = Color.PLUM
+        }
 
         paths.get(pIndex).stroke = Color.ORANGE
 

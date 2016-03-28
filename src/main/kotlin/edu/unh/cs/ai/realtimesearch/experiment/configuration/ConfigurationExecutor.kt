@@ -2,11 +2,6 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.agent.ATSAgent
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.Environment
-import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
@@ -22,17 +17,17 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
+import edu.unh.cs.ai.realtimesearch.experiment.ATSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.ATSExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
@@ -59,7 +54,7 @@ object ConfigurationExecutor {
 
         thread.setUncaughtExceptionHandler { thread, throwable ->
             executionException = throwable
-            logger.info("Experiment stopped.")
+            logger.info("Experiment stopped", throwable)
         }
 
         thread.start()

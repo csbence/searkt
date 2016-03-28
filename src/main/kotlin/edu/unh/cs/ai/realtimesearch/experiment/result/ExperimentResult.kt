@@ -38,7 +38,6 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         this.goalAchievementTime = goalAchievementTime
         this.actions = actions
         this.pathLength = pathLength
-        this.errorMessage = errorMessage
         this.timestamp = timestamp
         this.success = true
         this.errorMessage = null
