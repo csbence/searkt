@@ -32,7 +32,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
     }
 
-    private val closedList: HashSet<StateType> = HashSet(10000000)
+    private val closedList: HashSet<StateType> = HashSet(10000000, 1.0F)
 
     class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
 
@@ -71,14 +71,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                         closedList.add(successorNode.state)
                     }
                 }
-
             }
-
-            if (expandedNodeCount % 100000 == 0) {
-                println(time - System.currentTimeMillis())
-                time = System.currentTimeMillis()
-            }
-
         }
 
         throw GoalNotReachableException()
