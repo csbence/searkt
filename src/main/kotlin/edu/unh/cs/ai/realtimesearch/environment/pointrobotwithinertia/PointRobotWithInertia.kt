@@ -37,7 +37,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
 
         for (it in actions) {
-            val nSteps = 10
+            val nSteps = 100
             val dt = 1.0 / nSteps
             var valid = true
             var x = state.loc.x

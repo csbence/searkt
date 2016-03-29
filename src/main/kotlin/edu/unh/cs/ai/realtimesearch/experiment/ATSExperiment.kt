@@ -39,7 +39,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
         val maxCount = 3
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var executionNanoTime = 0L
+        var executionNanoTime = 1L
         //var timeBound = staticStepDuration
 
         while (!world.isGoal()) {

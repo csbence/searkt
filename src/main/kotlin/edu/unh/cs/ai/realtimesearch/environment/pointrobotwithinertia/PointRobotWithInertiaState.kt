@@ -11,7 +11,8 @@ data class PointRobotWithInertiaState(val loc: DoubleLocation, val xdot: Double,
     override fun equals(other: Any?): Boolean {
         if (other !is PointRobotWithInertiaState)
             return false
-        if (other.loc.x.toInt() == loc.x.toInt() && other.loc.y.toInt() == loc.y.toInt()) {
+        if (other.loc.x.toInt() == loc.x.toInt() && other.loc.y.toInt() == loc.y.toInt()
+             && other.xdot.toInt() == xdot.toInt() && other.ydot.toInt() == ydot.toInt()) {
             return true;
         }
         return false;

@@ -40,8 +40,6 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             for (i in 1..nSteps) {
                 var x = state.loc.x + (it.xdot * (dt * i));
                 var y = state.loc.y + (it.ydot * (dt * i));
-                //                x += it.xdot * dt;
-                //                y += it.ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
                     valid = false;
@@ -50,10 +48,6 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             }
 
             if (valid) {
-
-                //                    println("" + state.x + " " + state.y)
-                //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
-                //                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
                         PointRobotState(DoubleLocation(state.loc.x + it.xdot, state.loc.y + it.ydot)),
                         PointRobotAction(it.xdot, it.ydot),
@@ -128,10 +122,34 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     }
 
     override fun getGoal(): PointRobotState {
-        throw UnsupportedOperationException()
+        return PointRobotState(endLocation)
     }
 
     override fun predecessors(state: PointRobotState): List<SuccessorBundle<PointRobotState>> {
-        throw UnsupportedOperationException()
+        val predecessors: MutableList<SuccessorBundle<PointRobotState>> = arrayListOf()
+
+        for (it in actions) {
+            val dt = 0.1
+            val nSteps = 10
+            var valid = true
+
+            for (i in 1..nSteps) {
+                var x = state.loc.x - (it.xdot * (dt * i));
+                var y = state.loc.y - (it.ydot * (dt * i));
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (valid) {
+                predecessors.add(SuccessorBundle(
+                        PointRobotState(DoubleLocation(state.loc.x - it.xdot, state.loc.y - it.ydot)),
+                        PointRobotAction(it.xdot, it.ydot),
+                        1));
+            }
+        }
+        return predecessors
     }
 }
