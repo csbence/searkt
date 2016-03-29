@@ -14,8 +14,17 @@ appender("STDOUT", ConsoleAppender) {
 
 appender("FILE", FileAppender) {
     // make use of the USER_HOME variable
-    println "Setting [file] property to [/home/aifs2/group/data/real_time_search_log/rts_client_${hostname}.log]"
-    file = "/home/aifs2/group/data/real_time_search_log/rts_client_${HOSTNAME}.log"
+    String logFile = "rts_client_${HOSTNAME}.log"
+    String path = "/home/aifs2/group/data/real_time_search_log/$logFile"
+    println "Setting [file] property to [$path]"
+
+    if (new File(path).exists()) {
+        file = path
+    } else {
+        println("File '$path' does not exist; using working directory")
+        file = logFile
+    }
+
     encoder(PatternLayoutEncoder) {
         pattern = "%d{HH:mm:ss.SSS} %5level %logger{0} - %msg%n"
     }
