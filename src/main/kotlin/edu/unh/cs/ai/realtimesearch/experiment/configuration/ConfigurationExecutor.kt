@@ -54,6 +54,7 @@ object ConfigurationExecutor {
 
         thread.setUncaughtExceptionHandler { thread, throwable ->
             executionException = throwable
+
             logger.info("Experiment stopped", throwable)
         }
 

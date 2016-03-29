@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.visualizer.acrobot.AcrobotVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
@@ -19,30 +20,30 @@ fun main(args: Array<String>) {
     val fileName = args.first()
     val fileString = File(fileName).readText()
     val experimentResult = experimentResultFromJson(fileString)
-    val domainName = experimentResult.experimentConfiguration["domainName"]
+    val domainName = experimentResult.experimentConfiguration["domainName"] as String
 
     val params: MutableList<String> = mutableListOf()
     params.add(fileString)
     for (arg in args)
         params.add(arg)
 
-    when (domainName){
-        "vacuum world" -> {
+    when (Domains.valueOf(domainName)){
+        Domains.VACUUM_WORLD -> {
             Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         }
-        "grid world" -> {
+        Domains.GRID_WORLD -> {
             Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         }
-        "point robot" -> {
+        Domains.POINT_ROBOT -> {
             Application.launch(PointVisualizer::class.java, *params.toTypedArray())
         }
-        "point robot with inertia" -> {
+        Domains.POINT_ROBOT_WITH_INERTIA -> {
             Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
         }
-        "race track" -> {
+        Domains.RACETRACK -> {
             Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
         }
-        "acrobot" -> {
+        Domains.ACROBOT -> {
             Application.launch(AcrobotVisualizer::class.java, *params.toTypedArray())
         }
         else -> {

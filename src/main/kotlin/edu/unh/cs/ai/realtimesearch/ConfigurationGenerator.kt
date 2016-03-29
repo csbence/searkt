@@ -2,6 +2,11 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.defaultInitialAcrobotState
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.verticalUpAcrobotState
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.STATIC
@@ -103,7 +108,61 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
 
     when (domain) {
         ACROBOT -> {
+            val initialState = defaultInitialAcrobotState
+            val endState = verticalUpAcrobotState
+            val maxAngularVelocities = listOf(
+                    Math.PI,
+                    2.0 * Math.PI,
+                    4.0 * Math.PI,
+                    9.0 * Math.PI,
+                    12.0 * Math.PI
+            )
+            val minAngularVelocities: MutableList<Double> = mutableListOf()
+            for (velocity in maxAngularVelocities) {
+                minAngularVelocities.add(-velocity)
+            }
+            val bounds = listOf(
+                    0.3,
+                    0.2,
+                    0.1,
+                    0.09,
+                    0.08,
+                    0.07
+            )
 
+            for (minVelocity1 in minAngularVelocities) {
+                for (maxVelocity1 in maxAngularVelocities) {
+                    for (minVelocity2 in minAngularVelocities) {
+                        for (maxVelocity2 in maxAngularVelocities) {
+                            val stateConfiguration = AcrobotStateConfiguration(
+                                    minAngularVelocity1 = minVelocity1,
+                                    minAngularVelocity2 = minVelocity2,
+                                    maxAngularVelocity1 = maxVelocity1,
+                                    maxAngularVelocity2 = maxVelocity2)
+
+                            for (lowerBound1 in bounds) {
+                                for (upperBound1 in bounds) {
+                                    for (lowerBound2 in bounds) {
+                                        for (upperBound2 in bounds) {
+                                            val acrobotConfiguration = AcrobotConfiguration(
+                                                    initialState = initialState,
+                                                    endState = endState,
+                                                    endLink1LowerBound = endState.link1 - AcrobotLink(lowerBound1, lowerBound1),
+                                                    endLink1UpperBound = endState.link1 + AcrobotLink(upperBound1, upperBound1),
+                                                    endLink2LowerBound = endState.link2 - AcrobotLink(lowerBound2, lowerBound2),
+                                                    endLink2UpperBound = endState.link2 + AcrobotLink(upperBound2, upperBound2),
+                                                    stateConfiguration = stateConfiguration
+                                            )
+
+                                            // TODO change to being a map and add to configurations
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         GRID_WORLD, VACUUM_WORLD, POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
             for (map in gridMaps) {

@@ -17,7 +17,7 @@ RUN_NUM=0
 OUT_EXT=.json
 IGNORE_ERR=false
 IBM_PATH=/opt/ibm/java-x86_64-80/bin/java
-IBM_ARGS="-Xgc:targetPauseTime=20 -Xverbosegclog -Xgc:nosynchronousGCOnOOM -verbose:gc -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xmx8g -Xgcpolicy:metronome -Dorg.slf4j.simpleLogger.defaultLogLevel=trace"
+IBM_ARGS="-Xgc:targetPauseTime=20 -Xverbosegclog -Xgc:nosynchronousGCOnOOM -verbose:gc -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xmx8g -Xgcpolicy:metronome"
 
 usage() {
 # lim:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
