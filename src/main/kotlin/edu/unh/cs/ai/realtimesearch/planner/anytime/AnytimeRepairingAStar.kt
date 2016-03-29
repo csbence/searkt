@@ -33,6 +33,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
         //println("here " + openList.element())
         while (goalCost() > inflatedFValue(openList.element())) {
+//            println("loop: " + goalCost() + " " + inflatedFValue(openList.element()))
             val currentNode = openList.poll() ?: return // Return if the frontier is empty
             val currentState = currentNode.state//closedList[currentState]!!
 
@@ -46,11 +47,12 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
                     val updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost)
                     closedList[it.state] = updatedSuccessorNode
 
+//                    println(targetgoal)
                     if (targetgoal!!.equals(it.state)) {
                         goal = it.state
                         goalNode = updatedSuccessorNode
                         //println("clist: "  + closedList[it.state])
-                        //println("here")
+//                        println("here")
                     }
 
                     if (localClosedList.contains(it.state)) {

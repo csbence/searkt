@@ -206,11 +206,44 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     override fun getGoal(): PointRobotWithInertiaState {
-        throw UnsupportedOperationException()
+        return PointRobotWithInertiaState(endLocation, 0.0, 0.0)
     }
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
-        throw UnsupportedOperationException()
+        val predecessors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = arrayListOf()
+
+
+        for (it in actions) {
+            val nSteps = 100
+            val dt = 1.0 / nSteps
+            var valid = true
+            var x = state.loc.x
+            var y = state.loc.y
+            var xdot = state.xdot
+            var ydot = state.ydot
+
+            for (i in 1..nSteps) {
+                x -= xdot * dt;
+                y -= ydot * dt;
+                xdot -= it.xDoubleDot * dt
+                ydot -= it.yDoubleDot * dt
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
+
+
+            if (valid) {
+                //                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
+                predecessors.add(SuccessorBundle(
+                        PointRobotWithInertiaState(DoubleLocation(x, y), state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot),
+                        PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
+                        1));
+            }
+        }
+        return predecessors
     }
 }
 

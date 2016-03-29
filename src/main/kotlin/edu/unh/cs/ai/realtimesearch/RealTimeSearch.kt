@@ -29,14 +29,14 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/pointrobot/uniform.pr") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/pointrobot/smallmaze2.pr") ?: throw RuntimeException("Resource not found")
 //        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
                 Domains.POINT_ROBOT_WITH_INERTIA.toString(),
                 rawDomain,
-                Planners.A_STAR.toString(),
+                Planners.ARA_STAR.toString(),
                 "time")
         manualConfiguration["lookaheadDepthLimit"] = 4L
         manualConfiguration["actionDuration"] = 10L

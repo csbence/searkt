@@ -44,7 +44,11 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
 
         while (!world.isGoal()) {
             //print("" + world.getState() + " " + world.getGoal() + " ")
+            val startTime = System.currentTimeMillis()
+            println("start")
             var actionList = planner.solve(world.getState(), world.getGoal());
+            val endTime = System.currentTimeMillis()
+            println("time: " + (endTime - startTime))
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
             val update = planner.update()
