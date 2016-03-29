@@ -91,7 +91,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
         println(actionsLists);
 
         val pathLength = actions.size.toLong()
-        logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes in $executionNanoTime. (${planner.expandedNodeCount * 1000 / executionNanoTime})" }
+        logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes in $executionNanoTime. (${planner.expandedNodeCount * 1000 / if (executionNanoTime != 0L) executionNanoTime else 1L})" }
         return ExperimentResult(
                 experimentConfiguration.valueStore,
                 planner.expandedNodeCount,
