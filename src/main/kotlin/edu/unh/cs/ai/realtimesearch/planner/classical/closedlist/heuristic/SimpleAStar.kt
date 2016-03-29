@@ -31,7 +31,7 @@ class SimpleAStar<StateType : State<StateType>>(val domain: Domain<StateType>) {
     private var expanded: Long = 0
     private var generated: Long = 0
 
-//    private var timestamp = 0L
+    //    private var timestamp = 0L
 
     fun search(init: StateType) {
         val initNode = Node(init, null, 0)
@@ -56,10 +56,10 @@ class SimpleAStar<StateType : State<StateType>>(val domain: Domain<StateType>) {
                 open.add(Node(state = it.state, parent = currentNode, cost = it.actionCost.toInt()))
             }
 
-//            if (expanded % 100000 == 0L) {
-//                println(System.currentTimeMillis() - timestamp)
-//                timestamp = System.currentTimeMillis()
-//            }
+            //            if (expanded % 100000 == 0L) {
+            //                println(System.currentTimeMillis() - timestamp)
+            //                timestamp = System.currentTimeMillis()
+            //            }
         }
     }
 

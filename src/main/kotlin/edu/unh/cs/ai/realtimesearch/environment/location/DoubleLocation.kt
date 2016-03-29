@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.location
 
 import java.lang.Math.abs
+
 /**
  * Created by michaelatremblay on 2/25/16.
  */

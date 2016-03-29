@@ -80,13 +80,13 @@ data class SlidingTilePuzzleDynamicState(val zeroX: Int, val zeroY: Int, val til
             tiles[y * dimension + x] = value
         }
 
-//        operator fun get(location: Location): Byte {
-//            return tiles[location.y * dimension + location.x]
-//        }
-//
-//        operator fun set(location: Location, value: Byte) {
-//            tiles[location.y * dimension + location.x] = value
-//        }
+        //        operator fun get(location: Location): Byte {
+        //            return tiles[location.y * dimension + location.x]
+        //        }
+        //
+        //        operator fun set(location: Location, value: Byte) {
+        //            tiles[location.y * dimension + location.x] = value
+        //        }
 
         override fun toString(): String {
             return "Tiles(dimension = $dimension)"

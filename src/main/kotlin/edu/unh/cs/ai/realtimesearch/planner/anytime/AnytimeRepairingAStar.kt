@@ -65,7 +65,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    fun solve(startState: StateType, goalState: StateType) : MutableList<Node<StateType>>{
+    fun solve(startState: StateType, goalState: StateType): MutableList<Node<StateType>> {
         //Solving backwards, so flip start and goal states
 
         //println( " solve ")
@@ -82,7 +82,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
         val result: MutableList<Node<StateType>> = arrayListOf()
         var cur = goalNode
-        while(cur != null){
+        while (cur != null) {
             //print("" + cur.state + " " + cur.action + " ")
             //print("" + cur.action + " ")
             result.add(cur)
@@ -109,13 +109,13 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }*/
     }
 
-    fun update() : Double{
+    fun update(): Double {
         //println( " update ")
         inflationFactor *= 10
         inflationFactor -= 2
         inflationFactor /= 10
         if (inflationFactor < 1)
-                return inflationFactor;
+            return inflationFactor;
         //println( " add all ")
         val tempOpen = openList.toMutableList()
         openList.clear()

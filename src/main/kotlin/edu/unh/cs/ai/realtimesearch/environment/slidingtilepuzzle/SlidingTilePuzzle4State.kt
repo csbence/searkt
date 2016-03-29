@@ -35,13 +35,13 @@ data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: Long, val heur
         tiles = tiles and (0xFL shl (index * 4)).inv() or (value.toLong() shl (index * 4))
     }
 
-//    fun get(x: Int, y: Int): Byte {
-//        return tiles[y * 4 + x]
-//    }
-//
-//    fun set(x: Int, y: Int, value: Byte) {
-//        tiles[y * 4 + x] = value
-//    }
+    //    fun get(x: Int, y: Int): Byte {
+    //        return tiles[y * 4 + x]
+    //    }
+    //
+    //    fun set(x: Int, y: Int, value: Byte) {
+    //        tiles[y * 4 + x] = value
+    //    }
 
     override fun hashCode(): Int {
         return (tiles shr 32 xor tiles).toInt()
