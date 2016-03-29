@@ -18,6 +18,18 @@ from scipy import stats
 ALGORITHM = 0
 DOMAIN = 1
 
+script = os.path.basename(sys.argv[0])
+options = "hs:q"
+
+
+def usage():
+    print "usage:"
+    print "{} [{}] file1 file2 ...".format(script, options)
+    print "options:"
+    print "  h         print this usage info"
+    print "  s<file>   save to file"
+    print "  q         quiet mode; no logging or graph showing"
+
 
 def cnv_ns_to_ms(ns):
     return ns / 1000000.0
@@ -30,7 +42,7 @@ class Results:
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
-        self.time = cnv_ns_to_ms(parsedJson['planningTime']) + cnv_ns_to_ms(parsedJson['actionExecutionTime'])
+        self.time = cnv_ns_to_ms(parsedJson['goalAchievementTime'])
 
 
 def translateAlgorithmName(algName):
@@ -54,16 +66,8 @@ def translateDomainName(domainName):
     domainName = domainName.title()
     return domainName
 
-script = os.path.basename(sys.argv[0])
-options = "h"
-
-
-def usage():
-    print "usage:"
-    print "{} [{}] file1 file2 ...".format(script, options)
-    print "options:"
-    print "  h         print this usage info"
-
+saveFile = None
+quiet = False
 
 try:
     opts, args = getopt.gnu_getopt(sys.argv[1:], options)
@@ -75,7 +79,12 @@ for opt, arg in opts:
     if opt in ('-h', '--help'):
         usage()
         sys.exit(0)
+    elif opt in ('-s', '--save'):
+        saveFile = arg
+    elif opt in ('-q', '--quiet'):
+        quiet = True
     else:
+        print "invalid switch", opt
         usage()
         sys.exit(2)
 
@@ -114,20 +123,22 @@ for jsonFile in args:
         else:
             algorithmCounts[results.configuration[ALGORITHM]] += 1
 
-        print "File: ", jsonFile
-        print "== Configuration =="
-        print "Algorithm: ", results.configuration[ALGORITHM]
-        print "Domain: ", results.configuration[DOMAIN]
+        if not quiet:
+            print "File: ", jsonFile
+            print "== Configuration =="
+            print "Algorithm: ", results.configuration[ALGORITHM]
+            print "Domain: ", results.configuration[DOMAIN]
 
-        print "== Results =="
-        print "Generated Nodes: ", results.generatedNodes
-        print "Expanded Nodes: ", results.expandedNodes
-        print "Path length: ", len(results.actions)
-        print "Time (ns): ", results.time
+            print "== Results =="
+            print "Generated Nodes: ", results.generatedNodes
+            print "Expanded Nodes: ", results.expandedNodes
+            print "Path length: ", len(results.actions)
+            print "Time (ns): ", results.time
 
-        print
+            print
     else:
-        print "Skipping non-existent file '%s'" % jsonFile
+        if not quiet:
+            print "Skipping non-existent file '%s'" % jsonFile
 
 # TODO cleanup and remove code duplication
 domainGroups = True
@@ -216,4 +227,18 @@ plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
 
 # plt.boxplot(data, notch=True, labels=labels)
 # plt.errorbar(np.arange(len(data)), data, yerr=np.std(data,axis=0))
-plt.show()
+
+# Save before showing since show resets the figures
+if saveFile is not None:
+    filename, ext = os.path.splitext(saveFile)
+    if ext is '.pdf':
+        from matplotlib.backends.backend_pdf import PdfPages
+        pp = PdfPages('saveFile')
+        plt.savefig(pp, format='pdf')
+        pp.close()
+    else:
+        # Try and save it
+        plt.savefig(saveFile)
+
+if not quiet:
+    plt.show()
