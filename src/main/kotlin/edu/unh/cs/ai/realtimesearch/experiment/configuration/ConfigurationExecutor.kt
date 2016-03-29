@@ -131,7 +131,7 @@ object ConfigurationExecutor {
         val domainName: String = experimentConfiguration.domainName
         val domain = Domains.valueOf(domainName)
         return when (domain) {
-            SLIDING_TILE_PUZZLE -> executeSlidingTilePuzzle(experimentConfiguration)
+            SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(experimentConfiguration)
             VACUUM_WORLD -> executeVacuumWorld(experimentConfiguration)
             GRID_WORLD -> executeGridWorld(experimentConfiguration)
             ACROBOT -> executeAcrobot(experimentConfiguration)

@@ -182,7 +182,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                 ))
             }
         }
-        SLIDING_TILE_PUZZLE -> {
+        SLIDING_TILE_PUZZLE_4 -> {
             for (instanceName in slidingTile25EasyMapNames) {
                 val map = "$slidingTile4MapRoot$instanceName"
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
