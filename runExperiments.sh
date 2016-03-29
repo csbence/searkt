@@ -13,7 +13,7 @@ BIN="$INSTALL_DIR/bin"
 JAR="$INSTALL_DIR/lib/$PROJECT_NAME*.jar"
 RUN_SCRIPT="$BIN/$PROJECT_NAME"
 NUM_RUNS=1
-RUN_NUM=0
+RUN_NUM=1
 OUT_EXT=.json
 IGNORE_ERR=false
 IBM_PATH=/opt/ibm/java-x86_64-80/bin/java
@@ -114,7 +114,7 @@ get_unique_filename() {
   else
     CURRENT=_00
     COUNTER=0
-    while [ -f "$1$CURRENT$OUT_EXT" ] || [ -f "$1${CURRENT}_$RUN_NUM$OUT_EXT" ] || [ -f "$1${CURRENT}_0$RUN_NUM$OUT_EXT" ]; do
+    while [ -f "$1$CURRENT$OUT_EXT" -o -f "$1${CURRENT}_$RUN_NUM$OUT_EXT" -o -f "$1${CURRENT}_0$RUN_NUM$OUT_EXT" ]; do
       let COUNTER+=1
       CURRENT=$(get_file_num $COUNTER)
     done
@@ -138,7 +138,7 @@ config = json.loads('$PCONFIG')
 algorithm = config['algorithmName']
 domain = config['domainName']
 termType = config['terminationCheckerType']
-timeLimit = config['timeLimit']
+timeLimit = config['timeLimit'] if 'timeLimit' in config else None
 print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit)
 EOF
 ))

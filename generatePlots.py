@@ -6,16 +6,21 @@
 # configuration entries will be read and the algorithms and domains will be 
 # automatically separated.
 
-import sys
-import os
 import getopt
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import re
+import sys
 from scipy import stats
 
 ALGORITHM = 0
 DOMAIN = 1
+
+
+def cnv_ns_to_ms(ns):
+    return ns / 1000000.0
 
 
 class Results:
@@ -25,8 +30,29 @@ class Results:
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
-        self.time = parsedJson['nanoTime'] / 1000000 # convert to ms
+        self.time = cnv_ns_to_ms(parsedJson['planningTime']) + cnv_ns_to_ms(parsedJson['actionExecutionTime'])
 
+
+def translateAlgorithmName(algName):
+    # Handle hat (^) names
+    algName = re.sub(r"_(.*)_(HAT)", r"_\\hat{\1}", algName)
+    # Specific word formatting
+    algName = algName.replace('DYNAMIC', 'Dynamic')
+    algName = algName.replace('WEIGHTED', 'Weighted')
+    algName = algName.replace('LSS_', 'LSS-')
+    # Handle star (*) names
+    algName = algName.replace('_STAR', '*')
+    # Replace rest of underscores
+    algName = algName.replace('_', ' ')
+    return algName
+
+
+def translateDomainName(domainName):
+    # Replace underscores
+    domainName = domainName.replace('_', ' ')
+    # Convert case
+    domainName = domainName.title()
+    return domainName
 
 script = os.path.basename(sys.argv[0])
 options = "h"
@@ -153,37 +179,39 @@ labels = []
 if domainGroups:
     assert numDomains == 1
     plt.xlabel("Algorithm")
-    plt.title(domainCounts.keys()[0])
+    plt.title(translateDomainName(domainCounts.keys()[0]))
     for key in times.keys():  # Assumes same order will be plotted
-        labels.append(key[ALGORITHM])
+        labels.append(translateAlgorithmName(key[ALGORITHM]))
 else:
     assert numAlgorithms == 1
     plt.xlabel("Domain")
-    plt.title(algorithmCounts.keys()[0])
+    plt.title(translateAlgorithmName(algorithmCounts.keys()[0]))
     for key in times.keys():
-        labels.append(key[DOMAIN])
+        labels.append(translateDomainName(key[DOMAIN]))
 
 # print len(data)
-# x = np.arange(1, 5)
-# y = np.random.randn(20, 4)
 x = np.arange(1, len(data) + 1)
 y = data
 # print x
 # print y
-# TODO make work with different amounts of data per category
 
+# Get medians and stderr
+# Can't do this way for uneven data points
+# med = np.median(y, axis=1)
+# sem = stats.sem(y, axis=1)
+med = []
+sem = []
+for subdata in y:
+    med.append(np.median(subdata))
+    sem.append(stats.sem(subdata))
 
-# low, high = bootstrap(y, 100000, np.median, 0.05)
-med = np.median(y, axis=1)
-# print 'median', med
-
-CI = stats.t.interval(0.95, len(y)-1, loc=np.median(y, axis=1), scale=stats.sem(y, axis=1))
+CI = stats.t.interval(0.95, len(y) - 1, loc=med, scale=sem)
 # print 'CI',CI
 # print CI[0]
 # print CI[1]
 
 plt.boxplot(y, notch=False, labels=labels)
-plt.errorbar(x, np.median(y, axis=1), yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
+plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
 # plt.errorbar(x, np.median(y, axis=0), yerr=CI)
 
 # plt.boxplot(data, notch=True, labels=labels)
