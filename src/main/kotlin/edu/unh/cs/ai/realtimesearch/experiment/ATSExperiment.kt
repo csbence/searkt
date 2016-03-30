@@ -44,11 +44,13 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
 
         while (!world.isGoal()) {
             //print("" + world.getState() + " " + world.getGoal() + " ")
-            val startTime = System.currentTimeMillis()
             println("start")
+            val startTime = System.nanoTime()
             var actionList = planner.solve(world.getState(), world.getGoal());
-            val endTime = System.currentTimeMillis()
+            val endTime = System.nanoTime()
             println("time: " + (endTime - startTime))
+            if(actions.size == 0)
+                executionNanoTime = endTime - startTime
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
             val update = planner.update()

@@ -113,9 +113,10 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
     fun update() : Double{
         //println( " update ")
-        inflationFactor *= 10
+        inflationFactor *= 100
         inflationFactor -= 2
-        inflationFactor /= 10
+        inflationFactor /= 100
+
         if (inflationFactor < 1)
                 return inflationFactor;
         //println( " add all ")
