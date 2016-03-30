@@ -75,7 +75,7 @@ object PointRobotIO {
         }
 
         val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobot(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius)
-        val startState = PointRobotState(startLocation)
+        val startState = PointRobotState(startLocation.x, startLocation.y)
         return PointRobotInstance(doubleIntegrator, startState)
     }
 

@@ -1,25 +1,27 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 
 /**
  *
  */
-data class PointRobotState(val loc: DoubleLocation) : State<PointRobotState> {
+data class PointRobotState(val x: Double, val y: Double) : State<PointRobotState> {
 
     override fun equals(other: Any?): Boolean {
-        if (other !is PointRobotState)
-            return false
-        if (other.loc.x.toInt() == loc.x.toInt() && other.loc.y.toInt() == loc.y.toInt()) {
-            return true;
+        return when (other) {
+            !is PointRobotState -> false
+            other.x.toInt() == x.toInt() && other.y.toInt() == y.toInt() -> true
+            else -> false
         }
-        return false;
+    }
+
+    override fun hashCode(): Int {
+        return x.toInt() xor Integer.reverse(y.toInt())
     }
 
     /**
      * Copy simply calls the data class implemented copy
      */
-    override fun copy() = copy(loc)
+    override fun copy() = copy(x, y)
 }
 

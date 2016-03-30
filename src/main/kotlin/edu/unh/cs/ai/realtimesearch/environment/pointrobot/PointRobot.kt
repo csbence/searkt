@@ -38,8 +38,8 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             var valid = true
 
             for (i in 1..nSteps) {
-                var x = state.loc.x + (it.xdot * (dt * i));
-                var y = state.loc.y + (it.ydot * (dt * i));
+                var x = state.x + (it.xdot * (dt * i));
+                var y = state.y + (it.ydot * (dt * i));
                 //                x += it.xdot * dt;
                 //                y += it.ydot * dt;
 
@@ -55,7 +55,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 //                    println("" + state.x + it.xdot + " " + state.y + it.ydot);
                 //                println("" + x + " " + y + " " + (state.x + it.xdot) + " " + (state.y + it.ydot));
                 successors.add(SuccessorBundle(
-                        PointRobotState(DoubleLocation(state.loc.x + it.xdot, state.loc.y + it.ydot)),
+                        PointRobotState(state.x + it.xdot, state.y + it.ydot),
                         PointRobotAction(it.xdot, it.ydot),
                         1));
             }
@@ -66,7 +66,8 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *
-     * @param location the location to test
+     * @param x coordinate of the location
+     * @param y coordinate of the location
      * @return true if location is legal
      */
     fun isLegalLocation(x: Double, y: Double): Boolean {
@@ -87,15 +88,15 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     override fun heuristic(startState: PointRobotState, endState: PointRobotState): Double {
         //Distance Formula
         return (Math.sqrt(
-                Math.pow((endState.loc.x) - startState.loc.x, 2.0)
-                        + Math.pow((endState.loc.y) - startState.loc.y, 2.0)) - goalRadius) / 3
+                Math.pow((endState.x) - startState.x, 2.0)
+                        + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius) / 3
     }
 
     override fun distance(state: PointRobotState): Double {
         //Distance Formula
         return (Math.sqrt(
-                Math.pow((endLocation.x) - state.loc.x, 2.0)
-                        + Math.pow((endLocation.y) - state.loc.y, 2.0)) - goalRadius)
+                Math.pow((endLocation.x) - state.x, 2.0)
+                        + Math.pow((endLocation.y) - state.y, 2.0)) - goalRadius)
     }
 
     override fun isGoal(state: PointRobotState): Boolean {
@@ -115,9 +116,9 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val description = StringBuilder()
 
         description.append("State: at (")
-        description.append(state.loc.x)
+        description.append(state.x)
         description.append(", ")
-        description.append(state.loc.y)
+        description.append(state.y)
         description.append(")")
 
         return description.toString()
