@@ -54,6 +54,7 @@ object ConfigurationExecutor {
 
         thread.setUncaughtExceptionHandler { thread, throwable ->
             executionException = throwable
+
             logger.info("Experiment stopped", throwable)
         }
 
@@ -64,9 +65,9 @@ object ConfigurationExecutor {
             System.gc()
 
             logger.info("Experiment failed. ${executionException!!.message}")
-            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${executionException!!.message}")
-            experimentResult["errorDetails"] = executionException!!.stackTrace
-            return experimentResult
+            val failedExperimentResult = ExperimentResult(experimentConfiguration.valueStore, "${executionException!!.message}")
+            failedExperimentResult["errorDetails"] = executionException!!.stackTrace
+            return failedExperimentResult
         }
 
         if (experimentResult == null) {
@@ -126,19 +127,11 @@ object ConfigurationExecutor {
         //        }
     }
 
-    // TODO
-    //            "sliding tile puzzle" -> executeSlidingTilePuzzle(experimentConfiguration)
-    //            "vacuum world" -> executeVacuumWorld(experimentConfiguration)
-    //            "grid world" -> executeGridWorld(experimentConfiguration)
-    //            "acrobot" -> executeAcrobot(experimentConfiguration)
-    //            "point robot" -> executePointRobot(experimentConfiguration)
-    //            "point robot with inertia" -> executePointRobotWithInertia(experimentConfiguration)
-    //            "race track" -> executeRaceTrack(experimentConfiguration)
     private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult? {
         val domainName: String = experimentConfiguration.domainName
         val domain = Domains.valueOf(domainName)
         return when (domain) {
-            SLIDING_TILE_PUZZLE -> executeSlidingTilePuzzle(experimentConfiguration)
+            SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(experimentConfiguration)
             VACUUM_WORLD -> executeVacuumWorld(experimentConfiguration)
             GRID_WORLD -> executeGridWorld(experimentConfiguration)
             ACROBOT -> executeAcrobot(experimentConfiguration)

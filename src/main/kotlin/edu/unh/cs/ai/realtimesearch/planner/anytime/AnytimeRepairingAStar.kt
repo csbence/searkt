@@ -24,7 +24,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     public var generatedNodes = 0
     public var expandedNodes = 0
 
-    data class Node<State>(val parent: Node<State>? = null, val state: State, val action: Action? = null, val cost: Double = 0.0, val heuristic: Double = 0.0)
+    data class Node<State>(val parent: Node<State>? = null, val state: State, val action: Action? = null, val cost: Double = 0.0/*, val heuristic: Double = 0.0*/)
 
 
     private fun improvePath() {
@@ -67,12 +67,12 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    fun solve(startState: StateType, goalState: StateType) : MutableList<Node<StateType>>{
+    fun solve(startState: StateType, goalState: StateType): MutableList<Node<StateType>> {
         //Solving backwards, so flip start and goal states
 
         //println( " solve ")
         targetgoal = startState
-        closedList[goalState] = Node(state = goalState, heuristic = domain.heuristic(goalState, startState))
+        closedList[goalState] = Node(state = goalState/*, heuristic = domain.heuristic(goalState, startState)*/)
 
         //println( " ADD ")
         openList.add(closedList[goalState])
@@ -84,7 +84,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
         val result: MutableList<Node<StateType>> = arrayListOf()
         var cur = goalNode
-        while(cur != null){
+        while (cur != null) {
             //print("" + cur.state + " " + cur.action + " ")
             //print("" + cur.action + " ")
             result.add(cur)
@@ -111,14 +111,14 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }*/
     }
 
-    fun update() : Double{
+    fun update(): Double {
         //println( " update ")
         inflationFactor *= 100
         inflationFactor -= 2
         inflationFactor /= 100
 
         if (inflationFactor < 1)
-                return inflationFactor;
+            return inflationFactor;
         //println( " add all ")
         val tempOpen = openList.toMutableList()
         openList.clear()
@@ -141,7 +141,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
     private fun fValue(state: StateType): Double {
         val node = closedList[state]!!
-        return node.cost + node.heuristic
+        return node.cost + domain.heuristic(node.state, targetgoal!!)
     }
 
     private fun inflatedFValue(node: Node<StateType>): Double {
@@ -150,7 +150,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
         //println(node)
         //println("i: " + (node.cost + inflationFactor * node.heuristic))
-        return node.cost + inflationFactor * node.heuristic
+        return node.cost + inflationFactor * domain.heuristic(node.state, targetgoal!!)
     }
 
     private fun goalCost(): Double {

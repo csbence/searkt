@@ -6,16 +6,33 @@
 # configuration entries will be read and the algorithms and domains will be 
 # automatically separated.
 
-import sys
-import os
 import getopt
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import re
+import sys
 from scipy import stats
 
 ALGORITHM = 0
 DOMAIN = 1
+
+script = os.path.basename(sys.argv[0])
+options = "hs:q"
+
+
+def usage():
+    print "usage:"
+    print "{} [{}] file1 file2 ...".format(script, options)
+    print "options:"
+    print "  h         print this usage info"
+    print "  s<file>   save to file"
+    print "  q         quiet mode; no logging or graph showing"
+
+
+def cnv_ns_to_ms(ns):
+    return ns / 1000000.0
 
 
 class Results:
@@ -25,19 +42,32 @@ class Results:
         self.generatedNodes = parsedJson['generatedNodes']
         self.expandedNodes = parsedJson['expandedNodes']
         self.actions = parsedJson['actions']
-        self.time = parsedJson['nanoTime'] / 1000000 # convert to ms
+        self.time = cnv_ns_to_ms(parsedJson['goalAchievementTime'])
 
 
-script = os.path.basename(sys.argv[0])
-options = "h"
+def translateAlgorithmName(algName):
+    # Handle hat (^) names
+    algName = re.sub(r"_(.*)_(HAT)", r"_\\hat{\1}", algName)
+    # Specific word formatting
+    algName = algName.replace('DYNAMIC', 'Dynamic')
+    algName = algName.replace('WEIGHTED', 'Weighted')
+    algName = algName.replace('LSS_', 'LSS-')
+    # Handle star (*) names
+    algName = algName.replace('_STAR', '*')
+    # Replace rest of underscores
+    algName = algName.replace('_', ' ')
+    return algName
 
 
-def usage():
-    print "usage:"
-    print "{} [{}] file1 file2 ...".format(script, options)
-    print "options:"
-    print "  h         print this usage info"
+def translateDomainName(domainName):
+    # Replace underscores
+    domainName = domainName.replace('_', ' ')
+    # Convert case
+    domainName = domainName.title()
+    return domainName
 
+saveFile = None
+quiet = False
 
 try:
     opts, args = getopt.gnu_getopt(sys.argv[1:], options)
@@ -49,7 +79,12 @@ for opt, arg in opts:
     if opt in ('-h', '--help'):
         usage()
         sys.exit(0)
+    elif opt in ('-s', '--save'):
+        saveFile = arg
+    elif opt in ('-q', '--quiet'):
+        quiet = True
     else:
+        print "invalid switch", opt
         usage()
         sys.exit(2)
 
@@ -88,20 +123,22 @@ for jsonFile in args:
         else:
             algorithmCounts[results.configuration[ALGORITHM]] += 1
 
-        print "File: ", jsonFile
-        print "== Configuration =="
-        print "Algorithm: ", results.configuration[ALGORITHM]
-        print "Domain: ", results.configuration[DOMAIN]
+        if not quiet:
+            print "File: ", jsonFile
+            print "== Configuration =="
+            print "Algorithm: ", results.configuration[ALGORITHM]
+            print "Domain: ", results.configuration[DOMAIN]
 
-        print "== Results =="
-        print "Generated Nodes: ", results.generatedNodes
-        print "Expanded Nodes: ", results.expandedNodes
-        print "Path length: ", len(results.actions)
-        print "Time (ns): ", results.time
+            print "== Results =="
+            print "Generated Nodes: ", results.generatedNodes
+            print "Expanded Nodes: ", results.expandedNodes
+            print "Path length: ", len(results.actions)
+            print "Time (ns): ", results.time
 
-        print
+            print
     else:
-        print "Skipping non-existent file '%s'" % jsonFile
+        if not quiet:
+            print "Skipping non-existent file '%s'" % jsonFile
 
 # TODO cleanup and remove code duplication
 domainGroups = True
@@ -153,39 +190,55 @@ labels = []
 if domainGroups:
     assert numDomains == 1
     plt.xlabel("Algorithm")
-    plt.title(domainCounts.keys()[0])
+    plt.title(translateDomainName(domainCounts.keys()[0]))
     for key in times.keys():  # Assumes same order will be plotted
-        labels.append(key[ALGORITHM])
+        labels.append(translateAlgorithmName(key[ALGORITHM]))
 else:
     assert numAlgorithms == 1
     plt.xlabel("Domain")
-    plt.title(algorithmCounts.keys()[0])
+    plt.title(translateAlgorithmName(algorithmCounts.keys()[0]))
     for key in times.keys():
-        labels.append(key[DOMAIN])
+        labels.append(translateDomainName(key[DOMAIN]))
 
 # print len(data)
-# x = np.arange(1, 5)
-# y = np.random.randn(20, 4)
 x = np.arange(1, len(data) + 1)
 y = data
 # print x
 # print y
-# TODO make work with different amounts of data per category
 
+# Get medians and stderr
+# Can't do this way for uneven data points
+# med = np.median(y, axis=1)
+# sem = stats.sem(y, axis=1)
+med = []
+sem = []
+for subdata in y:
+    med.append(np.median(subdata))
+    sem.append(stats.sem(subdata))
 
-# low, high = bootstrap(y, 100000, np.median, 0.05)
-med = np.median(y, axis=1)
-# print 'median', med
-
-CI = stats.t.interval(0.95, len(y)-1, loc=np.median(y, axis=1), scale=stats.sem(y, axis=1))
+CI = stats.t.interval(0.95, len(y) - 1, loc=med, scale=sem)
 # print 'CI',CI
 # print CI[0]
 # print CI[1]
 
 plt.boxplot(y, notch=False, labels=labels)
-plt.errorbar(x, np.median(y, axis=1), yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
+plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
 # plt.errorbar(x, np.median(y, axis=0), yerr=CI)
 
 # plt.boxplot(data, notch=True, labels=labels)
 # plt.errorbar(np.arange(len(data)), data, yerr=np.std(data,axis=0))
-plt.show()
+
+# Save before showing since show resets the figures
+if saveFile is not None:
+    filename, ext = os.path.splitext(saveFile)
+    if ext is '.pdf':
+        from matplotlib.backends.backend_pdf import PdfPages
+        pp = PdfPages('saveFile')
+        plt.savefig(pp, format='pdf')
+        pp.close()
+    else:
+        # Try and save it
+        plt.savefig(saveFile)
+
+if not quiet:
+    plt.show()

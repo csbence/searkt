@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
-//import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import groovyjarjarcommonscli.*
 import javafx.application.Application
 import org.slf4j.LoggerFactory
@@ -29,14 +29,14 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/pointrobot/wall2.pr") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/wall.vw") ?: throw RuntimeException("Resource not found")
 //        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
-                Domains.POINT_ROBOT.toString(),
+                Domains.GRID_WORLD.toString(),
                 rawDomain,
-                Planners.RTA_STAR.toString(),
+                Planners.ARA_STAR.toString(),
                 "time")
         manualConfiguration["lookaheadDepthLimit"] = 4L
         manualConfiguration["actionDuration"] = 10L
@@ -69,8 +69,8 @@ fun main(args: Array<String>) {
             params.add(action.toString())
 
         //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
-        Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        //Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
     }
 

@@ -46,8 +46,6 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             generatedNodeCount++
         }
 
-        var time = System.currentTimeMillis()
-
         while (openList.isNotEmpty()) {
             executionNanoTime += measureNanoTime {
 

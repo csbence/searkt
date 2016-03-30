@@ -1,3 +1,4 @@
+/scripts/rtsMongoClient.py
 
 #3rd party libraries for testing
 /src/main/kotlin/edu/unh/cs/ai/realtimesearch/external

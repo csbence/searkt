@@ -1,6 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonAnyGetter
+import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.ExperimentDeserializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
@@ -42,6 +44,7 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
 
     @Suppress("UNCHECKED_CAST")
     fun <T> getTypedValue(key: String): T? = this[key] as? T
+
     open fun contains(key: String): Boolean = valueStore.contains(key)
 
     override fun toString(): String {

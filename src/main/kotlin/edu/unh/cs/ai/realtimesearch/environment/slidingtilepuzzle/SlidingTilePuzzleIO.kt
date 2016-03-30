@@ -27,7 +27,7 @@ object SlidingTilePuzzleIO {
             if (dimension != 4) {
                 throw RuntimeException("The dimensions of the sliding tile puzzle must be 4 by 4.")
             }
-            
+
         } catch (e: NoSuchElementException) {
             throw InvalidSlidingTilePuzzleException("SlidingTilePuzzle's first line is missing. The first line should contain the dimensions", e)
         } catch (e: NumberFormatException) {
