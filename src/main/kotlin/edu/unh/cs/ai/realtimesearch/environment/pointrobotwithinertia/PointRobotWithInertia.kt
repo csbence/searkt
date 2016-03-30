@@ -15,7 +15,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
-        var a = ArrayList<PointRobotWithInertiaAction>()
+        var actions = ArrayList<PointRobotWithInertiaAction>()
         //        for (itX in 0..4) {
         //            for (itY in 0..4) {
         //                var xDoubleDot = ((itX) - 2.0) / 4.0;
@@ -25,23 +25,22 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 var xDoubleDot = (itX) - 1.0;
                 var yDoubleDot = (itY) - 1.0;
                 //                                println("" + xDoubleDot + " " + yDoubleDot)
-                a.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
+                actions.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
             }
         }
-        return a
+        return actions
     }
 
     override fun successors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         // to return
         val successors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = arrayListOf()
 
-
         for (it in actions) {
             val nSteps = 10
             val dt = 1.0 / nSteps
             var valid = true
-            var x = state.loc.x
-            var y = state.loc.y
+            var x = state.x
+            var y = state.y
             var xdot = state.xdot
             var ydot = state.ydot
 
@@ -57,11 +56,10 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 }
             }
 
-
             if (valid) {
                 //                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
                 successors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(DoubleLocation(x, y), state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
+                        PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         1));
             }
@@ -88,10 +86,10 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun heuristic(state: PointRobotWithInertiaState): Double {
         //Distance Formula
         var bx = state.xdot
-        var cx = state.loc.x - endLocation.x
+        var cx = state.x - endLocation.x
 
         var by = state.ydot
-        var cy = state.loc.y - endLocation.y
+        var cy = state.y - endLocation.y
 
         var resultx1 = quadraticFormula(0.5, bx, cx)
         var resultx2 = quadraticFormula(-0.5, bx, cx)
@@ -123,10 +121,10 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun heuristic(startState: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double {
         //Distance Formula
         var bx = startState.xdot
-        var cx = startState.loc.x - endState.loc.x
+        var cx = startState.x - endState.x
 
         var by = startState.ydot
-        var cy = startState.loc.y - endState.loc.y
+        var cy = startState.y - endState.y
 
         var resultx1 = quadraticFormula(0.5, bx, cx)
         var resultx2 = quadraticFormula(-0.5, bx, cx)
@@ -177,8 +175,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     override fun distance(state: PointRobotWithInertiaState): Double {
         //Distance Formula
         return (Math.sqrt(
-                Math.pow((endLocation.x) - state.loc.x, 2.0)
-                        + Math.pow((endLocation.y) - state.loc.y, 2.0)) - goalRadius)
+                Math.pow((endLocation.x) - state.x, 2.0)
+                        + Math.pow((endLocation.y) - state.y, 2.0)) - goalRadius)
     }
 
     override fun isGoal(state: PointRobotWithInertiaState): Boolean {
@@ -189,9 +187,9 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         val description = StringBuilder()
 
         description.append("State: at (")
-        description.append(state.loc.x)
+        description.append(state.x)
         description.append(", ")
-        description.append(state.loc.y)
+        description.append(state.y)
         description.append(") going ")
         description.append(state.xdot)
         description.append(" in the ")
