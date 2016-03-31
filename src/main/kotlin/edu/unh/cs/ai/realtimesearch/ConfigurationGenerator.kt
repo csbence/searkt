@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
                         "terminationType" to terminationType
                 )
 
-                val realTimePlannerConfigurations = getRealTimePlannerConfigurations(planner)
+                val realTimePlannerConfigurations = getPlannerConfigurations(planner)
                 val domainConfigurations = getDomainConfigurations(domain)
 
                 for (realTimePlannerConfiguration in realTimePlannerConfigurations) {
@@ -167,8 +167,13 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     return configurations
 }
 
-fun getRealTimePlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
+fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
+
+    val weights = listOf(
+            2.0,
+            3.0
+    )
 
     when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
@@ -201,6 +206,13 @@ fun getRealTimePlannerConfigurations(planner: Planners): MutableList<MutableMap<
                         "lookaheadDepthLimit" to lookaheadDepthLimit,
                         "timeBoundType" to STATIC,
                         "commitmentStrategy" to SINGLE
+                ))
+            }
+        }
+        WEIGHTED_A_STAR -> {
+            for (weight in weights) {
+                configurations.add(mutableMapOf(
+                        "weight" to weight
                 ))
             }
         }
