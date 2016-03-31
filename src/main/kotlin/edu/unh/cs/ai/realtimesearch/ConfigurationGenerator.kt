@@ -62,7 +62,6 @@ fun main(args: Array<String>) {
 
                         configurations.add(completeConfiguration)
                     }
-
                 }
             }
         }
