@@ -207,8 +207,7 @@ y = data
 # print y
 
 # Get medians and stderr
-# Can't do this way for uneven data points
-# med = np.median(y, axis=1)
+# med = np.median(y, axis=1) # Can't do this way for uneven data points (no axis 1)
 # sem = stats.sem(y, axis=1)
 med = []
 sem = []
@@ -233,7 +232,7 @@ if saveFile is not None:
     filename, ext = os.path.splitext(saveFile)
     if ext is '.pdf':
         from matplotlib.backends.backend_pdf import PdfPages
-        pp = PdfPages('saveFile')
+        pp = PdfPages(saveFile)
         plt.savefig(pp, format='pdf')
         pp.close()
     else:

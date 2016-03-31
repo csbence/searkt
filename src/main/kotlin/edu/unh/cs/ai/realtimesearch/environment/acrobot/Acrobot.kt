@@ -3,29 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotState
-
-/**
- * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
- * [-pi,pi] to avoid attempting to rotate completely around in one direction.
- */
-fun angleDifference(angle: Double, goalAngle: Double): Double {
-    var difference = goalAngle - angle
-    if (difference < -Math.PI)
-        difference += 2 * Math.PI
-    else if (difference > Math.PI)
-        difference -= 2 * Math.PI
-    return difference
-}
-
-/**
- * Calculate the angle distance between an angle and a goal angle.  The resulting distance will be in the range
- * [0,pi].
- */
-fun angleDistance(angle: Double, goalAngle: Double): Double {
-    val distance = angleDifference(angle, goalAngle)
-    return if (distance < 0) distance * -1 else distance
-}
+import edu.unh.cs.ai.realtimesearch.util.angleDistance
 
 /**
  * The Acrobot is a two-link underactuated system.  Torque may be applied to the
@@ -34,8 +12,22 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
  * vertically from a downward facing position.
  */
 class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
-    internal val endStateLowerBound = AcrobotState(configuration.endLink1LowerBound, configuration.endLink2LowerBound, configuration.stateConfiguration)
-    internal val endStateUpperBound = AcrobotState(configuration.endLink1UpperBound, configuration.endLink2UpperBound, configuration.stateConfiguration)
+    companion object {
+        data class AcrobotBoundStates(val lowerBound: AcrobotState, val upperBound: AcrobotState)
+        fun getBoundStates(endState: AcrobotState, configuration: AcrobotConfiguration): AcrobotBoundStates {
+            val absoluteLink1LowerBound = endState.link1 - configuration.endLink1LowerBound
+            val absoluteLink2LowerBound = endState.link2 - configuration.endLink2LowerBound
+            val absoluteLink1UpperBound = endState.link1 - configuration.endLink1UpperBound
+            val absoluteLink2UpperBound = endState.link2 - configuration.endLink2UpperBound
+
+            val endStateLowerBound = AcrobotState(absoluteLink1LowerBound, absoluteLink2LowerBound, configuration.stateConfiguration)
+            val endStateUpperBound = AcrobotState(absoluteLink1UpperBound, absoluteLink2UpperBound, configuration.stateConfiguration)
+
+            return AcrobotBoundStates(endStateLowerBound, endStateUpperBound)
+        }
+    }
+
+    val endStateBounds = getBoundStates(configuration.endState, configuration)
 
     /**
      * Calculate the next state given the current state and an action
@@ -62,9 +54,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
     }
 
     /**
-     * Returns a heuristic for a Acrobot state.  If the state does not have enough energy to reach the goal, must
-     * inject energy before trying to reach the goal.  If the state does have enough energy, attempt to move towards
-     * the goal.
+     * Returns a heuristic for a Acrobot state based on the angular distance of the two links from the goal state bounds.
      *
      * @param state the state to provide a heuristic for
      */
@@ -72,14 +62,31 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
             return distanceHeuristic(state)
     }
 
+    /**
+     * Returns a heuristic for the given start state given an end state.
+     */
     override fun heuristic(startState: AcrobotState, endState: AcrobotState): Double {
         if (startState.equals(endState))
             return 0.0
-        val distance1 = Math.min(angleDistance(startState.link1.position, endState.link1.position), angleDistance(startState.link1.position, endState.link1.position))
-        val distance2 = Math.min(angleDistance(startState.link2.position, endState.link2.position), angleDistance(startState.link2.position, endState.link2.position))
+        return distanceHeuristic(startState, endState)
+    }
+
+    /**
+     * Calculate the distance heuristic between a start start state and an end state.
+     *
+     * @param startState the state to provide a heuristic for
+     * @param endState the ending state to calculate the distance to
+     */
+    private fun distanceHeuristic(startState: AcrobotState, endState: AcrobotState): Double {
+        if (isGoal(startState))
+            return 0.0
+
+        val (endStateLowerBound, endStateUpperBound) = getBoundStates(endState, configuration)
+
+        val distance1 = Math.min(angleDistance(startState.link1.position, endStateLowerBound.link1.position), angleDistance(startState.link1.position, endStateUpperBound.link1.position))
+        val distance2 = Math.min(angleDistance(startState.link2.position, endStateLowerBound.link2.position), angleDistance(startState.link2.position, endStateUpperBound.link2.position))
 
         return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(startState.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(startState.link2.velocity))
-
     }
 
     /**
@@ -88,15 +95,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      *
      * @param state the state to provide a heuristic for
      */
-    private fun distanceHeuristic(state: AcrobotState): Double {
-        // Dumb heuristic 1 (distance over velocity)
-        if (isGoal(state))
-            return 0.0
-        val distance1 = Math.min(angleDistance(state.link1.position, endStateLowerBound.link1.position), angleDistance(state.link1.position, endStateUpperBound.link1.position))
-        val distance2 = Math.min(angleDistance(state.link2.position, endStateLowerBound.link2.position), angleDistance(state.link2.position, endStateUpperBound.link2.position))
-
-        return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(state.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(state.link2.velocity))
-    }
+    private fun distanceHeuristic(state: AcrobotState): Double = distanceHeuristic(state, configuration.endState)
 
     /**
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
@@ -110,7 +109,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Returns whether the given state is a goal state.
      * @return true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(endStateLowerBound, endStateUpperBound)
+    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
 
     /**
      * Simply prints the state values.
@@ -134,7 +133,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
     }
 
     override fun getGoal(): AcrobotState {
-        throw UnsupportedOperationException()
+        return configuration.endState
     }
 
     override fun predecessors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {

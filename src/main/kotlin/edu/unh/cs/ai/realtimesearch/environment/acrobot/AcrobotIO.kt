@@ -5,11 +5,10 @@ import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import java.io.InputStream
-import java.util.*
 
 object AcrobotIO {
     fun parseFromStream(input: InputStream): AcrobotInstance {
-        val configuration = AcrobotConfiguration.fromStream(input)
+        val configuration = AcrobotConfiguration.fromJsonStream(input)
         return AcrobotInstance(DiscretizedDomain(Acrobot(configuration)), DiscretizedState(configuration.initialState))
     }
 }

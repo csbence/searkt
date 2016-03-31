@@ -16,12 +16,12 @@ appender("FILE", FileAppender) {
     // make use of the USER_HOME variable
     String logFile = "rts_client_${HOSTNAME}.log"
     String path = "/home/aifs2/group/data/real_time_search_log/$logFile"
-    println "Setting [file] property to [$path]"
+//    println "Setting [file] property to [$path]"
 
     if (new File(path).exists()) {
         file = path
     } else {
-        println("File '$path' does not exist; using working directory")
+//        println("File '$path' does not exist; using working directory")
         file = logFile
     }
 
