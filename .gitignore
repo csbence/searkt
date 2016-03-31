@@ -1,5 +1,3 @@
-/scripts/rtsMongoClient.py
-
 *.log
 
 #3rd party libraries for testing
