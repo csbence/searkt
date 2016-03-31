@@ -5,8 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.defaultInitialAcrobotState
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.verticalUpAcrobotState
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.STATIC
@@ -14,6 +12,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import groovy.json.JsonOutput
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -33,22 +32,15 @@ fun main(args: Array<String>) {
     for (domain in Domains.values()) {
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
-
-                // TODO integrate acrobot configurations
-                if (domain == ACROBOT) {
-                    continue
-                }
-
                 val partialConfiguration = mutableMapOf<String, Any?>(
                         "domainName" to domain,
                         "algorithmName" to planner,
                         "actionDuration" to actionDuration,
-                        //                                "timeBoundType" to timeBoundType,
                         "timeLimit" to timeLimit,
                         "terminationType" to terminationType
                 )
 
-                val realTimePlannerConfigurations = getRealTimePlannerConfigurations(planner)
+                val realTimePlannerConfigurations = getPlannerConfigurations(planner)
                 val domainConfigurations = getDomainConfigurations(domain)
 
                 for (realTimePlannerConfiguration in realTimePlannerConfigurations) {
@@ -67,11 +59,11 @@ fun main(args: Array<String>) {
         }
     }
 
-    //    for (configuration in configurations) {
-    //        println(configuration)
-    //    }
+//    for (configuration in configurations) {
+//        println(configuration)
+//    }
 
-    println("${configurations.size} configuration were generated.")
+    println("${configurations.size} configurations were generated.")
     uploadConfigurations(configurations)
 }
 
@@ -107,19 +99,6 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
 
     when (domain) {
         ACROBOT -> {
-            val initialState = defaultInitialAcrobotState
-            val endState = verticalUpAcrobotState
-            val maxAngularVelocities = listOf(
-                    Math.PI,
-                    2.0 * Math.PI,
-                    4.0 * Math.PI,
-                    9.0 * Math.PI,
-                    12.0 * Math.PI
-            )
-            val minAngularVelocities: MutableList<Double> = mutableListOf()
-            for (velocity in maxAngularVelocities) {
-                minAngularVelocities.add(-velocity)
-            }
             val bounds = listOf(
                     0.3,
                     0.2,
@@ -128,38 +107,21 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                     0.08,
                     0.07
             )
+            val stateConfiguration = AcrobotStateConfiguration()
 
-            for (minVelocity1 in minAngularVelocities) {
-                for (maxVelocity1 in maxAngularVelocities) {
-                    for (minVelocity2 in minAngularVelocities) {
-                        for (maxVelocity2 in maxAngularVelocities) {
-                            val stateConfiguration = AcrobotStateConfiguration(
-                                    minAngularVelocity1 = minVelocity1,
-                                    minAngularVelocity2 = minVelocity2,
-                                    maxAngularVelocity1 = maxVelocity1,
-                                    maxAngularVelocity2 = maxVelocity2)
-
-                            for (lowerBound1 in bounds) {
-                                for (upperBound1 in bounds) {
-                                    for (lowerBound2 in bounds) {
-                                        for (upperBound2 in bounds) {
-                                            val acrobotConfiguration = AcrobotConfiguration(
-                                                    initialState = initialState,
-                                                    endState = endState,
-                                                    endLink1LowerBound = endState.link1 - AcrobotLink(lowerBound1, lowerBound1),
-                                                    endLink1UpperBound = endState.link1 + AcrobotLink(upperBound1, upperBound1),
-                                                    endLink2LowerBound = endState.link2 - AcrobotLink(lowerBound2, lowerBound2),
-                                                    endLink2UpperBound = endState.link2 + AcrobotLink(upperBound2, upperBound2),
-                                                    stateConfiguration = stateConfiguration
-                                            )
-
-                                            // TODO change to being a map and add to configurations
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+            for (lowerBound in bounds) {
+                for (upperBound in bounds) {
+                    val acrobotConfiguration = AcrobotConfiguration(
+                            endLink1LowerBound = AcrobotLink(-lowerBound, -lowerBound),
+                            endLink1UpperBound = AcrobotLink(upperBound, upperBound),
+                            endLink2LowerBound = AcrobotLink(-lowerBound, -lowerBound),
+                            endLink2UpperBound = AcrobotLink(upperBound, upperBound),
+                            stateConfiguration = stateConfiguration
+                    )
+                    configurations.add(mutableMapOf(
+                            "rawDomain" to "${JsonOutput.toJson(acrobotConfiguration).replace("\"", "\\\"")}",
+                            "domainInstanceName" to "$lowerBound-$upperBound"
+                    ))
                 }
             }
         }
@@ -205,8 +167,13 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     return configurations
 }
 
-fun getRealTimePlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
+fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
+
+    val weights = listOf(
+            2.0,
+            3.0
+    )
 
     when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
@@ -239,6 +206,13 @@ fun getRealTimePlannerConfigurations(planner: Planners): MutableList<MutableMap<
                         "lookaheadDepthLimit" to lookaheadDepthLimit,
                         "timeBoundType" to STATIC,
                         "commitmentStrategy" to SINGLE
+                ))
+            }
+        }
+        WEIGHTED_A_STAR -> {
+            for (weight in weights) {
+                configurations.add(mutableMapOf(
+                        "weight" to weight
                 ))
             }
         }

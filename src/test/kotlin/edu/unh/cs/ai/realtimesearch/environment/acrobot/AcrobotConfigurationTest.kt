@@ -13,7 +13,7 @@ class AcrobotConfigurationTest {
     @Test
     fun testJSON1() {
         val json = JsonOutput.toJson(AcrobotStateConfiguration())
-        val parsed = AcrobotStateConfiguration.fromString(json)
+        val parsed = AcrobotStateConfiguration.fromJson(json)
 
         assertTrue { AcrobotStateConfiguration().equals(parsed) }
     }
@@ -21,7 +21,7 @@ class AcrobotConfigurationTest {
     @Test
     fun testJSON2() {
         val json = JsonOutput.toJson(AcrobotConfiguration())
-        val parsed = AcrobotConfiguration.fromString(json)
+        val parsed = AcrobotConfiguration.fromJson(json)
 
         assertTrue { AcrobotConfiguration().equals(parsed) }
     }

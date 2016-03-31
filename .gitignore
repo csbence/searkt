@@ -115,3 +115,11 @@ gradle-app.setting
 
 # JVM output
 verbosegc*.txt
+
+# graphs
+*.eps
+*.pdf
+
+# sample configurations
+/configs/
+/configurations/
