@@ -26,48 +26,72 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
-            lhs.cost > rhs.cost -> -1// Tie braking on cost (g)
+            lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
 
-    private val closedList: HashSet<StateType> = HashSet(10000000, 1.0F)
+    /**
+     * Hash table that represents the union of closed and the open list
+     */
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(10000000, 1F)
 
-    data class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
+    data class Node<StateType : State<StateType>>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double, var open: Boolean) {
+        override fun hashCode() = state.hashCode()
+        override fun equals(other: Any?) = other != null && other is Node<*> && state.equals(other.state)
+    }
 
     override fun plan(state: StateType): List<Action> {
-        executionNanoTime += measureNanoTime {
+        executionNanoTime = measureNanoTime {
             openList.clear();
-            closedList.clear();
+            nodes.clear();
 
-            openList.add(Node(null, state, null, 0.0, 0.0))
-            closedList.add(state)
+            val node = Node(null, state, null, 0.0, 0.0, true)
+            openList.add(node)
+            nodes.put(state, node)
             generatedNodeCount++
-        }
 
-        while (openList.isNotEmpty()) {
-            executionNanoTime += measureNanoTime {
-
-                val node = openList.remove()
-                closedList.add(node.state)
-
+            while (openList.isNotEmpty()) {
                 expandedNodeCount++
+                val node = openList.remove()
+
+                if (!node.open) {
+                    continue // This node was disabled
+                }
 
                 if (domain.isGoal(node.state)) {
                     return extractPlan(node)
                 }
 
                 // expand (only those not visited yet)
-                for (successor in domain.successors(node.state)) {
-                    if (successor.state !in closedList) {
-                        generatedNodeCount++
+                successors@ for (successor in domain.successors(node.state)) {
+                    if (successor.state == node.state) {
+                        continue // Don't consider the parent node
+                    }
 
-                        // generate the node with correct cost
-                        val nodeCost = successor.actionCost + node.cost
+                    generatedNodeCount++
 
-                        val successorNode = Node(node, successor.state, successor.action, nodeCost, nodeCost + domain.heuristic(successor.state))
-                        openList.add(successorNode)
+                    val existingSuccessorNode = nodes[successor.state]
+
+                    val newCost = successor.actionCost + node.cost
+
+                    when {
+                        existingSuccessorNode == null -> {
+                            // New state discovered
+                            val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
+                            nodes.put(newSuccessorNode.state, newSuccessorNode) // Add to the node list
+                            openList.add(newSuccessorNode)
+                        }
+                        existingSuccessorNode.open && existingSuccessorNode.cost > newCost -> {
+                            // Rediscover with a better cost
+                            val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
+                            nodes.put(newSuccessorNode.state, newSuccessorNode) // Override the previous node for the state
+                            openList.add(newSuccessorNode)
+                            existingSuccessorNode.open = false // Disable the existing representative on the open
+                        }
+                        else -> continue@successors
+
                     }
                 }
             }
