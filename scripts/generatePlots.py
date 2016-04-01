@@ -8,12 +8,14 @@
 
 import getopt
 import json
+import matplotlib.cbook as cbook
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import re
 import sys
 from scipy import stats
+
+import plotUtils
 
 ALGORITHM = 0
 DOMAIN = 1
@@ -31,43 +33,7 @@ def usage():
     print "  q         quiet mode; no logging or graph showing"
 
 
-def cnv_ns_to_ms(ns):
-    return ns / 1000000.0
-
-
-class Results:
-    def __init__(self, parsedJson):
-        self.configuration = (parsedJson['experimentConfiguration']['algorithmName'],
-                              parsedJson['experimentConfiguration']['domainName'])
-        self.generatedNodes = parsedJson['generatedNodes']
-        self.expandedNodes = parsedJson['expandedNodes']
-        self.actions = parsedJson['actions']
-        self.time = cnv_ns_to_ms(parsedJson['goalAchievementTime'])
-
-
-def translateAlgorithmName(algName):
-    # Handle hat (^) names
-    if "HAT" in algName:
-        algName = re.sub(r"(.*)_(.*)_(HAT)", r"\1", algName) + re.sub(r"(.*)_(.*)_(HAT)", r"_$\\hat{\2}$", algName).lower()
-    # Specific word formatting
-    algName = algName.replace('DYNAMIC', 'Dynamic')
-    algName = algName.replace('WEIGHTED', 'Weighted')
-    algName = algName.replace('LSS_', 'LSS-')
-    # Handle star (*) names
-    algName = algName.replace('_STAR', '*')
-    # Replace rest of underscores
-    algName = algName.replace('_', ' ')
-    return algName
-
-
-def translateDomainName(domainName):
-    # Replace underscores
-    domainName = domainName.replace('_', ' ')
-    # Convert case
-    domainName = domainName.title()
-    return domainName
-
-saveFile = None
+save_file = None
 quiet = False
 
 try:
@@ -81,7 +47,7 @@ for opt, arg in opts:
         usage()
         sys.exit(0)
     elif opt in ('-s', '--save'):
-        saveFile = arg
+        save_file = arg
     elif opt in ('-q', '--quiet'):
         quiet = True
     else:
@@ -90,41 +56,41 @@ for opt, arg in opts:
         sys.exit(2)
 
 # Process files from command line
-numFiles = len(args)
+num_files = len(args)
 if len(args) == 0:
     print "ERROR: No files provided"
     usage()
     sys.exit(2)
 
 times = {}
-domainCounts = {}
-algorithmCounts = {}
-numDomains = 0
-numAlgorithms = 0
-for jsonFile in args:
-    if os.path.exists(jsonFile):
-        f = open(jsonFile, 'r')
+domain_counts = {}
+algorithm_counts = {}
+num_domains = 0
+num_algorithms = 0
+for json_file in args:
+    if os.path.exists(json_file):
+        f = open(json_file, 'r')
         if not quiet:
-            print "File: ", jsonFile
-        results = Results(json.loads(f.read()))
+            print "File: ", json_file
+        results = plotUtils.Results(json.loads(f.read()))
 
         if results.configuration not in times:
             times[results.configuration] = []
         times[results.configuration].append(results.time)
 
         # Checking for common domain
-        if results.configuration[DOMAIN] not in domainCounts:
-            domainCounts[results.configuration[DOMAIN]] = 0
-            numDomains += 1
+        if results.configuration[DOMAIN] not in domain_counts:
+            domain_counts[results.configuration[DOMAIN]] = 0
+            num_domains += 1
         else:
-            domainCounts[results.configuration[DOMAIN]] += 1
+            domain_counts[results.configuration[DOMAIN]] += 1
 
         # Checking for common algorithms
-        if results.configuration[ALGORITHM] not in algorithmCounts:
-            algorithmCounts[results.configuration[ALGORITHM]] = 0
-            numAlgorithms += 1
+        if results.configuration[ALGORITHM] not in algorithm_counts:
+            algorithm_counts[results.configuration[ALGORITHM]] = 0
+            num_algorithms += 1
         else:
-            algorithmCounts[results.configuration[ALGORITHM]] += 1
+            algorithm_counts[results.configuration[ALGORITHM]] += 1
 
         if not quiet:
             print "== Configuration =="
@@ -140,42 +106,42 @@ for jsonFile in args:
             print
     else:
         if not quiet:
-            print "Skipping non-existent file '%s'" % jsonFile
+            print "Skipping non-existent file '%s'" % json_file
 
 # TODO cleanup and remove code duplication
-domainGroups = True
-if numDomains != 1:
-    if numAlgorithms < numDomains:
+domain_groups = True
+if num_domains != 1:
+    if num_algorithms < num_domains:
         print "Data grouped by algorithm, not by domain..."
-        domainGroups = False
-        if numAlgorithms != 1:
+        domain_groups = False
+        if num_algorithms != 1:
             print "Removing extra algorithms..."
             # Get max algorithm count
-            maxAlgorithm = None
-            maxCount = 0
-            for key, value in algorithmCounts.iteritems():
-                if value > maxCount:
-                    maxCount = value
-                    maxAlgorithm = key
+            max_algorithm = None
+            max_count = 0
+            for key, value in algorithm_counts.iteritems():
+                if value > max_count:
+                    max_count = value
+                    max_algorithm = key
             # Remove data from other algorithms
             for key, value in times.items():
-                if key.algorithm != maxAlgorithm:
+                if key.algorithm != max_algorithm:
                     del times[key]
-                    numAlgorithms -= 1
+                    num_algorithms -= 1
     else:
         print "Removing extra domains..."
         # Get max domain count
-        maxDomain = None
-        maxCount = 0
-        for key, value in domainCounts.iteritems():
-            if value > maxCount:
-                maxCount = value
-                maxDomain = key
+        max_domain = None
+        max_count = 0
+        for key, value in domain_counts.iteritems():
+            if value > max_count:
+                max_count = value
+                max_domain = key
         # Remove data from other domains
         for key, value in times.items():
-            if key[DOMAIN] != maxDomain:
+            if key[DOMAIN] != max_domain:
                 del times[key]
-                numDomains -= 1
+                num_domains -= 1
 
 # print times
 # data = np.concatenate(times.values())
@@ -189,18 +155,18 @@ data = times.values()
 
 plt.ylabel("Goal Achievement Time (ms)")
 labels = []
-if domainGroups:
-    assert numDomains == 1
+if domain_groups:
+    assert num_domains == 1
     plt.xlabel("Algorithm")
-    plt.title(translateDomainName(domainCounts.keys()[0]))
+    plt.title(plotUtils.translate_domain_name(domain_counts.keys()[0]))
     for key in times.keys():  # Assumes same order will be plotted
-        labels.append(translateAlgorithmName(key[ALGORITHM]))
+        labels.append(plotUtils.translate_algorithm_name(key[ALGORITHM]))
 else:
-    assert numAlgorithms == 1
+    assert num_algorithms == 1
     plt.xlabel("Domain")
-    plt.title(translateAlgorithmName(algorithmCounts.keys()[0]))
+    plt.title(plotUtils.translate_algorithm_name(algorithm_counts.keys()[0]))
     for key in times.keys():
-        labels.append(translateDomainName(key[DOMAIN]))
+        labels.append(plotUtils.translate_domain_name(key[DOMAIN]))
 
 # print len(data)
 x = np.arange(1, len(data) + 1)
@@ -213,34 +179,36 @@ y = data
 # sem = stats.sem(y, axis=1)
 med = []
 sem = []
+std = []
 for subdata in y:
     med.append(np.median(subdata))
     sem.append(stats.sem(subdata))
+    std.append(np.std(subdata))
 
-CI = stats.t.interval(0.95, len(y) - 1, loc=med, scale=sem)
-# print 'CI',CI
-# print CI[0]
-# print CI[1]
+bxpstats = cbook.boxplot_stats(y)
+confidence_intervals = [[], []]
+for stat in bxpstats:
+    confidence_intervals[0].append(stat['cilo'])
+    confidence_intervals[1].append(stat['cihi'])
+confidence_intervals[0] = np.array(confidence_intervals[0])
+confidence_intervals[1] = np.array(confidence_intervals[1])
 
 # plt.rcParams.update({'font.size': 14})
 plt.boxplot(y, notch=False, labels=labels)
-plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=3)
-# plt.errorbar(x, np.median(y, axis=0), yerr=CI)
-
-# plt.boxplot(data, notch=True, labels=labels)
-# plt.errorbar(np.arange(len(data)), data, yerr=np.std(data,axis=0))
+plt.errorbar(x, med, yerr=(med - confidence_intervals[0], confidence_intervals[1] - med), fmt='none', linewidth=3)
 
 # Save before showing since show resets the figures
-if saveFile is not None:
-    filename, ext = os.path.splitext(saveFile)
+if save_file is not None:
+    filename, ext = os.path.splitext(save_file)
     if ext is '.pdf':
         from matplotlib.backends.backend_pdf import PdfPages
-        pp = PdfPages(saveFile)
+
+        pp = PdfPages(save_file)
         plt.savefig(pp, format='pdf')
         pp.close()
     else:
         # Try and save it
-        plt.savefig(saveFile)
+        plt.savefig(save_file)
 
 if not quiet:
     print "Plotting..."
