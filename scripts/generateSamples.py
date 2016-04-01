@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-import os
-import sys
 import getopt
 import json
 import numpy
+import os
+import sys
 
 
 class Result:
