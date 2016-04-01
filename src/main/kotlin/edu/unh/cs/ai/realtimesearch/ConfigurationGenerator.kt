@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
     }
 
 //    for (configuration in configurations) {
-//        println(configuration)
+//        println(ExperimentData(configuration).toIndentedJson())
 //    }
 
     println("${configurations.size} configurations were generated.")
