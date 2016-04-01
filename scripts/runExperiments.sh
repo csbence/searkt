@@ -124,7 +124,7 @@ get_unique_filename() {
 
 # Parses a configuration file and sets up the directory structure based on the 
 # results in the form:
-# results/algorithm/domain/params
+# results/algorithm/domain/params/instance
 # arg1: the configuration file
 get_dirs_from_config() {
   if [ -z "$1" ]; then
@@ -137,9 +137,16 @@ import json
 config = json.loads('$PCONFIG')
 algorithm = config['algorithmName']
 domain = config['domainName']
-termType = config['terminationCheckerType']
+termType = config['terminationType']
 timeLimit = config['timeLimit'] if 'timeLimit' in config else None
-print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit)
+duration = config['actionDuration']
+instanceName = config['domainInstanceName']
+if instanceName is not None:
+    instanceName = instanceName.replace("/", "_")
+lookaheadDepthLimit = config['lookaheadDepthLimit'] if 'lookaheadDepthLimit' in config else None
+commitmentStrategy = config['commitmentStrategy'] if 'commitmentStrategy' in config else None
+singleStepLookahead = config['singleStepLookahead'] if 'singleStepLookahead' in config else None
+print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit) + "-" + str(duration) + "-" + (str(lookaheadDepthLimit) if lookaheadDepthLimit is not None else "None") + "-" + (commitmentStrategy if commitmentStrategy is not None else "None") + "-" + (str(singleStepLookahead) if singleStepLookahead is not None else "None") + "/" + instanceName
 EOF
 ))
     add_dir "$SUB_DIRS"
@@ -230,7 +237,7 @@ run() {
   fi
 }
 
-while getopts $OPTIONS arg; do
+while getopts "$OPTIONS" arg; do
   case $arg in
     h)
       usage

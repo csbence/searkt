@@ -47,7 +47,8 @@ class Results:
 
 def translateAlgorithmName(algName):
     # Handle hat (^) names
-    algName = re.sub(r"_(.*)_(HAT)", r"_\\hat{\1}", algName)
+    if "HAT" in algName:
+        algName = re.sub(r"(.*)_(.*)_(HAT)", r"\1", algName) + re.sub(r"(.*)_(.*)_(HAT)", r"_$\\hat{\2}$", algName).lower()
     # Specific word formatting
     algName = algName.replace('DYNAMIC', 'Dynamic')
     algName = algName.replace('WEIGHTED', 'Weighted')
@@ -103,6 +104,8 @@ numAlgorithms = 0
 for jsonFile in args:
     if os.path.exists(jsonFile):
         f = open(jsonFile, 'r')
+        if not quiet:
+            print "File: ", jsonFile
         results = Results(json.loads(f.read()))
 
         if results.configuration not in times:
@@ -124,7 +127,6 @@ for jsonFile in args:
             algorithmCounts[results.configuration[ALGORITHM]] += 1
 
         if not quiet:
-            print "File: ", jsonFile
             print "== Configuration =="
             print "Algorithm: ", results.configuration[ALGORITHM]
             print "Domain: ", results.configuration[DOMAIN]
@@ -179,7 +181,7 @@ if numDomains != 1:
 # data = np.concatenate(times.values())
 data = times.values()
 # print data
-datadata = np.array(data)
+# datadata = np.array(data)
 
 # print data
 # print datadata
@@ -220,8 +222,9 @@ CI = stats.t.interval(0.95, len(y) - 1, loc=med, scale=sem)
 # print CI[0]
 # print CI[1]
 
+# plt.rcParams.update({'font.size': 14})
 plt.boxplot(y, notch=False, labels=labels)
-plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=4)
+plt.errorbar(x, med, yerr=(med - CI[0], CI[1] - med), fmt='none', linewidth=3)
 # plt.errorbar(x, np.median(y, axis=0), yerr=CI)
 
 # plt.boxplot(data, notch=True, labels=labels)
@@ -240,4 +243,5 @@ if saveFile is not None:
         plt.savefig(saveFile)
 
 if not quiet:
+    print "Plotting..."
     plt.show()
