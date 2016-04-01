@@ -34,7 +34,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
     private val closedList: HashSet<StateType> = HashSet(10000000, 1.0F)
 
-    class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
+    data class Node<StateType>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double)
 
     override fun plan(state: StateType): List<Action> {
         executionNanoTime += measureNanoTime {
@@ -50,6 +50,8 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             executionNanoTime += measureNanoTime {
 
                 val node = openList.remove()
+                closedList.add(node.state)
+
                 expandedNodeCount++
 
                 if (domain.isGoal(node.state)) {
@@ -66,7 +68,6 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
                         val successorNode = Node(node, successor.state, successor.action, nodeCost, nodeCost + domain.heuristic(successor.state))
                         openList.add(successorNode)
-                        closedList.add(successorNode.state)
                     }
                 }
             }
