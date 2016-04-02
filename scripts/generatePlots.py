@@ -189,16 +189,7 @@ plt.errorbar(x, med, yerr=(med - confidence_intervals[0], confidence_intervals[1
 
 # Save before showing since show resets the figures
 if save_file is not None:
-    filename, ext = os.path.splitext(save_file)
-    if ext is '.pdf':
-        from matplotlib.backends.backend_pdf import PdfPages
-
-        pp = PdfPages(save_file)
-        plt.savefig(pp, format='pdf')
-        pp.close()
-    else:
-        # Try and save it
-        plt.savefig(save_file)
+    plotutils.save_plot(plt, save_file)
 
 if not quiet:
     print "Plotting..."

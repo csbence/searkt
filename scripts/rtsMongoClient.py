@@ -14,6 +14,8 @@ import plotutils
 class GraphType(Enum):
     gatPerDuration = 1
     gatBoxPlot = 2
+    gatBars = 3
+    gatLines = 4
 
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:"
@@ -67,19 +69,25 @@ def get_get_per_duration_data(db, algorithm, domain, instance):
     return data_action_durations
 
 
-def get_gat_data(db, algorithm, domain, instance):
+def get_gat_data(db, algorithms, domain, instance):
     gat_data = []
-    data_tiles = db.experimentResult.find({
-        "result.experimentConfiguration.domainName": domain,
-        "result.experimentConfiguration.algorithmName": algorithm,
-        "result.experimentConfiguration.domainInstanceName": instance,
-        "result.success": True
-    })
+    labels = []
 
-    for result in data_tiles:
-        gat_data.append(plotutils.cnv_ns_to_ms(result['result']['goalAchievementTime']))
+    for algorithm in algorithms:
+        data_tiles = db.experimentResult.find({
+            "result.experimentConfiguration.domainName": domain,
+            "result.experimentConfiguration.algorithmName": algorithm,
+            "result.experimentConfiguration.domainInstanceName": instance,
+            "result.success": True
+        })
 
-    return gat_data
+        data = []
+        for result in data_tiles:
+            data.append(plotutils.cnv_ns_to_ms(result['result']['goalAchievementTime']))
+        gat_data.append(data)
+        labels.append(plotutils.translate_algorithm_name(algorithm))
+
+    return gat_data, labels
 
 
 def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
@@ -112,15 +120,7 @@ def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
 
 
 def plot_gat_boxplots(db, algorithms, domain, instance):
-    y = []
-    labels = []
-
-    # Plot for each provided algorithm
-    for algorithm in algorithms:
-        data = get_gat_data(db, algorithm, domain, instance)
-        y.append(data)
-        labels.append(plotutils.translate_algorithm_name(algorithm))
-
+    y, labels = get_gat_data(db, algorithms, domain, instance)
     med, confidence_interval_low, confidence_interval_high = plotutils.median_confidence_intervals(y)
 
     # Set labels and build plots
@@ -132,6 +132,42 @@ def plot_gat_boxplots(db, algorithms, domain, instance):
     x = np.arange(1, len(y) + 1)
     plt.errorbar(x, med, yerr=(confidence_interval_low, confidence_interval_high), fmt='none',
                  linewidth=3)
+
+    return plt
+
+
+def plot_gat_bars(db, algorithms, domain, instance):
+    y, labels = get_gat_data(db, algorithms, domain, instance)
+    x = np.arange(1, len(y) + 1)
+    med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
+    mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
+    width = 0.35
+
+    fig, axis = plt.subplots()
+    med_bars = axis.bar(x, med, width, color='r', yerr=(med_confidence_interval_low, med_confidence_interval_high))
+    mean_bars = axis.bar(x + width, mean, width, color='y',
+                         yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
+
+    axis.set_title(plotutils.translate_domain_name(domain) + "-" + instance)
+    axis.set_ylabel("Goal Achievement Time (ms)")
+    axis.set_xlabel("Algorithms")
+    axis.set_xticks(x + width)
+    axis.set_xticklabels(labels)
+    axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
+
+    return plt
+
+
+def plot_gat_lines(db, algorithms, domain, instance):
+    y, labels = get_gat_data(db, algorithms, domain, instance)
+    x = np.arange(1, len(y) + 1)
+    med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
+    plt.title(plotutils.translate_domain_name(domain) + "-" + instance)
+    plt.ylabel("Goal Achievement Time (ms)")
+    plt.xlabel("Algorithms")
+    plt.xlim(x[0] - 0.1, x[len(x) - 1] + 0.1)
+    plt.errorbar(x, med, yerr=(med_confidence_interval_low, med_confidence_interval_high))
+    plt.xticks(x, labels)
 
     return plt
 
@@ -186,22 +222,16 @@ if __name__ == '__main__':
 
     plotter = {
         GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
-        GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance)
+        GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance),
+        GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance),
+        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance)
     }[graph_type]
 
     plot = plotter()
 
     # Save before showing since show resets the figures
     if save_file is not None:
-        filename, ext = os.path.splitext(save_file)
-        if ext is '.pdf':
-            from matplotlib.backends.backend_pdf import PdfPages
-            pp = PdfPages(save_file)
-            plot.savefig(pp, format='pdf')
-            pp.close()
-        else:
-            # Try and save it
-            plot.savefig(save_file)
+        plotutils.save_plot(plt, save_file)
 
     if not quiet:
         plot.show()

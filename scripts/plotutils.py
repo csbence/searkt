@@ -1,5 +1,6 @@
 import matplotlib.cbook as cbook
 import numpy as np
+import os
 import re
 from scipy import stats
 
@@ -60,3 +61,16 @@ def mean_confidence_intervals(data):
     std = [stats.sem(x) for x in data]
     confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=means, scale=std)
     return means, means - confidence_intervals[0], confidence_intervals[1] - means
+
+
+def save_plot(plot, filename):
+    basename, ext = os.path.splitext(filename)
+    if ext is '.pdf':
+        from matplotlib.backends.backend_pdf import PdfPages
+
+        pp = PdfPages(filename)
+        plot.savefig(pp, format='pdf')
+        pp.close()
+    else:
+        # Try and save it
+        plot.savefig(filename)
