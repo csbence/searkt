@@ -26,7 +26,6 @@ usage() {
   echo "options:"
   echo "  h                  show this usage info"
   echo "  o <file>           specify an output file name"
-  echo "  i <name>           specify an instance name for the configuration"
   echo "  I                  ignore errors in results when performing multiple runs"
   echo "  b <path>           provide path to IBM jdk; default $IBM_PATH"
   echo "  n <num>            specify the number of experiment runs"
@@ -40,6 +39,7 @@ usage() {
   echo "  t <type>           specify the termination type"
   echo "  p <param>          specify the time limit to provide"
   echo "  e <key(type)=val>  specify key/value pair for extra parameters"
+  echo "  i <name>           specify an instance name for the configuration"
   echo "distribution options:"
   echo "  D                  run the experiments via installed distribution"
   echo "  g                  install the dist with gradle before running"
@@ -124,7 +124,7 @@ get_unique_filename() {
 
 # Parses a configuration file and sets up the directory structure based on the 
 # results in the form:
-# results/algorithm/domain/params
+# results/algorithm/domain/params/instance
 # arg1: the configuration file
 get_dirs_from_config() {
   if [ -z "$1" ]; then
@@ -137,9 +137,16 @@ import json
 config = json.loads('$PCONFIG')
 algorithm = config['algorithmName']
 domain = config['domainName']
-termType = config['terminationCheckerType']
+termType = config['terminationType']
 timeLimit = config['timeLimit'] if 'timeLimit' in config else None
-print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit)
+duration = config['actionDuration']
+instanceName = config['domainInstanceName']
+if instanceName is not None:
+    instanceName = instanceName.replace("/", "_")
+lookaheadDepthLimit = config['lookaheadDepthLimit'] if 'lookaheadDepthLimit' in config else None
+commitmentStrategy = config['commitmentStrategy'] if 'commitmentStrategy' in config else None
+singleStepLookahead = config['singleStepLookahead'] if 'singleStepLookahead' in config else None
+print algorithm + "/" + domain + "/" + termType + "-" + str(timeLimit) + "-" + str(duration) + "-" + (str(lookaheadDepthLimit) if lookaheadDepthLimit is not None else "None") + "-" + (commitmentStrategy if commitmentStrategy is not None else "None") + "-" + (str(singleStepLookahead) if singleStepLookahead is not None else "None") + "/" + instanceName
 EOF
 ))
     add_dir "$SUB_DIRS"
@@ -230,7 +237,7 @@ run() {
   fi
 }
 
-while getopts $OPTIONS arg; do
+while getopts "$OPTIONS" arg; do
   case $arg in
     h)
       usage
@@ -358,11 +365,10 @@ else
     PARAM_DIR="$PARAM_DIR-$TIME_LIMIT"
   fi
   add_dir "$PARAM_DIR"
-fi
 
-# Instance name separate from configuration
-if [ -n "$INSTANCE_NAME" ]; then
-  add_dir "$INSTANCE_NAME"
+  if [ -n "$INSTANCE_NAME" ]; then
+    add_dir "$INSTANCE_NAME"
+  fi
 fi
 
 # Detect if the IBM path exists

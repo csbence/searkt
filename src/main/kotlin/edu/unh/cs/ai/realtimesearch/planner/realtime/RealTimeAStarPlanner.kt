@@ -22,19 +22,21 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         val successors = domain.successors(state)
         val sortedSuccessors = evaluateSuccessors(successors, terminationChecker).sortedBy { it.successorBundle.actionCost + it.heuristicLookahead }
 
-        val action = if (sortedSuccessors.size == 1) {
-            // Only one action is available
-            val successorHeuristicPair = sortedSuccessors[0]
-            heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
-            ActionBundle(successorHeuristicPair.successorBundle.action, successorHeuristicPair.successorBundle.actionCost)
-        } else if (sortedSuccessors.size >= 2) {
-            // Save the second best action's f value
-            val successorHeuristicPair = sortedSuccessors[1]
-            heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
-            // Use the best action
-            ActionBundle(sortedSuccessors[0].successorBundle.action, sortedSuccessors[0].successorBundle.actionCost)
-        } else {
-            throw RuntimeException("Cannot expand a state with no successors.")
+        val action = when {
+            sortedSuccessors.size == 1 -> {
+                // Only one action is available
+                val successorHeuristicPair = sortedSuccessors[0]
+                heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
+                ActionBundle(successorHeuristicPair.successorBundle.action, successorHeuristicPair.successorBundle.actionCost)
+            }
+            sortedSuccessors.size >= 2 -> {
+                // Save the second best action's f value
+                val successorHeuristicPair = sortedSuccessors[1]
+                heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
+                // Use the best action
+                ActionBundle(sortedSuccessors[0].successorBundle.action, sortedSuccessors[0].successorBundle.actionCost)
+            }
+            else -> throw RuntimeException("Cannot expand a state with no successors.")
         }
 
         logger.debug { "Selected action: $action" }

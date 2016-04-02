@@ -6,19 +6,15 @@ import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.angleDifference
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.util.angleDifference
 import edu.unh.cs.ai.realtimesearch.util.convertTime
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
-import groovy.json.JsonOutput
-import groovyjarjarcommonscli.*
+import groovyjarjarcommonscli.CommandLine
+import groovyjarjarcommonscli.Option
+import groovyjarjarcommonscli.Options
 import javafx.animation.*
-import javafx.application.Application
 import javafx.beans.value.WritableValue
 import javafx.event.EventHandler
 import javafx.scene.Scene
@@ -27,9 +23,6 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
 import org.slf4j.LoggerFactory
-import java.io.File
-import java.io.FileInputStream
-import kotlin.system.exitProcess
 
 /**
  * Visualizer for the Acrobot domain.  Given a set of results, produces and runs an animation of the Acrobot domain
@@ -59,7 +52,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         processCommandLine(parameters.raw.toTypedArray())
 
-        acrobotConfiguration = AcrobotConfiguration.fromString(experimentResult!!.experimentConfiguration["rawDomain"] as String)
+        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration["rawDomain"] as String)
 
         for (action in experimentResult!!.actions) {
             actionList.add(AcrobotAction.valueOf(action))

@@ -7,17 +7,15 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConf
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import groovyjarjarcommonscli.*
-import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
 import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
+import javafx.application.Application
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
 
 class Input
 
@@ -36,7 +34,7 @@ fun main(args: Array<String>) {
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
                 Domains.POINT_ROBOT.toString(),
                 rawDomain,
-                Planners.ARA_STAR.toString(),
+                Planners.RTA_STAR.toString(),
                 "time")
         manualConfiguration["lookaheadDepthLimit"] = 4L
         manualConfiguration["actionDuration"] = 10L
@@ -65,7 +63,7 @@ fun main(args: Array<String>) {
 
         val params: MutableList<String> = arrayListOf()
         params.add(manualConfiguration.rawDomain)
-        for(action in result.actions)
+        for (action in result.actions)
             params.add(action.toString())
 
         //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())

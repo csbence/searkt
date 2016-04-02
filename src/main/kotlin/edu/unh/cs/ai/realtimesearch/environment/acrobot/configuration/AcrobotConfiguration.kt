@@ -10,10 +10,10 @@ import java.io.InputStream
 data class AcrobotConfiguration(
         val initialState: AcrobotState = defaultInitialAcrobotState,
         val endState: AcrobotState = verticalUpAcrobotState,
-        val endLink1LowerBound: AcrobotLink = verticalUpAcrobotState.link1 - AcrobotLink(0.3, 0.3), /*Boone*/
-        val endLink2LowerBound: AcrobotLink = verticalUpAcrobotState.link2 - AcrobotLink(0.3, 0.3), /*Boone*/
-        val endLink1UpperBound: AcrobotLink = verticalUpAcrobotState.link1 + AcrobotLink(0.3, 0.3), /*Boone*/
-        val endLink2UpperBound: AcrobotLink = verticalUpAcrobotState.link2 + AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink1LowerBound: AcrobotLink = AcrobotLink(-0.3, -0.3), /*Boone*/
+        val endLink2LowerBound: AcrobotLink = AcrobotLink(-0.3, -0.3), /*Boone*/
+        val endLink1UpperBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink2UpperBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val stateConfiguration: AcrobotStateConfiguration = AcrobotStateConfiguration()) {
 
     companion object {
@@ -21,35 +21,36 @@ data class AcrobotConfiguration(
          * Returns an AcrobotConfiguration from the given string contents.
          * @param string a string in JSON format representing an AcrobotConfiguration
          */
-        fun fromString(string: String): AcrobotConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
+        fun fromJson(string: String): AcrobotConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
 
         /**
          * Returns an AcrobotConfiguration from the given stream contents.
          * @param stream a stream with JSON format content representing an AcrobotConfiguration
          */
-        fun fromStream(stream: InputStream): AcrobotConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
+        fun fromJsonStream(stream: InputStream): AcrobotConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
 
         /**
          * Returns an AcrobotConfiguration from the given map.
          * @param map a map containing AcrobotConfiguration values
          */
-        fun fromMap(map: Map<*,*>): AcrobotConfiguration {
-            val initialState = map["initialState"] as Map<*,*>
-            val endState = map["endState"] as Map<*,*>
-            val endLink1LowerBound = map["endLink1LowerBound"] as Map<*,*>
-            val endLink2LowerBound = map["endLink2LowerBound"] as Map<*,*>
-            val endLink1UpperBound = map["endLink1UpperBound"] as Map<*,*>
-            val endLink2UpperBound = map["endLink2UpperBound"] as Map<*,*>
-            val stateConfiguration = map["stateConfiguration"] as Map<*,*>
-
-            return AcrobotConfiguration(
-                    AcrobotState.fromMap(initialState),
-                    AcrobotState.fromMap(endState),
-                    AcrobotLink.fromMap(endLink1LowerBound),
-                    AcrobotLink.fromMap(endLink2LowerBound),
-                    AcrobotLink.fromMap(endLink1UpperBound),
-                    AcrobotLink.fromMap(endLink2UpperBound),
-                    AcrobotStateConfiguration.fromMap(stateConfiguration))
-        }
+        fun fromMap(map: Map<*, *>): AcrobotConfiguration = AcrobotConfiguration(
+                AcrobotState.fromMap(map["initialState"] as Map<*, *>),
+                AcrobotState.fromMap(map["endState"] as Map<*, *>),
+                AcrobotLink.fromMap(map["endLink1LowerBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["endLink2LowerBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["endLink1UpperBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["endLink2UpperBound"] as Map<*, *>),
+                AcrobotStateConfiguration.fromMap(map["stateConfiguration"] as Map<*, *>)
+        )
     }
+
+    fun toMap(): MutableMap<String, Any?> = mutableMapOf(
+            "initialState" to initialState.toMap(),
+            "endState" to endState.toMap(),
+            "endLink1LowerBound" to endLink1LowerBound.toMap(),
+            "endLink2LowerBound" to endLink2LowerBound.toMap(),
+            "endLink1UpperBound" to endLink1UpperBound.toMap(),
+            "endLink2UpperBound" to endLink2UpperBound.toMap(),
+            "stateConfiguration" to stateConfiguration.toMap()
+    )
 }

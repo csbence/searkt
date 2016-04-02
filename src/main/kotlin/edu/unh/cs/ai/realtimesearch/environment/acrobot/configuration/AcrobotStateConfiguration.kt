@@ -21,20 +21,19 @@ data class AcrobotStateConfiguration(
          * Returns an AcrobotStateConfiguration from the given string contents.
          * @param string a string in JSON format representing an AcrobotStateConfiguration
          */
-        fun fromString(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
+        fun fromJson(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
 
         /**
          * Returns an AcrobotStateConfiguration from the given stream contents.
          * @param stream a stream with JSON format content representing an AcrobotStateConfiguration
          */
-        fun fromSteam(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
+        fun fromJsonStream(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
 
         /**
          * Returns an AcrobotStateConfiguration from the given map.
          * @param map a map containing AcrobotStateConfiguration values
          */
-        fun fromMap(map: Map<*,*>): AcrobotStateConfiguration {
-            return AcrobotStateConfiguration(
+        fun fromMap(map: Map<*,*>): AcrobotStateConfiguration = AcrobotStateConfiguration(
                     (map["maxAngularVelocity1"] as BigDecimal).toDouble(),
                     (map["maxAngularVelocity2"] as BigDecimal).toDouble(),
                     (map["minAngularVelocity1"] as BigDecimal).toDouble(),
@@ -43,7 +42,19 @@ data class AcrobotStateConfiguration(
                     (map["positionGranularity2"] as BigDecimal).toDouble(),
                     (map["velocityGranularity1"] as BigDecimal).toDouble(),
                     (map["velocityGranularity2"] as BigDecimal).toDouble(),
-                    (map["timeStep"] as Int).toLong())
-        }
+                    (map["timeStep"] as Int).toLong()
+        )
     }
+
+    fun toMap(): MutableMap<String, Any?> = mutableMapOf(
+            "maxAngularVelocity1" to maxAngularVelocity1,
+            "maxAngularVelocity2" to maxAngularVelocity2,
+            "minAngularVelocity1" to minAngularVelocity1,
+            "minAngularVelocity2" to minAngularVelocity2,
+            "positionGranularity1" to positionGranularity1,
+            "positionGranularity2" to positionGranularity2,
+            "velocityGranularity1" to velocityGranularity1,
+            "velocityGranularity2" to velocityGranularity2,
+            "timeStep" to timeStep
+    )
 }

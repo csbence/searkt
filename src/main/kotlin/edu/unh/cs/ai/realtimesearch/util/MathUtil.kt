@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import java.util.concurrent.TimeUnit
+
 /**
  * The accuracy to use when comparing double numbers.
  */
@@ -30,4 +32,26 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
 /**
  * Convert time in ns to double in seconds
  */
-fun convertTime (time: Long): Double = time.toDouble() / 1000000000.0
+fun convertTime (time: Long): Double = TimeUnit.SECONDS.convert(time, TimeUnit.NANOSECONDS).toDouble()
+
+/**
+ * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
+ * [-pi,pi] to avoid attempting to rotate completely around in one direction.
+ */
+fun angleDifference(angle: Double, goalAngle: Double): Double {
+    var difference = goalAngle - angle
+    if (difference < -Math.PI)
+        difference += 2 * Math.PI
+    else if (difference > Math.PI)
+        difference -= 2 * Math.PI
+    return difference
+}
+
+/**
+ * Calculate the angle distance between an angle and a goal angle.  The resulting distance will be in the range
+ * [0,pi].
+ */
+fun angleDistance(angle: Double, goalAngle: Double): Double {
+    val distance = angleDifference(angle, goalAngle)
+    return if (distance < 0) distance * -1 else distance
+}

@@ -37,7 +37,7 @@ add_arg() {
   fi
 }
 
-while getopts $OPTIONS arg; do
+while getopts "$OPTIONS" arg; do
   case $arg in
     h)
       usage

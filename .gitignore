@@ -1,4 +1,4 @@
-/scripts/rtsMongoClient.py
+*.log
 
 #3rd party libraries for testing
 /src/main/kotlin/edu/unh/cs/ai/realtimesearch/external
@@ -115,3 +115,11 @@ gradle-app.setting
 
 # JVM output
 verbosegc*.txt
+
+# graphs
+*.eps
+*.pdf
+
+# sample configurations
+/configs/
+/configurations/
