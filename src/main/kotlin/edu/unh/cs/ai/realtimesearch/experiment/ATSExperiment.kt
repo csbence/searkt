@@ -56,9 +56,9 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
             val update = planner.update()
             if (update < 1.0) {
                 actionList.forEach {
-                    if (it.action != null) {
-                        world.step(it.action) // Move the agent
-                        actions.add(it.action.toString()) // Save the action
+                    if (it/*.action*/ != null) {
+                        world.step(it/*.action*/) // Move the agent
+                        actions.add(it/*.action*/.toString()) // Save the action
                     }
                 }
             } else {
@@ -66,14 +66,14 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
                 var count = 0;
                 for (it in actionList) {
                     //println(it.action)
-                    if (it.action != null) {
+                    if (it/*.action*/ != null) {
 
 
                         if (count < maxCount) {
-                            world.step(it.action) // Move the agent
-                            actions.add(it.action.toString())
+                            world.step(it/*.action*/) // Move the agent
+                            actions.add(it/*.action*/.toString())
                         }// Save the action
-                        actionsLists.add(it.action.toString())
+                        actionsLists.add(it/*.action*/.toString())
                         count++;
                     }
                     //print(world.getState())
@@ -106,7 +106,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
                 pathLength * experimentConfiguration.actionDuration,
                 executionNanoTime + pathLength * experimentConfiguration.actionDuration,
                 pathLength,
-                actions.map { it.toString() })
+                actionsLists.map { it.toString() })
     }
 }
 

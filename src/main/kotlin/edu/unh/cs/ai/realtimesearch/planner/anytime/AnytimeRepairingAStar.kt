@@ -20,11 +20,13 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     private var goal: StateType? = null
     private var targetgoal: StateType? = null
     private var goalNode: Node<StateType>? = null
+    private val allNodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
+    private var iterationCount = 0;
 
     public var generatedNodes = 0
     public var expandedNodes = 0
 
-    data class Node<State>(val parent: Node<State>? = null, val state: State, val action: Action? = null, val cost: Double = 0.0/*, val heuristic: Double = 0.0*/)
+    data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int/*, val heuristic: Double = 0.0*/)
 
 
     private fun improvePath() {
@@ -41,10 +43,25 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
             domain.predecessors(currentState).forEach {
                 val predecessorNode = closedList[it.state]
-                //println(predecessorNode);
+                println("" + it.state + " " + it.state.hashCode() + " " + predecessorNode);
 
                 if (predecessorNode == null || predecessorNode.cost > currentNode.cost + it.actionCost) {
-                    val updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost)
+                    var updatedSuccessorNode = allNodes[it.state]
+                    if(updatedSuccessorNode == null){
+                        updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost, iterationCount)
+                        allNodes[it.state] = updatedSuccessorNode
+                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
+                    }
+                    else if(updatedSuccessorNode.iteration == iterationCount
+                            || (updatedSuccessorNode.iteration < iterationCount && updatedSuccessorNode.cost > currentNode.cost + it.actionCost)){
+                        updatedSuccessorNode.action = it.action
+                        updatedSuccessorNode.parent = currentNode
+                        updatedSuccessorNode.cost = currentNode.cost + it.actionCost
+                        updatedSuccessorNode.iteration = iterationCount
+                        allNodes[it.state] = updatedSuccessorNode
+                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
+                    }
+
                     closedList[it.state] = updatedSuccessorNode
 
 //                    println(targetgoal)
@@ -67,13 +84,26 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    fun solve(startState: StateType, goalState: StateType): MutableList<Node<StateType>> {
+    fun solve(startState: StateType, goalState: StateType): MutableList<Action?> {
         //Solving backwards, so flip start and goal states
 
-        //println( " solve ")
+//        println( " solve ")
         targetgoal = startState
-        closedList[goalState] = Node(state = goalState/*, heuristic = domain.heuristic(goalState, startState)*/)
+        var tempNode = allNodes[goalState]
 
+        if(tempNode == null) {
+            tempNode = Node(state = goalState/*, heuristic = domain.heuristic(goalState, startState)*/, iteration = iterationCount)
+            allNodes[goalState] = tempNode
+        }
+        else{
+            tempNode.parent = null
+            tempNode.action = null
+            tempNode.cost = 0.0
+            tempNode.iteration = iterationCount
+            allNodes[goalState] = tempNode
+        }
+
+        closedList[goalState] = tempNode
         //println( " ADD ")
         openList.add(closedList[goalState])
         //println( " added ")
@@ -82,12 +112,14 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         // calculate e
         //assert(inconsistentStates.isEmpty())
 
-        val result: MutableList<Node<StateType>> = arrayListOf()
+        iterationCount++
+        val result: MutableList<Action?> = arrayListOf()
         var cur = goalNode
         while (cur != null) {
-            //print("" + cur.state + " " + cur.action + " ")
-            //print("" + cur.action + " ")
-            result.add(cur)
+//            println("looping")
+//            print("" + cur.state + " " + cur.action + " ")
+//            print("" + cur.action + " ")
+            result.add(cur!!.action)
             cur = cur.parent
         }
         //println()

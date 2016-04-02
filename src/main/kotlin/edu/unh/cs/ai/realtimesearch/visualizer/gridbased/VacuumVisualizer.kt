@@ -44,7 +44,7 @@ class VacuumVisualizer : BaseVisualizer() {
 //            actionList.add(action)
 //        }
         val DISPLAY_LINE = true
-        val isARAStar = false;
+        val isARAStar = true;
         if(isARAStar)
             moverobot = false
 
@@ -210,23 +210,24 @@ class VacuumVisualizer : BaseVisualizer() {
             }
         }
 
-        for(it in paths) {
-            if (DISPLAY_LINE)
-                root.children.add(it)
-        }
+        //for(it in paths) {
+            if (DISPLAY_LINE) {
+                root.children.add(paths.get(pIndex))
+            }
+        //}
 
-        if(isARAStar) {
-            paths.get(0).stroke = Color.RED
-            paths.get(1).stroke = Color.YELLOW
-            paths.get(2).stroke = Color.BLACK
-            paths.get(3).stroke = Color.CYAN
-            paths.get(4).stroke = Color.BLUE
-            paths.get(5).stroke = Color.MAGENTA
-            paths.get(6).stroke = Color.GREEN
-            paths.get(7).stroke = Color.WHITE
-            paths.get(8).stroke = Color.GOLD
-            paths.get(9).stroke = Color.PLUM
-        }
+//        if(isARAStar) {
+//            paths.get(0).stroke = Color.RED
+//            paths.get(1).stroke = Color.YELLOW
+//            paths.get(2).stroke = Color.BLACK
+//            paths.get(3).stroke = Color.CYAN
+//            paths.get(4).stroke = Color.BLUE
+//            paths.get(5).stroke = Color.MAGENTA
+//            paths.get(6).stroke = Color.GREEN
+//            paths.get(7).stroke = Color.WHITE
+//            paths.get(8).stroke = Color.GOLD
+//            paths.get(9).stroke = Color.PLUM
+//        }
 
         paths.get(pIndex).stroke = Color.ORANGE
 
