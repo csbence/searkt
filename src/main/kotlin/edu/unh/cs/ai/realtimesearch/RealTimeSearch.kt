@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
                 Domains.POINT_ROBOT.toString(),
                 rawDomain,
-                Planners.RTA_STAR.toString(),
+                Planners.ARA_STAR.toString(),
                 "time")
         manualConfiguration["lookaheadDepthLimit"] = 4L
         manualConfiguration["actionDuration"] = 10L
