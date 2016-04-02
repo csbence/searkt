@@ -26,7 +26,6 @@ usage() {
   echo "options:"
   echo "  h                  show this usage info"
   echo "  o <file>           specify an output file name"
-  echo "  i <name>           specify an instance name for the configuration"
   echo "  I                  ignore errors in results when performing multiple runs"
   echo "  b <path>           provide path to IBM jdk; default $IBM_PATH"
   echo "  n <num>            specify the number of experiment runs"
@@ -40,6 +39,7 @@ usage() {
   echo "  t <type>           specify the termination type"
   echo "  p <param>          specify the time limit to provide"
   echo "  e <key(type)=val>  specify key/value pair for extra parameters"
+  echo "  i <name>           specify an instance name for the configuration"
   echo "distribution options:"
   echo "  D                  run the experiments via installed distribution"
   echo "  g                  install the dist with gradle before running"
@@ -365,11 +365,10 @@ else
     PARAM_DIR="$PARAM_DIR-$TIME_LIMIT"
   fi
   add_dir "$PARAM_DIR"
-fi
 
-# Instance name separate from configuration
-if [ -n "$INSTANCE_NAME" ]; then
-  add_dir "$INSTANCE_NAME"
+  if [ -n "$INSTANCE_NAME" ]; then
+    add_dir "$INSTANCE_NAME"
+  fi
 fi
 
 # Detect if the IBM path exists

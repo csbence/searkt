@@ -13,9 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-from scipy import stats
 
-import plotUtils
+import plotutils
 
 ALGORITHM = 0
 DOMAIN = 1
@@ -72,7 +71,7 @@ for json_file in args:
         f = open(json_file, 'r')
         if not quiet:
             print "File: ", json_file
-        results = plotUtils.Results(json.loads(f.read()))
+        results = plotutils.Results(json.loads(f.read()))
 
         if results.configuration not in times:
             times[results.configuration] = []
@@ -158,15 +157,15 @@ labels = []
 if domain_groups:
     assert num_domains == 1
     plt.xlabel("Algorithm")
-    plt.title(plotUtils.translate_domain_name(domain_counts.keys()[0]))
+    plt.title(plotutils.translate_domain_name(domain_counts.keys()[0]))
     for key in times.keys():  # Assumes same order will be plotted
-        labels.append(plotUtils.translate_algorithm_name(key[ALGORITHM]))
+        labels.append(plotutils.translate_algorithm_name(key[ALGORITHM]))
 else:
     assert num_algorithms == 1
     plt.xlabel("Domain")
-    plt.title(plotUtils.translate_algorithm_name(algorithm_counts.keys()[0]))
+    plt.title(plotutils.translate_algorithm_name(algorithm_counts.keys()[0]))
     for key in times.keys():
-        labels.append(plotUtils.translate_domain_name(key[DOMAIN]))
+        labels.append(plotutils.translate_domain_name(key[DOMAIN]))
 
 # print len(data)
 x = np.arange(1, len(data) + 1)
@@ -174,16 +173,7 @@ y = data
 # print x
 # print y
 
-# Get medians and stderr
-# med = np.median(y, axis=1) # Can't do this way for uneven data points (no axis 1)
-# sem = stats.sem(y, axis=1)
-med = []
-sem = []
-std = []
-for subdata in y:
-    med.append(np.median(subdata))
-    sem.append(stats.sem(subdata))
-    std.append(np.std(subdata))
+med = [np.median(subdata) for subdata in y]
 
 bxpstats = cbook.boxplot_stats(y)
 confidence_intervals = [[], []]
