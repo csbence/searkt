@@ -24,33 +24,50 @@ def print_counts(db):
     # pprint.pprint(configuration_status, width=1)
 
 
-def plot_gat_duration_error(db, algorithm, domain):
-    astar_data_action_durations = data_for_algorithm(db, "A_STAR", domain)
-    lss_lrta_star_data_action_durations = data_for_algorithm(db, algorithm, domain)
+def gat_per_duration_stats(data):
+    means = [np.mean(x) for x in data]
+    std = [stats.sem(x) for x in data]
+    confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=means, scale=std)
+    return means, means - confidence_intervals[0], confidence_intervals[1] - means
 
-    astar_data_action_duration_means = [np.mean(x) for x in astar_data_action_durations]
-    astar_data_action_duration_std = [stats.sem(x) for x in astar_data_action_durations]
-    lss_lrta_star_data_action_duration_means = [np.mean(x) for x in lss_lrta_star_data_action_durations]
 
-    astar_confidence_intervals = stats.t.interval(0.95, len(astar_data_action_durations) - 1, loc=astar_data_action_duration_means, scale=astar_data_action_duration_std)
+def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
+    # Gather required A* data
+    astar_gat_per_duration = data_for_algorithm(db, "A_STAR", domain, instance)
+    astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
+        gat_per_duration_stats(astar_gat_per_duration)
 
-    x = np.arange(1, len(astar_data_action_duration_means) + 1)
+    x = np.arange(1, len(astar_gat_per_duration_means) + 1)
+    # Plot A* as well if requested
+    if graph_astar:
+        plt.errorbar(x, astar_gat_per_duration_means, label='A*',
+                     yerr=(astar_confidence_interval_low, astar_confidence_interval_high))
 
+    # Plot for each provided algorithm
+    for algorithm in algorithms:
+        algorithm_gat_per_duration = data_for_algorithm(db, algorithm, domain, instance)
+        # algorithm_gat_per_duration_means = [np.mean(x) for x in algorithm_gat_per_duration]
+        algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
+            gat_per_duration_stats(algorithm_gat_per_duration)
+        plt.errorbar(x, algorithm_gat_per_duration_means, label=plotUtils.translate_algorithm_name(algorithm),
+                     yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
+
+    # Set labels and show
+    plt.title(plotUtils.translate_domain_name(domain) + " - " + instance)
     plt.ylabel("GAT log10 factor of optimal")
     plt.xlabel("expansions per unit duration log10")
-    plt.errorbar(x, astar_data_action_duration_means, yerr=(astar_data_action_duration_means - astar_confidence_intervals[0], astar_confidence_intervals[1] - astar_data_action_duration_means), label='A*', color='blue')
-    plt.errorbar(x, lss_lrta_star_data_action_duration_means, label=plotUtils.translate_algorithm_name(algorithm), color='green')
+    plt.xlim([0.9, 5.1])
     plt.legend()
-    plt.show()
+    return plt
 
 
-def data_for_algorithm(db, algorithm, domain):
+def data_for_algorithm(db, algorithm, domain, instance):
     data_action_durations = []
     for i in reversed(range(1, 6)):
         action_duration = 100 * 10 ** i
         data_tiles_a_star = db.experimentResult.find({"result.experimentConfiguration.domainName": domain,
                                                       "result.experimentConfiguration.algorithmName": algorithm,
-                                                      # "result.experimentConfiguration.domainInstanceName": "input/vacuum/dylan/",
+                                                      "result.experimentConfiguration.domainInstanceName": instance,
                                                       "result.experimentConfiguration.actionDuration": action_duration,
                                                       "result.success": True})
         times_for_durations = []
@@ -65,4 +82,6 @@ def data_for_algorithm(db, algorithm, domain):
 if __name__ == '__main__':
     db = open_connection()
     print_counts(db)
-    plot_gat_duration_error(db, "LSS_LRTA_STAR", "GRID_WORLD")
+    plot_gat_duration_error(db, ["LSS_LRTA_STAR",
+                                 "RTA_STAR",
+                                 "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw").show()
