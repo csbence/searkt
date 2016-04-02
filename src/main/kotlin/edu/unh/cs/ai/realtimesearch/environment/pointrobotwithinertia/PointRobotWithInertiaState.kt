@@ -8,8 +8,8 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Double, val ydot: Double) : State<PointRobotWithInertiaState> {
 
     override fun equals(other: Any?): Boolean {
-        return when (other) {
-            !is PointRobotWithInertiaState -> false
+        return when {
+            other !is PointRobotWithInertiaState -> false
             other.x.toInt() == x.toInt() && other.y.toInt() == y.toInt() && other.xdot.toInt() == xdot.toInt() && other.ydot.toInt() == ydot.toInt() -> true
             else -> false
         }
