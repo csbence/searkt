@@ -17,8 +17,8 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
         fun getBoundStates(endState: AcrobotState, configuration: AcrobotConfiguration): AcrobotBoundStates {
             val absoluteLink1LowerBound = endState.link1 - configuration.endLink1LowerBound
             val absoluteLink2LowerBound = endState.link2 - configuration.endLink2LowerBound
-            val absoluteLink1UpperBound = endState.link1 - configuration.endLink1UpperBound
-            val absoluteLink2UpperBound = endState.link2 - configuration.endLink2UpperBound
+            val absoluteLink1UpperBound = endState.link1 + configuration.endLink1UpperBound
+            val absoluteLink2UpperBound = endState.link2 + configuration.endLink2UpperBound
 
             val endStateLowerBound = AcrobotState(absoluteLink1LowerBound, absoluteLink2LowerBound, configuration.stateConfiguration)
             val endStateUpperBound = AcrobotState(absoluteLink1UpperBound, absoluteLink2UpperBound, configuration.stateConfiguration)
@@ -109,7 +109,8 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Returns whether the given state is a goal state.
      * @return true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
+    override fun isGoal(state: AcrobotState): Boolean =
+            state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
 
     /**
      * Simply prints the state values.

@@ -3,11 +3,16 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertTrue
 
 
@@ -15,32 +20,35 @@ class AcrobotTest {
 
     private val logger = LoggerFactory.getLogger(AcrobotTest::class.java)
 
-//    @Test
-//    fun testGoalHeuristic() {
-//        val acrobot = Acrobot()
-//        val heuristic1 = acrobot.heuristic(acrobot.endStateLowerBound)
-//        val heuristic2 = acrobot.heuristic(acrobot.endStateUpperBound)
-//        val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.link1.position, acrobot.configuration.endState.link2.position, 0.0, 0.0))
-//
-//        assertTrue { doubleNearEquals(heuristic1, 0.0) }
-//        assertTrue { doubleNearEquals(heuristic2, 0.0) }
-//        assertTrue { doubleNearEquals(heuristic3, 0.0) }
-//    }
-//
-//    @Test
-//    fun testHeuristic1() {
-//        val acrobot = Acrobot()
-//        val heuristic = acrobot.heuristic(acrobot.endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
-//
-//        assertTrue { heuristic > 0.0 }
-//    }
-//
-//    @Test
-//    fun testHeuristic2() {
-//        val acrobot = Acrobot()
-//        val heuristic = acrobot.heuristic(acrobot.endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
-//        assertTrue { heuristic > 0.0 }
-//    }
+    @Test
+    fun testGoalHeuristic() {
+        val acrobot = Acrobot()
+        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val heuristic1 = acrobot.heuristic(endStateLowerBound)
+        val heuristic2 = acrobot.heuristic(endStateUpperBound)
+        val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.link1.position, acrobot.configuration.endState.link2.position, 0.0, 0.0))
+
+        assertTrue { doubleNearEquals(heuristic1, 0.0) }
+        assertTrue { doubleNearEquals(heuristic2, 0.0) }
+        assertTrue { doubleNearEquals(heuristic3, 0.0) }
+    }
+
+    @Test
+    fun testHeuristic1() {
+        val acrobot = Acrobot()
+        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val heuristic = acrobot.heuristic(endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+
+        assertTrue { heuristic > 0.0 }
+    }
+
+    @Test
+    fun testHeuristic2() {
+        val acrobot = Acrobot()
+        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val heuristic = acrobot.heuristic(endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+        assertTrue { heuristic > 0.0 }
+    }
 
     @Test
     fun testSuccessors1() {
@@ -55,9 +63,12 @@ class AcrobotTest {
     fun testAStarDiscretized1() {
         val domain = DiscretizedDomain(Acrobot())
         val initialState = DiscretizedState(defaultInitialAcrobotState)
+        val experimentConfiguration = GeneralExperimentConfiguration(Domains.ACROBOT.toString(), JsonOutput.toJson(domain.domain.configuration), Planners.A_STAR.toString(), "time")
+        experimentConfiguration["actionDuration"] = domain.domain.configuration.stateConfiguration.timeStep
+        experimentConfiguration["timeLimit"] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 
         val aStarAgent = ClassicalAgent(AStarPlanner(domain))
-        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, domain, initialState)
+        val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState)
 
         aStarExperiment.run()
     }

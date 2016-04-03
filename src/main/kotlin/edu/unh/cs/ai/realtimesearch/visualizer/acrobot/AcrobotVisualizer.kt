@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.util.angleDifference
-import edu.unh.cs.ai.realtimesearch.util.convertTime
+import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Option
@@ -187,7 +187,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
             logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(convertTime(time)),
+            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(convertNanoToSecondsDouble(time)),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
                     KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
         }

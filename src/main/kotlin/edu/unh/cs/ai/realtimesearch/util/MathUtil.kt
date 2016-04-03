@@ -32,7 +32,7 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
 /**
  * Convert time in ns to double in seconds
  */
-fun convertTime (time: Long): Double = TimeUnit.SECONDS.convert(time, TimeUnit.NANOSECONDS).toDouble()
+fun convertNanoToSecondsDouble(time: Long): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS).toDouble()
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range

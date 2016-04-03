@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
-import edu.unh.cs.ai.realtimesearch.util.convertTime
+import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
 import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
@@ -101,10 +101,10 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     fun calculateNextState(accelerations: Accelerations): AcrobotState {
-        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, convertTime(configuration.timeStep))
-        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, convertTime(configuration.timeStep))
-        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, convertTime(configuration.timeStep))
-        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, convertTime(configuration.timeStep))
+        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, convertNanoToSecondsDouble(configuration.timeStep))
+        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, convertNanoToSecondsDouble(configuration.timeStep))
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, convertNanoToSecondsDouble(configuration.timeStep))
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, convertNanoToSecondsDouble(configuration.timeStep))
 
         return AcrobotState(
                 AcrobotLink(newLinkPosition1, newLinkVelocity1),

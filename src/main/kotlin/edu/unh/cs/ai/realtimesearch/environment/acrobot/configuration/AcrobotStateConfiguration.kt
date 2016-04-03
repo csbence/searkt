@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 import groovy.json.JsonSlurper
 import java.io.InputStream
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 
 data class AcrobotStateConfiguration(
         // Sutton: Limit angular velocities to \dot\theta_1\in[-4\pi,4\pi] and \dot\theta_2\in[-9\pi,9\pi]
@@ -14,7 +15,7 @@ data class AcrobotStateConfiguration(
         val positionGranularity2: Double = 0.2991993003,
         val velocityGranularity1: Double = 0.1045309649, // 250 velocities
         val velocityGranularity2: Double = 0.0767315570, // 750 velocities
-        val timeStep: Long = 200000000) { // Sutton and Boone
+        val timeStep: Long = TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS)) { // Sutton and Boone
 
     companion object {
         /**

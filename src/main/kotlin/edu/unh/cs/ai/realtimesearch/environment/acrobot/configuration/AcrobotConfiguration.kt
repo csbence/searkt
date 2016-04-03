@@ -10,8 +10,8 @@ import java.io.InputStream
 data class AcrobotConfiguration(
         val initialState: AcrobotState = defaultInitialAcrobotState,
         val endState: AcrobotState = verticalUpAcrobotState,
-        val endLink1LowerBound: AcrobotLink = AcrobotLink(-0.3, -0.3), /*Boone*/
-        val endLink2LowerBound: AcrobotLink = AcrobotLink(-0.3, -0.3), /*Boone*/
+        val endLink1LowerBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
+        val endLink2LowerBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val endLink1UpperBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val endLink2UpperBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val stateConfiguration: AcrobotStateConfiguration = AcrobotStateConfiguration()) {
