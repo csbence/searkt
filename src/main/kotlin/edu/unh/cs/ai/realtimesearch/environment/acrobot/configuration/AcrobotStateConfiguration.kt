@@ -14,10 +14,11 @@ data class AcrobotStateConfiguration(
         val positionGranularity1: Double = 0.2991993003, // 21 positions
         val positionGranularity2: Double = 0.2991993003,
         val velocityGranularity1: Double = 0.1045309649, // 250 velocities
-        val velocityGranularity2: Double = 0.0767315570, // 750 velocities
-        val timeStep: Long = TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS)) { // Sutton and Boone
+        val velocityGranularity2: Double = 0.0767315570) { // 750 velocities
 
     companion object {
+        val defaultActionDuration = TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS) // Sutton and Boone
+
         /**
          * Returns an AcrobotStateConfiguration from the given string contents.
          * @param string a string in JSON format representing an AcrobotStateConfiguration
@@ -42,8 +43,7 @@ data class AcrobotStateConfiguration(
                     (map["positionGranularity1"] as BigDecimal).toDouble(),
                     (map["positionGranularity2"] as BigDecimal).toDouble(),
                     (map["velocityGranularity1"] as BigDecimal).toDouble(),
-                    (map["velocityGranularity2"] as BigDecimal).toDouble(),
-                    (map["timeStep"] as Int).toLong()
+                    (map["velocityGranularity2"] as BigDecimal).toDouble()
         )
     }
 
@@ -55,7 +55,6 @@ data class AcrobotStateConfiguration(
             "positionGranularity1" to positionGranularity1,
             "positionGranularity2" to positionGranularity2,
             "velocityGranularity1" to velocityGranularity1,
-            "velocityGranularity2" to velocityGranularity2,
-            "timeStep" to timeStep
+            "velocityGranularity2" to velocityGranularity2
     )
 }

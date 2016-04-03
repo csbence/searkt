@@ -27,7 +27,7 @@ class AcrobotStateTest {
 
     @Test
     fun testAcceleration() {
-        val state = defaultInitialAcrobotState
+        val state = AcrobotState.defaultInitialState
 
         val (accelerationNone1, accelerationNone2) = state.calculateLinkAccelerations(AcrobotAction.NONE)
         assertTrue { doubleNearEquals(accelerationNone1, 0.0) }
@@ -59,6 +59,6 @@ class AcrobotStateTest {
 
     @Test
     fun testJSON1() {
-        assertTrue { defaultInitialAcrobotState.equals(AcrobotState.fromString(JsonOutput.toJson(defaultInitialAcrobotState))) }
+        assertTrue { AcrobotState.Companion.defaultInitialState.equals(AcrobotState.fromString(JsonOutput.toJson(AcrobotState.defaultInitialState))) }
     }
 }

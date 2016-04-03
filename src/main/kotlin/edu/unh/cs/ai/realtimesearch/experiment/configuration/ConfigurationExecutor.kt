@@ -193,7 +193,7 @@ object ConfigurationExecutor {
 
     private fun executeAcrobot(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val acrobotInstance = AcrobotIO.parseFromStream(rawDomain.byteInputStream())
+        val acrobotInstance = AcrobotIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val acrobotEnvironment = DiscretizedEnvironment(acrobotInstance.domain, acrobotInstance.initialState)
 
         return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState, acrobotEnvironment)

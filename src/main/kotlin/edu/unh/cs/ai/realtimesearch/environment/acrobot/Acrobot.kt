@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import edu.unh.cs.ai.realtimesearch.util.angleDistance
 
 /**
@@ -11,7 +12,8 @@ import edu.unh.cs.ai.realtimesearch.util.angleDistance
  * is to maneuver the links such that they are pointing straight up inverted
  * vertically from a downward facing position.
  */
-class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
+class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
+              val actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration) : Domain<AcrobotState> {
     companion object {
         data class AcrobotBoundStates(val lowerBound: AcrobotState, val upperBound: AcrobotState)
         fun getBoundStates(endState: AcrobotState, configuration: AcrobotConfiguration): AcrobotBoundStates {
@@ -33,7 +35,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Calculate the next state given the current state and an action
      */
     internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
-        return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
+        return currentState.calculateNextState(currentState.calculateLinkAccelerations(action), actionDuration)
     }
 
     /**
@@ -47,7 +49,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
             // add the legal movement actions
             successors.add(SuccessorBundle(
                     calculateNextState(state, action),
-                    action, actionCost = configuration.stateConfiguration.timeStep))
+                    action, actionCost = actionDuration))
         }
 
         return successors

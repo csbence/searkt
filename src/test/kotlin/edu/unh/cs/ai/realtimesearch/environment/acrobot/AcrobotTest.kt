@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.Domains
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.Planners
@@ -62,9 +63,9 @@ class AcrobotTest {
     @Test
     fun testAStarDiscretized1() {
         val domain = DiscretizedDomain(Acrobot())
-        val initialState = DiscretizedState(defaultInitialAcrobotState)
+        val initialState = DiscretizedState(AcrobotState.Companion.defaultInitialState)
         val experimentConfiguration = GeneralExperimentConfiguration(Domains.ACROBOT.toString(), JsonOutput.toJson(domain.domain.configuration), Planners.A_STAR.toString(), "time")
-        experimentConfiguration["actionDuration"] = domain.domain.configuration.stateConfiguration.timeStep
+        experimentConfiguration["actionDuration"] = AcrobotStateConfiguration.defaultActionDuration
         experimentConfiguration["timeLimit"] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 
         val aStarAgent = ClassicalAgent(AStarPlanner(domain))

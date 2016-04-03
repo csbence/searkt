@@ -7,12 +7,6 @@ import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
 
-val verticalUpAcrobotState = AcrobotState(AcrobotLink(Math.PI / 2, 0.0), AcrobotLink.ZERO)
-val verticalDownAcrobotState = AcrobotState(AcrobotLink(3 * Math.PI / 2, 0.0), AcrobotLink.ZERO)
-
-// Initial state with both links pointed down
-val defaultInitialAcrobotState = verticalDownAcrobotState
-
 /**
  * Represents one link of an Acrobot.
  */
@@ -58,6 +52,12 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     override fun copy() = copy(link1, link2, configuration)
 
     companion object {
+        val verticalUpState = AcrobotState(AcrobotLink(Math.PI / 2, 0.0), AcrobotLink.ZERO)
+        val verticalDownState = AcrobotState(AcrobotLink(3 * Math.PI / 2, 0.0), AcrobotLink.ZERO)
+
+        // Initial state with both links pointed down
+        val defaultInitialState = verticalDownState
+
         // Constants
         // Given in Sutton and Barto 1998 as well as Boone 1997
         val linkMass1: Double = 1.0
@@ -100,11 +100,12 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
     internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
-    fun calculateNextState(accelerations: Accelerations): AcrobotState {
-        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, convertNanoToSecondsDouble(configuration.timeStep))
-        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, convertNanoToSecondsDouble(configuration.timeStep))
-        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, convertNanoToSecondsDouble(configuration.timeStep))
-        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, convertNanoToSecondsDouble(configuration.timeStep))
+    fun calculateNextState(accelerations: Accelerations, actionDuration: Long): AcrobotState {
+        val durationSeconds: Double = convertNanoToSecondsDouble(actionDuration)
+        var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, durationSeconds)
+        var newLinkPosition2 = link2.position + calculateDisplacement(accelerations.linkAcceleration2, link2.velocity, durationSeconds)
+        var newLinkVelocity1 = calculateVelocity(accelerations.linkAcceleration1, link1.velocity, durationSeconds)
+        var newLinkVelocity2 = calculateVelocity(accelerations.linkAcceleration2, link2.velocity, durationSeconds)
 
         return AcrobotState(
                 AcrobotLink(newLinkPosition1, newLinkVelocity1),

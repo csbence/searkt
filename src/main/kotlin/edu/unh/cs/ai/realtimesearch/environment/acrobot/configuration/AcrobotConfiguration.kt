@@ -2,14 +2,12 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.defaultInitialAcrobotState
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.verticalUpAcrobotState
 import groovy.json.JsonSlurper
 import java.io.InputStream
 
 data class AcrobotConfiguration(
-        val initialState: AcrobotState = defaultInitialAcrobotState,
-        val endState: AcrobotState = verticalUpAcrobotState,
+        val initialState: AcrobotState = AcrobotState.defaultInitialState,
+        val endState: AcrobotState = AcrobotState.verticalUpState,
         val endLink1LowerBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val endLink2LowerBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
         val endLink1UpperBound: AcrobotLink = AcrobotLink(0.3, 0.3), /*Boone*/
