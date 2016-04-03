@@ -15,9 +15,9 @@
 ## Conventions
 
 * Naming
-    - iAmGoodVariable
-    - IAmGoodClass
-    - iAmGoodFunction()
+    - `iAmGoodVariable`
+    - `IAmGoodClass`
+    - `iAmGoodFunction()`
     - No abbreviations
 * Style
     - Braces open on same line
@@ -45,20 +45,19 @@ The aim to have multiple domains to test on, currently the following are impleme
 
 A 2D grid with with dirty and blocked cells. The agent aims to clean all dirty spots by vacuuming those cells.
 
-State space: (x,y, {dirty locations})
+State space: (`x`,`y`, {dirty locations})
 
 Actions: up, down, left, right, vacuum 
 
 #### RaceTrack ([from [1]](#ref-1))
 
-A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a 
-starting and finish line. The goal is for the car to reach the finish line from the start location.
+A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a starting and finish line. The goal is for the car to reach the finish line from the start location.
 
 Whenever the car hits a track boundary, it will be put back on a random position on the starting line with 0 velocity.
 
-State space: (x, y, x. [-1,0,1], y. [-1,0,1])
+State space: (`x, y, x. [-1,0,1], y. [-1,0,1]`)
 
-Actions: Acceleration in x and y (x. and y.) of [-1,0,1]
+Actions: Acceleration in `x` and `y` (`x.` and `y.`) of `[-1,0,1]`
 
 Dynamics:
 
@@ -67,7 +66,7 @@ Dynamics:
     x.(t+1) = x.(t) + m(x,t)
     y.(t+1) = y.(t) + m(y,t)
 
-Stochasticity:  p: with probability p the system will ignore the action: (m(x,t),m(y,t)) = (0,0) with probability p 
+Stochasticity:  `p`: with probability `p` the system will ignore the action: `(m(x,t),m(y,t)) = (0,0)` with probability `p`
 
 #### Acrobot  ([from [2]](#ref-2))
 
@@ -86,27 +85,27 @@ Actions: Torque applied to joint 2
 
 ### General
 
-* algorithm name ("algorithmName" : String)
+* algorithm name (`"algorithmName" : String`)
     - Name of the algorithm.
-* domain name ("domainName" : String)
+* domain name (`"domainName" : String`)
     - Name of the domain.
-* serialized domain ("rawDomain" : String)
-* domain instance name ("domainInstanceName" : String)
+* serialized domain (`"rawDomain" : String`)
+* domain instance name (`"domainInstanceName" : String`)
     - Name assigned to particular domain configuration instance
-* time limit ("timeLimit" : Long)
-* action duration ("actionDuration": Long)
+* time limit (`"timeLimit" : Long`)
+* action duration (`"actionDuration" : Long`)
     - Must be greater than zero
-* termination type ("terminationType": "time")
+* termination type (`"terminationType" : "time"`)
     - Time is the only supported termination type
 
 ### Real-time search
 
-* time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
-* commitment strategy ("commitmentStrategy" : { "SINGLE" | "MULTIPLE" })
+* time bound type (`"timeBoundType" : { "STATIC" | "DYNAMIC" }`)
+* commitment strategy (`"commitmentStrategy" : { "SINGLE" | "MULTIPLE" }`)
 
 ### Anytime search
 
-* max count ("anytimeMaxCount": Long)
+* max count (`"anytimeMaxCount" : Long`)
 
 ### Algorithm
 
@@ -116,11 +115,13 @@ No extra parameter required
 
 #### Weighted A*
 
-* weight ("weight" : Double)
+* weight (`"weight" : Double`)
 
 #### ARA*
 
 #### RTA*
+
+* lookahead depth limit (`"lookaheadDepthLimit" : Long`)
 
 #### LSS-LRTA*
 
