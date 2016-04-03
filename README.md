@@ -96,10 +96,12 @@ Actions: Torque applied to joint 2
 
 ### Real-time search
 
- * Time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
- * Single step lookahead ("singleStepLookeahead" : { true | false })
+ * time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
+ * single step lookahead ("singleStepLookahead" : { true | false })
 
 ### Anytime search
+
+ * max count ("anytimeMaxCount": Long)
 
 ### Algorithm
 

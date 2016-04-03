@@ -174,6 +174,10 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
             3.0
     )
 
+    val maxCounts = listOf(
+            3
+    )
+
     when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
             for (timeBoundType in TimeBoundType.values()) {
@@ -205,6 +209,13 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
                         "lookaheadDepthLimit" to lookaheadDepthLimit,
                         "timeBoundType" to STATIC,
                         "commitmentStrategy" to SINGLE
+                ))
+            }
+        }
+        ARA_STAR -> {
+            for (maxCount in maxCounts) {
+                configurations.add(mutableMapOf<String, Any?>(
+                        "anytimeMaxCount" to maxCount
                 ))
             }
         }

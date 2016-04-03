@@ -7,17 +7,15 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConf
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import groovyjarjarcommonscli.*
+import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
 import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
-import javafx.application.Application
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 
 class Input
 
@@ -44,6 +42,7 @@ fun main(args: Array<String>) {
         manualConfiguration["commitmentStrategy"] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration["singleStepLookahead"] = false
         manualConfiguration["timeLimit"] = NANOSECONDS.convert(5, MINUTES)
+        manualConfiguration["anytimeMaxCount"] = 3L
 
     } else {
         // Read configuration from command line

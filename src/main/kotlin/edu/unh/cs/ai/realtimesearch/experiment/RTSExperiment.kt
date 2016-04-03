@@ -11,6 +11,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
 import org.slf4j.LoggerFactory
 import kotlin.system.measureNanoTime
 
@@ -45,12 +46,12 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         val actions: MutableList<Action> = arrayListOf()
         logger.info { "Starting experiment from state ${world.getState()}" }
 
-        var totalNanoTime = 0L
+        var totalPlanningNanoTime = 0L
         var timeBound = actionDuration
         var singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         while (!world.isGoal()) {
-            totalNanoTime += measureNanoTime {
+            totalPlanningNanoTime += measureNanoTime {
                 terminationChecker.init(timeBound)
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
@@ -71,15 +72,19 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         }
 
         val pathLength: Long = actions.size.toLong()
-        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+        val totalExecutionNanoTime = pathLength * actionDuration
+        val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
+        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded " +
+                "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                "(${agent.planner.expandedNodeCount / convertNanoToSecondsDouble(totalPlanningNanoTime)} expanded nodes per sec)" }
 
         return ExperimentResult(
                 experimentConfiguration.valueStore,
                 agent.planner.expandedNodeCount,
                 agent.planner.generatedNodeCount,
-                totalNanoTime,
-                pathLength * actionDuration,
-                totalNanoTime + pathLength * actionDuration,
+                totalPlanningNanoTime,
+                totalExecutionNanoTime,
+                goalAchievementTime,
                 pathLength,
                 actions.map { it.toString() })
     }

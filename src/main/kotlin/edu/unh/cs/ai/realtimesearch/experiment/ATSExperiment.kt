@@ -3,10 +3,12 @@ package edu.unh.cs.ai.realtimesearch.experiment
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
+import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
 import org.slf4j.LoggerFactory
 
 /**
@@ -24,8 +26,8 @@ import org.slf4j.LoggerFactory
  */
 class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
                                                   val experimentConfiguration: GeneralExperimentConfiguration,
-        /*val agent: RTSAgent<StateType>,
-        */val world: Environment<StateType>
+        /*val agent: RTSAgent<StateType>,*/
+                                                  val world: Environment<StateType>
         /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
@@ -36,21 +38,21 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
     override fun run(): ExperimentResult {
         val actions: MutableList<String> = arrayListOf()
         val actionsLists: MutableList<String> = arrayListOf()
-        val maxCount = 3
+        val maxCount: Long = experimentConfiguration.getTypedValue<Long>("anytimeMaxCount") ?: throw InvalidFieldException("\"anytimeMaxCount\" is not found. Please add it to the experiment configuration.")
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var executionNanoTime = 1L
+        var totalPlanningNanoTime = 1L
         //var timeBound = staticStepDuration
 
         while (!world.isGoal()) {
             //print("" + world.getState() + " " + world.getGoal() + " ")
-            println("start")
+            logger.debug { "start ATS" }
             val startTime = System.nanoTime()
-            var actionList = planner.solve(world.getState(), world.getGoal());
+            var actionList = planner.solve(world.getState(), world.getGoal())
             val endTime = System.nanoTime()
-            println("time: " + (endTime - startTime))
+            logger.debug { "time: " + (endTime - startTime) }
             if(actions.size == 0)
-                executionNanoTime = endTime - startTime
+                totalPlanningNanoTime = endTime - startTime
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
             val update = planner.update()
@@ -63,7 +65,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
                 }
             } else {
 
-                var count = 0;
+                var count = 0
                 for (it in actionList) {
                     //println(it.action)
                     if (it/*.action*/ != null) {
@@ -93,20 +95,24 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
         }
         //actionsLists.add(" " + maxCount + " ")
 
-
-        println(actionsLists);
+        logger.info { actionsLists.toString() }
 
         val pathLength = actions.size.toLong()
-        logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes in $executionNanoTime. (${planner.expandedNodeCount * 1000 / if (executionNanoTime != 0L) executionNanoTime else 1L})" }
+        val totalExecutionNanoTime = pathLength * experimentConfiguration.actionDuration
+        val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
+        logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded " +
+                "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                "(${planner.expandedNodeCount / convertNanoToSecondsDouble(totalPlanningNanoTime)} expanded nodes per sec)" }
         return ExperimentResult(
                 experimentConfiguration.valueStore,
                 planner.expandedNodeCount,
                 planner.generatedNodeCount,
-                executionNanoTime,
-                pathLength * experimentConfiguration.actionDuration,
-                executionNanoTime + pathLength * experimentConfiguration.actionDuration,
+                totalPlanningNanoTime,
+                totalExecutionNanoTime,
+                goalAchievementTime,
                 pathLength,
-                actions.map { it.toString() })
+                actions.map { it.toString() }
+        )
     }
 }
 
