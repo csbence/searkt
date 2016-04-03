@@ -44,7 +44,7 @@ class VacuumVisualizer : BaseVisualizer() {
 //            actionList.add(action)
 //        }
         val DISPLAY_LINE = true
-        val isARAStar = true;
+        val isARAStar = false;
         if(isARAStar)
             moverobot = false
 
@@ -229,7 +229,7 @@ class VacuumVisualizer : BaseVisualizer() {
 //            paths.get(9).stroke = Color.PLUM
 //        }
 
-        paths.get(pIndex).stroke = Color.ORANGE
+        paths.get(pIndex).stroke = Color.RED
 
         /* Animate the robot */
         val pathTransition = PathTransition()

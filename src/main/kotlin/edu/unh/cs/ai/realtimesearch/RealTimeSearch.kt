@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
 import javafx.application.Application
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 
 class Input
 
@@ -27,12 +29,12 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/pointrobot/wall.pr") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/wall.vw") ?: throw RuntimeException("Resource not found")
 //        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
-                Domains.POINT_ROBOT.toString(),
+                Domains.GRID_WORLD.toString(),
                 rawDomain,
                 Planners.ARA_STAR.toString(),
                 "time")
@@ -67,8 +69,8 @@ fun main(args: Array<String>) {
             params.add(action.toString())
 
         //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
-        Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        //Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+        //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
     }
 

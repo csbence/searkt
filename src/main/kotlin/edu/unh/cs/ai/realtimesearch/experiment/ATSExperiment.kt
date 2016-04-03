@@ -106,7 +106,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
                 pathLength * experimentConfiguration.actionDuration,
                 executionNanoTime + pathLength * experimentConfiguration.actionDuration,
                 pathLength,
-                actionsLists.map { it.toString() })
+                actions.map { it.toString() })
     }
 }
 
