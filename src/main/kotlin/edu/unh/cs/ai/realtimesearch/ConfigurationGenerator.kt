@@ -101,7 +101,6 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
         ACROBOT -> {
             val bounds = listOf(
                     0.3,
-                    0.2,
                     0.1,
                     0.09,
                     0.08,
@@ -112,9 +111,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             for (lowerBound in bounds) {
                 for (upperBound in bounds) {
                     val acrobotConfiguration = AcrobotConfiguration(
-                            endLink1LowerBound = AcrobotLink(-lowerBound, -lowerBound),
+                            endLink1LowerBound = AcrobotLink(lowerBound, lowerBound),
+                            endLink2LowerBound = AcrobotLink(lowerBound, lowerBound),
                             endLink1UpperBound = AcrobotLink(upperBound, upperBound),
-                            endLink2LowerBound = AcrobotLink(-lowerBound, -lowerBound),
                             endLink2UpperBound = AcrobotLink(upperBound, upperBound),
                             stateConfiguration = stateConfiguration
                     )
