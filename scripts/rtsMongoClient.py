@@ -120,7 +120,7 @@ def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
     return plt
 
 
-def plot_gat_boxplots(db, algorithms, domain, instance):
+def plot_gat_boxplots(db, algorithms, domain, instance, showviolin=False):
     y, labels = get_gat_data(db, algorithms, domain, instance)
     med, confidence_interval_low, confidence_interval_high = plotutils.median_confidence_intervals(y)
 
@@ -133,6 +133,12 @@ def plot_gat_boxplots(db, algorithms, domain, instance):
     x = np.arange(1, len(y) + 1)
     plt.errorbar(x, med, yerr=(confidence_interval_low, confidence_interval_high), fmt='none',
                  linewidth=3)
+
+    if showviolin:
+        mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
+        plt.violinplot(y, showmeans=True, showmedians=True)
+        plt.errorbar(x, mean, yerr=(mean_confidence_interval_low, mean_confidence_interval_high), fmt='none',
+                     linewidth=3, color='g')
 
     return plt
 
