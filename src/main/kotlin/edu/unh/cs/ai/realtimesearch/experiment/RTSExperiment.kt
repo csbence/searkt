@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
@@ -11,8 +12,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
-import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureNanoTime
 
 /**
@@ -36,8 +38,8 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                                                   val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(experimentConfiguration, "commitmentStrategy")
-    private val actionDuration by lazyData<Long>(experimentConfiguration, "actionDuration")
+    private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
 
     /**
      * Runs the experiment
@@ -76,7 +78,7 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
         logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded " +
                 "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
-                "(${agent.planner.expandedNodeCount / convertNanoToSecondsDouble(totalPlanningNanoTime)} expanded nodes per sec)" }
+                "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)" }
 
         return ExperimentResult(
                 experimentConfiguration.valueStore,

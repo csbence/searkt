@@ -60,10 +60,12 @@ State space: (x, y, x. [-1,0,1], y. [-1,0,1])
 
 Actions: Acceleration in x and y (x. and y.) of [-1,0,1]
 
-Dynamics:       x(t+1) = x(t) + x.(t) + m(x,t)
-                y(t+1) = y(t) + y.(t) + m(y,t)
-                x.(t+1) = x.(t) + m(x,t)
-                y.(t+1) = y.(t) + m(y,t)
+Dynamics:
+
+    x(t+1) = x(t) + x.(t) + m(x,t)
+    y(t+1) = y(t) + y.(t) + m(y,t)
+    x.(t+1) = x.(t) + m(x,t)
+    y.(t+1) = y.(t) + m(y,t)
 
 Stochasticity:  p: with probability p the system will ignore the action: (m(x,t),m(y,t)) = (0,0) with probability p 
 
@@ -79,29 +81,32 @@ Actions: Torque applied to joint 2
 
 ### Type and unit information
 
- * The default time unit for every value is nanoseconds.
- * Numbers are represented as 64 bit values. (Long/Double)
+* The default time unit for every value is nanoseconds.
+* Numbers are represented as 64 bit values. (Long/Double)
 
 ### General
 
- * algorithm name ("algorithmName" : String)
-     - Name of the algorithm.
- * domain name ("domainName" : String) 
-     - Name of the domain.
- * serialized domain ("rawDomain" : String)
- * time limit ("timeLimit" : Long)
- * action duration ("actionDuration": Long)
-     - Greater than zero
-     - Experiment Bounds: 1 - 1,000,000,000 (ns) steps of 10,000
+* algorithm name ("algorithmName" : String)
+    - Name of the algorithm.
+* domain name ("domainName" : String)
+    - Name of the domain.
+* serialized domain ("rawDomain" : String)
+* domain instance name ("domainInstanceName" : String)
+    - Name assigned to particular domain configuration instance
+* time limit ("timeLimit" : Long)
+* action duration ("actionDuration": Long)
+    - Must be greater than zero
+* termination type ("terminationType": "time")
+    - Time is the only supported termination type
 
 ### Real-time search
 
- * time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
- * single step lookahead ("singleStepLookahead" : { true | false })
+* time bound type ("timeBoundType" : { "STATIC" | "DYNAMIC" })
+* commitment strategy ("commitmentStrategy" : { "SINGLE" | "MULTIPLE" })
 
 ### Anytime search
 
- * max count ("anytimeMaxCount": Long)
+* max count ("anytimeMaxCount": Long)
 
 ### Algorithm
 
@@ -111,7 +116,7 @@ No extra parameter required
 
 #### Weighted A*
 
-* Weight ("weight" : Double)
+* weight ("weight" : Double)
 
 #### ARA*
 

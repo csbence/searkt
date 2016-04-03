@@ -5,10 +5,11 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.STATIC
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
@@ -33,11 +34,11 @@ fun main(args: Array<String>) {
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
                 val partialConfiguration = mutableMapOf<String, Any?>(
-                        "domainName" to domain,
-                        "algorithmName" to planner,
-                        "actionDuration" to actionDuration,
-                        "timeLimit" to timeLimit,
-                        "terminationType" to terminationType
+                        Configurations.DOMAIN_NAME.toString() to domain,
+                        Configurations.ALGORITHM_NAME.toString() to planner,
+                        Configurations.ACTION_DURATION.toString() to actionDuration,
+                        Configurations.TIME_LIMIT.toString() to timeLimit,
+                        Configurations.TERMINATION_TYPE.toString() to terminationType
                 )
 
                 val realTimePlannerConfigurations = getPlannerConfigurations(planner)
@@ -118,8 +119,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                             stateConfiguration = stateConfiguration
                     )
                     configurations.add(mutableMapOf(
-                            "rawDomain" to "${JsonOutput.toJson(acrobotConfiguration).replace("\"", "\\\"")}",
-                            "domainInstanceName" to "$lowerBound-$upperBound"
+                            Configurations.RAW_DOMAIN.toString() to "${JsonOutput.toJson(acrobotConfiguration).replace("\"", "\\\"")}",
+                            Configurations.DOMAIN_INSTANCE_NAME.toString() to "$lowerBound-$upperBound"
                     ))
                 }
             }
@@ -128,8 +129,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             for (map in gridMaps) {
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
-                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next(),
-                        "domainInstanceName" to map
+                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
             }
         }
@@ -137,8 +138,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             for (map in racetrackMaps) {
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
-                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next(),
-                        "domainInstanceName" to map
+                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
             }
         }
@@ -147,8 +148,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                 val map = "$slidingTile4MapRoot$instanceName"
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
-                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next(),
-                        "domainInstanceName" to map
+                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
             }
         }
@@ -156,8 +157,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             for (map in pointRobotMaps) {
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
-                        "rawDomain" to Scanner(input).useDelimiter("\\Z").next(),
-                        "domainInstanceName" to map
+                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
             }
         }
@@ -185,18 +186,18 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
                 when (timeBoundType) {
                     STATIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                "timeBoundType" to timeBoundType,
-                                "commitmentStrategy" to SINGLE
+                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
                         ))
                         configurations.add(mutableMapOf<String, Any?>(
-                                "timeBoundType" to timeBoundType,
-                                "commitmentStrategy" to CommitmentStrategy.MULTIPLE
+                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
                     DYNAMIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                "timeBoundType" to timeBoundType,
-                                "commitmentStrategy" to CommitmentStrategy.MULTIPLE
+                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
                 }
@@ -206,23 +207,23 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
         RTA_STAR -> {
             for (lookaheadDepthLimit in lookaheadLimits) {
                 configurations.add(mutableMapOf<String, Any?>(
-                        "lookaheadDepthLimit" to lookaheadDepthLimit,
-                        "timeBoundType" to STATIC,
-                        "commitmentStrategy" to SINGLE
+                        Configurations.LOOKAHEAD_DEPTH_LIMIT.toString() to lookaheadDepthLimit,
+                        Configurations.TIME_BOUND_TYPE.toString() to STATIC,
+                        Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
                 ))
             }
         }
         ARA_STAR -> {
             for (maxCount in maxCounts) {
                 configurations.add(mutableMapOf<String, Any?>(
-                        "anytimeMaxCount" to maxCount
+                        Configurations.ANYTIME_MAX_COUNT.toString() to maxCount
                 ))
             }
         }
         WEIGHTED_A_STAR -> {
             for (weight in weights) {
                 configurations.add(mutableMapOf(
-                        "weight" to weight
+                        Configurations.WEIGHT.toString() to weight
                 ))
             }
         }

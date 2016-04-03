@@ -2,14 +2,16 @@ package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
-import edu.unh.cs.ai.realtimesearch.util.convertNanoToSecondsDouble
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -38,7 +40,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
     override fun run(): ExperimentResult {
         val actions: MutableList<String> = arrayListOf()
         val actionsLists: MutableList<String> = arrayListOf()
-        val maxCount: Long = experimentConfiguration.getTypedValue<Long>("anytimeMaxCount") ?: throw InvalidFieldException("\"anytimeMaxCount\" is not found. Please add it to the experiment configuration.")
+        val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
 
         logger.info { "Starting experiment from state ${world.getState()}" }
         var totalPlanningNanoTime = 1L
@@ -102,7 +104,7 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
         val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
         logger.info { "Path length: [$pathLength] \nAfter ${planner.expandedNodeCount} expanded " +
                 "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
-                "(${planner.expandedNodeCount / convertNanoToSecondsDouble(totalPlanningNanoTime)} expanded nodes per sec)" }
+                "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)" }
         return ExperimentResult(
                 experimentConfiguration.valueStore,
                 planner.expandedNodeCount,
