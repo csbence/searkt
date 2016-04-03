@@ -139,8 +139,8 @@ algorithm = config['algorithmName']
 domain = config['domainName']
 termType = config['terminationType']
 timeLimit = config['timeLimit'] if 'timeLimit' in config else None
-duration = config['actionDuration']
-instanceName = config['domainInstanceName']
+duration = config['actionDuration'] if 'actionDuration' in config else None
+instanceName = config['domainInstanceName'] if 'domainInstanceName' in config else None
 if instanceName is not None:
     instanceName = instanceName.replace("/", "_")
 lookaheadDepthLimit = config['lookaheadDepthLimit'] if 'lookaheadDepthLimit' in config else None

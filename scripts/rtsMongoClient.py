@@ -90,6 +90,7 @@ def get_gat_data(db, algorithms, domain, instance):
     return gat_data, labels
 
 
+# TODO add log10, factor A*, expansions per duration
 def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
     # Gather required A* data
     astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
