@@ -1,8 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
@@ -27,13 +27,13 @@ import java.util.concurrent.TimeUnit
  *
  * @param world is the environment
  */
-class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
-                                                  val experimentConfiguration: GeneralExperimentConfiguration,
+class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
+                                                      val experimentConfiguration: GeneralExperimentConfiguration,
         /*val agent: RTSAgent<StateType>,*/
                                                   val world: Environment<StateType>
         /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
 
-    private val logger = LoggerFactory.getLogger(ATSExperiment::class.java)
+    private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
     /**
      * Runs the experiment

@@ -92,11 +92,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
-    val slidingTile25EasyMapRoot = "input/tiles/korf/4/25_easy/"
-    val slidingTileEasyMapRoot = "input/tiles/korf/4/easy"
 
     val slidingTile25EasyMapNames = listOf(9, 12, 19, 28, 30, 31, 42, 45, 47, 48, 55, 57, 61, 71, 73, 74, 79, 81, 85, 86, 90, 93, 94, 95, 97)
-    val slidingTIleEasyMapNames = listOf (5, 6, 8, 9, 12, 13, 19, 20, 23, 28, 30, 31, 34, 38, 39, 42, 45, 46, 47, 48, 51, 55, 57, 58, 61, 62, 65, 71, 73, 74, 77, 78, 79, 81, 85, 86, 90, 93, 94, 95, 96, 97)
+//    val slidingTileEasyMapNames = listOf (5, 6, 8, 9, 12, 13, 19, 20, 23, 28, 30, 31, 34, 38, 39, 42, 45, 46, 47, 48, 51, 55, 57, 58, 61, 62, 65, 71, 73, 74, 77, 78, 79, 81, 85, 86, 90, 93, 94, 95, 96, 97)
 
     when (domain) {
         ACROBOT -> {
