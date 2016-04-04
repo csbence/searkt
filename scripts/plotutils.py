@@ -10,6 +10,9 @@ def cnv_ns_to_ms(ns):
 
 
 class Results:
+    ALGORITHM = 0
+    DOMAIN = 1
+
     def __init__(self, parsedJson):
         self.configuration = (parsedJson['experimentConfiguration']['algorithmName'],
                               parsedJson['experimentConfiguration']['domainName'])
