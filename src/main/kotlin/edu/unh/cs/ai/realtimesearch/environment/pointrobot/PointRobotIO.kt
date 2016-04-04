@@ -12,9 +12,9 @@ object PointRobotIO {
 
         val rowCount: Int
         val columnCount: Int
-        var startLocation: DoubleLocation? = null
-        var endLocation: DoubleLocation? = null
-        var radius = 0.0;
+        var startLocation: DoubleLocation?
+        var endLocation: DoubleLocation?
+        var radius: Double
 
         try {
             columnCount = inputScanner.nextLine().toInt()
@@ -64,14 +64,6 @@ object PointRobotIO {
             }
         } catch (e: NoSuchElementException) {
             throw InvalidPointRobotException("DoubleIntegrator is not complete.", e)
-        }
-
-        if (startLocation == null) {
-            throw InvalidPointRobotException("Unknown start location. Start location has was not defined.")
-        }
-
-        if (endLocation == null) {
-            throw InvalidPointRobotException("Unknown end location. End location has was not defined.")
         }
 
         val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobot(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius)

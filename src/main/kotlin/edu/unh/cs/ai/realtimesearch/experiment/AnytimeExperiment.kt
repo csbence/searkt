@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
@@ -26,13 +27,13 @@ import java.util.concurrent.TimeUnit
  *
  * @param world is the environment
  */
-class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
-                                                  val experimentConfiguration: GeneralExperimentConfiguration,
+class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
+                                                      val experimentConfiguration: GeneralExperimentConfiguration,
         /*val agent: RTSAgent<StateType>,*/
                                                   val world: Environment<StateType>
         /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
 
-    private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
+    private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
     /**
      * Runs the experiment
@@ -40,6 +41,8 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
     override fun run(): ExperimentResult {
         val actions: MutableList<String> = arrayListOf()
         val actionsLists: MutableList<String> = arrayListOf()
+        var actionList: MutableList<Action?> = arrayListOf()
+//        val maxCount = 6
         val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
 
         logger.info { "Starting experiment from state ${world.getState()}" }
@@ -50,11 +53,24 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
             //print("" + world.getState() + " " + world.getGoal() + " ")
             logger.debug { "start ATS" }
             val startTime = System.nanoTime()
-            var actionList = planner.solve(world.getState(), world.getGoal())
+
+            val tempActions = planner.solve(world.getState(), world.getGoal());
             val endTime = System.nanoTime()
             logger.debug { "time: " + (endTime - startTime) }
-            if(actions.size == 0)
+            if(actions.size == 0) {
                 totalPlanningNanoTime = endTime - startTime
+                actionList = tempActions
+            }
+            else if(experimentConfiguration.actionDuration * maxCount < endTime - startTime){
+                println("Planning took too long! Use old plan.")
+                for(i in 1..maxCount){
+                    actionList.removeAt(0)
+                }
+            }
+            else{
+                actionList = tempActions
+            }
+
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
             val update = planner.update()
@@ -69,11 +85,12 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
 
                 var count = 0
                 for (it in actionList) {
-                    //println(it.action)
+                    println(it/*.action*/)
                     if (it/*.action*/ != null) {
 
 
                         if (count < maxCount) {
+//                            println(it)
                             world.step(it/*.action*/) // Move the agent
                             actions.add(it/*.action*/.toString())
                         }// Save the action

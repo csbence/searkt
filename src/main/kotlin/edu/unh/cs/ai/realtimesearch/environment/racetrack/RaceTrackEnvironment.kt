@@ -30,6 +30,6 @@ class RaceTrackEnvironment(private val domain: RaceTrack, private val initialSta
     }
 
     override fun reset() {
-        currentState = initialState?.copy() ?: domain.randomState()
+        currentState = initialState.copy()
     }
 }

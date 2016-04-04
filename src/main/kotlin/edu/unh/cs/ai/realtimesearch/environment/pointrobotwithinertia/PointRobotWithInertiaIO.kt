@@ -12,8 +12,8 @@ object PointRobotWithInertiaIO {
 
         val rowCount: Int
         val columnCount: Int
-        var startLocation: DoubleLocation? = null
-        var endLocation: DoubleLocation? = null
+        var startLocation: DoubleLocation?
+        var endLocation: DoubleLocation?
         var radius: Double;
 
         try {
@@ -64,14 +64,6 @@ object PointRobotWithInertiaIO {
             }
         } catch (e: NoSuchElementException) {
             throw InvalidPointRobotWithInertiaException("DoubleIntegrator is not complete.", e)
-        }
-
-        if (startLocation == null) {
-            throw InvalidPointRobotWithInertiaException("Unknown start location. Start location has was not defined.")
-        }
-
-        if (endLocation == null) {
-            throw InvalidPointRobotWithInertiaException("Unknown end location. End location has was not defined.")
         }
 
         val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.

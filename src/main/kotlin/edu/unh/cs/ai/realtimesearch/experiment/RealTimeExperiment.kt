@@ -32,12 +32,12 @@ import kotlin.system.measureNanoTime
  * @param world is the environment
  * @param terminationChecker controls the constraint put upon the agent
  */
-class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
-                                                  val agent: RTSAgent<StateType>,
-                                                  val world: Environment<StateType>,
-                                                  val terminationChecker: TimeTerminationChecker) : Experiment() {
+class RealTimeExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
+                                                       val agent: RTSAgent<StateType>,
+                                                       val world: Environment<StateType>,
+                                                       val terminationChecker: TimeTerminationChecker) : Experiment() {
 
-    private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
+    private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
     private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
     private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
 

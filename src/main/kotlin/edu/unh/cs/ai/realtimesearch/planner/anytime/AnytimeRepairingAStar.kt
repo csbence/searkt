@@ -118,7 +118,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 //            println("looping")
 //            print("" + cur.state + " " + cur.action + " ")
 //            print("" + cur.action + " ")
-            result.add(cur!!.action)
+            result.add(cur.action)
             cur = cur.parent
         }
         //println()

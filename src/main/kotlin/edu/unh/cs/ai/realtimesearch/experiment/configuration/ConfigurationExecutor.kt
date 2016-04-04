@@ -17,9 +17,9 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.experiment.ATSExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.RTSExperiment
+import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
@@ -248,7 +248,7 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
-        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
@@ -256,7 +256,7 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
         val dynamicFHatPlanner = DynamicFHatPlanner(domain)
         val rtsAgent = RTSAgent(dynamicFHatPlanner)
-        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
@@ -275,7 +275,7 @@ object ConfigurationExecutor {
         val depthLimit = experimentConfiguration.getTypedValue<Long>(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
-        val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
@@ -284,7 +284,7 @@ object ConfigurationExecutor {
         //val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val anytimeRepairingAStarPlanner = AnytimeRepairingAStar(domain)
         /*val atsAgent = ATSAgent(anytimeRepairingAStarPlanner)*/
-        val atsExperiment = ATSExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
+        val atsExperiment = AnytimeExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
 
         return atsExperiment.run()
     }

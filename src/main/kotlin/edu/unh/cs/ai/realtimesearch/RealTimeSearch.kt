@@ -30,6 +30,7 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
+
         val map = "input/vacuum/dylan/wall.vw"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
@@ -39,6 +40,7 @@ fun main(args: Array<String>) {
                 rawDomain,
                 Planners.ARA_STAR.toString(),
                 "time")
+
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
