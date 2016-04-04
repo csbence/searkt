@@ -70,6 +70,8 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
 
         systemProperties.put("java_vm_info", System.getProperties()["java.vm.info"].toString())
         systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
+        systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
+        systemProperties.put("java_version", System.getProperties()["java.version"].toString())
         systemProperties.put("java_vm_input_args", arguments)
     }
 }
