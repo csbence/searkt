@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.visualizer.acrobot.AcrobotVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
@@ -20,7 +21,7 @@ fun main(args: Array<String>) {
     val fileName = args.first()
     val fileString = File(fileName).readText()
     val experimentResult = experimentResultFromJson(fileString)
-    val domainName = experimentResult.experimentConfiguration["domainName"] as String
+    val domainName = experimentResult.experimentConfiguration[Configurations.DOMAIN_NAME.toString()] as String
 
     val params: MutableList<String> = mutableListOf()
     params.add(fileString)

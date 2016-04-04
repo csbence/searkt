@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.experiment.network
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import org.apache.commons.cli.*
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -43,7 +44,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
             // Get configuration
             val experimentConfiguration = realTimeSearchClient.getExperimentConfiguration()
             if (experimentConfiguration != null) {
-                logger.info("Experiment configuration has been received. [̵̵̵̵domain:${experimentConfiguration.domainName} :: algorithm:${experimentConfiguration.algorithmName} :: instance:${experimentConfiguration["domainInstanceName"]}]")
+                logger.info("Experiment configuration has been received. [̵̵̵̵domain:${experimentConfiguration.domainName} :: algorithm:${experimentConfiguration.algorithmName} :: instance:${experimentConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()]}]")
                 stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
                 System.gc() // Make sure that we have not garbage in the memory
 

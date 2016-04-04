@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+import java.lang.management.ManagementFactory
 import java.util.*
 
 
@@ -28,7 +29,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
                 pathLength: Long,
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
-                systemProperties: HashMap<String, String> = HashMap()) : this() {
+                systemProperties: HashMap<String, Any> = HashMap()) : this() {
 
         this.experimentConfiguration = experimentConfiguration
         this.expandedNodes = expandedNodes
@@ -58,14 +59,19 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
     var actions: List<String> by valueStore
     var timestamp: Long by valueStore
     var success: Boolean by valueStore
-    var systemProperties: MutableMap<String, String> by valueStore
+    var systemProperties: MutableMap<String, Any> by valueStore
 
     init {
         // Initialize the system properties
-        systemProperties = hashMapOf<String, String>()
-        System.getProperties().forEach {
-            // MongoDB cannot handle . in keys
-            systemProperties.put(it.key.toString().replace('.', '_'), it.value.toString())
-        }
+        systemProperties = hashMapOf<String, Any>()
+
+        val runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        val arguments = runtimeMxBean.inputArguments;
+
+        systemProperties.put("java_vm_info", System.getProperties()["java.vm.info"].toString())
+        systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
+        systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
+        systemProperties.put("java_version", System.getProperties()["java.version"].toString())
+        systemProperties.put("java_vm_input_args", arguments)
     }
 }

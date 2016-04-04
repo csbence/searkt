@@ -2,22 +2,23 @@ package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import groovyjarjarcommonscli.*
+import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
 import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
-import javafx.application.Application
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 
 class Input
 
@@ -29,8 +30,9 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
-//        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
+
+        val map = "input/vacuum/dylan/wall.vw"
+        val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
@@ -38,12 +40,14 @@ fun main(args: Array<String>) {
                 rawDomain,
                 Planners.ARA_STAR.toString(),
                 "time")
-        manualConfiguration["lookaheadDepthLimit"] = 4L
-        manualConfiguration["actionDuration"] = 40000L
-        manualConfiguration["timeBoundType"] = "STATIC"
-        manualConfiguration["commitmentStrategy"] = CommitmentStrategy.MULTIPLE.toString()
-        manualConfiguration["singleStepLookahead"] = false
-        manualConfiguration["timeLimit"] = NANOSECONDS.convert(5, MINUTES)
+
+        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
+        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
+        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
+        manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
+        manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
     } else {
         // Read configuration from command line
@@ -60,18 +64,17 @@ fun main(args: Array<String>) {
     } else if (result.errorMessage != null) {
         logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        logger.info("Execution time: ${MILLISECONDS.convert(result.planningTime, NANOSECONDS)}ms")
+        logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
+        logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
+        logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
         //        logger.info(result.toIndentedJson())
 
-        val params: MutableList<String> = arrayListOf()
-        params.add(manualConfiguration.rawDomain)
-        for (action in result.actions)
-            params.add(action.toString())
+        val params: List<String> = arrayListOf(result.toJson())
 
-        //Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
-        //Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+//        Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
+//        Application.launch(PointVisualizer::class.java, *params.toTypedArray())
         Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
-        //Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
+//        Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
     }
 
 }

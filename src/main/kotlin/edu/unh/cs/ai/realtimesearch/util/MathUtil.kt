@@ -29,10 +29,12 @@ fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperat
 fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
 fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 
+
 /**
- * Convert time in ns to double in seconds
+ * Convert time in ns to double in specified time unit
  */
-fun convertNanoToSecondsDouble(time: Long): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS).toDouble()
+fun convertNanoUpDouble(time: Long, unit: TimeUnit): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, unit).toDouble()
+//fun convertNanoToSecondsDouble(time: Long): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS).toDouble()
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range

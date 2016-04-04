@@ -1,14 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
-import groovyjarjarcommonscli.*
+import groovyjarjarcommonscli.CommandLine
+import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
-import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
@@ -30,32 +29,16 @@ class RacetrackVisualizer : BaseVisualizer() {
     override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
-//        processCommandLine(parameters.raw.toTypedArray())
-//
-//        val DISPLAY_LINE = true
-//
-//        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
-//
-//        /* Get action list from Application */
-//        val actionList: MutableList<String> = arrayListOf()
-//        for (action in experimentResult!!.actions) {
-//            actionList.add(action)
-//        }
+        processCommandLine(parameters.raw.toTypedArray())
+
         val DISPLAY_LINE = true
 
-        val parameters = getParameters()
-        val raw = parameters.raw
-        if(raw.isEmpty()){
-            println("Cannot visualize without a domain!")
-            //exitProcess(1);
-        }
-
-        val rawDomain = raw.first()//experimentResult!!.experimentConfiguration["rawDomain"] as String
+        val rawDomain = experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1){
-            actionList.add(raw.get(i))
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
 
         primaryStage.title = "RTS Visualizer"
