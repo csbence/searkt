@@ -193,7 +193,7 @@ object ConfigurationExecutor {
 
     private fun executeAcrobot(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val acrobotInstance = AcrobotIO.parseFromStream(rawDomain.byteInputStream())
+        val acrobotInstance = AcrobotIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val acrobotEnvironment = DiscretizedEnvironment(acrobotInstance.domain, acrobotInstance.initialState)
 
         return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState, acrobotEnvironment)
@@ -229,7 +229,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
-        val weight = experimentConfiguration.getTypedValue<Double>("weight") ?: throw InvalidFieldException("\"weight\" is not found. Please add it the the experiment configuration.")
+        val weight = experimentConfiguration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = ClassicalAStarPlanner(domain, weight)
         val classicalAgent = ClassicalAgent(aStarPlanner)
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
@@ -262,17 +262,17 @@ object ConfigurationExecutor {
     }
 
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
-        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>("timeBoundType") ?: throw  InvalidFieldException("timeBoundType is not found. Please add it to the configuration.")
+        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>(Configurations.TIME_BOUND_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.TIME_BOUND_TYPE}\" is not found. Please add it to the configuration.")
         val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
 
         return when (timeBoundType) {
             TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
-            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>("actionDuration") ?: throw  InvalidFieldException("\"actionDuration\" is not found. Please add it the the experiment configuration."))
+            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>(Configurations.ACTION_DURATION.toString()) ?: throw  InvalidFieldException("\"${Configurations.ACTION_DURATION}\" is not found. Please add it the the experiment configuration."))
         }
     }
 
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Long>("lookaheadDepthLimit") ?: throw InvalidFieldException("\"lookaheadDepthLimit\" is not found. Please add it to the experiment configuration.")
+        val depthLimit = experimentConfiguration.getTypedValue<Long>(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
         val rtsExperiment = RTSExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))

@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import edu.unh.cs.ai.realtimesearch.util.angleDistance
 
 /**
@@ -11,14 +12,15 @@ import edu.unh.cs.ai.realtimesearch.util.angleDistance
  * is to maneuver the links such that they are pointing straight up inverted
  * vertically from a downward facing position.
  */
-class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) : Domain<AcrobotState> {
+class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
+              val actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration) : Domain<AcrobotState> {
     companion object {
         data class AcrobotBoundStates(val lowerBound: AcrobotState, val upperBound: AcrobotState)
         fun getBoundStates(endState: AcrobotState, configuration: AcrobotConfiguration): AcrobotBoundStates {
             val absoluteLink1LowerBound = endState.link1 - configuration.endLink1LowerBound
             val absoluteLink2LowerBound = endState.link2 - configuration.endLink2LowerBound
-            val absoluteLink1UpperBound = endState.link1 - configuration.endLink1UpperBound
-            val absoluteLink2UpperBound = endState.link2 - configuration.endLink2UpperBound
+            val absoluteLink1UpperBound = endState.link1 + configuration.endLink1UpperBound
+            val absoluteLink2UpperBound = endState.link2 + configuration.endLink2UpperBound
 
             val endStateLowerBound = AcrobotState(absoluteLink1LowerBound, absoluteLink2LowerBound, configuration.stateConfiguration)
             val endStateUpperBound = AcrobotState(absoluteLink1UpperBound, absoluteLink2UpperBound, configuration.stateConfiguration)
@@ -33,7 +35,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Calculate the next state given the current state and an action
      */
     internal fun calculateNextState(currentState: AcrobotState, action: AcrobotAction): AcrobotState {
-        return currentState.calculateNextState(currentState.calculateLinkAccelerations(action))
+        return currentState.calculateNextState(currentState.calculateLinkAccelerations(action), actionDuration)
     }
 
     /**
@@ -47,7 +49,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
             // add the legal movement actions
             successors.add(SuccessorBundle(
                     calculateNextState(state, action),
-                    action, actionCost = configuration.stateConfiguration.timeStep))
+                    action, actionCost = actionDuration))
         }
 
         return successors
@@ -109,7 +111,8 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration()) 
      * Returns whether the given state is a goal state.
      * @return true if the links within a threshold of positions and velocities.
      */
-    override fun isGoal(state: AcrobotState): Boolean = state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
+    override fun isGoal(state: AcrobotState): Boolean =
+            state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
 
     /**
      * Simply prints the state values.

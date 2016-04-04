@@ -1,9 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-/**
- * Created by Stephen on 2/11/16.
- */
-
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -19,6 +16,9 @@ import javafx.util.Duration
 import java.util.*
 import kotlin.system.exitProcess
 
+/**
+ * Created by Stephen on 2/11/16.
+ */
 class VacuumVisualizer : BaseVisualizer() {
     var moverobot = true;
     var arastarXOrig = 0.0;
@@ -32,37 +32,21 @@ class VacuumVisualizer : BaseVisualizer() {
     override fun processOptions(cmd: CommandLine) {}
 
     override fun start(primaryStage: Stage) {
-//        processCommandLine(parameters.raw.toTypedArray())
-//
-//        val DISPLAY_LINE = true
-//
-//        val rawDomain = experimentResult!!.experimentConfiguration["rawDomain"] as String
-//
-//        /* Get action list from Application */
-//        val actionList: MutableList<String> = arrayListOf()
-//        for (action in experimentResult!!.actions) {
-//            actionList.add(action)
-//        }
+        processCommandLine(parameters.raw.toTypedArray())
+
         val DISPLAY_LINE = true
-        val isARAStar = true;
-        if(isARAStar)
-            moverobot = false
 
-        val parameters = getParameters()
-        val raw = parameters.raw
-        if(raw.isEmpty()){
-            println("Cannot visualize without a domain!")
-            //exitProcess(1);
-        }
-
-
-        val rawDomain = raw.first()//experimentResult!!.experimentConfiguration["rawDomain"] as String
+        val rawDomain = experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (i in 1..raw.size - 1){
-            actionList.add(raw.get(i))
+        for (action in experimentResult!!.actions) {
+            actionList.add(action)
         }
+
+        val isARAStar = false
+        if(isARAStar)
+            moverobot = false
 
         val TIME_TO_RUN = actionList.size * 200.0
 
@@ -229,7 +213,7 @@ class VacuumVisualizer : BaseVisualizer() {
 //            paths.get(9).stroke = Color.PLUM
 //        }
 
-        paths.get(pIndex).stroke = Color.ORANGE
+        paths.get(pIndex).stroke = Color.RED
 
         /* Animate the robot */
         val pathTransition = PathTransition()

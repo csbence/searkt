@@ -23,9 +23,6 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     private val allNodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
     private var iterationCount = 0;
 
-    public var generatedNodes = 0
-    public var expandedNodes = 0
-
     data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int/*, val heuristic: Double = 0.0*/)
 
 
@@ -40,17 +37,19 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
             val currentState = currentNode.state//closedList[currentState]!!
 
             localClosedList.add(currentState)
+            expandedNodeCount++;
 
             domain.predecessors(currentState).forEach {
                 val predecessorNode = closedList[it.state]
-                println("" + it.state + " " + it.state.hashCode() + " " + predecessorNode);
+//                println("" + it.state + " " + it.state.hashCode() + " " + predecessorNode);
 
                 if (predecessorNode == null || predecessorNode.cost > currentNode.cost + it.actionCost) {
+                    generatedNodeCount++
                     var updatedSuccessorNode = allNodes[it.state]
                     if(updatedSuccessorNode == null){
                         updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost, iterationCount)
                         allNodes[it.state] = updatedSuccessorNode
-                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
+//                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
                     }
                     else if(updatedSuccessorNode.iteration == iterationCount
                             || (updatedSuccessorNode.iteration < iterationCount && updatedSuccessorNode.cost > currentNode.cost + it.actionCost)){
@@ -59,7 +58,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
                         updatedSuccessorNode.cost = currentNode.cost + it.actionCost
                         updatedSuccessorNode.iteration = iterationCount
                         allNodes[it.state] = updatedSuccessorNode
-                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
+//                        println("" + it.state + " " + it.state.hashCode() + " " + updatedSuccessorNode.state);
                     }
 
                     closedList[it.state] = updatedSuccessorNode

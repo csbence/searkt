@@ -7,9 +7,11 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.util.angleDifference
-import edu.unh.cs.ai.realtimesearch.util.convertTime
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Option
@@ -23,6 +25,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 /**
  * Visualizer for the Acrobot domain.  Given a set of results, produces and runs an animation of the Acrobot domain
@@ -34,6 +37,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
     private var acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()
     private var ghost: Boolean = false
     private val actionList: MutableList<AcrobotAction> = mutableListOf()
+    private var actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration
 
     private val ghostOption = Option("g", "ghost", false, "Display ghost animation")
 
@@ -52,7 +56,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         processCommandLine(parameters.raw.toTypedArray())
 
-        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration["rawDomain"] as String)
+        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
+        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Int).toLong()
 
         for (action in experimentResult!!.actions) {
             actionList.add(AcrobotAction.valueOf(action))
@@ -177,7 +182,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         if (stateList.size < 1)
             throw IllegalArgumentException("State list must have at least one state for animation")
 
-        val time = acrobotConfiguration.stateConfiguration.timeStep
+        val time = actionDuration
         for (state in stateList) {
             val diff1 = Math.toDegrees(angleDifference(state.previousState.link1.position, state.state.link1.position))
             val diff2 = Math.toDegrees(angleDifference(state.previousState.link2.position, state.state.link2.position)) + diff1
@@ -187,7 +192,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
             logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(convertTime(time)),
+            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(convertNanoUpDouble(time, TimeUnit.SECONDS)),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
                     KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
         }

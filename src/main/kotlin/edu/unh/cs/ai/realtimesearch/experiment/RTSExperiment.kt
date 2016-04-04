@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
@@ -11,7 +12,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureNanoTime
 
 /**
@@ -35,8 +38,8 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
                                                   val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RTSExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(experimentConfiguration, "commitmentStrategy")
-    private val actionDuration by lazyData<Long>(experimentConfiguration, "actionDuration")
+    private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
 
     /**
      * Runs the experiment
@@ -45,12 +48,12 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         val actions: MutableList<Action> = arrayListOf()
         logger.info { "Starting experiment from state ${world.getState()}" }
 
-        var totalNanoTime = 0L
+        var totalPlanningNanoTime = 0L
         var timeBound = actionDuration
         var singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         while (!world.isGoal()) {
-            totalNanoTime += measureNanoTime {
+            totalPlanningNanoTime += measureNanoTime {
                 terminationChecker.init(timeBound)
 
                 var actionList = agent.selectAction(world.getState(), terminationChecker);
@@ -71,15 +74,19 @@ class RTSExperiment<StateType : State<StateType>>(val experimentConfiguration: G
         }
 
         val pathLength: Long = actions.size.toLong()
-        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes in $totalNanoTime. (${agent.planner.expandedNodeCount * 1000 / totalNanoTime})" }
+        val totalExecutionNanoTime = pathLength * actionDuration
+        val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
+        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded " +
+                "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)" }
 
         return ExperimentResult(
                 experimentConfiguration.valueStore,
                 agent.planner.expandedNodeCount,
                 agent.planner.generatedNodeCount,
-                totalNanoTime,
-                pathLength * actionDuration,
-                totalNanoTime + pathLength * actionDuration,
+                totalPlanningNanoTime,
+                totalExecutionNanoTime,
+                goalAchievementTime,
                 pathLength,
                 actions.map { it.toString() })
     }
