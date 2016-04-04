@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Environment
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -36,7 +37,8 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
     override fun run(): ExperimentResult {
         val actions: MutableList<String> = arrayListOf()
         val actionsLists: MutableList<String> = arrayListOf()
-        val maxCount = 3
+        var actionList: MutableList<Action?> = arrayListOf()
+        val maxCount = 6
 
         logger.info { "Starting experiment from state ${world.getState()}" }
         var executionNanoTime = 1L
@@ -46,11 +48,22 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
             //print("" + world.getState() + " " + world.getGoal() + " ")
             println("start")
             val startTime = System.nanoTime()
-            var actionList = planner.solve(world.getState(), world.getGoal());
+            val tempActions = planner.solve(world.getState(), world.getGoal());
             val endTime = System.nanoTime()
             println("time: " + (endTime - startTime))
-            if(actions.size == 0)
+            if(actions.size == 0) {
                 executionNanoTime = endTime - startTime
+                actionList = tempActions
+            }
+            else if(experimentConfiguration.actionDuration * maxCount < endTime - startTime){
+                println("Planning took too long! Use old plan.")
+                for(i in 1..maxCount){
+                    actionList.removeAt(0)
+                }
+            }
+            else{
+                actionList = tempActions
+            }
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
             val update = planner.update()
@@ -65,11 +78,12 @@ class ATSExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingA
 
                 var count = 0;
                 for (it in actionList) {
-                    //println(it.action)
+                    println(it/*.action*/)
                     if (it/*.action*/ != null) {
 
 
                         if (count < maxCount) {
+//                            println(it)
                             world.step(it/*.action*/) // Move the agent
                             actions.add(it/*.action*/.toString())
                         }// Save the action

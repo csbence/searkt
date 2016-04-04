@@ -29,7 +29,7 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/wall.vw") ?: throw RuntimeException("Resource not found")
+        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/dylan/uniform.vw") ?: throw RuntimeException("Resource not found")
 //        val input = Input::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/all/1") ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
                 Planners.ARA_STAR.toString(),
                 "time")
         manualConfiguration["lookaheadDepthLimit"] = 4L
-        manualConfiguration["actionDuration"] = 10L
+        manualConfiguration["actionDuration"] = 40000L
         manualConfiguration["timeBoundType"] = "STATIC"
         manualConfiguration["commitmentStrategy"] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration["singleStepLookahead"] = false
