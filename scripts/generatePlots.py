@@ -8,16 +8,12 @@
 
 import getopt
 import json
-import matplotlib.cbook as cbook
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
 
 import plotutils
-
-ALGORITHM = 0
-DOMAIN = 1
 
 script = os.path.basename(sys.argv[0])
 options = "hs:q"
@@ -78,23 +74,23 @@ for json_file in args:
         times[results.configuration].append(results.time)
 
         # Checking for common domain
-        if results.configuration[DOMAIN] not in domain_counts:
-            domain_counts[results.configuration[DOMAIN]] = 0
+        if results.configuration[plotutils.Results.DOMAIN] not in domain_counts:
+            domain_counts[results.configuration[plotutils.Results.DOMAIN]] = 0
             num_domains += 1
         else:
-            domain_counts[results.configuration[DOMAIN]] += 1
+            domain_counts[results.configuration[plotutils.Results.DOMAIN]] += 1
 
         # Checking for common algorithms
-        if results.configuration[ALGORITHM] not in algorithm_counts:
-            algorithm_counts[results.configuration[ALGORITHM]] = 0
+        if results.configuration[plotutils.Results.ALGORITHM] not in algorithm_counts:
+            algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] = 0
             num_algorithms += 1
         else:
-            algorithm_counts[results.configuration[ALGORITHM]] += 1
+            algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] += 1
 
         if not quiet:
             print "== Configuration =="
-            print "Algorithm: ", results.configuration[ALGORITHM]
-            print "Domain: ", results.configuration[DOMAIN]
+            print "Algorithm: ", results.configuration[plotutils.Results.ALGORITHM]
+            print "Domain: ", results.configuration[plotutils.Results.DOMAIN]
 
             print "== Results =="
             print "Generated Nodes: ", results.generatedNodes
@@ -138,7 +134,7 @@ if num_domains != 1:
                 max_domain = key
         # Remove data from other domains
         for key, value in times.items():
-            if key[DOMAIN] != max_domain:
+            if key[plotutils.Results.DOMAIN] != max_domain:
                 del times[key]
                 num_domains -= 1
 
@@ -159,13 +155,13 @@ if domain_groups:
     plt.xlabel("Algorithm")
     plt.title(plotutils.translate_domain_name(domain_counts.keys()[0]))
     for key in times.keys():  # Assumes same order will be plotted
-        labels.append(plotutils.translate_algorithm_name(key[ALGORITHM]))
+        labels.append(plotutils.translate_algorithm_name(key[plotutils.Results.ALGORITHM]))
 else:
     assert num_algorithms == 1
     plt.xlabel("Domain")
     plt.title(plotutils.translate_algorithm_name(algorithm_counts.keys()[0]))
     for key in times.keys():
-        labels.append(plotutils.translate_domain_name(key[DOMAIN]))
+        labels.append(plotutils.translate_domain_name(key[plotutils.Results.DOMAIN]))
 
 # print len(data)
 x = np.arange(1, len(data) + 1)
@@ -173,19 +169,13 @@ y = data
 # print x
 # print y
 
-med = [np.median(subdata) for subdata in y]
-
-bxpstats = cbook.boxplot_stats(y)
-confidence_intervals = [[], []]
-for stat in bxpstats:
-    confidence_intervals[0].append(stat['cilo'])
-    confidence_intervals[1].append(stat['cihi'])
-confidence_intervals[0] = np.array(confidence_intervals[0])
-confidence_intervals[1] = np.array(confidence_intervals[1])
+med, confidence_intervals_low, confidence_intervals_high = plotutils.median_confidence_intervals(y)
 
 # plt.rcParams.update({'font.size': 14})
-plt.boxplot(y, notch=False, labels=labels)
-plt.errorbar(x, med, yerr=(med - confidence_intervals[0], confidence_intervals[1] - med), fmt='none', linewidth=3)
+plt.boxplot(y, notch=False, labels=labels, boxprops=dict(linewidth=2))
+plt.errorbar(x, med, yerr=(confidence_intervals_low, confidence_intervals_high), fmt='none', linewidth=3)
+plt.ylim([min(min(y)) - 1, max(max(y)) + 1])
+
 
 # Save before showing since show resets the figures
 if save_file is not None:

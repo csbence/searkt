@@ -396,7 +396,11 @@ if [ -n "$DIST" ] && [ "$DIST" = true ]; then
     exit 1
   fi
 
+  date
   run run_dist
+  date
 else
+  date
   run run_gradle
+  date
 fi
