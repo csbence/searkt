@@ -7,7 +7,6 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.system.measureNanoTime
 
 /**
  * Standalone A* implementation.
@@ -43,56 +42,56 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
     }
 
     override fun plan(state: StateType): List<Action> {
-        executionNanoTime = measureNanoTime {
-            openList.clear();
-            nodes.clear();
+        val startTime = System.nanoTime()
+        openList.clear()
+        nodes.clear()
 
-            val startNode = Node(null, state, null, 0.0, 0.0, true)
-            openList.add(startNode)
-            nodes.put(state, startNode)
-            generatedNodeCount++
+        val startNode = Node(null, state, null, 0.0, 0.0, true)
+        openList.add(startNode)
+        nodes.put(state, startNode)
+        generatedNodeCount++
 
-            while (openList.isNotEmpty()) {
-                expandedNodeCount++
-                val node = openList.remove()
+        while (openList.isNotEmpty()) {
+            expandedNodeCount++
+            val node = openList.remove()
 
-                if (!node.open) {
-                    continue // This node was disabled
+            if (!node.open) {
+                continue // This node was disabled
+            }
+
+            if (domain.isGoal(node.state)) {
+                executionNanoTime = System.nanoTime() - startTime
+                return extractPlan(node)
+            }
+
+            // expand (only those not visited yet)
+            successors@ for (successor in domain.successors(node.state)) {
+                if (successor.state == node.state) {
+                    continue // Don't consider the parent node
                 }
 
-                if (domain.isGoal(node.state)) {
-                    return extractPlan(node)
-                }
+                generatedNodeCount++
 
-                // expand (only those not visited yet)
-                successors@ for (successor in domain.successors(node.state)) {
-                    if (successor.state == node.state) {
-                        continue // Don't consider the parent node
+                val existingSuccessorNode = nodes[successor.state]
+
+                val newCost = successor.actionCost + node.cost
+
+                when {
+                    existingSuccessorNode == null -> {
+                        // New state discovered
+                        val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
+                        nodes.put(newSuccessorNode.state, newSuccessorNode) // Add to the node list
+                        openList.add(newSuccessorNode)
                     }
-
-                    generatedNodeCount++
-
-                    val existingSuccessorNode = nodes[successor.state]
-
-                    val newCost = successor.actionCost + node.cost
-
-                    when {
-                        existingSuccessorNode == null -> {
-                            // New state discovered
-                            val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
-                            nodes.put(newSuccessorNode.state, newSuccessorNode) // Add to the node list
-                            openList.add(newSuccessorNode)
-                        }
-                        existingSuccessorNode.open && existingSuccessorNode.cost > newCost -> {
-                            // Rediscover with a better cost
-                            val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
-                            nodes.put(newSuccessorNode.state, newSuccessorNode) // Override the previous node for the state
-                            openList.add(newSuccessorNode)
-                            existingSuccessorNode.open = false // Disable the existing representative on the open
-                        }
-                        else -> continue@successors
-
+                    existingSuccessorNode.open && existingSuccessorNode.cost > newCost -> {
+                        // Rediscover with a better cost
+                        val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
+                        nodes.put(newSuccessorNode.state, newSuccessorNode) // Override the previous node for the state
+                        openList.add(newSuccessorNode)
+                        existingSuccessorNode.open = false // Disable the existing representative on the open
                     }
+                    else -> continue@successors
+
                 }
             }
         }
