@@ -12,6 +12,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -49,20 +50,20 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         logger.info { "Starting experiment from state ${world.getState()}" }
 
         var totalPlanningNanoTime = 0L
+        val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
+
         var timeBound = actionDuration
-        var singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
+        var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
         while (!world.isGoal()) {
-            totalPlanningNanoTime += measureNanoTime {
+            val iterationNanoTime = measureNanoTime {
                 terminationChecker.init(timeBound)
 
-                var actionList = agent.selectAction(world.getState(), terminationChecker);
+                actionList = agent.selectAction(world.getState(), terminationChecker);
 
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
-
-                logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
                 timeBound = 0
                 actionList.forEach {
@@ -71,14 +72,35 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
                 }
             }
+
+            logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+
+            if (actionList.isEmpty()) {
+                throw RuntimeException("Select action did not return actions in the given time bound. The agent is confused.")
+            }
+
+            // Check if the algorithm satisfies the real-time bound
+            if (terminationChecker.timeLimit < iterationNanoTime) {
+                throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime")
+            } else {
+                logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime" }
+            }
+
+            //            System.gc()
+            //            Thread.sleep(500)
+
+            totalPlanningNanoTime += iterationNanoTime
+
         }
 
         val pathLength: Long = actions.size.toLong()
         val totalExecutionNanoTime = pathLength * actionDuration
-        val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
-        logger.info { "Path length: [$pathLength] \nAfter ${agent.planner.expandedNodeCount} expanded " +
-                "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
-                "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)" }
+        val goalAchievementTime = actionDuration + totalExecutionNanoTime // We only plan during execution plus the first iteration
+        logger.info {
+            "Path length: [$pathLength] After ${agent.planner.expandedNodeCount} expanded " +
+                    "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                    "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
+        }
 
         return ExperimentResult(
                 experimentConfiguration.valueStore,
