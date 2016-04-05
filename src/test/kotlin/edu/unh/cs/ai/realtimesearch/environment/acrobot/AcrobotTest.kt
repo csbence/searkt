@@ -38,8 +38,8 @@ class AcrobotTest {
     @Test
     fun testHeuristic1() {
         val acrobot = Acrobot()
-        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
-        val heuristic = acrobot.heuristic(endStateLowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+        val endStateBounds = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val heuristic = acrobot.heuristic(endStateBounds.lowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
 
         assertTrue { heuristic > 0.0 }
     }
@@ -47,8 +47,8 @@ class AcrobotTest {
     @Test
     fun testHeuristic2() {
         val acrobot = Acrobot()
-        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
-        val heuristic = acrobot.heuristic(endStateUpperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
+        val endStateBounds = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val heuristic = acrobot.heuristic(endStateBounds.upperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
         assertTrue { heuristic > 0.0 }
     }
 

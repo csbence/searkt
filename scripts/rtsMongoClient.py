@@ -102,6 +102,7 @@ def plot_gat_duration_error(db, algorithms, domain, instance):
     # Plot for each provided algorithm
     for algorithm in algorithms:
         algorithm_gat_per_duration = get_get_per_duration_data(db, algorithm, domain, instance)
+        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             plotutils.mean_confidence_intervals(algorithm_gat_per_duration)
         x = np.arange(1, len(algorithm_gat_per_duration_means) + 1)
