@@ -106,20 +106,18 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             )
             val stateConfiguration = AcrobotStateConfiguration()
 
-            for (lowerBound in bounds) {
-                for (upperBound in bounds) {
-                    val acrobotConfiguration = AcrobotConfiguration(
-                            endLink1LowerBound = AcrobotLink(lowerBound, lowerBound),
-                            endLink2LowerBound = AcrobotLink(lowerBound, lowerBound),
-                            endLink1UpperBound = AcrobotLink(upperBound, upperBound),
-                            endLink2UpperBound = AcrobotLink(upperBound, upperBound),
-                            stateConfiguration = stateConfiguration
-                    )
-                    configurations.add(mutableMapOf(
-                            Configurations.RAW_DOMAIN.toString() to "${JsonOutput.toJson(acrobotConfiguration).replace("\"", "\\\"")}",
-                            Configurations.DOMAIN_INSTANCE_NAME.toString() to "$lowerBound-$upperBound"
-                    ))
-                }
+            for (bound in bounds) {
+                val acrobotConfiguration = AcrobotConfiguration(
+                        endLink1LowerBound = AcrobotLink(bound, bound),
+                        endLink2LowerBound = AcrobotLink(bound, bound),
+                        endLink1UpperBound = AcrobotLink(bound, bound),
+                        endLink2UpperBound = AcrobotLink(bound, bound),
+                        stateConfiguration = stateConfiguration
+                )
+                configurations.add(mutableMapOf(
+                        Configurations.RAW_DOMAIN.toString() to "${JsonOutput.toJson(acrobotConfiguration)}",
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to "$bound-$bound"
+                ))
             }
         }
         GRID_WORLD, VACUUM_WORLD, POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
