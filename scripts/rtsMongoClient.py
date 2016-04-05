@@ -65,7 +65,8 @@ def get_get_per_duration_data(db, algorithm, domain, instance):
         for result in data_tiles_a_star:
             times_for_durations.append(plotutils.cnv_ns_to_ms(result['result']['goalAchievementTime']))
 
-        data_action_durations.append(times_for_durations)
+        if times_for_durations:  # not empty
+            data_action_durations.append(times_for_durations)
 
     return data_action_durations
 
@@ -102,6 +103,9 @@ def plot_gat_duration_error(db, algorithms, domain, instance):
     # Plot for each provided algorithm
     for algorithm in algorithms:
         algorithm_gat_per_duration = get_get_per_duration_data(db, algorithm, domain, instance)
+        if not algorithm_gat_per_duration: # empty
+            print("No data for " + algorithm)
+            continue
         algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             plotutils.mean_confidence_intervals(algorithm_gat_per_duration)
@@ -113,9 +117,10 @@ def plot_gat_duration_error(db, algorithms, domain, instance):
     plt.title(plotutils.translate_domain_name(domain) + " - " + instance)
     plt.ylabel("GAT log10")
     plt.xlabel("Action Duration (ms)")
+    plt.legend()
+    # Adjust x limits so end errors are visible
     xmin, xmax = plt.xlim()
     plt.xlim(xmin - 0.1, xmax + 0.1)
-    plt.legend()
     return plt
 
 
