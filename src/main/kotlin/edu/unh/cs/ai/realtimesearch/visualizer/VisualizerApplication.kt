@@ -3,6 +3,8 @@ package edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.visualizer.acrobot.AcrobotVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointInertiaVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.PointVisualizer
@@ -18,16 +20,21 @@ fun main(args: Array<String>) {
     if (args.size < 1){
         throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
     }
-    val fileName = args.first()
+    val argsIterator = args.iterator()
+    val fileName = argsIterator.next()
     val fileString = File(fileName).readText()
     val experimentResult = experimentResultFromJson(fileString)
-    val domainName = experimentResult.experimentConfiguration[Configurations.DOMAIN_NAME.toString()] as String
 
     val params: MutableList<String> = mutableListOf()
-    params.add(fileString)
-    for (arg in args)
-        params.add(arg)
+    while (argsIterator.hasNext())
+        params.add(argsIterator.next())
 
+    runVisualizer(experimentResult, params)
+}
+
+fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutableListOf()) {
+    val domainName = result.experimentConfiguration[Configurations.DOMAIN_NAME.toString()] as String
+    params.add(0, result.toJson())
     when (Domains.valueOf(domainName)){
         Domains.VACUUM_WORLD -> {
             Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())

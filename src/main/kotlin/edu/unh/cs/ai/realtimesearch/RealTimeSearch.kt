@@ -6,13 +6,11 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.runVisualizer
 import groovyjarjarcommonscli.*
-import javafx.application.Application
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
@@ -69,14 +67,8 @@ fun main(args: Array<String>) {
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
         //        logger.info(result.toIndentedJson())
 
-        val params: List<String> = arrayListOf(result.toJson())
-
-//        Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
-//        Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
-//        Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
+        runVisualizer(result)
     }
-
 }
 
 private fun readConfig(fileConfig: String?, stringConfig: String?): Boolean {

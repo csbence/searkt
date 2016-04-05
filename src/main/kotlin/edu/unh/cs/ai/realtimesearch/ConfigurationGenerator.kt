@@ -83,11 +83,10 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     )
 
     val pointRobotMaps = listOf(
-            "input/pointrobot/empty.pr",
-            "input/pointrobot/smallmaze.pr",
-            "input/pointrobot/uniform.pr",
-            "input/pointrobot/wall.pr",
-            "input/pointrobot/wall2.pr"
+            "input/pointrobot/dylan/cups.pr",
+            "input/pointrobot/dylan/slalom.pr",
+            "input/pointrobot/dylan/uniform.pr",
+            "input/pointrobot/dylan/wall.pr"
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
