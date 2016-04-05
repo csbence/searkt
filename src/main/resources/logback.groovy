@@ -30,5 +30,5 @@ appender("FILE", FileAppender) {
     }
 }
 
-root(INFO, ["STDOUT"])
+root(INFO, ["STDOUT", "FILE"])
 
