@@ -23,8 +23,7 @@ import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
-val actionDurationRange = 1..5
-val actionDurations = actionDurationRange.map { Math.pow(10.0, it.toDouble()).toLong() * 100 }
+val actionDurations = listOf(10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
 val lookaheadLimits = 1..6
 
 fun main(args: Array<String>) {
@@ -60,9 +59,9 @@ fun main(args: Array<String>) {
         }
     }
 
-//    for (configuration in configurations) {
-//        println(ExperimentData(configuration).toIndentedJson())
-//    }
+    //    for (configuration in configurations) {
+    //        println(ExperimentData(configuration).toIndentedJson())
+    //    }
 
     println("${configurations.size} configurations were generated.")
     uploadConfigurations(configurations)
@@ -94,7 +93,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
 
     val slidingTile25EasyMapNames = listOf(9, 12, 19, 28, 30, 31, 42, 45, 47, 48, 55, 57, 61, 71, 73, 74, 79, 81, 85, 86, 90, 93, 94, 95, 97)
-//    val slidingTileEasyMapNames = listOf (5, 6, 8, 9, 12, 13, 19, 20, 23, 28, 30, 31, 34, 38, 39, 42, 45, 46, 47, 48, 51, 55, 57, 58, 61, 62, 65, 71, 73, 74, 77, 78, 79, 81, 85, 86, 90, 93, 94, 95, 96, 97)
+    //    val slidingTileEasyMapNames = listOf (5, 6, 8, 9, 12, 13, 19, 20, 23, 28, 30, 31, 34, 38, 39, 42, 45, 46, 47, 48, 51, 55, 57, 58, 61, 62, 65, 71, 73, 74, 77, 78, 79, 81, 85, 86, 90, 93, 94, 95, 96, 97)
 
     when (domain) {
         ACROBOT -> {
@@ -142,7 +141,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             }
         }
         SLIDING_TILE_PUZZLE_4 -> {
-            for (instanceName in slidingTile25EasyMapNames) {
+            for (instanceName in 1..100) {
                 val map = "$slidingTile4MapRoot$instanceName"
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
@@ -233,8 +232,8 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
 
 fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
     val restTemplate = RestTemplate()
-    //    val serverUrl = "http://aerials.cs.unh.edu:3824
-    var serverUrl = "http://localhost:3824/configurations"
+    val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
+    //    var serverUrl = "http://localhost:3824/configurations"
 
     println("Upload generated files. ${configurations.size}")
     val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
