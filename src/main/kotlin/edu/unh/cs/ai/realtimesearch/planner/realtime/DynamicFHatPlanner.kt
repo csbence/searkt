@@ -28,7 +28,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var distance: Double, var correctedDistance: Double,
+                                             var distance: Double, var distanceError: Double,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
@@ -119,7 +119,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<Node<StateType>>(fValueComparator)
+    private var openList = PriorityQueue<Node<StateType>>(fHatComparator)
 
     // for fast lookup we maintain a set in parallel
     private val openSet = hashSetOf<Node<StateType>>()
@@ -249,7 +249,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         clearOpenList()
         closedList.clear()
 
-        reorderOpenListBy(fValueComparator)
+        reorderOpenListBy(fHatComparator)
     }
 
     /**
@@ -299,7 +299,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 // Initially the cost is going to be higher, thus we encounter each (local) state at least once in the LSS
                 successorNode.apply {
-                    val currentDistanceEstimate = correctedDistance / (1.0 - distanceError) // Dionne 2011 (3.8)
+                    val currentDistanceEstimate = distanceError / (1.0 - distanceError) // Dionne 2011 (3.8)
 
                     cost = successorGValueFromCurrent
                     parent = sourceNode
@@ -311,7 +311,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
-                if (!inOpenList(successorNode)) {
+                if (!successorNode.open) {
                     addToOpenList(successorNode)
                 }
             } else {
@@ -356,7 +356,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     action = successor.action,
                     parent = parent,
                     iteration = iterationCounter,
-                    correctedDistance = distance,
+                    distanceError = distance,
                     correctedHeuristic = distance * heuristicError + heuristic)
 
             nodes[successorState] = undiscoveredNode
@@ -396,26 +396,32 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
-            node.predecessors.forEach { predecessor ->
+            for (predecessor in node.predecessors) {
+                val predecessorNode = predecessor.node
+
                 // Update if the node is outdated
-                if (predecessor.node.iteration != iterationCounter) {
-                    predecessor.node.heuristic = POSITIVE_INFINITY
-                    predecessor.node.iteration = iterationCounter
+                if (predecessorNode.iteration != iterationCounter) {
+                    predecessorNode.heuristic = POSITIVE_INFINITY
+                    predecessorNode.iteration = iterationCounter
                 }
 
-                val predecessorHeuristicValue = predecessor.node.heuristic
+                val predecessorHeuristicValue = predecessorNode.heuristic
 
                 //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
                 //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
                 // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessor.node in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                if (predecessorNode in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
 
-                    predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
-                    logger.debug { "Updated to ${predecessor.node.heuristic}" }
+                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.distanceError = node.distanceError
+                    predecessorNode.distance = node.distance + 1
 
-                    if (!inOpenList(predecessor.node))
-                        addToOpenList(predecessor.node)
+                    logger.debug { "Updated to ${predecessorNode.heuristic}" }
+
+                    if (!predecessorNode.open) {
+                        addToOpenList(predecessorNode)
+                    }
                 }
             }
         }
@@ -457,8 +463,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         openList.forEach { it.open = false }
         openList.clear()
     }
-
-    private fun inOpenList(node: Node<StateType>) = node.open
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.remove()
