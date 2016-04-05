@@ -20,6 +20,7 @@ class GraphType(Enum):
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:"
 default_graph_type = GraphType.gatPerDuration
+action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
 
 
 def usage():
@@ -30,6 +31,7 @@ def usage():
     print("  a<alg>     specify an algorithm, one per switch")
     print("  d<domain>  specify domain")
     print("  i<name>    specify instance name")
+    print("  c<nano>    specify action duration")
     print("  s<file>    save to file")
     print("  t<type>    specify type of plot; default {}".format(default_graph_type.name))
     print("  q          quiet mode; no logging or graph showing")
@@ -53,8 +55,7 @@ def print_counts(db):
 
 def get_get_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
-    for i in reversed(range(1, 6)):
-        action_duration = 100 * 10 ** i
+    for action_duration in reversed(action_durations):
         data_tiles_a_star = db.experimentResult.find({"result.experimentConfiguration.domainName": domain,
                                                       "result.experimentConfiguration.algorithmName": algorithm,
                                                       "result.experimentConfiguration.domainInstanceName": instance,
@@ -69,7 +70,7 @@ def get_get_per_duration_data(db, algorithm, domain, instance):
     return data_action_durations
 
 
-def get_gat_data(db, algorithms, domain, instance):
+def get_gat_data(db, algorithms, domain, instance, action_duration):
     gat_data = []
     labels = []
 
@@ -78,6 +79,7 @@ def get_gat_data(db, algorithms, domain, instance):
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
+            "result.experimentConfiguration.actionDuration": action_duration,
             "result.success": True
         })
 
@@ -90,38 +92,34 @@ def get_gat_data(db, algorithms, domain, instance):
     return gat_data, labels
 
 
-# TODO add log10, factor A*, expansions per duration
-def plot_gat_duration_error(db, algorithms, domain, instance, graph_astar=True):
+# TODO add factor A*
+def plot_gat_duration_error(db, algorithms, domain, instance):
     # Gather required A* data
-    astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
-    astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
-        plotutils.mean_confidence_intervals(astar_gat_per_duration)
-
-    x = np.arange(1, len(astar_gat_per_duration_means) + 1)
-    # Plot A* as well if requested
-    if graph_astar:
-        plt.errorbar(x, astar_gat_per_duration_means, label='A*',
-                     yerr=(astar_confidence_interval_low, astar_confidence_interval_high))
+    # astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
+    # astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
+    #     plotutils.mean_confidence_intervals(astar_gat_per_duration)
 
     # Plot for each provided algorithm
     for algorithm in algorithms:
         algorithm_gat_per_duration = get_get_per_duration_data(db, algorithm, domain, instance)
         algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             plotutils.mean_confidence_intervals(algorithm_gat_per_duration)
+        x = np.arange(1, len(algorithm_gat_per_duration_means) + 1)
         plt.errorbar(x, algorithm_gat_per_duration_means, label=plotutils.translate_algorithm_name(algorithm),
                      yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
 
     # Set labels
     plt.title(plotutils.translate_domain_name(domain) + " - " + instance)
-    plt.ylabel("GAT log10 factor of optimal")
-    plt.xlabel("expansions per unit duration log10")
-    plt.xlim([0.9, 5.1])
+    plt.ylabel("GAT log10")
+    plt.xlabel("Action Duration (ms)")
+    xmin, xmax = plt.xlim()
+    plt.xlim(xmin - 0.1, xmax + 0.1)
     plt.legend()
     return plt
 
 
-def plot_gat_boxplots(db, algorithms, domain, instance, showviolin=False):
-    y, labels = get_gat_data(db, algorithms, domain, instance)
+def plot_gat_boxplots(db, algorithms, domain, instance, action_duration, showviolin=False):
+    y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
     med, confidence_interval_low, confidence_interval_high = plotutils.median_confidence_intervals(y)
 
     # Set labels and build plots
@@ -143,8 +141,8 @@ def plot_gat_boxplots(db, algorithms, domain, instance, showviolin=False):
     return plt
 
 
-def plot_gat_bars(db, algorithms, domain, instance):
-    y, labels = get_gat_data(db, algorithms, domain, instance)
+def plot_gat_bars(db, algorithms, domain, instance, action_duration):
+    y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
     x = np.arange(1, len(y) + 1)
     med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
     mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
@@ -165,8 +163,8 @@ def plot_gat_bars(db, algorithms, domain, instance):
     return plt
 
 
-def plot_gat_lines(db, algorithms, domain, instance):
-    y, labels = get_gat_data(db, algorithms, domain, instance)
+def plot_gat_lines(db, algorithms, domain, instance, action_duration):
+    y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
     x = np.arange(1, len(y) + 1)
     med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
     plt.title(plotutils.translate_domain_name(domain) + "-" + instance)
@@ -203,6 +201,8 @@ if __name__ == '__main__':
             domain = arg
         elif opt in ('-i', '--instance'):
             instance = arg
+        elif opt in ('c', '--action'):
+            action_duration = arg
         elif opt in ('-t', '--type'):
             graph_type = getattr(GraphType, arg)
         elif opt in ('-s', '--save'):
@@ -229,12 +229,13 @@ if __name__ == '__main__':
 
     plotter = {
         GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
-        GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance),
-        GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance),
-        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance)
+        GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration),
+        GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance, action_duration),
+        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance, action_duration)
     }[graph_type]
 
     plot = plotter()
+    plot.gcf().tight_layout()
 
     # Save before showing since show resets the figures
     if save_file is not None:

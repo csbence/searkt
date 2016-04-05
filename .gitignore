@@ -123,3 +123,8 @@ verbosegc*.txt
 # sample configurations
 /configs/
 /configurations/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

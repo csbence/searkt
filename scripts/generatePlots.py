@@ -67,38 +67,42 @@ for json_file in args:
         f = open(json_file, 'r')
         if not quiet:
             print "File: ", json_file
-        results = plotutils.Results(json.loads(f.read()))
+        parsedJson = json.loads(f.read())
 
-        if results.configuration not in times:
-            times[results.configuration] = []
-        times[results.configuration].append(results.time)
+        if parsedJson['success']:
+            results = plotutils.Results(parsedJson)
+            if results.configuration not in times:
+                times[results.configuration] = []
+            times[results.configuration].append(results.time)
 
-        # Checking for common domain
-        if results.configuration[plotutils.Results.DOMAIN] not in domain_counts:
-            domain_counts[results.configuration[plotutils.Results.DOMAIN]] = 0
-            num_domains += 1
-        else:
-            domain_counts[results.configuration[plotutils.Results.DOMAIN]] += 1
+            # Checking for common domain
+            if results.configuration[plotutils.Results.DOMAIN] not in domain_counts:
+                domain_counts[results.configuration[plotutils.Results.DOMAIN]] = 0
+                num_domains += 1
+            else:
+                domain_counts[results.configuration[plotutils.Results.DOMAIN]] += 1
 
-        # Checking for common algorithms
-        if results.configuration[plotutils.Results.ALGORITHM] not in algorithm_counts:
-            algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] = 0
-            num_algorithms += 1
-        else:
-            algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] += 1
+            # Checking for common algorithms
+            if results.configuration[plotutils.Results.ALGORITHM] not in algorithm_counts:
+                algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] = 0
+                num_algorithms += 1
+            else:
+                algorithm_counts[results.configuration[plotutils.Results.ALGORITHM]] += 1
 
-        if not quiet:
-            print "== Configuration =="
-            print "Algorithm: ", results.configuration[plotutils.Results.ALGORITHM]
-            print "Domain: ", results.configuration[plotutils.Results.DOMAIN]
+            if not quiet:
+                print "== Configuration =="
+                print "Algorithm: ", results.configuration[plotutils.Results.ALGORITHM]
+                print "Domain: ", results.configuration[plotutils.Results.DOMAIN]
 
-            print "== Results =="
-            print "Generated Nodes: ", results.generatedNodes
-            print "Expanded Nodes: ", results.expandedNodes
-            print "Path length: ", len(results.actions)
-            print "Time (ns): ", results.time
+                print "== Results =="
+                print "Generated Nodes: ", results.generatedNodes
+                print "Expanded Nodes: ", results.expandedNodes
+                print "Path length: ", len(results.actions)
+                print "Time (ns): ", results.time
 
-            print
+                print
+        elif not quiet:
+            print "Failure:", parsedJson['errorMessage']
     else:
         if not quiet:
             print "Skipping non-existent file '%s'" % json_file

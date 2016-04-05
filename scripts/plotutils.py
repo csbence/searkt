@@ -61,8 +61,9 @@ def median_confidence_intervals(data):
 
 def mean_confidence_intervals(data):
     means = [np.mean(x) for x in data]
-    std = [stats.sem(x) for x in data]
+    std = [stats.sem(x) if len(x) > 1 else 0.0 for x in data]
     confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=means, scale=std)
+    confidence_intervals = [np.nan_to_num(ci) for ci in confidence_intervals]
     return means, means - confidence_intervals[0], confidence_intervals[1] - means
 
 
