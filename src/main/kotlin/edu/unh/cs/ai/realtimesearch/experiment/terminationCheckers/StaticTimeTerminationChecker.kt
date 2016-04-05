@@ -5,7 +5,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
  *
  * @param timeLimit is the limit allowed after init before termination is confirmed
  */
-class StaticTimeTerminationChecker(override var timeLimit: Long) : TimeTerminationChecker {
+class StaticTimeTerminationChecker(override var timeLimit: Long) : TimeTerminationChecker() {
     override var startTime: Long = 0
 
     /**
@@ -14,6 +14,6 @@ class StaticTimeTerminationChecker(override var timeLimit: Long) : TimeTerminati
      * The given time limit is ignored
      */
     override fun init(timeBound: Long) {
-        startTime = System.currentTimeMillis()
+        startTime = System.nanoTime()
     }
 }

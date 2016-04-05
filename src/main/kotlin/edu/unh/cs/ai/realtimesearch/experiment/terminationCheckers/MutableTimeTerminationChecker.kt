@@ -5,7 +5,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
  *
  * @param timeLimit is the limit allowed after init before termination is confirmed
  */
-class MutableTimeTerminationChecker() : TimeTerminationChecker {
+class MutableTimeTerminationChecker() : TimeTerminationChecker() {
     override var startTime: Long = 0
     override var timeLimit: Long = 0
 
@@ -13,7 +13,7 @@ class MutableTimeTerminationChecker() : TimeTerminationChecker {
      * Sets start time to now and the time limit to the given [timeBound].
      */
     override fun init(timeBound: Long) {
-        startTime = System.currentTimeMillis()
+        startTime = System.nanoTime()
         timeLimit = timeBound
     }
 }
