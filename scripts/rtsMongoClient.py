@@ -183,6 +183,7 @@ if __name__ == '__main__':
     algorithms = []
     domain = None
     instance = None
+    action_duration = action_durations[0]
     graph_type = default_graph_type
 
     try:
