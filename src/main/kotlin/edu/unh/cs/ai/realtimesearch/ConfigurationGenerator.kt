@@ -120,8 +120,17 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                 ))
             }
         }
-        GRID_WORLD, VACUUM_WORLD, POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+        GRID_WORLD, VACUUM_WORLD -> {
             for (map in gridMaps) {
+                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+                configurations.add(mutableMapOf(
+                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
+                ))
+            }
+        }
+        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+            for (map in pointRobotMaps) {
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
                         Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
