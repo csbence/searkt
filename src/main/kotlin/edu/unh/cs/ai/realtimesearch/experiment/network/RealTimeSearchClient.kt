@@ -95,8 +95,10 @@ class RealTimeSearchClient(val url: String) {
      *
      * @return true if the submission was successful, else false.
      */
-    fun submitResult(experimentConfiguration: ExperimentResult): Boolean {
-        val responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(experimentConfiguration), Nothing::class.java)
+    fun submitResult(experimentResult: ExperimentResult): Boolean {
+        cleanUpResult(experimentResult)
+
+        val responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(experimentResult), Nothing::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Submit result: successful")
             true
@@ -104,5 +106,10 @@ class RealTimeSearchClient(val url: String) {
             logger.warn("Submit result: failed")
             false
         }
+    }
+
+    private fun cleanUpResult(experimentResult: ExperimentResult) {
+        val experimentConfiguration = experimentResult.valueStore["experimentConfiguration"] as MutableMap<String, Any?>
+        experimentConfiguration.remove("rawDomain")
     }
 }
