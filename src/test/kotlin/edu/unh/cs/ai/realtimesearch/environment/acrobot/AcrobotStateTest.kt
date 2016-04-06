@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
-import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertFalse
@@ -59,6 +58,6 @@ class AcrobotStateTest {
 
     @Test
     fun testJSON1() {
-        assertTrue { AcrobotState.Companion.defaultInitialState.equals(AcrobotState.fromString(JsonOutput.toJson(AcrobotState.defaultInitialState))) }
+        assertTrue { AcrobotState.defaultInitialState.equals(AcrobotState.fromJson(AcrobotState.defaultInitialState.toJson())) }
     }
 }
