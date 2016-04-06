@@ -13,7 +13,7 @@ interface Domain<State> {
     fun isGoal(state: State): Boolean
     fun print(state: State): String
     fun randomState(): State = TODO()
-    fun getGoal(): State = TODO()
+    fun getGoal(): List<State> = TODO()
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)

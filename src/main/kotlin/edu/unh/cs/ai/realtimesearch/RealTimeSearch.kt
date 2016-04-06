@@ -29,12 +29,13 @@ fun main(args: Array<String>) {
     if (args.size == 0) {
         // Default configuration
 
-        val map = "input/vacuum/dylan/wall.vw"
+        val map = "input/racetrack/bigger-track.track"
+//        val map = "input/pointrobot/dylan/slalom.pr"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
 //                Domains.SLIDING_TILE_PUZZLE.toString(),
-                Domains.GRID_WORLD.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
                 Planners.ARA_STAR.toString(),
                 "time")
@@ -65,7 +66,7 @@ fun main(args: Array<String>) {
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-        //        logger.info(result.toIndentedJson())
+        logger.info(result.toIndentedJson())
 
         runVisualizer(result)
     }

@@ -124,8 +124,8 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): PointRobotState {
-        return PointRobotState(endLocation.x, endLocation.y)
+    override fun getGoal(): List<PointRobotState>{
+        return listOf(PointRobotState(endLocation.x, endLocation.y))
     }
 
     override fun predecessors(state: PointRobotState): List<SuccessorBundle<PointRobotState>> {

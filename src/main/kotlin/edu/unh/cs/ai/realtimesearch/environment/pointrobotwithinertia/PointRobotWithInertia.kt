@@ -203,8 +203,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): PointRobotWithInertiaState {
-        return PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0)
+    override fun getGoal(): List<PointRobotWithInertiaState> {
+        return listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0))
     }
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {

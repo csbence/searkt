@@ -137,8 +137,8 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
         return AcrobotState(0.0, 0.0, 0.0, 0.0, configuration.stateConfiguration)
     }
 
-    override fun getGoal(): AcrobotState {
-        return configuration.endState
+    override fun getGoal(): List<AcrobotState>{
+        return listOf(configuration.endState)
     }
 
     override fun predecessors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {

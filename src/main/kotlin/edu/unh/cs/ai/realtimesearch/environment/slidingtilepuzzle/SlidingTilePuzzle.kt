@@ -74,7 +74,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): SlidingTilePuzzle4State {
+    override fun getGoal(): List<SlidingTilePuzzle4State> {
         throw UnsupportedOperationException()
     }
 

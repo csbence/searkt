@@ -30,6 +30,33 @@ class RaceTrack(val width: Int,
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
+    val maxXSpeed = getXSpeed()
+    val maxYSpeed = getYSpeed()
+
+    fun getXSpeed() : Int{
+        var w = 1
+        var xSpeed = 0
+
+        while(w <= width){
+            w += xSpeed
+            xSpeed++
+        }
+
+        return xSpeed - 1
+    }
+
+    fun getYSpeed() : Int{
+        var h = 1
+        var ySpeed = 0
+
+        while(h <= height){
+            h += ySpeed
+            ySpeed++
+        }
+
+        return ySpeed - 1
+    }
+
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
         val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
 
@@ -54,9 +81,7 @@ class RaceTrack(val width: Int,
             }
 
             //filter on legal moves (not too fast and on the track)
-            if (/*new_x_speed <= 2 && new_x_speed >= -2 &&
-                    new_y_speed <= 2 && new_y_speed >= -2 &&*/
-            valid) {
+            if (valid) {
 
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
@@ -82,7 +107,13 @@ class RaceTrack(val width: Int,
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState) = 0.0 //distance(state) / 2
+    override fun heuristic(state: RaceTrackState) : Double{
+        var h = distance(state)
+//        return 0.0
+        if(maxXSpeed > maxYSpeed)
+            return h / maxYSpeed
+        return h / maxYSpeed
+    }
 
     override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = 0.0
 
@@ -103,7 +134,6 @@ class RaceTrack(val width: Int,
         val retval = Math.max(dx.toDouble(), dy.toDouble())
         return retval;
     }
-
 
     override fun isGoal(state: RaceTrackState): Boolean {
         val newLocation = Location(state.x, state.y)
@@ -141,11 +171,66 @@ class RaceTrack(val width: Int,
         throw UnsupportedOperationException("Random state not implemented for racetrack domain")
     }
 
-    override fun getGoal(): RaceTrackState {
-        throw UnsupportedOperationException()
+    override fun getGoal(): List<RaceTrackState> {
+        val list: MutableList<RaceTrackState> = arrayListOf()
+        for(it in finish_line){
+            for(xS in 0..maxXSpeed){
+                for(yS in 0..maxYSpeed){
+                    if(xS == 0 && yS == 0){
+                        list.add(RaceTrackState(it.x, it.y, xS, yS))
+                    }
+                    else if(xS == 0){
+                        list.add(RaceTrackState(it.x, it.y, xS, yS))
+                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
+                    }
+                    else if(yS == 0){
+                        list.add(RaceTrackState(it.x, it.y, xS, yS))
+                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
+                    }
+                    else{
+                        list.add(RaceTrackState(it.x, it.y, xS, yS))
+                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
+                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
+                        list.add(RaceTrackState(it.x, it.y, -xS, -yS))
+                    }
+                }
+            }
+        }
+
+        return list
     }
 
     override fun predecessors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
-        throw UnsupportedOperationException()
+        val predecessors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
+
+        for (action in RaceTrackAction.values()) {
+            val new_x_speed = state.x_speed
+            val new_y_speed = state.y_speed
+
+            var x:Double
+            var y:Double
+            val dt = 0.1
+            val nSteps = 10
+            var valid = true
+
+            for (i in 1..nSteps) {
+                x = state.x - (new_x_speed * (dt * i));
+                y = state.y - (new_y_speed * (dt * i));
+
+                if (!isLegalLocation(x, y)) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            //filter on legal moves (not too fast and on the track)
+            if (valid) {
+                predecessors.add(SuccessorBundle(
+                        RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.getAcceleration().x, new_y_speed - action.getAcceleration().y),
+                        action,
+                        actionCost = 1))
+            }
+        }
+        return predecessors
     }
 }

@@ -15,10 +15,14 @@ data class RaceTrackState(val x: Int, val y: Int, val x_speed: Int, val y_speed:
     override fun equals(other: Any?): Boolean {
         if (other !is RaceTrackState)
             return false
-        if (other.x == x && other.y == y) {
+        if (other.x == x && other.y == y && other.x_speed == x_speed && other.y_speed == y_speed) {
             return true;
         }
         return false;
+    }
+
+    override fun hashCode(): Int {
+        return x.toInt() xor Integer.reverse(y.toInt())
     }
 
     override fun copy() = RaceTrackState(x, y, x_speed, y_speed)

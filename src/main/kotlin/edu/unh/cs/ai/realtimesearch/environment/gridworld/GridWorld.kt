@@ -109,8 +109,8 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getGoal(): GridWorldState {
-        return GridWorldState(targetLocation)
+    override fun getGoal(): List<GridWorldState> {
+        return listOf(GridWorldState(targetLocation))
     }
 
     override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
