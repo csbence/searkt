@@ -13,6 +13,7 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -81,9 +82,16 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
             // Check if the algorithm satisfies the real-time bound
             if (terminationChecker.timeLimit < iterationNanoTime) {
-                throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime")
+                val planner = agent.planner
+                val extras = if (planner is LssLrtaStarPlanner) {
+                    "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
+                } else {
+                    ""
+                }
+
+                throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime. $extras")
             } else {
-                logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime" }
+                logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime." }
             }
 
             //            System.gc()
