@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.InputStream
 import java.math.BigDecimal
@@ -57,4 +58,6 @@ data class AcrobotStateConfiguration(
             "velocityGranularity1" to velocityGranularity1,
             "velocityGranularity2" to velocityGranularity2
     )
+
+    fun toJson(): String = JsonOutput.toJson(this)
 }

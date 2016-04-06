@@ -122,12 +122,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
      * @param state the state whose values should be printed
      */
     override fun print(state: AcrobotState): String {
-        val description = StringBuilder()
-        description.append("linkPosition1=").appendln(state.link1.position)
-        description.append("linkPosition2=").appendln(state.link2.position)
-        description.append("linkVelocity1=").appendln(state.link1.velocity)
-        description.append("linkVelocity2=").appendln(state.link2.velocity)
-        return description.toString()
+        return state.toJson()
     }
 
     /**

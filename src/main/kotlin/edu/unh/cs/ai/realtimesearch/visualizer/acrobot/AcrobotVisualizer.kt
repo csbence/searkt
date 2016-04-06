@@ -1,10 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
+import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
@@ -74,7 +72,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
             errorMessage.appendln(experimentResult!!.errorMessage)
         }
 
-        val stateList = getStateList(actionList, acrobotConfiguration)
+        val stateList = getStateList(actionList, acrobotConfiguration, actionDuration)
 
         if (stateList.size <= 0)
             throw InvalidResultException("Must have at least one state to animate")
@@ -105,10 +103,21 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val animationPane = Pane()
         animationPane.children.addAll(acrobotView.getNodes())
 
-        val errorLabel = Label(errorMessage.toString())
-        errorLabel.textFill = Color.RED
-        errorLabel.font = Font.font("Verdana", FontWeight.BOLD, 18.0)
-        headerBox.children.add(errorLabel)
+        if (errorMessage.isNotEmpty()) {
+            val errorLabel = Label(errorMessage.toString())
+            errorLabel.textFill = Color.RED
+            errorLabel.font = Font.font("Verdana", FontWeight.BOLD, 18.0)
+            headerBox.children.add(errorLabel)
+        }
+
+        val info = StringBuilder()
+        info.append("Algorithm: ").appendln(experimentResult!!.experimentConfiguration["algorithmName"])
+        info.append("Instance: ").appendln(experimentResult!!.experimentConfiguration["domainInstanceName"])
+        info.append("Path Length: ").appendln(experimentResult!!.pathLength)
+        info.append("Action Duration: ").append(experimentResult!!.experimentConfiguration["actionDuration"]).appendln(" ns")
+        info.append("Action Execution Time: ").append(experimentResult!!.actionExecutionTime).appendln(" ns")
+        val infoLabel = Label(info.toString())
+        headerBox.children.add(infoLabel)
 
         rootBox.children.add(headerBox)
         rootBox.children.add(animationPane)
@@ -165,25 +174,25 @@ open class AcrobotVisualizer : BaseVisualizer() {
      * @return the list of states derived from the action list
      */
     private fun getStateList(actionList: List<AcrobotAction>,
-                             acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration()): List<StateInfo> {
+                             acrobotConfiguration: AcrobotConfiguration = AcrobotConfiguration(),
+                             actionDuration: Long): List<StateInfo> {
         val stateList = mutableListOf<StateInfo>()
-        val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
-        val environment = DiscretizedEnvironment(domain, DiscretizedState(acrobotConfiguration.initialState))
+        val acrobotDomain = Acrobot(acrobotConfiguration, actionDuration)
+
+        val environment = AcrobotEnvironment(acrobotDomain, acrobotConfiguration.initialState)
         var currentState = environment.getState()
-        //        println(currentState)
+
         for (action in actionList) {
             environment.step(action)
             val newState = environment.getState()
 
             // Assign interpolator for each link
-            val linkInterpolation1: Interpolator = getLinkInterpolator(currentState.state.link1.velocity, newState.state.link1.velocity)
-            val linkInterpolation2: Interpolator = getLinkInterpolator(currentState.state.link2.velocity, newState.state.link2.velocity)
+            val linkInterpolation1: Interpolator = getLinkInterpolator(currentState.link1.velocity, newState.link1.velocity)
+            val linkInterpolation2: Interpolator = getLinkInterpolator(currentState.link2.velocity, newState.link2.velocity)
 
             // Add the state info to list
-            stateList.add(StateInfo(currentState.state, newState.state, action,
-                    linkInterpolation1, linkInterpolation2))
+            stateList.add(StateInfo(currentState, newState, action, linkInterpolation1, linkInterpolation2))
             currentState = newState
-            //            println(currentState)
         }
         return stateList
     }
@@ -203,8 +212,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         /*
         Implementation note: We form a sequential transition of timelines with one keyframe each.  If we try to make it
         a single timeline then the interpolation will screw up the animation.  Also need to have separate Rotate
-        objects, one for each keyframe, since manipulating one a single Rotate object repeatedly causes unexpected
-        values.
+        objects, one for each keyframe, since manipulating a single Rotate object repeatedly causes unexpected values.
          */
         val sequentialTransition = SequentialTransition()
 
@@ -221,7 +229,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
             logger.debug { "Adding (${String.format("%.3f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(time),
+            sequentialTransition.children.add(Timeline(KeyFrame(Duration.seconds(time),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
                     KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
         }

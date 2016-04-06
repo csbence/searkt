@@ -15,6 +15,7 @@ import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 
@@ -59,6 +60,22 @@ class AcrobotTest {
         val successors = acrobot.successors(state)
 
         assertTrue { successors.size == AcrobotAction.values().size }
+    }
+
+    @Test
+    fun testGoal1() {
+        val acrobot = Acrobot()
+        val endStateBounds = Acrobot.getBoundStates(acrobot.configuration)
+        val state1 = endStateBounds.upperBound + AcrobotState(0.1, 0.1, 0.1, 0.1)
+        val state2 = endStateBounds.upperBound - AcrobotState(AcrobotLink(acrobot.configuration.endLink1UpperBound.position / 2, acrobot.configuration.endLink1UpperBound.velocity), acrobot.configuration.endState.link2)
+
+        assertTrue { acrobot.isGoal(acrobot.configuration.endState) }
+        assertTrue { acrobot.isGoal(acrobot.getGoal()) }
+        assertTrue { acrobot.isGoal(endStateBounds.upperBound) }
+        assertTrue { acrobot.isGoal(endStateBounds.lowerBound) }
+        assertFalse { acrobot.isGoal(acrobot.configuration.initialState) }
+        assertFalse { acrobot.isGoal(state1) }
+        assertTrue { acrobot.isGoal(state2) }
     }
 
     @Test

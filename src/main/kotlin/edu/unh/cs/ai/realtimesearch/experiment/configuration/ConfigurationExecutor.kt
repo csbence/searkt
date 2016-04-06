@@ -58,11 +58,14 @@ object ConfigurationExecutor {
             logger.info("Experiment stopped", throwable)
         }
 
+        collectAndWait()
+
         thread.start()
+        thread.priority = Thread.MAX_PRIORITY
         thread.join(MILLISECONDS.convert(experimentConfiguration.timeLimit, NANOSECONDS))
 
         if (executionException != null) {
-            System.gc()
+            collectAndWait()
 
             logger.info("Experiment failed. ${executionException!!.message}")
             val failedExperimentResult = ExperimentResult(experimentConfiguration.valueStore, "${executionException!!.message}")
@@ -75,7 +78,8 @@ object ConfigurationExecutor {
             thread.stop() // This should be replaced with a graceful stop
             thread.join()
 
-            System.gc()
+            collectAndWait()
+
             return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
         }
 
@@ -125,6 +129,11 @@ object ConfigurationExecutor {
         //            System.gc()
         //
         //        }
+    }
+
+    private fun collectAndWait() {
+        System.gc()
+        Thread.sleep(500)
     }
 
     private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult? {

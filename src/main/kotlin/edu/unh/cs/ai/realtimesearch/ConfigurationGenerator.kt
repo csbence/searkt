@@ -17,13 +17,14 @@ import groovy.json.JsonOutput
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
-val actionDurations = listOf(10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+val actionDurations = listOf(20000000, 40000000, 80000000, 160000000, 320000000)
 val lookaheadLimits = 1..6
 
 fun main(args: Array<String>) {
@@ -32,6 +33,14 @@ fun main(args: Array<String>) {
     for (domain in Domains.values()) {
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
+                // Skip impossible Acrobot configurations
+                if (domain == ACROBOT) {
+                    // Goal unreachable for these action durations
+                    if (actionDuration < 40000000) {
+                        continue
+                    }
+                }
+
                 val partialConfiguration = mutableMapOf<String, Any?>(
                         Configurations.DOMAIN_NAME.toString() to domain,
                         Configurations.ALGORITHM_NAME.toString() to planner,
@@ -51,6 +60,16 @@ fun main(args: Array<String>) {
                         completeConfiguration.putAll(partialConfiguration)
                         completeConfiguration.putAll(realTimePlannerConfiguration)
                         completeConfiguration.putAll(domainConfiguration)
+
+                        // Skip impossible Acrobot configurations
+                        if (domain == ACROBOT) {
+                            if (actionDuration <= 80000000) {
+                                // Not enough memory for smallest bound
+                                val instance = domainConfiguration["domainInstanceName"] ?: continue
+                                if (instance.equals("0.07-0.07"))
+                                    continue
+                            }
+                        }
 
                         configurations.add(completeConfiguration)
                     }
@@ -241,12 +260,25 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
     //    var serverUrl = "http://localhost:3824/configurations"
 
-    println("Upload generated files. ${configurations.size}")
-    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-    if (responseEntity.statusCode == HttpStatus.OK) {
-        println("Upload completed! ${configurations.size}")
-    } else {
-        println("Upload failed! ${configurations.size}")
-    }
+    println("${configurations.size} configurations has been generated.")
 
+    print("Upload configurations (y/n)? ")
+    val input = readLine()
+    when (input?.toLowerCase()) {
+        "y", "yes" -> {
+            try {
+                val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
+                if (responseEntity.statusCode == HttpStatus.OK) {
+                    println("Upload completed! ${configurations.size}")
+                } else {
+                    println("Upload failed!")
+                }
+            } catch (e: RestClientException) {
+                println("Upload failed!")
+            }
+        }
+        else -> {
+            println("Not uploading")
+        }
+    }
 }

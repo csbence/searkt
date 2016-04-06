@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import getopt
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -16,6 +17,7 @@ class GraphType(Enum):
     gatBoxPlot = 2
     gatBars = 3
     gatLines = 4
+    gatViolin = 5
 
 
 script = os.path.basename(sys.argv[0])
@@ -36,6 +38,12 @@ def usage():
     print("  s<file>    save to file")
     print("  t<type>    specify type of plot; default {}".format(default_graph_type.name))
     print("  q          quiet mode; no logging or graph showing")
+    print("valid graph types:")
+    for graph_type in GraphType:
+        print("  " + str(graph_type).replace("GraphType.", ""))
+    print("valid action durations:")
+    for action_duration in action_durations:
+        print("  " + str(action_duration))
 
 
 def open_connection():
@@ -90,8 +98,10 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
         data = []
         for result in data_tiles:
             data.append(plotutils.cnv_ns_to_ms(result['result']['goalAchievementTime']))
-        gat_data.append(data)
-        labels.append(plotutils.translate_algorithm_name(algorithm))
+
+        if data:  # not empty
+            gat_data.append(data)
+            labels.append(plotutils.translate_algorithm_name(algorithm))
 
     return gat_data, labels
 
@@ -151,6 +161,9 @@ def plot_gat_boxplots(db, algorithms, domain, instance, action_duration, showvio
         plt.errorbar(x, mean, yerr=(mean_confidence_interval_low, mean_confidence_interval_high), fmt='none',
                      linewidth=3, color='g')
 
+    ymin, ymax = plt.ylim()
+    plt.ylim(ymin - 0.1, ymax + 0.1)
+
     return plt
 
 
@@ -166,12 +179,27 @@ def plot_gat_bars(db, algorithms, domain, instance, action_duration):
     mean_bars = axis.bar(x + width, mean, width, color='y',
                          yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
 
+    # Set labels
     axis.set_title(plotutils.translate_domain_name(domain) + "-" + instance)
     axis.set_ylabel("Goal Achievement Time (ms)")
     axis.set_xlabel("Algorithms")
     axis.set_xticks(x + width)
     axis.set_xticklabels(labels)
     axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
+
+    # Set ylims so we aren't at the top of the graph space for even data
+    low = min(min(y))
+    high = max(max(y))
+    plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
+
+    # Add numbers to top of bars
+    def autolabel(rects):
+        for rect in rects:
+            height = rect.get_height()
+            axis.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
+
+    autolabel(med_bars)
+    autolabel(mean_bars)
 
     return plt
 
@@ -245,7 +273,9 @@ if __name__ == '__main__':
         GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
         GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration),
         GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance, action_duration),
-        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance, action_duration)
+        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance, action_duration),
+        GraphType.gatViolin: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration,
+                                                       showviolin=True)
     }[graph_type]
 
     plot = plotter()
