@@ -33,6 +33,14 @@ fun main(args: Array<String>) {
     for (domain in Domains.values()) {
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
+                // Skip impossible Acrobot configurations
+                if (domain == ACROBOT) {
+                    // Goal unreachable for these action durations
+                    if (actionDuration == 10000000 || actionDuration == 20000000 || actionDuration == 40000000) {
+                        continue
+                    }
+                }
+
                 val partialConfiguration = mutableMapOf<String, Any?>(
                         Configurations.DOMAIN_NAME.toString() to domain,
                         Configurations.ALGORITHM_NAME.toString() to planner,
@@ -52,6 +60,16 @@ fun main(args: Array<String>) {
                         completeConfiguration.putAll(partialConfiguration)
                         completeConfiguration.putAll(realTimePlannerConfiguration)
                         completeConfiguration.putAll(domainConfiguration)
+
+                        // Skip impossible Acrobot configurations
+                        if (domain == ACROBOT) {
+                            if (actionDuration == 80000000) {
+                                // Not enough memory for smallest bound
+                                val instance = domainConfiguration["domainInstanceName"] ?: continue
+                                if (instance.equals("0.7-0.7"))
+                                    continue
+                            }
+                        }
 
                         configurations.add(completeConfiguration)
                     }
@@ -242,18 +260,25 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
     //    var serverUrl = "http://localhost:3824/configurations"
 
-    println("Upload generated files. ${configurations.size}")
-    println("Uploading...")
+    println("${configurations.size} configurations has been generated.")
 
-    try {
-        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-        if (responseEntity.statusCode == HttpStatus.OK) {
-            println("Upload completed! ${configurations.size}")
-        } else {
-            println("Upload failed!")
+    print("Upload configurations (y/n)? ")
+    val input = readLine()
+    when (input?.toLowerCase()) {
+        "y", "yes" -> {
+            try {
+                val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
+                if (responseEntity.statusCode == HttpStatus.OK) {
+                    println("Upload completed! ${configurations.size}")
+                } else {
+                    println("Upload failed!")
+                }
+            } catch (e: RestClientException) {
+                println("Upload failed!")
+            }
         }
-    } catch (e: RestClientException) {
-        println("Upload failed!")
+        else -> {
+            println("Not uploading")
+        }
     }
-
 }

@@ -13,6 +13,7 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.util.angleDifference
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
+import edu.unh.cs.ai.realtimesearch.visualizer.InvalidResultException
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Option
 import groovyjarjarcommonscli.Options
@@ -20,8 +21,12 @@ import javafx.animation.*
 import javafx.beans.value.WritableValue
 import javafx.event.EventHandler
 import javafx.scene.Scene
+import javafx.scene.control.Label
 import javafx.scene.layout.Pane
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
+import javafx.scene.text.FontWeight
 import javafx.stage.Stage
 import javafx.util.Duration
 import org.slf4j.LoggerFactory
@@ -56,15 +61,29 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         processCommandLine(parameters.raw.toTypedArray())
 
+        // Parse results
         acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
-        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Int).toLong()
+        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
 
         for (action in experimentResult!!.actions) {
             actionList.add(AcrobotAction.valueOf(action))
         }
 
+        val errorMessage = StringBuilder()
+        if (experimentResult!!.errorMessage != null) {
+            errorMessage.appendln(experimentResult!!.errorMessage)
+        }
+
         val stateList = getStateList(actionList, acrobotConfiguration)
-        assert(stateList.size > 0, {"Must have at least one state to animate"})
+
+        if (stateList.size <= 0)
+            throw InvalidResultException("Must have at least one state to animate")
+
+        val endBounds = Acrobot.getBoundStates(acrobotConfiguration.endState, acrobotConfiguration)
+        if (!stateList.last().state.inBounds(endBounds.lowerBound, endBounds.upperBound)) {
+            errorMessage.appendln("Last state not in goal bounds!!!!!")
+            assert(!Acrobot(AcrobotConfiguration()).isGoal(stateList.last().state), { "Found last state not in goal but Acrobot environment isGoal true" })
+        }
 
         /* Graphical parameters */
         val stageBorder = 100.0
@@ -81,10 +100,19 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val acrobotView = AcrobotView(linkStartX1, linkStartY1, linkScaledLength1, linkWidth)
 
         // Add everything to the stage
-        val rootPane = Pane()
-        rootPane.children.addAll(acrobotView.getNodes())
+        val rootBox = VBox()
+        val headerBox = VBox()
+        val animationPane = Pane()
+        animationPane.children.addAll(acrobotView.getNodes())
 
-        primaryStage.scene = Scene(rootPane, WIDTH, HEIGHT)
+        val errorLabel = Label(errorMessage.toString())
+        errorLabel.textFill = Color.RED
+        errorLabel.font = Font.font("Verdana", FontWeight.BOLD, 18.0)
+        headerBox.children.add(errorLabel)
+
+        rootBox.children.add(headerBox)
+        rootBox.children.add(animationPane)
+        primaryStage.scene = Scene(rootBox, WIDTH, HEIGHT)
         primaryStage.show()
 
         // Create the animations
@@ -97,7 +125,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
             ghostAcrobot.opacity = 0.5
             ghostAcrobot.linkColor = Color.GRAY
 
-            rootPane.children.addAll(ghostAcrobot.getNodes())
+            animationPane.children.addAll(ghostAcrobot.getNodes())
             ghostAcrobot.toBack()
 
             val ghostTransition = animateAcrobot(ghostAcrobot, stateList.subList(1, stateList.size), Interpolator.DISCRETE)
@@ -108,7 +136,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         }
 
         // Play the animations
-        for(animation in animations)
+        for (animation in animations)
             animation.play()
     }
 
@@ -126,7 +154,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         else if (previousVelocity > nextVelocity)
             return Interpolator.EASE_OUT
         else // equal
-            return  Interpolator.LINEAR
+            return Interpolator.LINEAR
     }
 
     /**
@@ -142,6 +170,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val domain = DiscretizedDomain(Acrobot(acrobotConfiguration))
         val environment = DiscretizedEnvironment(domain, DiscretizedState(acrobotConfiguration.initialState))
         var currentState = environment.getState()
+        //        println(currentState)
         for (action in actionList) {
             environment.step(action)
             val newState = environment.getState()
@@ -153,8 +182,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
             // Add the state info to list
             stateList.add(StateInfo(currentState.state, newState.state, action,
                     linkInterpolation1, linkInterpolation2))
-
             currentState = newState
+            //            println(currentState)
         }
         return stateList
     }
@@ -182,7 +211,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         if (stateList.size < 1)
             throw IllegalArgumentException("State list must have at least one state for animation")
 
-        val time = actionDuration
+        val time = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
         for (state in stateList) {
             val diff1 = Math.toDegrees(angleDifference(state.previousState.link1.position, state.state.link1.position))
             val diff2 = Math.toDegrees(angleDifference(state.previousState.link2.position, state.state.link2.position)) + diff1
@@ -190,9 +219,9 @@ open class AcrobotVisualizer : BaseVisualizer() {
             val newRotate1 = acrobotView.addRotate1()
             val newRotate2 = acrobotView.addRotate2()
 
-            logger.debug { "Adding (${String.format("%.1f", time)}: $diff1, $diff2) to timeline" }
+            logger.debug { "Adding (${String.format("%.3f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(convertNanoUpDouble(time, TimeUnit.SECONDS)),
+            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(time),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
                     KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
         }
