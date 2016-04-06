@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
-val actionDurations = listOf(10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+val actionDurations = listOf(20000000, 40000000, 80000000, 160000000, 320000000)
 val lookaheadLimits = 1..6
 
 fun main(args: Array<String>) {
@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
                 // Skip impossible Acrobot configurations
                 if (domain == ACROBOT) {
                     // Goal unreachable for these action durations
-                    if (actionDuration == 10000000 || actionDuration == 20000000 || actionDuration == 40000000) {
+                    if (actionDuration < 40000000) {
                         continue
                     }
                 }
