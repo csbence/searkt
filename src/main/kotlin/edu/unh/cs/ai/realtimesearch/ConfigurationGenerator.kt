@@ -259,12 +259,20 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
     //    var serverUrl = "http://localhost:3824/configurations"
 
-    println("Upload generated files. ${configurations.size}")
-    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-    if (responseEntity.statusCode == HttpStatus.OK) {
-        println("Upload completed! ${configurations.size}")
-    } else {
-        println("Upload failed! ${configurations.size}")
+    print("Upload configurations (y/n)? ")
+    val input = readLine()
+    when (input?.toLowerCase()) {
+        "y", "yes" -> {
+            println("Uploading generated files. ${configurations.size}")
+            val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
+            if (responseEntity.statusCode == HttpStatus.OK) {
+                println("Upload completed! ${configurations.size}")
+            } else {
+                println("Upload failed! ${configurations.size}")
+            }
+        }
+        else -> {
+            println("Not uploading")
+        }
     }
-
 }
