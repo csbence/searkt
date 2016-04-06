@@ -17,6 +17,7 @@ import groovy.json.JsonOutput
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -242,11 +243,17 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     //    var serverUrl = "http://localhost:3824/configurations"
 
     println("Upload generated files. ${configurations.size}")
-    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-    if (responseEntity.statusCode == HttpStatus.OK) {
-        println("Upload completed! ${configurations.size}")
-    } else {
-        println("Upload failed! ${configurations.size}")
+    println("Uploading...")
+
+    try {
+        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
+        if (responseEntity.statusCode == HttpStatus.OK) {
+            println("Upload completed! ${configurations.size}")
+        } else {
+            println("Upload failed!")
+        }
+    } catch (e: RestClientException) {
+        println("Upload failed!")
     }
 
 }
