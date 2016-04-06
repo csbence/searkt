@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.InputStream
 
@@ -51,4 +52,6 @@ data class AcrobotConfiguration(
             "endLink2UpperBound" to endLink2UpperBound.toMap(),
             "stateConfiguration" to stateConfiguration.toMap()
     )
+
+    fun toJson(): String = JsonOutput.toJson(this)
 }

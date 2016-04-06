@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
-import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
@@ -12,7 +11,7 @@ class AcrobotConfigurationTest {
 
     @Test
     fun testJSON1() {
-        val json = JsonOutput.toJson(AcrobotStateConfiguration())
+        val json = AcrobotStateConfiguration().toJson()
         val parsed = AcrobotStateConfiguration.fromJson(json)
 
         assertTrue { AcrobotStateConfiguration().equals(parsed) }
@@ -20,7 +19,7 @@ class AcrobotConfigurationTest {
 
     @Test
     fun testJSON2() {
-        val json = JsonOutput.toJson(AcrobotConfiguration())
+        val json = AcrobotConfiguration().toJson()
         val parsed = AcrobotConfiguration.fromJson(json)
 
         assertTrue { AcrobotConfiguration().equals(parsed) }
