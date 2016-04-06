@@ -27,9 +27,11 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
 
             return AcrobotBoundStates(endStateLowerBound, endStateUpperBound)
         }
+
+        fun getBoundStates(configuration: AcrobotConfiguration): AcrobotBoundStates = getBoundStates(configuration.endState, configuration)
     }
 
-    val endStateBounds = getBoundStates(configuration.endState, configuration)
+    val endStateBounds = getBoundStates(configuration)
 
     /**
      * Calculate the next state given the current state and an action
