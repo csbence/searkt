@@ -114,7 +114,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
         info.append("Algorithm: ").appendln(experimentResult!!.experimentConfiguration["algorithmName"])
         info.append("Instance: ").appendln(experimentResult!!.experimentConfiguration["domainInstanceName"])
         info.append("Path Length: ").appendln(experimentResult!!.pathLength)
-        info.append("Action Execution Time: ").appendln(experimentResult!!.actionExecutionTime)
+        info.append("Action Duration: ").append(experimentResult!!.experimentConfiguration["actionDuration"]).appendln(" ns")
+        info.append("Action Execution Time: ").append(experimentResult!!.actionExecutionTime).appendln(" ns")
         val infoLabel = Label(info.toString())
         headerBox.children.add(infoLabel)
 
@@ -228,7 +229,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
             logger.debug { "Adding (${String.format("%.3f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
-            sequentialTransition.children.add(Timeline(60.0, KeyFrame(Duration.seconds(time),
+            sequentialTransition.children.add(Timeline(KeyFrame(Duration.seconds(time),
                     KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
                     KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
         }
