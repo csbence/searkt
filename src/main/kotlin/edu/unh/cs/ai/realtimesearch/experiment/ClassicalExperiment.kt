@@ -36,10 +36,9 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         val state: StateType = initState?.copy() ?: domain.randomState()
         //        logger.warn { "Starting experiment with state $state on agent $agent" }
 
-        // Execute the gc before running the experiment
-        System.gc()
-
-        actions = agent.plan(state)
+        val cpuNanoTime = measureThreadCpuNanoTime {
+            actions = agent.plan(state)
+        }
 
         // log results
         val pathLength = actions.size.toLong()
@@ -49,9 +48,9 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
                 experimentConfiguration.valueStore,
                 agent.planner.expandedNodeCount,
                 agent.planner.generatedNodeCount,
-                agent.planner.executionNanoTime,
+                cpuNanoTime,
                 pathLength * experimentConfiguration.actionDuration,
-                agent.planner.executionNanoTime + pathLength * experimentConfiguration.actionDuration,
+                cpuNanoTime + pathLength * experimentConfiguration.actionDuration,
                 pathLength,
                 actions.map { it.toString() })
 

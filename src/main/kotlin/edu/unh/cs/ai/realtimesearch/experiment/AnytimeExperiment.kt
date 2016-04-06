@@ -51,10 +51,12 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
 
         while (!world.isGoal()) {
             logger.debug { "Start anytime search" }
-            val startTime = System.nanoTime()
+            val startTime = getThreadCpuNanotTime()
 
             val tempActions = planner.solve(world.getState(), world.getGoal());
-            val endTime = System.nanoTime()
+
+            val endTime = getThreadCpuNanotTime()
+
             logger.debug { "time: " + (endTime - startTime) }
             if (actions.size == 0) {
                 totalPlanningNanoTime = endTime - startTime

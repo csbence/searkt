@@ -17,7 +17,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
-import kotlin.system.measureNanoTime
 
 /**
  * An RTS experiment repeatedly queries the agent
@@ -57,7 +56,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
         while (!world.isGoal()) {
-            val iterationNanoTime = measureNanoTime {
+            val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.init(timeBound)
 
                 actionList = agent.selectAction(world.getState(), terminationChecker);
@@ -76,23 +75,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
 
-            if (actionList.isEmpty()) {
-                throw RuntimeException("Select action did not return actions in the given time bound. The agent is confused.")
-            }
-
-            // Check if the algorithm satisfies the real-time bound
-            if (terminationChecker.timeLimit < iterationNanoTime) {
-                val planner = agent.planner
-                val extras = if (planner is LssLrtaStarPlanner) {
-                    "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
-                } else {
-                    ""
-                }
-
-                throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime. $extras")
-            } else {
-                logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime." }
-            }
+            validateInteration(actionList, iterationNanoTime)
 
             //            System.gc()
             //            Thread.sleep(500)
@@ -119,6 +102,26 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 goalAchievementTime,
                 pathLength,
                 actions.map { it.toString() })
+    }
+
+    private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
+        if (actionList.isEmpty()) {
+            throw RuntimeException("Select action did not return actions in the given time bound. The agent is confused.")
+        }
+
+        // Check if the algorithm satisfies the real-time bound
+        if (terminationChecker.timeLimit < iterationNanoTime) {
+            val planner = agent.planner
+            val extras = if (planner is LssLrtaStarPlanner) {
+                "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
+            } else {
+                ""
+            }
+
+            throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime. $extras")
+        } else {
+            logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime." }
+        }
     }
 }
 
