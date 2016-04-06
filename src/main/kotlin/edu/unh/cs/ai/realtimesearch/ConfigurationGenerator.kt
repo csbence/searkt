@@ -32,6 +32,14 @@ fun main(args: Array<String>) {
     for (domain in Domains.values()) {
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
+                // Skip impossible Acrobot configurations
+                if (domain == ACROBOT) {
+                    // Goal unreachable for these action durations
+                    if (actionDuration == 10000000 || actionDuration == 20000000 || actionDuration == 40000000) {
+                        continue
+                    }
+                }
+
                 val partialConfiguration = mutableMapOf<String, Any?>(
                         Configurations.DOMAIN_NAME.toString() to domain,
                         Configurations.ALGORITHM_NAME.toString() to planner,
@@ -51,6 +59,16 @@ fun main(args: Array<String>) {
                         completeConfiguration.putAll(partialConfiguration)
                         completeConfiguration.putAll(realTimePlannerConfiguration)
                         completeConfiguration.putAll(domainConfiguration)
+
+                        // Skip impossible Acrobot configurations
+                        if (domain == ACROBOT) {
+                            if (actionDuration == 80000000) {
+                                // Not enough memory for smallest bound
+                                val instance = domainConfiguration["domainInstanceName"] ?: continue
+                                if (instance.equals("0.7-0.7"))
+                                    continue
+                            }
+                        }
 
                         configurations.add(completeConfiguration)
                     }
