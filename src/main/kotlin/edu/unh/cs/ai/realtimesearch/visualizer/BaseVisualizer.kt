@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
+import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.JsonMappingException
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import groovyjarjarcommonscli.*
@@ -33,7 +35,16 @@ abstract class BaseVisualizer : Application() {
             throw IllegalArgumentException("Error: Must pass results to visualizer")
         }
 
-        experimentResult = experimentResultFromJson(cmd.args.first())
+        try {
+            experimentResult = experimentResultFromJson(cmd.args.first())
+        } catch (e: JsonParseException ) {
+            throw InvalidResultException("Failed to parse result", e)
+        } catch (e: JsonMappingException) {
+            throw InvalidResultException("Failed to parse result", e)
+        }
+
+        if (experimentResult!!.experimentConfiguration["rawDomain"] == null)
+            throw InvalidResultException("Visualizer must have raw domain in result")
 
         processOptions(cmd)
     }

@@ -57,7 +57,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
-        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Int).toLong()
+        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
 
         for (action in experimentResult!!.actions) {
             actionList.add(AcrobotAction.valueOf(action))
