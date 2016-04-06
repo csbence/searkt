@@ -94,8 +94,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
-    private var aStarTimer = 0L
-    private var dijkstraTimer = 0L
+    var aStarTimer = 0L
+        get
+    var dijkstraTimer = 0L
+        get
 
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
