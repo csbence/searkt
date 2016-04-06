@@ -39,6 +39,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
     fun start() {
         startPeriodicCheckIn()
         running = true
+        var lastActiveTimestamp = System.currentTimeMillis()
 
         while (running) {
             // Get configuration
@@ -55,8 +56,16 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 realTimeSearchClient.submitResult(experimentResult)
                 logger.info("Result submitted")
                 startPeriodicCheckIn()
+
+                lastActiveTimestamp = System.currentTimeMillis()
             } else {
                 logger.info("No experiment available.")
+                if (System.currentTimeMillis() - lastActiveTimestamp > 600000) {
+                    stopPeriodicCheckIn()
+                    logger.info("Stop application (timeout)")
+                    realTimeSearchClient.disconnect()
+                }
+
                 // Failed to get a a configuration wait a second to avoid busy wait
                 Thread.sleep(10000)
             }
