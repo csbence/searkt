@@ -63,10 +63,10 @@ fun main(args: Array<String>) {
 
                         // Skip impossible Acrobot configurations
                         if (domain == ACROBOT) {
-                            if (actionDuration == 80000000) {
+                            if (actionDuration <= 80000000) {
                                 // Not enough memory for smallest bound
                                 val instance = domainConfiguration["domainInstanceName"] ?: continue
-                                if (instance.equals("0.7-0.7"))
+                                if (instance.equals("0.07-0.07"))
                                     continue
                             }
                         }
