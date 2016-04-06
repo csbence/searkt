@@ -17,6 +17,7 @@ class GraphType(Enum):
     gatBars = 3
     gatLines = 4
 
+
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:"
 default_graph_type = GraphType.gatPerDuration
@@ -56,13 +57,15 @@ def print_counts(db):
 def get_get_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
     for action_duration in reversed(action_durations):
-        data_tiles_a_star = db.experimentResult.find({"result.experimentConfiguration.domainName": domain,
-                                                      "result.experimentConfiguration.algorithmName": algorithm,
-                                                      "result.experimentConfiguration.domainInstanceName": instance,
-                                                      "result.experimentConfiguration.actionDuration": action_duration,
-                                                      "result.success": True})
+        data_tiles = db.experimentResult.find({
+            "result.experimentConfiguration.domainName": domain,
+            "result.experimentConfiguration.algorithmName": algorithm,
+            "result.experimentConfiguration.domainInstanceName": instance,
+            "result.experimentConfiguration.actionDuration": action_duration,
+            "result.success": True
+        })
         times_for_durations = []
-        for result in data_tiles_a_star:
+        for result in data_tiles:
             times_for_durations.append(plotutils.cnv_ns_to_ms(result['result']['goalAchievementTime']))
 
         if times_for_durations:  # not empty
@@ -96,14 +99,15 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
 # TODO add factor A*
 def plot_gat_duration_error(db, algorithms, domain, instance):
     # Gather required A* data
-    # astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
-    # astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
-    #     plotutils.mean_confidence_intervals(astar_gat_per_duration)
+    astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
+    astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
+        plotutils.mean_confidence_intervals(astar_gat_per_duration)
+    x_astar = np.arange(1, len(astar_gat_per_duration_means) + 1)
 
     # Plot for each provided algorithm
     for algorithm in algorithms:
         algorithm_gat_per_duration = get_get_per_duration_data(db, algorithm, domain, instance)
-        if not algorithm_gat_per_duration: # empty
+        if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
             continue
         algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
@@ -118,9 +122,12 @@ def plot_gat_duration_error(db, algorithms, domain, instance):
     plt.ylabel("GAT log10")
     plt.xlabel("Action Duration (ms)")
     plt.legend()
+    plt.xticks(x_astar, reversed(action_durations))
+
     # Adjust x limits so end errors are visible
     xmin, xmax = plt.xlim()
     plt.xlim(xmin - 0.1, xmax + 0.1)
+
     return plt
 
 
@@ -251,9 +258,9 @@ if __name__ == '__main__':
     if not quiet:
         plot.show()
 
-    # plot_gat_duration_error(db, ["LSS_LRTA_STAR",
-    #                              "RTA_STAR",
-    #                              "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw")
-    # plot_gat_boxplots(db, ["LSS_LRTA_STAR",
-    #                        "RTA_STAR",
-    #                        "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw").show()
+        # plot_gat_duration_error(db, ["LSS_LRTA_STAR",
+        #                              "RTA_STAR",
+        #                              "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw")
+        # plot_gat_boxplots(db, ["LSS_LRTA_STAR",
+        #                        "RTA_STAR",
+        #                        "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw").show()
