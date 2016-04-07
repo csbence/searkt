@@ -9,6 +9,8 @@ import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTEnvironment
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
@@ -145,6 +147,7 @@ object ConfigurationExecutor {
             GRID_WORLD -> executeGridWorld(experimentConfiguration)
             ACROBOT -> executeAcrobot(experimentConfiguration)
             POINT_ROBOT -> executePointRobot(experimentConfiguration)
+            POINT_ROBOT_LOST -> executePointRobotLOST(experimentConfiguration)
             POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(experimentConfiguration)
             RACETRACK -> executeRaceTrack(experimentConfiguration)
 
@@ -158,6 +161,14 @@ object ConfigurationExecutor {
         val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
 
         return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
+    }
+
+    private fun executePointRobotLOST(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
+        val rawDomain: String = experimentConfiguration.rawDomain
+        val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotLOSTEnvironment = PointRobotLOSTEnvironment(pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
+
+        return executeDomain(experimentConfiguration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState, pointRobotLOSTEnvironment)
     }
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {

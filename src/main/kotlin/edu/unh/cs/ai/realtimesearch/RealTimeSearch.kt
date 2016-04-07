@@ -31,6 +31,7 @@ fun main(args: Array<String>) {
 
 //        val map = "input/racetrack/bigger-track.track"
         val map = "input/pointrobot/dylan/slalom.pr"
+//        val map = "input/vacuum/big-squiggle.vw"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
