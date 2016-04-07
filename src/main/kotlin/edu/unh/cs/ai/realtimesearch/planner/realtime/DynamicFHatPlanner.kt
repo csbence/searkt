@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.error
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
@@ -177,7 +176,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = state
         } else if (state != rootState) {
             // The given state should be the last target
-            logger.error { "Inconsistent world state. Expected $rootState got $state" }
+            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
         }
 
         if (domain.isGoal(state)) {
