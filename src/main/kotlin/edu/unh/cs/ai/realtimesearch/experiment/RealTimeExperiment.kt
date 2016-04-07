@@ -56,6 +56,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
         while (!world.isGoal()) {
+            Thread.`yield`()
+
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.init(timeBound)
 
@@ -65,12 +67,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
 
-                timeBound = 0
-                actionList.forEach {
-                    world.step(it.action) // Move the agent
-                    actions.add(it.action) // Save the action
-                    timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
-                }
+            }
+
+            timeBound = 0
+            actionList.forEach {
+                world.step(it.action) // Move the agent
+                actions.add(it.action) // Save the action
+                timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
             }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }

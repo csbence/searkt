@@ -7,15 +7,23 @@ abstract class Experiment {
 
     val threadMXBean = ManagementFactory.getThreadMXBean()
 
+    init {
+        threadMXBean.isThreadCpuTimeEnabled = true
+    }
+
     /**
      * Runs the experiment
      */
     abstract fun run(): ExperimentResult
 
     inline fun measureThreadCpuNanoTime(block: () -> Unit): Long {
+        val wallStart = System.nanoTime()
         val start = threadMXBean.currentThreadCpuTime
         block()
-        return threadMXBean.currentThreadCpuTime - start
+        val cpuTime = threadMXBean.currentThreadCpuTime - start
+        println(System.nanoTime() - wallStart
+        )
+        return cpuTime
     }
 
     fun getThreadCpuNanotTime() = threadMXBean.currentThreadCpuTime

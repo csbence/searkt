@@ -10,7 +10,7 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
-import kotlin.system.measureTimeMillis
+import kotlin.system.measureNanoTime
 
 /**
  * Local Search Space Learning Real Time Search A*, a type of RTS planner.
@@ -132,38 +132,39 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
         // Initiate for the first search
+        dijkstraTimer = measureNanoTime {
+            if (rootState == null) {
+                rootState = state
+            } else if (state != rootState) {
+                // The given state should be the last target
+                logger.debug { "Inconsistent world state. Expected $rootState got $state" }
+            }
 
-        if (rootState == null) {
-            rootState = state
-        } else if (state != rootState) {
-            // The given state should be the last target
-            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
-        }
+            if (domain.isGoal(state)) {
+                // The start state is the goal state
+                logger.debug { "selectAction: The goal state is already found." }
+                return emptyList()
+            }
 
-        if (domain.isGoal(state)) {
-            // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
-            return emptyList()
-        }
+            logger.debug { "Root state: $state" }
+            // Every turn learn then A* until time expires
 
-        logger.debug { "Root state: $state" }
-        // Every turn learn then A* until time expires
-
-        // Learning phase
-        if (closedList.isNotEmpty()) {
-            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
+            // Learning phase
+            if (closedList.isNotEmpty()) {
+                dijkstra(terminationChecker)
+            }
         }
 
         // Exploration phase
         var plan: List<ActionBundle>? = null
-        aStarTimer += measureTimeMillis {
+        aStarTimer = measureNanoTime {
             val targetNode = aStar(state, terminationChecker)
             plan = extractPlan(targetNode, state)
             rootState = targetNode.state
         }
 
-//        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-//        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        //        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        //        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -376,7 +377,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
 
-//        logger.debug() { "Extracting plan" }
+        //        logger.debug() { "Extracting plan" }
 
         if (targetNode.state == sourceState) {
             return emptyList()
@@ -388,7 +389,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
-//        logger.debug() { "Plan extracted" }
+        //        logger.debug() { "Plan extracted" }
 
         return actions.reversed()
     }

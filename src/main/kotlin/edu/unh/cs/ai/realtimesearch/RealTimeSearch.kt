@@ -9,7 +9,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.visualizer.runVisualizer
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -26,48 +25,51 @@ private var outFile: String = ""
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
-    if (args.size == 0) {
-        // Default configuration
+    while (true) {
+        System.gc()
+        if (args.size == 0) {
+            // Default configuration
 
-        val map = "input/vacuum/dylan/wall.vw"
-        val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
-        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-        manualConfiguration = GeneralExperimentConfiguration(
-//                Domains.SLIDING_TILE_PUZZLE.toString(),
-                Domains.GRID_WORLD.toString(),
-                rawDomain,
-                Planners.ARA_STAR.toString(),
-                "time")
+            val map = "input/tiles/korf/4/all/2"
+            val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
+            val rawDomain = Scanner(input).useDelimiter("\\Z").next()
+            manualConfiguration = GeneralExperimentConfiguration(
+                    Domains.SLIDING_TILE_PUZZLE_4.toString(),
+                    //                Domains.GRID_WORLD.toString(),
+                    rawDomain,
+                    Planners.LSS_LRTA_STAR.toString(),
+                    "time")
 
-        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
-        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
-        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
-        manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
-        manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
+            manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
+            manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(30, MILLISECONDS)
+            manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
+            manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
+            manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
+            manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
+            manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
-    } else {
-        // Read configuration from command line
-        createCommandLineMenu(args)
-    }
-
-    val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-
-    /* output the results */
-    if (!outFile.isEmpty()) {
-        PrintWriter(outFile, "UTF-8").use {
-            it.write(result.toIndentedJson())
+        } else {
+            // Read configuration from command line
+            createCommandLineMenu(args)
         }
-    } else if (result.errorMessage != null) {
-        logger.error("Something went wrong: ${result.errorMessage}")
-    } else {
-        logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
-        logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
-        logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-        //        logger.info(result.toIndentedJson())
 
-        runVisualizer(result)
+        val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
+
+        /* output the results */
+        if (!outFile.isEmpty()) {
+            PrintWriter(outFile, "UTF-8").use {
+                it.write(result.toIndentedJson())
+            }
+        } else if (result.errorMessage != null) {
+            logger.error("Something went wrong: ${result.errorMessage}")
+        } else {
+            logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
+            logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
+            logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
+            //        logger.info(result.toIndentedJson())
+
+            //        runVisualizer(result)
+        }
     }
 }
 
