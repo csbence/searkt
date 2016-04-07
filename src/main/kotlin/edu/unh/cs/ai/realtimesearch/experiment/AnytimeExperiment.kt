@@ -62,7 +62,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
                 totalPlanningNanoTime = endTime - startTime
                 actionList = tempActions
             } else if (experimentConfiguration.actionDuration * maxCount < endTime - startTime) {
-                println("Planning took too long! Use old plan.")
                 for (i in 1..maxCount) {
                     actionList.removeAt(0)
                 }
@@ -84,7 +83,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
 
                 var count = 0
                 for (it in actionList) {
-                    println(it)
                     if (it != null) {
 
                         if (count < maxCount) {
@@ -105,7 +103,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
         for (it in actions) {
             actionsLists.add(it.toString())
         }
-        //actionsLists.add(" " + maxCount + " ")
 
         logger.info { actionsLists.toString() }
 

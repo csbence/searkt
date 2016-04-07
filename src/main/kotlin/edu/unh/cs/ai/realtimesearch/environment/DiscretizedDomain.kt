@@ -69,5 +69,13 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      */
     override fun randomState(): DiscretizedState<StateType> = DiscretizedState(domain.randomState())
 
-    override fun getGoal(): DiscretizedState<StateType> = DiscretizedState(domain.getGoal())
+    override fun getGoal(): List<DiscretizedState<StateType>>{
+        val list : MutableList<DiscretizedState<StateType>> = arrayListOf<DiscretizedState<StateType>>()
+
+        for(it in domain.getGoal()){
+            list.add(DiscretizedState<StateType>(it))
+        }
+
+        return list
+    }
 }

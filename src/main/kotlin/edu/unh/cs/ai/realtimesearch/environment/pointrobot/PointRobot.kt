@@ -14,16 +14,26 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 
     //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
+    var maxXSpeed = 0;
+    var maxYSpeed = 0;
 
     fun getAllActions(): ArrayList<PointRobotAction> {
         var a = ArrayList<PointRobotAction>()
-        for (itX in 0..6) {
-            for (itY in 0..6) {
-                var xdot = ((itX) - 3.0);
-                var ydot = ((itY) - 3.0);
+        maxXSpeed = width;
+        maxYSpeed = height;
+        val rangeXSpeed = width * 2
+        val rangeYSpeed = height * 2
+        var itX = 0;
+        while (itX <= rangeXSpeed) {
+            var itY = 0;
+            while (itY <= rangeYSpeed) {
+                var xdot = ((itX) - width);
+                var ydot = ((itY) - height);
                 //                println("" + xdot + " " + ydot)
-                a.add(PointRobotAction(xdot, ydot))
+                a.add(PointRobotAction(xdot.toDouble(), ydot.toDouble()))
+                itY++
             }
+            itX++
         }
         return a
     }
@@ -33,8 +43,9 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val successors: MutableList<SuccessorBundle<PointRobotState>> = arrayListOf()
 
         for (it in actions) {
-            val dt = 0.1
-            val nSteps = 10
+//            println(it)
+            val nSteps = 1000
+            val dt = 1.0/nSteps
             var valid = true
 
             for (i in 1..nSteps) {
@@ -78,14 +89,22 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     * */
     override fun heuristic(state: PointRobotState): Double {
         //Distance Formula
-        return distance(state) / 3
+//                return 0.0
+        val h = distance(state)
+
+        if(maxXSpeed < maxYSpeed)
+            return h / maxYSpeed
+        return h / maxXSpeed
     }
 
     override fun heuristic(startState: PointRobotState, endState: PointRobotState): Double {
         //Distance Formula
-        return (Math.sqrt(
-                Math.pow((endState.x) - startState.x, 2.0)
-                        + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius) / 3
+//        return 0.0
+        val h = distance(startState, endState)
+
+        if(maxXSpeed < maxYSpeed)
+            return h / maxYSpeed
+        return h / maxXSpeed
     }
 
     override fun distance(state: PointRobotState): Double {
@@ -93,6 +112,13 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         return (Math.sqrt(
                 Math.pow((endLocation.x) - state.x, 2.0)
                         + Math.pow((endLocation.y) - state.y, 2.0)) - goalRadius)
+    }
+
+    fun distance(startState: PointRobotState, endState: PointRobotState): Double {
+        //Distance Formula
+        return (Math.sqrt(
+                Math.pow((endState.x) - startState.x, 2.0)
+                        + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius)
     }
 
     override fun isGoal(state: PointRobotState): Boolean {
@@ -124,16 +150,16 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): PointRobotState {
-        return PointRobotState(endLocation.x, endLocation.y)
+    override fun getGoal(): List<PointRobotState>{
+        return listOf(PointRobotState(endLocation.x, endLocation.y))
     }
 
     override fun predecessors(state: PointRobotState): List<SuccessorBundle<PointRobotState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotState>> = arrayListOf()
 
         for (it in actions) {
-            val dt = 0.1
-            val nSteps = 10
+            val nSteps = 1000
+            val dt = 1.0/nSteps
             var valid = true
 
             for (i in 1..nSteps) {
