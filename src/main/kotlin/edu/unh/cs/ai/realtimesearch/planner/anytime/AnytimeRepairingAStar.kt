@@ -4,8 +4,8 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
+import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
-import java.lang.Math.min
 import java.util.*
 import kotlin.comparisons.compareBy
 
@@ -20,7 +20,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     private var goal: StateType? = null
     private var targetgoal: StateType? = null
     private var goalNode: Node<StateType>? = null
-    private val allNodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
+    private val allNodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1F).resize()
     private var iterationCount = 0;
 
     data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int)
@@ -43,12 +43,11 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
                 if (predecessorNode == null || predecessorNode.cost > currentNode.cost + it.actionCost) {
                     generatedNodeCount++
                     var updatedSuccessorNode = allNodes[it.state]
-                    if(updatedSuccessorNode == null){
+                    if (updatedSuccessorNode == null) {
                         updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost, iterationCount)
                         allNodes[it.state] = updatedSuccessorNode
-                    }
-                    else if(updatedSuccessorNode.iteration == iterationCount
-                            || (updatedSuccessorNode.iteration < iterationCount && updatedSuccessorNode.cost > currentNode.cost + it.actionCost)){
+                    } else if (updatedSuccessorNode.iteration == iterationCount
+                            || (updatedSuccessorNode.iteration < iterationCount && updatedSuccessorNode.cost > currentNode.cost + it.actionCost)) {
                         updatedSuccessorNode.action = it.action
                         updatedSuccessorNode.parent = currentNode
                         updatedSuccessorNode.cost = currentNode.cost + it.actionCost
@@ -77,7 +76,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         //Solving backwards, so flip start and goal states
 
         targetgoal = startState
-        for(goalState in gS) {
+        for (goalState in gS) {
             var tempNode = allNodes[goalState]
 
             if (tempNode == null) {
