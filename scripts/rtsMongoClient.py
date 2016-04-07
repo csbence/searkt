@@ -21,9 +21,9 @@ class GraphType(Enum):
 
 
 script = os.path.basename(sys.argv[0])
-options = "hs:qa:d:i:t:"
+options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+action_durations = (20000000, 40000000, 80000000, 160000000, 320000000)
 
 
 def usage():
@@ -57,7 +57,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResult')
+    result_status = db.command('collstats', 'experimentResultAll')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -65,7 +65,7 @@ def print_counts(db):
 def get_get_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
     for action_duration in reversed(action_durations):
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultAll.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -85,13 +85,12 @@ def get_get_per_duration_data(db, algorithm, domain, instance):
 def get_gat_data(db, algorithms, domain, instance, action_duration):
     gat_data = []
     labels = []
-
     for algorithm in algorithms:
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultAll.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
-            "result.experimentConfiguration.actionDuration": action_duration,
+            "result.experimentConfiguration.actionDuration": int(action_duration),
             "result.success": True
         })
 
@@ -229,7 +228,8 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], options)
-    except getopt.GetoptError:
+    except getopt.GetoptError as e:
+        print("Getopt error: {0}".format(e.strerror))
         usage()
         sys.exit(2)
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
             domain = arg
         elif opt in ('-i', '--instance'):
             instance = arg
-        elif opt in ('c', '--action'):
+        elif opt in ('-c', '--action'):
             action_duration = arg
         elif opt in ('-t', '--type'):
             graph_type = getattr(GraphType, arg)
@@ -287,10 +287,3 @@ if __name__ == '__main__':
 
     if not quiet:
         plot.show()
-
-        # plot_gat_duration_error(db, ["LSS_LRTA_STAR",
-        #                              "RTA_STAR",
-        #                              "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw")
-        # plot_gat_boxplots(db, ["LSS_LRTA_STAR",
-        #                        "RTA_STAR",
-        #                        "DYNAMIC_F_HAT"], "GRID_WORLD", "input/vacuum/dylan/slalom.vw").show()
