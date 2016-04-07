@@ -90,7 +90,10 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
         val distance1 = Math.min(angleDistance(startState.link1.position, endStateLowerBound.link1.position), angleDistance(startState.link1.position, endStateUpperBound.link1.position))
         val distance2 = Math.min(angleDistance(startState.link2.position, endStateLowerBound.link2.position), angleDistance(startState.link2.position, endStateUpperBound.link2.position))
 
-        return distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(startState.link1.velocity)) + distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(startState.link2.velocity))
+        val link1Heuristic = distance1 / (configuration.stateConfiguration.maxAngularVelocity1 - Math.abs(startState.link1.velocity))
+        val link2Heuristic = distance2 / (configuration.stateConfiguration.maxAngularVelocity2 - Math.abs(startState.link2.velocity))
+
+        return Math.max(link1Heuristic, link2Heuristic)
     }
 
     /**
