@@ -56,8 +56,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
         while (!world.isGoal()) {
-            Thread.`yield`()
-
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.init(timeBound)
 

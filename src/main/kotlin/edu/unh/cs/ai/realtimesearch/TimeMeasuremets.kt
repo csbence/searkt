@@ -9,14 +9,20 @@ import kotlin.system.measureTimeMillis
  */
 
 fun main(args: Array<String>) {
-    Compiler.disable()
+    val threadMXBean = ManagementFactory.getThreadMXBean()
 
-    var x = System.nanoTime()
+    if (!threadMXBean.isCurrentThreadCpuTimeSupported) {
+        throw RuntimeException("CPU time measurement is not supported.")
+    }
+
+
+    var x = threadMXBean.currentThreadCpuTime
     while (true) {
-        val message = System.nanoTime() - x
-        if (message > 100000)
+        Thread.sleep(1)
+        val message = threadMXBean.currentThreadCpuTime - x
+        if (message > 200000)
             println(message)
-        x = System.nanoTime()
+        x = threadMXBean.currentThreadCpuTime
     }
 
     println(measureTimeMillis {
@@ -33,7 +39,6 @@ fun main(args: Array<String>) {
         }
     })
 
-    val threadMXBean = ManagementFactory.getThreadMXBean()
 
     println(measureTimeMillis {
         var test = 0L

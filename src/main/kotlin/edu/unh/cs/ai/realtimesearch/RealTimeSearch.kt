@@ -37,10 +37,10 @@ fun main(args: Array<String>) {
                     Domains.SLIDING_TILE_PUZZLE_4.toString(),
                     //                Domains.GRID_WORLD.toString(),
                     rawDomain,
-                    Planners.LSS_LRTA_STAR.toString(),
+                    Planners.RTA_STAR.toString(),
                     "time")
 
-            manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
+            manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 8L
             manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(30, MILLISECONDS)
             manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
             manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
