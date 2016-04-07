@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientT
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -16,7 +17,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
 
-    private val heuristicTable: MutableMap<StateType, Double> = hashMapOf()
+    private val heuristicTable: HashMap<StateType, Double> = HashMap<StateType, Double>(100000000, 1F).resize()
 
     override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
         val successors = domain.successors(state)
