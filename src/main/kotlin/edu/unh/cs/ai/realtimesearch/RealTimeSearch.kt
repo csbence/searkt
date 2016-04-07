@@ -28,18 +28,17 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-
-        val map = "input/tiles/korf/4/all/2"
+        val map = "input/acrobot/default_0.07-0.07.ab"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.SLIDING_TILE_PUZZLE_4.toString(),
+                Domains.ACROBOT.toString(),
                 rawDomain,
-                Planners.LSS_LRTA_STAR.toString(),
+                Planners.A_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(320, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
