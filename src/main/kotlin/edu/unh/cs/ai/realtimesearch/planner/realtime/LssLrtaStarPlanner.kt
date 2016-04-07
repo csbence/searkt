@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
@@ -83,8 +84,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
-    private val closedList: MutableSet<Node<StateType>> = hashSetOf()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
+    private val closedList: HashSet<Node<StateType>> = HashSet<Node<StateType>>(100000).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
