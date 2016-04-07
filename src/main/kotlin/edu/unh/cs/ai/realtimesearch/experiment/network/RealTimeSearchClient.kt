@@ -83,7 +83,12 @@ class RealTimeSearchClient(val url: String) {
         val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.GET, HttpEntity(ClientInformation(systemProperties)), ExperimentData::class.java)
         return if (responseEntity.statusCode == HttpStatus.OK) {
             logger.info("Get configuration: successful")
-            GeneralExperimentConfiguration(responseEntity.body.valueStore)
+            if (responseEntity?.body?.valueStore != null) {
+                GeneralExperimentConfiguration(responseEntity.body.valueStore)
+            } else {
+                null
+            }
+
         } else {
             logger.warn("Get configuration: failed")
             null

@@ -11,6 +11,7 @@ import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.*
+import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.*
@@ -63,8 +64,9 @@ class VacuumVisualizer : BaseVisualizer() {
         val root = Pane()
 
         /* Graphical parameters */
-        val WIDTH = 1600.0
-        val HEIGHT = 800.0
+        val primaryScreenBounds = Screen.getPrimary().visualBounds
+        val WIDTH = primaryScreenBounds.width - 100
+        val HEIGHT = primaryScreenBounds.height - 100
         val TILE_WIDTH: Double = (WIDTH / columnCount)
         val TILE_HEIGHT: Double = (HEIGHT / rowCount)
         var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
@@ -72,7 +74,6 @@ class VacuumVisualizer : BaseVisualizer() {
         while(((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)){
             TILE_SIZE /= 1.05
         }
-
 
         /* The robot */
         val robotWidth = TILE_SIZE / 2.0
@@ -82,7 +83,6 @@ class VacuumVisualizer : BaseVisualizer() {
         /* The robots starting location, needs to be drawn later */
         var startX: Double? = null
         var startY: Double? = null
-
 
         for (y in 0..rowCount - 1) {
             val line = inputScanner.nextLine()

@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -34,7 +35,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
     /**
      * Hash table that represents the union of closed and the open list
      */
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(10000000, 1F)
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1F).resize()
 
     data class Node<StateType : State<StateType>>(val parent: Node<StateType>?, val state: StateType, val action: Action?, val cost: Double, val f: Double, var open: Boolean) {
         override fun hashCode() = state.hashCode()

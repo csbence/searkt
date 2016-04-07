@@ -31,6 +31,8 @@ fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     for (domain in Domains.values()) {
+        if (domain == VACUUM_WORLD)
+            continue
         for (planner in Planners.values()) {
             for (actionDuration in actionDurations) {
                 // Skip impossible Acrobot configurations

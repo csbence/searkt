@@ -32,17 +32,17 @@ fun main(args: Array<String>) {
 //        val map = "input/racetrack/bigger-track.track"
         val map = "input/pointrobot/dylan/slalom.pr"
 //        val map = "input/vacuum/big-squiggle.vw"
+//        val map = "input/acrobot/default_0.07-0.07.ab"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-//                Domains.SLIDING_TILE_PUZZLE.toString(),
-                Domains.POINT_ROBOT.toString(),
+                Domains.ACROBOT.toString(),
                 rawDomain,
-                Planners.ARA_STAR.toString(),
+                Planners.A_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(320, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
@@ -67,9 +67,9 @@ fun main(args: Array<String>) {
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-        logger.info(result.toIndentedJson())
+        //        logger.info(result.toIndentedJson())
 
-        runVisualizer(result)
+//        runVisualizer(result)
     }
 }
 
