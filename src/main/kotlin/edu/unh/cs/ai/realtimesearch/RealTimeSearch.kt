@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
                     Domains.SLIDING_TILE_PUZZLE_4.toString(),
                     //                Domains.GRID_WORLD.toString(),
                     rawDomain,
-                    Planners.RTA_STAR.toString(),
+                    Planners.LSS_LRTA_STAR.toString(),
                     "time")
 
             manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 8L

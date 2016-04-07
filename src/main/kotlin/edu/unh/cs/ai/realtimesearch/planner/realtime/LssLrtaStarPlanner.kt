@@ -83,7 +83,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
+    private val nodes: MutableMap<StateType, Node<StateType>> = HashMap(30000000)
     private val closedList: MutableSet<Node<StateType>> = hashSetOf()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
@@ -112,6 +112,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         dijkstraPopCounter = 0
         aStarTimer = 0L
         dijkstraTimer = 0L
+        nodes.clear()
 
         clearOpenList()
         closedList.clear()
@@ -217,14 +218,24 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(sourceNode)
+        val addClosedTime = measureNanoTime {
+            closedList.add(sourceNode)
+        }
+        if (addClosedTime > 1000000) {
+            println("Addclosed: $addClosedTime")
+        }
 
         val currentGValue = sourceNode.cost
+
         for (successor in domain.successors(sourceNode.state)) {
+
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
+
             val successorNode = getNode(sourceNode, successor)
+
+
 
             // Add the current state as the predecessor of the child state
             successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
@@ -240,9 +251,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Skip if we got back to the parent
-            if (successorState == sourceNode.parent.state) {
-                continue
-            }
+            //                if (successorState == sourceNode.parent.state) {
+            //                    continue
+            //                }
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -266,7 +277,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
+
+
         }
+
+
     }
 
     /**
@@ -291,7 +306,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter,
                     open = false)
 
+            val evaluateSuccessorTime = System.currentTimeMillis() // REMOVE
             nodes[successorState] = undiscoveredNode
+
+            val timeDiff = System.currentTimeMillis() - evaluateSuccessorTime
+            if (timeDiff > 1) {
+                println("\t\t\t\t************** Evaluation time was: $timeDiff") // REMOVE
+            }
+
             undiscoveredNode
         } else {
             tempSuccessorNode
@@ -407,8 +429,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     private fun addToOpenList(node: Node<StateType>) {
-        openList.add(node)
-        node.open = true
+        val addTime = measureNanoTime {
+            openList.add(node)
+            node.open = true
+        }
+        if (addTime > 1000000) {
+            println("addtime: $addTime")
+        }
     }
 
     private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
