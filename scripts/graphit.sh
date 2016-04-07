@@ -29,22 +29,40 @@ make_graphs() {
     FILE_HEADER="$3"
     MD=""
 
-    FILE="$PLOTS_DIR/${FILE_HEADER}_error.pdf"
-    ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -t "gatPerDuration" -s "$FILE" -q $@
-    MD="${MD}![$INSTANCE]($FILE)\n\n"
+    if [ "$DOMAIN" == "SLIDING_TILE_PUZZLE_4" ]; then
+      if [ "$FILE_HEADER" == "tiles_33" ]; then
+        return
+      fi
+    fi
+
+    FILE="${FILE_HEADER}_error.pdf"
+    ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -t "gatPerDuration" -s "$PLOTS_DIR/$FILE" -q $@
+    MD="${MD}![$FILE_HEADER]($FILE)\n\n\\\\clearpage\n\n"
 
     for duration in ${DURATIONS[@]}; do
-      FILE="$PLOTS_DIR/${FILE_HEADER}_${duration}.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBoxPlot" -s "$FILE" -q $@
-      MD="${MD}![$INSTANCE]($FILE)\n\n"
+      # Skip instances with no results
+      if [ "$DOMAIN" == "ACROBOT" ]; then
+        if [ $duration -le 40000000 ]; then
+          continue
+        fi
+        if [ $duration -le 80000000 ]; then
+          if [ "$INSTANCE" == "0.07-0.07" ] || [ "$INSTANCE" == "0.09-0.09" ]; then
+            continue
+          fi
+        fi
+      fi
 
-      FILE="$PLOTS_DIR/${FILE_HEADER}_${duration}_bars.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBars"    -s "$FILE" -q $@
-      MD="${MD}![$INSTANCE]($FILE)\n\n"
+      FILE="${FILE_HEADER}_${duration}.pdf"
+      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBoxPlot" -s "$PLOTS_DIR/$FILE" -q $@
+      MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
 
-      FILE="$PLOTS_DIR/${FILE_HEADER}_${duration}_violin.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatViolin"  -s "$FILE" -q $@
-      MD="${MD}![$INSTANCE]($FILE)\n\n"
+      FILE="${FILE_HEADER}_${duration}_bars.pdf"
+      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBars"    -s "$PLOTS_DIR/$FILE" -q $@
+      MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
+
+      FILE="${FILE_HEADER}_${duration}_violin.pdf"
+      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatViolin"  -s "$PLOTS_DIR/$FILE" -q $@
+      MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
     done
 
     echo "$MD"
@@ -79,7 +97,7 @@ PR_MD="${PR_MD}$(make_graphs "POINT_ROBOT" "input/pointrobot/dylan/wall.pr" "pr_
 # Point Robot with Inertia
 PRWI_MD=""
 PRWI_MD="${PRWI_MD}$(make_graphs "POINT_ROBOT_WITH_INERTIA" "input/pointrobot/dylan/slalom.pr" "prwi_dylan_slalom")"
-PRWI_MD="${PRWI_MD}$(make_graphs "POINT_ROBOT_WITH_INERTIA" "input/pointrobot/dylan/unifoom.pr" "prwi_dylan_uniform")"
+PRWI_MD="${PRWI_MD}$(make_graphs "POINT_ROBOT_WITH_INERTIA" "input/pointrobot/dylan/uniform.pr" "prwi_dylan_uniform")"
 PRWI_MD="${PRWI_MD}$(make_graphs "POINT_ROBOT_WITH_INERTIA" "input/pointrobot/dylan/cups.pr" "prwi_dylan_cups")"
 PRWI_MD="${PRWI_MD}$(make_graphs "POINT_ROBOT_WITH_INERTIA" "input/pointrobot/dylan/wall.pr" "prwi_dylan_wall")"
 
@@ -91,19 +109,26 @@ RACETRACK_MD="${PRWI_MD}$(make_graphs "RACETRACK" "input/racetrack/barto-small.t
 # Acrobot
 ACROBOT_MD=""
 for i in 0.3 0.1 0.09 0.08 0.07; do
-  ACROBOT_MD="${ACROBOT_MD}$(make_graphs "ACROBOT" "$duration-$duration" "acrobot_${i}-${i}")"
+  echo "ACROBOT" "$i-$i" "acrobot_${i}-${i}"
+  ACROBOT_MD="${ACROBOT_MD}$(make_graphs "ACROBOT" "$i-$i" "acrobot_${i}-${i}")"
 done
 
-echo "$GRID_WORLD_MD" > $PLOTS_DIR/grid_world_plots.md
-echo "$PUZZLE_MD" > $PLOTS_DIR/sliding_tile_puzzle_plots.md
-echo "$PR_MD" > $PLOTS_DIR/point_robot_plots.md
-echo "$PRWI_MD" > $PLOTS_DIR/point_robot_with_inertia_plots.md
-echo "$ACROBOT_MD" > $PLOTS_DIR/acrobot_plots.md
+# Write to Markdown files
+echo -e "$GRID_WORLD_MD" > $PLOTS_DIR/grid_world_plots.md
+echo -e "$PUZZLE_MD" > $PLOTS_DIR/sliding_tile_puzzle_plots.md
+echo -e "$PR_MD" > $PLOTS_DIR/point_robot_plots.md
+echo -e "$PRWI_MD" > $PLOTS_DIR/point_robot_with_inertia_plots.md
+echo -e "$ACROBOT_MD" > $PLOTS_DIR/acrobot_plots.md
+echo -e "$RACETRACK_MD" > $PLOTS_DIR/racetrack_plots.md
 
+# Convert Markdown files to pdf
 if command -v "pandoc" 2>/dev/null; then
-  pandoc -o $PLOTS_DIR/grid_world_plots.pdf $PLOTS_DIR/grid_world_plots.md
-  pandoc -o $PLOTS_DIR/sliding_tile_puzzle_plots.pdf $PLOTS_DIR/sliding_tile_puzzle_plots.md
-  pandoc -o $PLOTS_DIR/point_robot_plots.pdf $PLOTS_DIR/point_robot_plots.md
-  pandoc -o $PLOTS_DIR/point_robot_with_inertia_plots.pdf $PLOTS_DIR/point_robot_with_inertia_plots.md
-  pandoc -o $PLOTS_DIR/acrobot_plots.pdf $PLOTS_DIR/acrobot_plots.md
+  pushd "$PLOTS_DIR"
+  pandoc -o grid_world_plots.pdf grid_world_plots.md
+  pandoc -o sliding_tile_puzzle_plots.pdf sliding_tile_puzzle_plots.md
+  pandoc -o point_robot_plots.pdf point_robot_plots.md
+  pandoc -o point_robot_with_inertia_plots.pdf point_robot_with_inertia_plots.md
+  pandoc -o acrobot_plots.pdf acrobot_plots.md
+  pandoc -o racetrack_plots.pdf racetrack_plots.md
+  popd
 fi
