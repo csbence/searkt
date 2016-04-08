@@ -30,7 +30,8 @@ class VacuumVisualizer : BaseVisualizer() {
 
     override fun getOptions(): Options = Options()
 
-    override fun processOptions(cmd: CommandLine) {}
+    override fun processOptions(cmd: CommandLine) {
+    }
 
     override fun start(primaryStage: Stage) {
         processCommandLine(parameters.raw.toTypedArray())
@@ -46,7 +47,7 @@ class VacuumVisualizer : BaseVisualizer() {
         }
 
         val isARAStar = false
-        if(isARAStar)
+        if (isARAStar)
             moverobot = false
 
         val TIME_TO_RUN = actionList.size * 200.0
@@ -71,7 +72,7 @@ class VacuumVisualizer : BaseVisualizer() {
         val TILE_HEIGHT: Double = (HEIGHT / rowCount)
         var TILE_SIZE = Math.min(TILE_WIDTH, TILE_HEIGHT)
 
-        while(((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)){
+        while (((TILE_SIZE * columnCount) > WIDTH) || ((TILE_SIZE * rowCount) > HEIGHT)) {
             TILE_SIZE /= 1.05
         }
 
@@ -143,7 +144,7 @@ class VacuumVisualizer : BaseVisualizer() {
         robot.translateY = yLoc
         //path.elements.add(MoveTo(xLoc, yLoc))
         //path.stroke = Color.ORANGE
-        if(isARAStar) {
+        if (isARAStar) {
             arastarXOrig = xLoc
             arastarYOrig = yLoc
             arastarX = xLoc
@@ -152,20 +153,20 @@ class VacuumVisualizer : BaseVisualizer() {
 
         /* Display the path */
         //if(DISPLAY_LINE)
-            //root.children.add(path)
+        //root.children.add(path)
 
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
-            val p = Path()
-            p.elements.add(MoveTo(xLoc, yLoc))
-            paths.add(p)
+        val p = Path()
+        p.elements.add(MoveTo(xLoc, yLoc))
+        paths.add(p)
         //}
         var pIndex = 0;
 
         for (action in actionList) {
-            val p = paths.get(pIndex)
+            val p = paths[pIndex]
 
-            if(action.contains(".")){
+            if (action.contains(".")) {
                 arastarX = arastarXOrig
                 arastarY = arastarYOrig
                 //path.stroke = Color.RED
@@ -176,55 +177,51 @@ class VacuumVisualizer : BaseVisualizer() {
                 paths.add(newP)
                 pIndex++;
                 count = 0;
-            }
-            else if(!action.equals("UP")
+            } else if (!action.equals("UP")
                     && !action.equals("DOWN")
                     && !action.equals("LEFT")
-                    && !action.equals("RIGHT")){
+                    && !action.equals("RIGHT")) {
                 println(action);
                 moverobot = true;
                 val newP = Path()
                 newP.elements.add(MoveTo(xLoc, yLoc))
                 paths.add(newP)
-                pIndex ++
-            }
-            else {
+                pIndex++
+            } else {
                 //println(action)
                 animate(root, action, p, robot, TILE_SIZE, TILE_SIZE)
             }
         }
 
         //for(it in paths) {
-            if (DISPLAY_LINE) {
-                root.children.add(paths.get(pIndex))
-            }
+        if (DISPLAY_LINE) {
+            root.children.add(paths.get(pIndex))
+        }
         //}
 
-//        if(isARAStar) {
-//            paths.get(0).stroke = Color.RED
-//            paths.get(1).stroke = Color.YELLOW
-//            paths.get(2).stroke = Color.BLACK
-//            paths.get(3).stroke = Color.CYAN
-//            paths.get(4).stroke = Color.BLUE
-//            paths.get(5).stroke = Color.MAGENTA
-//            paths.get(6).stroke = Color.GREEN
-//            paths.get(7).stroke = Color.WHITE
-//            paths.get(8).stroke = Color.GOLD
-//            paths.get(9).stroke = Color.PLUM
-//        }
+        //        if(isARAStar) {
+        //            paths.get(0).stroke = Color.RED
+        //            paths.get(1).stroke = Color.YELLOW
+        //            paths.get(2).stroke = Color.BLACK
+        //            paths.get(3).stroke = Color.CYAN
+        //            paths.get(4).stroke = Color.BLUE
+        //            paths.get(5).stroke = Color.MAGENTA
+        //            paths.get(6).stroke = Color.GREEN
+        //            paths.get(7).stroke = Color.WHITE
+        //            paths.get(8).stroke = Color.GOLD
+        //            paths.get(9).stroke = Color.PLUM
+        //        }
 
-        paths.get(pIndex).stroke = Color.RED
+        paths[pIndex].stroke = Color.RED
 
         /* Animate the robot */
         val pathTransition = PathTransition()
-        pathTransition.setDuration(Duration.millis(TIME_TO_RUN))
-        pathTransition.setPath(paths.get(pIndex))
-        pathTransition.setNode(robot)
-        pathTransition.setInterpolator(Interpolator.LINEAR);
-        pathTransition.setCycleCount(Timeline.INDEFINITE);
+        pathTransition.duration = Duration.millis(TIME_TO_RUN)
+        pathTransition.path = paths[pIndex]
+        pathTransition.node = robot
+        pathTransition.interpolator = Interpolator.LINEAR
+        pathTransition.cycleCount = Timeline.INDEFINITE
         pathTransition.play()
-
-
     }
 
     private fun animate(root: Pane, action: String, path: Path, robot: Rectangle, width: Double, height: Double) {
@@ -232,53 +229,49 @@ class VacuumVisualizer : BaseVisualizer() {
         count++;
         when (action) {
             "UP" -> {
-                if(moverobot) {
+                if (moverobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY + height))
                     robot.translateY = robot.translateY + height
-                }
-                else {
+                } else {
                     path.elements.add(LineTo(arastarX, arastarY + height))
-                    arastarY = arastarY + height
-                    if(count <= 3){
+                    arastarY += height
+                    if (count <= 3) {
                         arastarYOrig = arastarY
                     }
                 }
             }
             "RIGHT" -> {
-                if(moverobot) {
+                if (moverobot) {
                     path.elements.add(LineTo(robot.translateX + width, robot.translateY))
                     robot.translateX = robot.translateX + width
-                }
-                else{
+                } else {
                     path.elements.add(LineTo(arastarX + width, arastarY))
-                    arastarX = arastarX + width
-                    if(count <= 3){
+                    arastarX += width
+                    if (count <= 3) {
                         arastarXOrig = arastarX
                     }
                 }
             }
             "DOWN" -> {
-                if(moverobot) {
+                if (moverobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY - height))
                     robot.translateY = robot.translateY - height
-                }
-                else {
+                } else {
                     path.elements.add(LineTo(arastarX, arastarY - height))
-                    arastarY = arastarY - height
-                    if(count <= 3){
+                    arastarY -= height
+                    if (count <= 3) {
                         arastarYOrig = arastarY
                     }
                 }
             }
             "LEFT" -> {
-                if(moverobot) {
+                if (moverobot) {
                     path.elements.add(LineTo(robot.translateX - width, robot.translateY))
                     robot.translateX = robot.translateX - width
-                }
-                else{
+                } else {
                     path.elements.add(LineTo(arastarX - width, arastarY))
-                    arastarX = arastarX - width
-                    if(count <= 3){
+                    arastarX -= width
+                    if (count <= 3) {
                         arastarXOrig = arastarX
                     }
                 }
