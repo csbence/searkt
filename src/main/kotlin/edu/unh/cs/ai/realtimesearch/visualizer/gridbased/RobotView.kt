@@ -5,6 +5,8 @@ import javafx.scene.shape.Circle
 import javafx.scene.shape.Rectangle
 
 /**
+ * Visual components of robot for grid-based visualizations.
+ *
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
  */
@@ -42,8 +44,6 @@ class RobotView(val width: Double) {
     private fun relocateTracker() {
         tracker.centerX = robot.x + width / 2.0
         tracker.centerY = robot.y + width / 2.0
-//        tracker.translateX = tracker.centerX
-//        tracker.translateY = tracker.centerY
     }
 
     fun setLocation(x: Double, y: Double) {
@@ -56,13 +56,9 @@ class RobotView(val width: Double) {
 
     fun translateX(x: Double) {
         robot.translateX = x
-//        if (trackingEnabled)
-//            tracker.translateX = x
     }
 
     fun translateY(y: Double) {
         robot.translateY = y
-//        if (trackingEnabled)
-//            tracker.translateY = y
     }
 }

@@ -24,6 +24,8 @@ import java.util.*
 
 
 /**
+ * Info for a grid world map.
+ *
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
  */
@@ -35,13 +37,16 @@ data class MapInfo(
         val endCells: MutableList<Location> = mutableListOf())
 
 /**
+ * A canvas which displays the grid specified in the provided {@link MapInfo}.  All cells except start cells are
+ * displayed automatically.
+ *
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
  */
-class VacuumGrid(val rowCount: Int, val columnCount: Int, val tileSize: Double, val mapInfo: MapInfo): Pane() {
+class VacuumGrid(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
     val canvas: Canvas = Canvas()
-    val gridWidth = columnCount * tileSize
-    val gridHeight = rowCount * tileSize
+    val gridWidth = mapInfo.columnCount * tileSize
+    val gridHeight = mapInfo.rowCount * tileSize
 
     init {
         children.add(canvas)
@@ -70,13 +75,13 @@ class VacuumGrid(val rowCount: Int, val columnCount: Int, val tileSize: Double, 
             g.fillRect(canvas.layoutX, canvas.layoutY, canvas.width, canvas.height)
 
             // Add row lines
-            for (row in 1..rowCount) {
+            for (row in 1..mapInfo.rowCount) {
                 val yPosition = row * tileSize
                 g.strokeLine(0.0, yPosition, gridWidth, yPosition)
             }
 
             // Add column lines
-            for (column in 1..columnCount) {
+            for (column in 1..mapInfo.columnCount) {
                 val xPosition = column * tileSize
                 g.strokeLine(xPosition, 0.0, xPosition, gridHeight)
             }
@@ -119,8 +124,12 @@ class VacuumVisualizer : BaseVisualizer() {
 
     override fun getOptions(): Options = Options()
 
-    override fun processOptions(cmd: CommandLine) {}
+    override fun processOptions(cmd: CommandLine) {
+    }
 
+    /**
+     * Parse map; fill {@link MapInfo}
+     */
     fun parseGrid(rawDomain: String): MapInfo {
         val inputScanner = Scanner(rawDomain.byteInputStream())
         val columnCount = inputScanner.nextLine().toInt()
@@ -133,12 +142,13 @@ class VacuumVisualizer : BaseVisualizer() {
                     '#' -> {
                         mapInfo.blockedCells.add(Location(x, y))
                     }
-                    '_' -> {}
+                    '_' -> {
+                    }
                     '*' -> {
-                        mapInfo.endCells.add(Location(x,y))
+                        mapInfo.endCells.add(Location(x, y))
                     }
                     '@' -> {
-                        mapInfo.startCells.add(Location(x,y))
+                        mapInfo.startCells.add(Location(x, y))
                     }
                     else -> {
                         throw IllegalArgumentException("Invalid character ${line[x]} found in map")
@@ -174,7 +184,7 @@ class VacuumVisualizer : BaseVisualizer() {
         val mapInfo = parseGrid(rawDomain)
 
         if (mapInfo.startCells.size != 1) {
-            throw IllegalArgumentException("${mapInfo.startCells.size} start cells found in map; required 1" )
+            throw IllegalArgumentException("${mapInfo.startCells.size} start cells found in map; required 1")
         }
 
         /* Graphical parameters */
@@ -194,7 +204,7 @@ class VacuumVisualizer : BaseVisualizer() {
         val robotView = RobotView(robotWidth)
         robotView.trackingEnabled = trackRobot
 
-        val grid = VacuumGrid(mapInfo.rowCount, mapInfo.columnCount, tileSize, mapInfo)
+        val grid = VacuumGrid(mapInfo, tileSize)
         grid.children.add(robotView.robot)
         grid.children.add(robotView.tracker)
 
@@ -250,7 +260,7 @@ class VacuumVisualizer : BaseVisualizer() {
                     && !action.equals("DOWN")
                     && !action.equals("LEFT")
                     && !action.equals("RIGHT")) {
-//                println(action)
+                //                println(action)
                 moveRobot = true
                 val newP = Path()
                 newP.elements.add(MoveTo(robotLocationX, robotLocationY))
