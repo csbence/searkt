@@ -154,6 +154,7 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
 
 # TODO add factor A*
 def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations, title=""):
+    handles = []
     astar_gat_per_duration = astar_data
     if not astar_gat_per_duration:  # empty
         print("No data for A*")
@@ -168,14 +169,19 @@ def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations,
             print("No data for " + algorithm)
             continue
         algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
-        algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
+        algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
-        x = np.arange(1, len(algorithm_gat_per_duration_means) + 1)
-        plt.errorbar(x, algorithm_gat_per_duration_means, label=translate_algorithm_name(algorithm),
-                     yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
+        x = np.arange(1, len(algorithm_gat_per_duration_mean) + 1)
+        handle = plt.errorbar(x, algorithm_gat_per_duration_mean,
+                              label=translate_algorithm_name(algorithm),
+                              yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
+        handles.append((handle, algorithm, np.mean(algorithm_gat_per_duration_mean)))
 
     # Set labels
-    plt.legend()
+    handles = sorted(handles, key=lambda handle: handle[2], reverse=True)
+    ordered_handles = [a[0] for a in handles]
+    ordered_labels = [a[1] for a in handles]
+    plt.legend(handles=ordered_handles, labels=ordered_labels)
     plt.xticks(x_astar, reversed(action_durations))
     plt.title(title)
     plt.ylabel("GAT log10")
@@ -184,10 +190,5 @@ def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations,
     # Adjust x limits so end errors are visible
     xmin, xmax = plt.xlim()
     plt.xlim(xmin - 0.1, xmax + 0.1)
-
-    # Set ylims so we aren't at the top of the graph space for even data
-    low = min(min(y))
-    high = max(max(y))
-    plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
 
     plt.gcf().tight_layout()
