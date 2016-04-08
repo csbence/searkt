@@ -29,6 +29,9 @@ class RobotView(val width: Double) {
         tracker.translateYProperty().bind(robot.translateYProperty())
 
         tracker.opacity = 0.25
+
+        if (tracker.radius < 10.0)
+            tracker.radius = 10.0
     }
 
     fun toFront() {
