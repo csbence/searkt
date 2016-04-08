@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -85,7 +86,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
-    private val closedList: HashSet<Node<StateType>> = HashSet<Node<StateType>>(100000).resize()
+    //    private val closedList: HashSet<Node<StateType>> = HashSet<Node<StateType>>(100000).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
@@ -115,7 +116,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         dijkstraTimer = 0L
 
         clearOpenList()
-        closedList.clear()
+        //        closedList.clear()
     }
 
     /**
@@ -151,7 +152,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // Every turn learn then A* until time expires
 
         // Learning phase
-        if (closedList.isNotEmpty()) {
+        if (openList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
@@ -163,8 +164,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             rootState = targetNode.state
         }
 
-//        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-//        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        //        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        //        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -205,7 +206,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun initializeAStar() {
         iterationCounter++
         clearOpenList()
-        closedList.clear()
+        //        closedList.clear() XXX
 
         reorderOpenListBy(fValueComparator)
     }
@@ -217,7 +218,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(sourceNode)
+        //        closedList.add(sourceNode) XXX
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -235,6 +236,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = MAX_VALUE
+                    open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -259,7 +261,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!successorNode.open) {
-                    addToOpenList(successorNode)
+                    addToOpenList(successorNode) // Fresh node not on the open yet
+                } else {
+                    // TODO fix open heap property after update
                 }
             } else {
                 logger.trace {
@@ -284,10 +288,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    cost = MAX_VALUE,
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
+                    cost = MAX_VALUE,
                     iteration = iterationCounter,
                     open = false)
 
@@ -328,36 +332,43 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             val node = popOpenList()
             node.iteration = iterationCounter
 
-            if (!closedList.remove(node) /*&& iterationCounter != node.iteration*/) {
-                continue // Already explored, skip.
-            }
-
             val currentHeuristicValue = node.heuristic
             //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
 
             // update heuristic value for each predecessor
-            node.predecessors.forEach { predecessor ->
-                // Update if the node is outdated
-                if (predecessor.node.iteration != iterationCounter) {
-                    predecessor.node.heuristic = Double.POSITIVE_INFINITY
-                    predecessor.node.iteration = iterationCounter
+            for (predecessor in node.predecessors) {
+                val predecessorNode = predecessor.node
+
+                if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
+                    // This node was already learned and closed in the current iteration
+                    continue
                 }
 
-                val predecessorHeuristicValue = predecessor.node.heuristic
+                // Update if the node is outdated
+//                if (predecessorNode.iteration != iterationCounter) {
+//                    predecessorNode.heuristic = Double.POSITIVE_INFINITY
+//                    predecessorNode.iteration = iterationCounter
+//                }
+
+                val predecessorHeuristicValue = predecessorNode.heuristic
 
                 //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
                 //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
-                // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessor.node in closedList ) {
 
-                    if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
-                        predecessor.node.heuristic = currentHeuristicValue + predecessor.actionCost
-                    }
+                if (!predecessorNode.open) {
+                    // This node is not open yet, because it was not visited in the current planning iteration
+                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    assert(predecessorNode.iteration == iterationCounter - 1)
+                    predecessorNode.iteration = iterationCounter
 
-                    if (!predecessor.node.open) {
-                        addToOpenList(predecessor.node)
-                    }
+                    addToOpenList(predecessorNode)
+                } else if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                    // This node was visited in this learning phase, but the current path is better then the previous
+                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    assert(predecessorNode.iteration == iterationCounter)
+
+                    // It is already on open but its value changed TODO
                 }
             }
         }
@@ -366,7 +377,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         if (openList.isEmpty()) {
             logger.debug { "Done with Dijkstra" }
         } else {
-            logger.warn { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
+            logger.warn { "Incomplete learning step. Lists: Open(${openList.size})" }
         }
     }
 
@@ -377,7 +388,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
 
-//        logger.debug() { "Extracting plan" }
+        //        logger.debug() { "Extracting plan" }
 
         if (targetNode.state == sourceState) {
             return emptyList()
@@ -389,7 +400,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
-//        logger.debug() { "Plan extracted" }
+        //        logger.debug() { "Plan extracted" }
 
         return actions.reversed()
     }
@@ -401,6 +412,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     private fun popOpenList(): Node<StateType> {
+        if (openList.isEmpty()) {
+            throw GoalNotReachableException("Goal not reachable. Open list is empty.")
+        }
         val node = openList.remove()
         node.open = false
         return node
