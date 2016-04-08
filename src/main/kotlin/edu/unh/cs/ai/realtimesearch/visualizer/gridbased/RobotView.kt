@@ -10,7 +10,7 @@ import javafx.scene.shape.Rectangle
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
  */
-class RobotView(val width: Double) {
+class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     private val TRACKER_SCALE = 4.0
     val robot = Rectangle(width, width, Color.ORANGE)
     val tracker = Circle(width * TRACKER_SCALE, Color.YELLOW)
@@ -30,8 +30,8 @@ class RobotView(val width: Double) {
 
         tracker.opacity = 0.25
 
-        if (tracker.radius < 10.0)
-            tracker.radius = 10.0
+        if (tracker.radius < minimumTrackerRadius)
+            tracker.radius = minimumTrackerRadius
     }
 
     fun toFront() {
