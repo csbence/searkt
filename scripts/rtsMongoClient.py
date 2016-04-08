@@ -23,7 +23,7 @@ class GraphType(Enum):
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-action_durations = (20000000, 40000000, 80000000, 160000000, 320000000)
+action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
 
 
 def usage():
@@ -57,7 +57,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResultAll')
+    result_status = db.command('collstats', 'experimentResult')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -65,7 +65,7 @@ def print_counts(db):
 def get_get_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
     for action_duration in reversed(action_durations):
-        data_tiles = db.experimentResultAll.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -86,7 +86,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
     gat_data = []
     labels = []
     for algorithm in algorithms:
-        data_tiles = db.experimentResultAll.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
