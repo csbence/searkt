@@ -19,5 +19,5 @@ abstract class TimeTerminationChecker(val epsilon: Long = TimeUnit.NANOSECONDS.c
     /**
      * Checks whether the allowed time has passed since init
      */
-    open fun reachedTermination() = (System.nanoTime() - startTime + epsilon) > timeLimit
+    open fun reachedTermination() = (System.nanoTime() - startTime + epsilon + timeLimit * 0.01) > timeLimit
 }
