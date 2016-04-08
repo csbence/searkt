@@ -1,29 +1,49 @@
 #!/usr/bin/python3
 
 import getopt
-import math
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 import sys
+import warnings
 from enum import Enum
 from pymongo import MongoClient
 
 import plotutils
 
+warnings.filterwarnings("ignore", message=".*Source ID.*", module="matplotlib")
+warnings.filterwarnings("ignore", message="invalid value encountered in multiply", module="scipy")
+
 
 class GraphType(Enum):
-    gatPerDuration = 1
-    gatBoxPlot = 2
-    gatBars = 3
-    gatLines = 4
+    all = 1
+    gatPerDuration = 2
+    gatBoxPlot = 3
+    gatBars = 4
     gatViolin = 5
 
 
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+all_action_durations = (20000000, 40000000, 80000000, 160000000, 320000000)
+all_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
+all_domains = ["GRID_WORLD", "SLIDING_TILE_PUZZLE_4", "ACROBOT", "POINT_ROBOT", "POINT_ROBOT_WITH_INERTIA", "RACETRACK"]
+all_acrobot_instances = ["0.07-0.07",
+                         "0.08-0.08",
+                         "0.09-0.09",
+                         "0.1-0.1",
+                         "0.3-0.3"]
+all_dylan_instances = ["dylan/cups",
+                       "dylan/slalom",
+                       "dylan/uniform",
+                       "dylan/wall"]
+all_racetrack_instances = ["input/racetrack/barto-big.track",
+                           "input/racetrack/barto-small.track"]
+sliding_tile_4_map_root = "input/tiles/korf/4/all"
+all_sliding_tile_4_instances = [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25, 26, 27, 28,
+                                29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50,
+                                51, 52, 53, 54, 55, 56, 57, 58, 59, 62, 64, 65, 66, 67, 68, 69, 70, 71, 73, 75,
+                                76, 77, 78, 79, 80, 81, 83, 84, 85, 86, 87, 89, 92, 93, 94, 95, 96, 97, 98, 99, 100]
 
 
 def usage():
@@ -42,7 +62,7 @@ def usage():
     for graph_type in GraphType:
         print("  " + str(graph_type).replace("GraphType.", ""))
     print("valid action durations:")
-    for action_duration in action_durations:
+    for action_duration in all_action_durations:
         print("  " + str(action_duration))
 
 
@@ -62,9 +82,9 @@ def print_counts(db):
     # pprint.pprint(configuration_status, width=1)
 
 
-def get_get_per_duration_data(db, algorithm, domain, instance):
+def get_gat_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
-    for action_duration in reversed(action_durations):
+    for action_duration in reversed(all_action_durations):
         data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
@@ -108,121 +128,149 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
 # TODO add factor A*
 def plot_gat_duration_error(db, algorithms, domain, instance):
     # Gather required A* data
-    astar_gat_per_duration = get_get_per_duration_data(db, "A_STAR", domain, instance)
-    if not astar_gat_per_duration:  # empty
-        print("No data for A*")
-    astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
-        plotutils.mean_confidence_intervals(astar_gat_per_duration)
-    x_astar = np.arange(1, len(astar_gat_per_duration_means) + 1)
-
+    astar_gat_per_duration = get_gat_per_duration_data(db, "A_STAR", domain, instance)
+    algorithm_data = {}
     # Plot for each provided algorithm
     for algorithm in algorithms:
-        algorithm_gat_per_duration = get_get_per_duration_data(db, algorithm, domain, instance)
-        if not algorithm_gat_per_duration:  # empty
-            print("No data for " + algorithm)
-            continue
-        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
-        algorithm_gat_per_duration_means, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
-            plotutils.mean_confidence_intervals(algorithm_gat_per_duration)
-        x = np.arange(1, len(algorithm_gat_per_duration_means) + 1)
-        plt.errorbar(x, algorithm_gat_per_duration_means, label=plotutils.translate_algorithm_name(algorithm),
-                     yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
-
-    # Set labels
-    plt.title(plotutils.translate_domain_name(domain) + " - " + instance)
-    plt.ylabel("GAT log10")
-    plt.xlabel("Action Duration (ms)")
-    plt.legend()
-    plt.xticks(x_astar, reversed(action_durations))
-
-    # Adjust x limits so end errors are visible
-    xmin, xmax = plt.xlim()
-    plt.xlim(xmin - 0.1, xmax + 0.1)
-
-    return plt
+        algorithm_data[algorithm] = get_gat_per_duration_data(db, algorithm, domain, instance)
+    plotutils.plot_gat_duration_error(algorithm_data, astar_gat_per_duration, algorithms, all_action_durations,
+                                      title=plotutils.translate_domain_name(domain) + " - " + instance)
 
 
 def plot_gat_boxplots(db, algorithms, domain, instance, action_duration, showviolin=False):
     y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
-    if not y:  # empty
-        print("No data for {} - {} - {}".format(domain, instance, action_duration))
-        return None
-    med, confidence_interval_low, confidence_interval_high = plotutils.median_confidence_intervals(y)
-
-    # Set labels and build plots
-    plt.title(plotutils.translate_domain_name(domain) + "-" + instance)
-    plt.ylabel("Goal Achievement Time (ms)")
-    plt.xlabel("Algorithms")
-    plt.boxplot(y, notch=False, labels=labels)
-    # Plot separate error bars without line to show median confidence intervals
-    x = np.arange(1, len(y) + 1)
-    plt.errorbar(x, med, yerr=(confidence_interval_low, confidence_interval_high), fmt='none',
-                 linewidth=3)
-
-    if showviolin:
-        mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
-        plt.violinplot(y, showmeans=True, showmedians=True)
-        plt.errorbar(x, mean, yerr=(mean_confidence_interval_low, mean_confidence_interval_high), fmt='none',
-                     linewidth=3, color='g')
-
-    ymin, ymax = plt.ylim()
-    plt.ylim(ymin - 0.1, ymax + 0.1)
-
-    return plt
+    plotutils.plot_gat_boxplots(y, labels, showviolin=showviolin,
+                                title=plotutils.translate_domain_name(domain) + "-" + instance)
 
 
 def plot_gat_bars(db, algorithms, domain, instance, action_duration):
     y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
-    if not y:  # empty
-        print("No data for {} - {} - {}".format(domain, instance, action_duration))
-        return None
-    x = np.arange(1, len(y) + 1)
-    med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
-    mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
-    width = 0.35
-
-    fig, axis = plt.subplots()
-    med_bars = axis.bar(x, med, width, color='r', yerr=(med_confidence_interval_low, med_confidence_interval_high))
-    mean_bars = axis.bar(x + width, mean, width, color='y',
-                         yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
-
-    # Set labels
-    axis.set_title(plotutils.translate_domain_name(domain) + "-" + instance)
-    axis.set_ylabel("Goal Achievement Time (ms)")
-    axis.set_xlabel("Algorithms")
-    axis.set_xticks(x + width)
-    axis.set_xticklabels(labels)
-    axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
-
-    # Set ylims so we aren't at the top of the graph space for even data
-    low = min(min(y))
-    high = max(max(y))
-    plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
-
-    # Add numbers to top of bars
-    def autolabel(rects):
-        for rect in rects:
-            height = rect.get_height()
-            axis.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
-
-    autolabel(med_bars)
-    autolabel(mean_bars)
-
-    return plt
+    plotutils.plot_gat_bars(y, labels, title=plotutils.translate_domain_name(domain) + "-" + instance)
 
 
-def plot_gat_lines(db, algorithms, domain, instance, action_duration):
-    y, labels = get_gat_data(db, algorithms, domain, instance, action_duration)
-    x = np.arange(1, len(y) + 1)
-    med, med_confidence_interval_low, med_confidence_interval_high = plotutils.median_confidence_intervals(y)
-    plt.title(plotutils.translate_domain_name(domain) + "-" + instance)
-    plt.ylabel("Goal Achievement Time (ms)")
-    plt.xlabel("Algorithms")
-    plt.xlim(x[0] - 0.1, x[len(x) - 1] + 0.1)
-    plt.errorbar(x, med, yerr=(med_confidence_interval_low, med_confidence_interval_high))
-    plt.xticks(x, labels)
+def plot_all_for_domain(db, domain, instances):
+    # all_gat_data = []
+    all_error_data = {}
+    all_astar_error_data = []
 
-    return plt
+    for algorithm in all_algorithms:
+        all_error_data[algorithm] = []
+        for action_duration in all_action_durations:
+            all_error_data[algorithm].append([])
+    for action_duration in all_action_durations:
+        all_astar_error_data.append([])
+
+    for instance in instances:
+        instance_file_name = instance.replace("/", "_")
+        # instance_gat_data = []
+
+        astar_gat_per_duration = get_gat_per_duration_data(db, "A_STAR", domain, instance)
+        algorithm_gat_per_duration = {}
+        for algorithm in all_algorithms:
+            algorithm_gat_per_duration[algorithm] = get_gat_per_duration_data(db, algorithm, domain, instance)
+
+        # Errorbar plot
+        if not quiet:
+            print("Plotting error plot: {} - {}".format(domain, instance))
+        plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration, all_algorithms,
+                                          all_action_durations,
+                                          title=plotutils.translate_domain_name(domain) + " - " + instance)
+        plotutils.save_plot(plt, "plots/{}_{}_error.pdf".format(domain, instance_file_name))
+        plt.close('all')
+
+        for action_duration in all_action_durations:
+            # Gather data
+            y_gat, labels_gat = get_gat_data(db, all_algorithms, domain, instance, action_duration)
+            # instance_gat_data.append(y_gat)
+
+            # Boxplots
+            if not quiet:
+                print("Plotting boxplot: {} - {} - {}".format(domain, instance, action_duration))
+            plotutils.plot_gat_boxplots(y_gat, labels_gat,
+                                        title=plotutils.translate_domain_name(domain) + " - " + instance)
+            plotutils.save_plot(plt, "plots/{}_{}_{}_boxplots.pdf".format(domain, instance_file_name, action_duration))
+            plt.close('all')
+
+            # Bars
+            if not quiet:
+                print("Plotting bars: {} - {} - {}".format(domain, instance, action_duration))
+            plotutils.plot_gat_bars(y_gat, labels_gat,
+                                    title=plotutils.translate_domain_name(domain) + " - " + instance)
+            plotutils.save_plot(plt, "plots/{}_{}_{}_bars.pdf".format(domain, instance_file_name, action_duration))
+            plt.close('all')
+
+            # Violin
+            if not quiet:
+                print("Plotting violin: {} - {} - {}".format(domain, instance, action_duration))
+            plotutils.plot_gat_boxplots(y_gat, labels_gat, showviolin=True,
+                                        title=plotutils.translate_domain_name(domain) + " - " + instance)
+            plotutils.save_plot(plt,
+                                "plots/{}_{}_{}_boxplots_dist.pdf".format(domain, instance_file_name, action_duration))
+            plt.close('all')
+
+        # all_gat_data.append(instance_gat_data)
+
+        for algorithm in all_algorithms:
+            count = 0
+            for val in algorithm_gat_per_duration[algorithm]:
+                # print(val[0])
+                all_error_data[algorithm][count].append(val[0])
+                count += 1
+        print(all_error_data)
+
+        count = 0
+        for val in astar_gat_per_duration:
+            all_astar_error_data[count].append(val[0])
+            count += 1
+        print(all_astar_error_data)
+
+    # print(all_error_data)
+    # for algorithm in all_algorithms:
+    #     all_error_data[algorithm] = list(chain.from_iterable(chain.from_iterable(all_error_data[algorithm])))
+    # all_astar_error_data = list(chain.from_iterable(chain.from_iterable(all_astar_error_data)))
+
+    if not quiet:
+        print("Plotting {} averages".format(domain))
+    print(all_error_data)
+    print(all_astar_error_data)
+    plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_algorithms, all_action_durations,
+                                      title="{} data over all instances".format(
+                                          plotutils.translate_domain_name(domain)))
+    plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain))
+    plt.clf()
+
+
+def get_all_grid_world_instances():
+    instances = []
+    for instance in all_dylan_instances:
+        instances.append("input/vacuum/{}.vw".format(instance))
+    return instances
+
+
+def get_all_point_robot_instances():
+    instances = []
+    for instance in all_dylan_instances:
+        instances.append("input/pointrobot/{}.pr".format(instance))
+    return instances
+
+
+def get_all_sliding_tile_instances():
+    instances = []
+    for instance in all_sliding_tile_4_instances:
+        instances.append("{}/{}".format(sliding_tile_4_map_root, instance))
+    return instances
+
+
+def plot_all(db):
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
+
+    plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
+    plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
+    plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
+    plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
+    plot_all_for_domain(db, "ACROBOT", all_acrobot_instances)
+    plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances())
 
 
 if __name__ == '__main__':
@@ -231,7 +279,7 @@ if __name__ == '__main__':
     algorithms = []
     domain = None
     instance = None
-    action_duration = action_durations[0]
+    action_duration = all_action_durations[0]
     graph_type = default_graph_type
 
     try:
@@ -264,14 +312,15 @@ if __name__ == '__main__':
             usage()
             sys.exit(2)
 
-    if not algorithms:
-        print("Must provide at least 1 algorithm")
-        usage()
-        sys.exit(2)
-    elif domain is None or instance is None:
-        print("Must provide domain and instance")
-        usage()
-        sys.exit(2)
+    if graph_type is not GraphType.all:
+        if not algorithms:
+            print("Must provide at least 1 algorithm")
+            usage()
+            sys.exit(2)
+        elif domain is None or instance is None:
+            print("Must provide domain and instance")
+            usage()
+            sys.exit(2)
 
     db = open_connection()
     if not quiet:
@@ -281,20 +330,16 @@ if __name__ == '__main__':
         GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
         GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration),
         GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance, action_duration),
-        GraphType.gatLines: lambda: plot_gat_lines(db, algorithms, domain, instance, action_duration),
         GraphType.gatViolin: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration,
-                                                       showviolin=True)
+                                                       showviolin=True),
+        GraphType.all: lambda: plot_all(db)
     }[graph_type]
 
-    plot = plotter()
-    if plot is None:
-        print("Could not make plot")
-        sys.exit(1)
-    plot.gcf().tight_layout()
+    plotter()
 
     # Save before showing since show resets the figures
     if save_file is not None:
         plotutils.save_plot(plt, save_file)
 
     if not quiet:
-        plot.show()
+        plt.show()
