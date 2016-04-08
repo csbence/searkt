@@ -16,7 +16,7 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
-import javafx.scene.shape.Rectangle
+import javafx.scene.shape.Shape
 import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.util.Duration
@@ -105,9 +105,10 @@ class VacuumGrid(val rowCount: Int, val columnCount: Int, val tileSize: Double, 
  * Created by Stephen on 2/11/16.
  */
 class VacuumVisualizer : BaseVisualizer() {
-    var moverobot = true
-    var arastarXOrig = 0.0
-    var arastarYOrig = 0.0
+    var moveRobot = true
+    var trackRobot = true
+    var arastarXOriginal = 0.0
+    var arastarYOriginal = 0.0
     var arastarX = 0.0
     var arastarY = 0.0
     var count = 0
@@ -163,7 +164,7 @@ class VacuumVisualizer : BaseVisualizer() {
 
         val isARAStar = false
         if (isARAStar)
-            moverobot = false
+            moveRobot = false
 
         val TIME_TO_RUN = actionList.size * 200.0
 
@@ -190,11 +191,12 @@ class VacuumVisualizer : BaseVisualizer() {
 
         /* The robot */
         val robotWidth = tileSize / 2.0
-        val robot = Rectangle(robotWidth, robotWidth)
-        robot.fill = Color.ORANGE
+        val robotView = RobotView(robotWidth)
+        robotView.trackingEnabled = trackRobot
 
         val grid = VacuumGrid(mapInfo.rowCount, mapInfo.columnCount, tileSize, mapInfo)
-        grid.children.add(robot)
+        grid.children.add(robotView.robot)
+        grid.children.add(robotView.tracker)
 
         primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount)
         //primaryStage.scene = Scene(root, WIDTH, HEIGHT)
@@ -204,19 +206,16 @@ class VacuumVisualizer : BaseVisualizer() {
         val robotStartY = mapInfo.startCells.first().y
 
         /* Create the path that the robot will travel */
-        robot.toFront()
-        //val path = Path()
+        robotView.toFront()
+
         val robotLocationX = robotStartX * tileSize + ((tileSize) / 2.0)
         val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
-        robot.x = robotLocationX
-        robot.y = robotLocationY
-        robot.translateX = robotLocationX
-        robot.translateY = robotLocationY
+        robotView.setLocation(robotLocationX, robotLocationY)
         //path.elements.add(MoveTo(xLoc, yLoc))
         //path.stroke = Color.ORANGE
         if (isARAStar) {
-            arastarXOrig = robotLocationX
-            arastarYOrig = robotLocationY
+            arastarXOriginal = robotLocationX
+            arastarYOriginal = robotLocationY
             arastarX = robotLocationX
             arastarY = robotLocationY
         }
@@ -231,35 +230,35 @@ class VacuumVisualizer : BaseVisualizer() {
         p.elements.add(MoveTo(robotLocationX, robotLocationY))
         paths.add(p)
         //}
-        var pIndex = 0;
+        var pIndex = 0
 
         for (action in actionList) {
-            val p = paths[pIndex]
+            val path = paths[pIndex]
 
             if (action.contains(".")) {
-                arastarX = arastarXOrig
-                arastarY = arastarYOrig
+                arastarX = arastarXOriginal
+                arastarY = arastarYOriginal
                 //path.stroke = Color.RED
 
-                val newP = Path()
+                val newPath = Path()
                 //println("" + arastarX + " " + arastarY)
-                newP.elements.add(MoveTo(arastarX, arastarY))
-                paths.add(newP)
-                pIndex++;
+                newPath.elements.add(MoveTo(arastarX, arastarY))
+                paths.add(newPath)
+                pIndex++
                 count = 0;
             } else if (!action.equals("UP")
                     && !action.equals("DOWN")
                     && !action.equals("LEFT")
                     && !action.equals("RIGHT")) {
-                println(action);
-                moverobot = true;
+//                println(action)
+                moveRobot = true
                 val newP = Path()
                 newP.elements.add(MoveTo(robotLocationX, robotLocationY))
                 paths.add(newP)
                 pIndex++
             } else {
                 //println(action)
-                animate(action, p, robot, tileSize, tileSize)
+                animate(action, path, robotView.robot, tileSize, tileSize)
             }
         }
 
@@ -288,61 +287,61 @@ class VacuumVisualizer : BaseVisualizer() {
         val pathTransition = PathTransition()
         pathTransition.duration = Duration.millis(TIME_TO_RUN)
         pathTransition.path = paths[pIndex]
-        pathTransition.node = robot
+        pathTransition.node = robotView.robot
         pathTransition.interpolator = Interpolator.LINEAR
         pathTransition.cycleCount = Timeline.INDEFINITE
         pathTransition.play()
     }
 
-    private fun animate(action: String, path: Path, robot: Rectangle, width: Double, height: Double) {
+    private fun animate(action: String, path: Path, robot: Shape, width: Double, height: Double) {
         //path.elements.add(MoveTo(arastarX, arastarY))
         count++;
         when (action) {
             "UP" -> {
-                if (moverobot) {
+                if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY + height))
                     robot.translateY = robot.translateY + height
                 } else {
                     path.elements.add(LineTo(arastarX, arastarY + height))
                     arastarY += height
                     if (count <= 3) {
-                        arastarYOrig = arastarY
+                        arastarYOriginal = arastarY
                     }
                 }
             }
             "RIGHT" -> {
-                if (moverobot) {
+                if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX + width, robot.translateY))
                     robot.translateX = robot.translateX + width
                 } else {
                     path.elements.add(LineTo(arastarX + width, arastarY))
                     arastarX += width
                     if (count <= 3) {
-                        arastarXOrig = arastarX
+                        arastarXOriginal = arastarX
                     }
                 }
             }
             "DOWN" -> {
-                if (moverobot) {
+                if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY - height))
                     robot.translateY = robot.translateY - height
                 } else {
                     path.elements.add(LineTo(arastarX, arastarY - height))
                     arastarY -= height
                     if (count <= 3) {
-                        arastarYOrig = arastarY
+                        arastarYOriginal = arastarY
                     }
                 }
             }
             "LEFT" -> {
-                if (moverobot) {
+                if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX - width, robot.translateY))
                     robot.translateX = robot.translateX - width
                 } else {
                     path.elements.add(LineTo(arastarX - width, arastarY))
                     arastarX -= width
                     if (count <= 3) {
-                        arastarXOrig = arastarX
+                        arastarXOriginal = arastarX
                     }
                 }
             }
