@@ -103,7 +103,6 @@ private fun createCommandLineMenu(args: Array<String>) {
     val domainOption = Option("d", "domain", true, "The domain name")
     val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
     val terminationTypeOption = Option("t", "term-type", true, "The termination type")
-    val terminationParameterOption = Option("p", "term-param", true, "The termination parameter")
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
     val extraOption = Option ("e", "extra", true, "Extra configuration option key/value pairs")
 
@@ -119,7 +118,6 @@ private fun createCommandLineMenu(args: Array<String>) {
     domainOption.isRequired = true
     algorithmOption.isRequired = true
     terminationTypeOption.isRequired = true
-    terminationParameterOption.isRequired = true
 
     // Add the options
     // Separate options
@@ -129,7 +127,6 @@ private fun createCommandLineMenu(args: Array<String>) {
     separateOptions.addOption(domainOption)
     separateOptions.addOption(algorithmOption)
     separateOptions.addOption(terminationTypeOption)
-    separateOptions.addOption(terminationParameterOption)
     separateOptions.addOption(outFileOption)
     separateOptions.addOption(extraOption)
 
@@ -169,8 +166,7 @@ private fun createCommandLineMenu(args: Array<String>) {
         val mapFile = separateCmd.getOptionValue(mapFileOption.opt)
         val algName = separateCmd.getOptionValue(algorithmOption.opt)
         val termType = separateCmd.getOptionValue(terminationTypeOption.opt)
-        val termParam = separateCmd.getOptionValue(terminationParameterOption.opt)
-        outFile = separateCmd.getOptionValue(outFileOption.opt, "out.json")
+        outFile = separateCmd.getOptionValue(outFileOption.opt, "")
         val extras = separateCmd.getOptionValues(extraOption.opt)
 
         /* run the experiment */
