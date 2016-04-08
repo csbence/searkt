@@ -29,6 +29,7 @@ default_graph_type = GraphType.gatPerDuration
 all_action_durations = (20000000, 40000000, 80000000, 160000000, 320000000)
 all_action_durations_ms = [plotutils.cnv_ns_to_ms(duration) for duration in all_action_durations]
 all_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
+no_RTA_STAR = ["A_STAR", "ARA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
 all_domains = ["GRID_WORLD", "SLIDING_TILE_PUZZLE_4", "ACROBOT", "POINT_ROBOT", "POINT_ROBOT_WITH_INERTIA", "RACETRACK"]
 all_acrobot_instances = ["0.07-0.07",
                          "0.08-0.08",
@@ -135,7 +136,7 @@ def plot_gat_duration_error(db, algorithms, domain, instance):
     # Plot for each provided algorithm
     for algorithm in algorithms:
         algorithm_data[algorithm] = get_gat_per_duration_data(db, algorithm, domain, instance)
-    plotutils.plot_gat_duration_error(algorithm_data, astar_gat_per_duration, algorithms, all_action_durations,
+    plotutils.plot_gat_duration_error(algorithm_data, astar_gat_per_duration, algorithms, all_action_durations_ms,
                                       title=plotutils.translate_domain_name(domain) + " - " + instance)
 
 
@@ -188,7 +189,7 @@ def plot_all_for_domain(db, domain, instances):
     # all_gat_data = []
     all_error_data = {}
     all_astar_error_data = []
-    markdown_document = ""
+    markdown_document = "# Domain: {}\n\n".format(domain)
 
     for algorithm in all_algorithms:
         all_error_data[algorithm] = []
@@ -200,6 +201,8 @@ def plot_all_for_domain(db, domain, instances):
     for instance in instances:
         instance_file_name = instance.replace("/", "_")
         # instance_gat_data = []
+
+        markdown_document += "## Instance: {}\n\n".format(instance)
 
         astar_gat_per_duration = get_gat_per_duration_data(db, "A_STAR", domain, instance)
         algorithm_gat_per_duration = {}
@@ -219,6 +222,8 @@ def plot_all_for_domain(db, domain, instances):
             # Gather data
             y_gat, labels_gat = get_gat_data(db, all_algorithms, domain, instance, action_duration)
             # instance_gat_data.append(y_gat)
+
+            markdown_document += "### Action Duration: {} ns\n\n".format(action_duration)
 
             # Boxplots
             if not quiet:
@@ -271,6 +276,16 @@ def plot_all_for_domain(db, domain, instances):
                                           plotutils.translate_domain_name(domain)))
     plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain))
     plt.clf()
+
+    # Plot Sliding tile puzzle average without RTA*
+    if domain is "SLIDING_TILE_PUZZLE_4":
+        all_error_data.pop("RTA_STAR")
+        plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, no_RTA_STAR, all_action_durations_ms,
+                                          title="{} data over all instances".format(
+                                              plotutils.translate_domain_name(domain)))
+        plotutils.save_plot(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain))
+        plt.clf()
+
 
 
 def get_all_grid_world_instances():
