@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 /**
  * A termination checker based on time. Will check whether timeLimit minus [epsilon] has exceeded since init().
  */
-abstract class TimeTerminationChecker(val epsilon: Long = TimeUnit.NANOSECONDS.convert(5000, TimeUnit.MICROSECONDS)) {
+abstract class TimeTerminationChecker(val epsilon: Long = TimeUnit.NANOSECONDS.convert(3000, TimeUnit.MICROSECONDS)) {
     abstract var startTime: Long
     abstract var timeLimit: Long
 
