@@ -7,6 +7,7 @@ import sys
 import warnings
 from enum import Enum
 from pymongo import MongoClient
+from subprocess import call
 
 import plotutils
 
@@ -149,10 +150,45 @@ def plot_gat_bars(db, algorithms, domain, instance, action_duration):
     plotutils.plot_gat_bars(y, labels, title=plotutils.translate_domain_name(domain) + "-" + instance)
 
 
+def do_plot(file_header, file_suffix, plot):
+    # file_header = "{}_{}".format(domain, instance_file_name)
+    filename = "plots/{}_{}.pdf".format(file_header, file_suffix)
+    plot()
+    plotutils.save_plot(plt, filename)
+    plt.close('all')
+    return "![{}]({})\n\n\\clearpage\n\n".format(file_header, filename)
+
+
+def save_to_file(filename, text):
+    text_file = open(filename, "w")
+    text_file.write(text)
+    text_file.close()
+
+
+# http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python#answer-377028
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+
 def plot_all_for_domain(db, domain, instances):
     # all_gat_data = []
     all_error_data = {}
     all_astar_error_data = []
+    markdown_document = ""
 
     for algorithm in all_algorithms:
         all_error_data[algorithm] = []
@@ -173,11 +209,11 @@ def plot_all_for_domain(db, domain, instances):
         # Errorbar plot
         if not quiet:
             print("Plotting error plot: {} - {}".format(domain, instance))
+        file_header = "{}_{}".format(domain, instance_file_name)
+        markdown_document += do_plot(file_header, "error", lambda:
         plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration, all_algorithms,
                                           all_action_durations_ms,
-                                          title=plotutils.translate_domain_name(domain) + " - " + instance)
-        plotutils.save_plot(plt, "plots/{}_{}_error.pdf".format(domain, instance_file_name))
-        plt.close('all')
+                                          title=plotutils.translate_domain_name(domain) + " - " + instance))
 
         for action_duration in all_action_durations:
             # Gather data
@@ -187,54 +223,50 @@ def plot_all_for_domain(db, domain, instances):
             # Boxplots
             if not quiet:
                 print("Plotting boxplot: {} - {} - {}".format(domain, instance, action_duration))
+            file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
+            markdown_document += do_plot(file_header, "boxplots", lambda:
             plotutils.plot_gat_boxplots(y_gat, labels_gat,
-                                        title=plotutils.translate_domain_name(domain) + " - " + instance)
-            plotutils.save_plot(plt, "plots/{}_{}_{}_boxplots.pdf".format(domain, instance_file_name, action_duration))
-            plt.close('all')
+                                        title=plotutils.translate_domain_name(domain) + " - " + instance))
 
             # Bars
             if not quiet:
                 print("Plotting bars: {} - {} - {}".format(domain, instance, action_duration))
+            markdown_document += do_plot(file_header, "bars", lambda:
             plotutils.plot_gat_bars(y_gat, labels_gat,
-                                    title=plotutils.translate_domain_name(domain) + " - " + instance)
-            plotutils.save_plot(plt, "plots/{}_{}_{}_bars.pdf".format(domain, instance_file_name, action_duration))
-            plt.close('all')
+                                    title=plotutils.translate_domain_name(domain) + " - " + instance))
 
             # Violin
             if not quiet:
                 print("Plotting violin: {} - {} - {}".format(domain, instance, action_duration))
+            markdown_document += do_plot(file_header, "boxplots_dist", lambda:
             plotutils.plot_gat_boxplots(y_gat, labels_gat, showviolin=True,
-                                        title=plotutils.translate_domain_name(domain) + " - " + instance)
-            plotutils.save_plot(plt,
-                                "plots/{}_{}_{}_boxplots_dist.pdf".format(domain, instance_file_name, action_duration))
-            plt.close('all')
+                                        title=plotutils.translate_domain_name(domain) + " - " + instance))
 
         # all_gat_data.append(instance_gat_data)
-
         for algorithm in all_algorithms:
             count = 0
             for val in algorithm_gat_per_duration[algorithm]:
-                # print(val[0])
                 all_error_data[algorithm][count].append(val[0])
                 count += 1
-        print(all_error_data)
 
         count = 0
         for val in astar_gat_per_duration:
             all_astar_error_data[count].append(val[0])
             count += 1
-        print(all_astar_error_data)
 
-    # print(all_error_data)
-    # for algorithm in all_algorithms:
-    #     all_error_data[algorithm] = list(chain.from_iterable(chain.from_iterable(all_error_data[algorithm])))
-    # all_astar_error_data = list(chain.from_iterable(chain.from_iterable(all_astar_error_data)))
+    if not quiet:
+        print("Saving markdown file")
+    file_header = "plots/{}_plots".format(domain)
+    markdown_file = "{}.md".format(file_header)
+    pdf_file = "{}.pdf".format(file_header)
+    save_to_file(markdown_file, markdown_document)
+    pandoc = which("pandoc")
+    if pandoc:
+        call([pandoc, "-o", pdf_file, markdown_file])
 
     if not quiet:
         print("Plotting {} averages".format(domain))
-    print(all_error_data)
-    print(all_astar_error_data)
-    plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_algorithms, all_action_durations,
+    plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_algorithms, all_action_durations_ms,
                                       title="{} data over all instances".format(
                                           plotutils.translate_domain_name(domain)))
     plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain))
