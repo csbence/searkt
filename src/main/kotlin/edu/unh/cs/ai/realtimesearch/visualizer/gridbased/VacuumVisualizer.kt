@@ -62,30 +62,32 @@ class VacuumGrid(val rowCount: Int, val columnCount: Int, val tileSize: Double, 
             canvas.height = layoutHeight
             val g: GraphicsContext = canvas.graphicsContext2D
 
-            g.fill = Color.RED
-            g.stroke = Color.BLUE
+            g.stroke = Color.WHITE
+            g.fill = Color.LIGHTSLATEGRAY
             g.lineWidth = 0.1
 
+            // Set background color
+            g.fillRect(canvas.layoutX, canvas.layoutY, canvas.width, canvas.height)
+
+            // Add row lines
             for (row in 1..rowCount) {
                 val yPosition = row * tileSize
-//                g.fillArc(0.0, yPosition, gridWidth, 0.0, 0.0, 0.0, ArcType.CHORD)
                 g.strokeLine(0.0, yPosition, gridWidth, yPosition)
             }
 
+            // Add column lines
             for (column in 1..columnCount) {
                 val xPosition = column * tileSize
-//                g.fillRect(xPosition, yPosition, tileSize, tileSize)
                 g.strokeLine(xPosition, 0.0, xPosition, gridHeight)
-//                g.fillArc(xPosition, 0.0, 0.0, gridHeight, 0.0, 0.0, ArcType.CHORD)
-                //                    g.clearRect(xPosition, yPosition, layoutWidth, layoutHeight)
-                //                    g.fill = Color.RED
             }
 
+            // Add blocked cells
             g.fill = Color.BLACK
             for (cell in mapInfo.blockedCells) {
                 g.fillRect(cell.x.toDouble() * tileSize, cell.y.toDouble() * tileSize, tileSize, tileSize)
             }
 
+            // Add goal cells
             g.fill = Color.BLUE
             val radius = tileSize / 10.0
             val diameter = radius * 2
@@ -95,7 +97,6 @@ class VacuumGrid(val rowCount: Int, val columnCount: Int, val tileSize: Double, 
 
                 g.fillOval(dirtyLocX, dirtyLocY, diameter, diameter)
             }
-
         }
     }
 }
