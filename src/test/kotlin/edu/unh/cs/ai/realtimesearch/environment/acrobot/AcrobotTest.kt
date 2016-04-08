@@ -26,7 +26,7 @@ class AcrobotTest {
     @Test
     fun testGoalHeuristic() {
         val acrobot = Acrobot()
-        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val (endStateLowerBound, endStateUpperBound) = Acrobot.getBoundStates(acrobot.configuration.endState, acrobot.configuration)
         val heuristic1 = acrobot.heuristic(endStateLowerBound)
         val heuristic2 = acrobot.heuristic(endStateUpperBound)
         val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.link1.position, acrobot.configuration.endState.link2.position, 0.0, 0.0))
@@ -39,7 +39,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic1() {
         val acrobot = Acrobot()
-        val endStateBounds = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val endStateBounds = Acrobot.getBoundStates(acrobot.configuration.endState, acrobot.configuration)
         val heuristic = acrobot.heuristic(endStateBounds.lowerBound - AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
 
         assertTrue { heuristic > 0.0 }
@@ -48,7 +48,7 @@ class AcrobotTest {
     @Test
     fun testHeuristic2() {
         val acrobot = Acrobot()
-        val endStateBounds = Acrobot.getBoundStates(acrobot.getGoal(), acrobot.configuration)
+        val endStateBounds = Acrobot.getBoundStates(acrobot.configuration.endState, acrobot.configuration)
         val heuristic = acrobot.heuristic(endStateBounds.upperBound + AcrobotState(acrobot.configuration.stateConfiguration.positionGranularity1, 0.0, 0.0, 0.0))
         assertTrue { heuristic > 0.0 }
     }
@@ -70,7 +70,7 @@ class AcrobotTest {
         val state2 = endStateBounds.upperBound - AcrobotState(AcrobotLink(acrobot.configuration.endLink1UpperBound.position / 2, acrobot.configuration.endLink1UpperBound.velocity), acrobot.configuration.endState.link2)
 
         assertTrue { acrobot.isGoal(acrobot.configuration.endState) }
-        assertTrue { acrobot.isGoal(acrobot.getGoal()) }
+        assertTrue { acrobot.isGoal(acrobot.getGoal().first()) }
         assertTrue { acrobot.isGoal(endStateBounds.upperBound) }
         assertTrue { acrobot.isGoal(endStateBounds.lowerBound) }
         assertFalse { acrobot.isGoal(acrobot.configuration.initialState) }

@@ -85,8 +85,11 @@ def save_plot(plot, filename):
         plot.savefig(filename)
 
 
-def plot_gat_bars(data, labels):
+def plot_gat_bars(data, labels, title=""):
     y = data
+    if not y:  # empty
+        print("No data provided to plotutills.plot_gat_boxplots")
+        return
     x = np.arange(1, len(y) + 1)
     med, med_confidence_interval_low, med_confidence_interval_high = median_confidence_intervals(y)
     mean, mean_confidence_interval_low, mean_confidence_interval_high = mean_confidence_intervals(y)
@@ -98,9 +101,9 @@ def plot_gat_bars(data, labels):
                          yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
 
     # Set labels
-    # axis.set_title(plotutils.translate_domain_name(domain) + "-" + instance)
-    # axis.set_ylabel("Goal Achievement Time (ms)")
-    # axis.set_xlabel("Algorithms")
+    plt.title(title)
+    plt.ylabel("Goal Achievement Time (ms)")
+    plt.xlabel("Algorithms")
     axis.set_xticks(x + width)
     axis.set_xticklabels(labels)
     axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
@@ -118,10 +121,14 @@ def plot_gat_bars(data, labels):
 
     autolabel(med_bars)
     autolabel(mean_bars)
+    plt.gcf().tight_layout()
 
 
-def plot_gat_boxplots(data, labels, showviolin=False):
+def plot_gat_boxplots(data, labels, title="", showviolin=False):
     y = data
+    if not y:  # empty
+        print("No data provided to plotutills.plot_gat_boxplots")
+        return
     med, confidence_interval_low, confidence_interval_high = median_confidence_intervals(y)
 
     plt.boxplot(y, notch=False, labels=labels)
@@ -131,18 +138,25 @@ def plot_gat_boxplots(data, labels, showviolin=False):
                  linewidth=3)
 
     if showviolin:
-        mean, mean_confidence_interval_low, mean_confidence_interval_high = plotutils.mean_confidence_intervals(y)
+        mean, mean_confidence_interval_low, mean_confidence_interval_high = mean_confidence_intervals(y)
         plt.violinplot(y, showmeans=True, showmedians=True)
         plt.errorbar(x, mean, yerr=(mean_confidence_interval_low, mean_confidence_interval_high), fmt='none',
                      linewidth=3, color='g')
 
+    plt.title(title)
+    plt.ylabel("Goal Achievement Time (ms)")
+    plt.xlabel("Algorithms")
+
     ymin, ymax = plt.ylim()
     plt.ylim(ymin - 0.1, ymax + 0.1)
+    plt.gcf().tight_layout()
 
 
 # TODO add factor A*
-def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations):  # algorithms, domain, instance
+def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations, title=""):
     astar_gat_per_duration = astar_data
+    if not astar_gat_per_duration:  # empty
+        print("No data for A*")
     astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
         mean_confidence_intervals(astar_gat_per_duration)
     x_astar = np.arange(1, len(astar_gat_per_duration_means) + 1)
@@ -163,7 +177,17 @@ def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations)
     # Set labels
     plt.legend()
     plt.xticks(x_astar, reversed(action_durations))
+    plt.title(title)
+    plt.ylabel("GAT log10")
+    plt.xlabel("Action Duration (ms)")
 
     # Adjust x limits so end errors are visible
     xmin, xmax = plt.xlim()
     plt.xlim(xmin - 0.1, xmax + 0.1)
+
+    # Set ylims so we aren't at the top of the graph space for even data
+    low = min(min(y))
+    high = max(max(y))
+    plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
+
+    plt.gcf().tight_layout()

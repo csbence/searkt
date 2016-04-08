@@ -28,11 +28,15 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        val map = "input/acrobot/default_0.07-0.07.ab"
+
+//        val map = "input/racetrack/bigger-track.track"
+        val map = "input/pointrobot/wall.pr"
+//        val map = "input/vacuum/big-squiggle.vw"
+//        val map = "input/acrobot/default_0.07-0.07.ab"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.ACROBOT.toString(),
+                Domains.POINT_ROBOT_WITH_INERTIA.toString(),
                 rawDomain,
                 Planners.A_STAR.toString(),
                 "time")
@@ -63,9 +67,9 @@ fun main(args: Array<String>) {
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-        //        logger.info(result.toIndentedJson())
+                logger.info(result.toIndentedJson())
 
-//        runVisualizer(result)
+        runVisualizer(result)
     }
 }
 

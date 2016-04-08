@@ -45,6 +45,9 @@ fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutabl
         Domains.POINT_ROBOT -> {
             Application.launch(PointVisualizer::class.java, *params.toTypedArray())
         }
+        Domains.POINT_ROBOT_LOST -> {
+            Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        }
         Domains.POINT_ROBOT_WITH_INERTIA -> {
             Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
         }
