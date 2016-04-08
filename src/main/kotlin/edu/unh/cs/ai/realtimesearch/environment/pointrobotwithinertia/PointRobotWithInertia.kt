@@ -12,6 +12,8 @@ import java.util.*
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
                             val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotWithInertiaState> {
 
+    val numAction = 3; // total number of accelerations avaliable in one direction
+    val fractions = 1; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
@@ -20,13 +22,17 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         //            for (itY in 0..4) {
         //                var xDoubleDot = ((itX) - 2.0) / 4.0;
         //                var yDoubleDot = ((itY) - 2.0) / 4.0;
-        for (itX in 0..2) {
-            for (itY in 0..2) {
-                var xDoubleDot = (itX) - 1.0;
-                var yDoubleDot = (itY) - 1.0;
-                //                                println("" + xDoubleDot + " " + yDoubleDot)
+        var itX = 0;
+        while (itX < numAction) {
+            var itY = 0;
+            while (itY < numAction) {
+                var xDoubleDot = ((itX) - ((numAction - (1.0)) / 2)) / fractions;
+                var yDoubleDot = ((itY) - ((numAction - (1.0)) / 2)) / fractions;
+                println("" + xDoubleDot + " " + yDoubleDot)
                 actions.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
+                itY++
             }
+            itX++
         }
         return actions
     }
@@ -35,6 +41,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         // to return
         val successors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = arrayListOf()
 
+//        println(state)
         for (it in actions) {
             val nSteps = 100
             val dt = 1.0 / nSteps
@@ -58,6 +65,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
             if (valid) {
                 //                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
+//                println("\t" + PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot))
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
