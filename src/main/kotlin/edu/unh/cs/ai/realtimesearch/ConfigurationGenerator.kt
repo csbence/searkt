@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
-val actionDurations = listOf(10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 val lookaheadLimits = 1..6
 
 fun main(args: Array<String>) {
