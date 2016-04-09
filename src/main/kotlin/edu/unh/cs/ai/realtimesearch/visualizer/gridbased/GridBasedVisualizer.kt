@@ -38,6 +38,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     protected var tileWidth = 0.0
     protected var tileHeight = 0.0
     protected var tileSize = 0.0
+    open protected var robotScale = 2.0
 
     init {
         gridOptions.addOption(trackerOption)
@@ -105,7 +106,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
      * from the results as strings then the implementing visualizer should override this method.  GridBasedVisualizer
      * will call this method after calling {@link BaseVisualizer#processCommandLine).
      */
-    protected fun parseActions(): MutableList<String> {
+    open protected fun parseActions(): MutableList<String> {
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
         for (action in experimentResult!!.actions) {
@@ -133,12 +134,12 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         }
 
         // Calculate robot parameters
-        val robotWidth = tileSize / 2.0
+        val robotWidth = tileSize / robotScale
         val robotStartX = mapInfo.startCells.first().x
         val robotStartY = mapInfo.startCells.first().y
         val robotLocationX = robotStartX * tileSize + ((tileSize) / 2.0)
         val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
-println(showTracker)
+
         // Robot setup
         robotView = RobotView(robotWidth)
         robotView.trackingEnabled = showTracker

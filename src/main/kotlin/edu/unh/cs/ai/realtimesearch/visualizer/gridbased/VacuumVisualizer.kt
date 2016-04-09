@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -18,12 +20,14 @@ import javafx.util.Duration
  * Created by Stephen on 2/11/16.
  */
 class VacuumVisualizer : GridBasedVisualizer() {
+    var isARAStar = false
     var moveRobot = true
-    var arastarXOriginal = 0.0
-    var arastarYOriginal = 0.0
-    var arastarX = 0.0
-    var arastarY = 0.0
-    var count = 0
+    var araStarXOriginal = 0.0
+    var araStarYOriginal = 0.0
+    var araStarX = 0.0
+    var araStarY = 0.0
+    var count = 0L
+    var anytimeMaxCount = 3L
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -34,28 +38,33 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        val isARAStar = false
-        if (isARAStar)
+        isARAStar = experimentResult!!.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
+        if (isARAStar) {
             moveRobot = false
+            anytimeMaxCount = experimentResult!!.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
+            araStarXOriginal = robotView.robot.x
+            araStarYOriginal = robotView.robot.y
+            araStarX = robotView.robot.x
+            araStarY = robotView.robot.y
+        }
 
         primaryStage.title = "RTS Visualizer"
         primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, Color.LIGHTSLATEGRAY)
         primaryStage.show()
 
+        val path = buildAnimation()
 
-        //path.elements.add(MoveTo(xLoc, yLoc))
-        //path.stroke = Color.ORANGE
-        if (isARAStar) {
-            arastarXOriginal = robotView.robot.x
-            arastarYOriginal = robotView.robot.y
-            arastarX = robotView.robot.x
-            arastarY = robotView.robot.y
-        }
-
-        /* Display the path */
-        //if(DISPLAY_LINE)
-        //root.children.add(path)
-
+        /* Animate the robot */
+        val pathTransition = PathTransition()
+        pathTransition.duration = Duration.millis(timeToRun)
+        pathTransition.path = path
+        pathTransition.node = robotView.robot
+        pathTransition.interpolator = Interpolator.LINEAR
+        pathTransition.cycleCount = Timeline.INDEFINITE
+        pathTransition.play()
+    }
+    
+    private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
         val p = Path()
@@ -67,26 +76,26 @@ class VacuumVisualizer : GridBasedVisualizer() {
         for (action in actionList) {
             val path = paths[pIndex]
 
-            if (action.contains(".")) {
-                arastarX = arastarXOriginal
-                arastarY = arastarYOriginal
+            if (isARAStar && action.contains(".")) {
+                araStarX = araStarXOriginal
+                araStarY = araStarYOriginal
                 //path.stroke = Color.RED
 
                 val newPath = Path()
                 //println("" + arastarX + " " + arastarY)
-                newPath.elements.add(MoveTo(arastarX, arastarY))
+                newPath.elements.add(MoveTo(araStarX, araStarY))
                 paths.add(newPath)
                 pIndex++
-                count = 0;
+                count = 0
             } else if (!action.equals("UP")
                     && !action.equals("DOWN")
                     && !action.equals("LEFT")
                     && !action.equals("RIGHT")) {
                 //                println(action)
                 moveRobot = true
-                val newP = Path()
-                newP.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
-                paths.add(newP)
+                val newPath = Path()
+                newPath.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
+                paths.add(newPath)
                 pIndex++
             } else {
                 //println(action)
@@ -94,9 +103,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
             }
         }
 
+        /* Display the path */
         //for(it in paths) {
         if (displayLine) {
             grid.children.add(paths[pIndex])
+            paths[pIndex].stroke = Color.RED
         }
         //}
 
@@ -113,31 +124,22 @@ class VacuumVisualizer : GridBasedVisualizer() {
         //            paths.get(9).stroke = Color.PLUM
         //        }
 
-        paths[pIndex].stroke = Color.RED
-
-        /* Animate the robot */
-        val pathTransition = PathTransition()
-        pathTransition.duration = Duration.millis(timeToRun)
-        pathTransition.path = paths[pIndex]
-        pathTransition.node = robotView.robot
-        pathTransition.interpolator = Interpolator.LINEAR
-        pathTransition.cycleCount = Timeline.INDEFINITE
-        pathTransition.play()
+        return paths[pIndex]
     }
 
     private fun animate(action: String, path: Path, robot: Shape, width: Double, height: Double) {
         //path.elements.add(MoveTo(arastarX, arastarY))
-        count++;
+        count++
         when (action) {
             "UP" -> {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY + height))
                     robot.translateY = robot.translateY + height
-                } else {
-                    path.elements.add(LineTo(arastarX, arastarY + height))
-                    arastarY += height
-                    if (count <= 3) {
-                        arastarYOriginal = arastarY
+                } else if (isARAStar) {
+                    path.elements.add(LineTo(araStarX, araStarY + height))
+                    araStarY += height
+                    if (count <= anytimeMaxCount) {
+                        araStarYOriginal = araStarY
                     }
                 }
             }
@@ -145,11 +147,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX + width, robot.translateY))
                     robot.translateX = robot.translateX + width
-                } else {
-                    path.elements.add(LineTo(arastarX + width, arastarY))
-                    arastarX += width
-                    if (count <= 3) {
-                        arastarXOriginal = arastarX
+                } else if (isARAStar) {
+                    path.elements.add(LineTo(araStarX + width, araStarY))
+                    araStarX += width
+                    if (count <= anytimeMaxCount) {
+                        araStarXOriginal = araStarX
                     }
                 }
             }
@@ -157,11 +159,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY - height))
                     robot.translateY = robot.translateY - height
-                } else {
-                    path.elements.add(LineTo(arastarX, arastarY - height))
-                    arastarY -= height
-                    if (count <= 3) {
-                        arastarYOriginal = arastarY
+                } else if (isARAStar) {
+                    path.elements.add(LineTo(araStarX, araStarY - height))
+                    araStarY -= height
+                    if (count <= anytimeMaxCount) {
+                        araStarYOriginal = araStarY
                     }
                 }
             }
@@ -169,11 +171,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX - width, robot.translateY))
                     robot.translateX = robot.translateX - width
-                } else {
-                    path.elements.add(LineTo(arastarX - width, arastarY))
-                    arastarX -= width
-                    if (count <= 3) {
-                        arastarXOriginal = arastarX
+                } else if (isARAStar) {
+                    path.elements.add(LineTo(araStarX - width, araStarY))
+                    araStarX -= width
+                    if (count <= anytimeMaxCount) {
+                        araStarXOriginal = araStarX
                     }
                 }
             }
