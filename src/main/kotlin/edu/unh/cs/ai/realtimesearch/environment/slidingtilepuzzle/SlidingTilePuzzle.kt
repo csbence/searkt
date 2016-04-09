@@ -78,7 +78,5 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         throw UnsupportedOperationException()
     }
 
-    override fun predecessors(state: SlidingTilePuzzle4State): List<SuccessorBundle<SlidingTilePuzzle4State>> {
-        throw UnsupportedOperationException()
-    }
+    override fun predecessors(state: SlidingTilePuzzle4State) = successors(state)
 }
