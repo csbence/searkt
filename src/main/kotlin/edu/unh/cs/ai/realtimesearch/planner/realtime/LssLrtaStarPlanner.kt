@@ -8,6 +8,8 @@ import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -31,10 +33,17 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var open: Boolean = false,
-                                             parent: Node<StateType>? = null) {
+                                             parent: Node<StateType>? = null) : Indexable {
 
+        /** Item index in the open list. */
+        override var index: Int = -1
+
+        /** Nodes that generated this Node as a successor in the current exploration phase. */
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
+
+        /** Parent pointer that points to the min cost predecessor. */
         var parent: Node<StateType>
+
         val f: Double
             get() = cost + heuristic
 
@@ -86,11 +95,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
-    //    private val closedList: HashSet<Node<StateType>> = HashSet<Node<StateType>>(100000).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<Node<StateType>>(fValueComparator)
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fValueComparator)
 
     private var rootState: StateType? = null
 
@@ -100,6 +108,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         get
     var dijkstraTimer = 0L
         get
+
 
     /**
      * Prepares LSS for a completely unrelated new search. Sets mode to init
@@ -208,7 +217,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         clearOpenList()
         //        closedList.clear() XXX
 
-        reorderOpenListBy(fValueComparator)
+        openList.reorder(fValueComparator)
     }
 
     /**
@@ -263,7 +272,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 if (!successorNode.open) {
                     addToOpenList(successorNode) // Fresh node not on the open yet
                 } else {
-                    // TODO fix open heap property after update
+                    openList.update(successorNode)
                 }
             } else {
                 logger.trace {
@@ -320,7 +329,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         iterationCounter++
 
         // change openList ordering to heuristic only`
-        reorderOpenListBy(heuristicComparator)
+        openList.reorder(heuristicComparator)
 
         // LSS-LRTA addition
         //        openList.toTypedArray().forEach {
@@ -345,10 +354,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
 
                 // Update if the node is outdated
-//                if (predecessorNode.iteration != iterationCounter) {
-//                    predecessorNode.heuristic = Double.POSITIVE_INFINITY
-//                    predecessorNode.iteration = iterationCounter
-//                }
+                //                if (predecessorNode.iteration != iterationCounter) {
+                //                    predecessorNode.heuristic = Double.POSITIVE_INFINITY
+                //                    predecessorNode.iteration = iterationCounter
+                //                }
 
                 val predecessorHeuristicValue = predecessorNode.heuristic
 
@@ -366,9 +375,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 } else if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
                     // This node was visited in this learning phase, but the current path is better then the previous
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
-                    assert(predecessorNode.iteration == iterationCounter)
+                    openList.update(predecessorNode) // Update priority
 
-                    // It is already on open but its value changed TODO
+                    assert(predecessorNode.iteration == iterationCounter)
                 }
             }
         }
@@ -407,15 +416,16 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.forEach { it.open = false }
+        for (it in openList.backingArray) {
+            if (it != null) {
+                it.open = false
+            }
+        }
         openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
-        if (openList.isEmpty()) {
-            throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        }
-        val node = openList.remove()
+        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
         node.open = false
         return node
     }
@@ -425,14 +435,4 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         node.open = true
     }
 
-    private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
-        val tempOpenList = openList.toTypedArray() // O(1)
-        if (tempOpenList.size >= 1) {
-            openList = PriorityQueue<Node<StateType>>(tempOpenList.size, comparator) // O(1)
-        } else {
-            openList = PriorityQueue<Node<StateType>>(comparator) // O(1)
-        }
-
-        openList.addAll(tempOpenList) // O(n * log(n))
-    }
 }
