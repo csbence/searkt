@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobot
 
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTState
 import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
