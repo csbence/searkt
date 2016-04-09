@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.util.*
 
@@ -80,19 +82,23 @@ class RealTimeSearchClient(val url: String) {
      * @return ExperimentConfiguration if available, else null.
      */
     fun getExperimentConfiguration(): GeneralExperimentConfiguration? {
-        val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.GET, HttpEntity(ClientInformation(systemProperties)), ExperimentData::class.java)
-        return if (responseEntity.statusCode == HttpStatus.OK) {
-            logger.info("Get configuration: successful")
-            if (responseEntity?.body?.valueStore != null) {
-                GeneralExperimentConfiguration(responseEntity.body.valueStore)
+        try {
+            val responseEntity = restTemplate.exchange("$url/configuration/$connectionId", HttpMethod.GET, HttpEntity(ClientInformation(systemProperties)), ExperimentData::class.java)
+            return if (responseEntity.statusCode == HttpStatus.OK) {
+                logger.info("Get configuration: successful")
+                val valueStore = responseEntity?.body?.valueStore ?: return null
+                return GeneralExperimentConfiguration(valueStore)
+
             } else {
+                logger.warn("Get configuration: failed")
                 null
             }
 
-        } else {
-            logger.warn("Get configuration: failed")
-            null
+        } catch(e: RestClientException) {
+            logger.error("Get configuration: failed", e)
         }
+
+        return null
     }
 
     /**
@@ -103,14 +109,21 @@ class RealTimeSearchClient(val url: String) {
     fun submitResult(experimentResult: ExperimentResult): Boolean {
         cleanUpResult(experimentResult)
 
-        val responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(experimentResult), Nothing::class.java)
-        return if (responseEntity.statusCode == HttpStatus.OK) {
-            logger.info("Submit result: successful")
-            true
-        } else {
-            logger.warn("Submit result: failed")
-            false
+        val responseEntity: ResponseEntity<Nothing>?
+        try {
+            responseEntity = restTemplate.exchange("$url/result/$connectionId", HttpMethod.POST, HttpEntity(experimentResult), Nothing::class.java)
+            return if (responseEntity.statusCode == HttpStatus.OK) {
+                logger.info("Submit result: successful")
+                true
+            } else {
+                logger.warn("Submit result: failed")
+                false
+            }
+        } catch(e: RestClientException) {
+            logger.error("Submit result: failed", e)
         }
+
+        return false
     }
 
     private fun cleanUpResult(experimentResult: ExperimentResult) {
