@@ -287,7 +287,6 @@ def plot_all_for_domain(db, domain, instances):
         plt.clf()
 
 
-
 def get_all_grid_world_instances():
     instances = []
     for instance in all_dylan_instances:

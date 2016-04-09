@@ -22,6 +22,7 @@ class Input
 
 private var manualConfiguration: GeneralExperimentConfiguration = GeneralExperimentConfiguration()
 private var outFile: String = ""
+private val visualizerParameters = mutableListOf<String>()
 
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
@@ -49,6 +50,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
+        visualizerParameters.add("--path")
+        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
@@ -67,9 +70,11 @@ fun main(args: Array<String>) {
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-                logger.info(result.toIndentedJson())
+        logger.info("Path Length: ${result.pathLength}")
+        logger.info("Generated Nodes: ${result.generatedNodes}, Expanded Nodes ${result.expandedNodes}")
+        //        logger.info(result.toIndentedJson())
 
-        runVisualizer(result)
+        runVisualizer(result, visualizerParameters)
     }
 }
 
@@ -105,6 +110,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     val terminationTypeOption = Option("t", "term-type", true, "The termination type")
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
     val extraOption = Option ("e", "extra", true, "Extra configuration option key/value pairs")
+    val visualizerOption = Option ("v", "visualizer", true, "Visualizer configuration key/value pairs")
 
     // Configuration file options
     val fileOptionGroup = OptionGroup()
@@ -129,6 +135,7 @@ private fun createCommandLineMenu(args: Array<String>) {
     separateOptions.addOption(terminationTypeOption)
     separateOptions.addOption(outFileOption)
     separateOptions.addOption(extraOption)
+    separateOptions.addOption(visualizerOption)
 
     // File options
     fileOptions.addOptionGroup(fileOptionGroup)
@@ -168,6 +175,7 @@ private fun createCommandLineMenu(args: Array<String>) {
         val termType = separateCmd.getOptionValue(terminationTypeOption.opt)
         outFile = separateCmd.getOptionValue(outFileOption.opt, "")
         val extras = separateCmd.getOptionValues(extraOption.opt)
+        val visualizerArgs = separateCmd.getOptionValues(visualizerOption.opt)
 
         /* run the experiment */
         val rawDomain = File(mapFile).readText()
@@ -199,6 +207,21 @@ private fun createCommandLineMenu(args: Array<String>) {
                 }
             } else {
                 manualConfiguration[key] = value
+            }
+        }
+
+        if (visualizerArgs != null) {
+            for (arg in visualizerArgs) {
+                val values = arg.split('=', limit = 2)
+                if (values.size != 2) {
+                    visualizerParameters.add("--$arg")
+                } else {
+                    var key: String = values[0]
+                    val value = values[1]
+
+                    visualizerParameters.add("--$key")
+                    visualizerParameters.add(value)
+                }
             }
         }
     }

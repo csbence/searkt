@@ -14,16 +14,15 @@ class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     private val TRACKER_SCALE = 4.0
     val robot = Rectangle(width, width, Color.ORANGE)
     val tracker = Circle(width * TRACKER_SCALE, Color.YELLOW)
-    var trackingEnabled: Boolean = false
+    var trackingEnabled: Boolean
         set(value) {
-            field = value
+            tracker.isVisible = value
             relocateTracker()
-            tracker.isVisible = true
         }
+        get() = tracker.isVisible
 
     init {
-        if (!trackingEnabled)
-            tracker.isVisible = false
+        trackingEnabled = false
 
         tracker.translateXProperty().bind(robot.translateXProperty())
         tracker.translateYProperty().bind(robot.translateYProperty())
@@ -32,6 +31,10 @@ class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
 
         if (tracker.radius < minimumTrackerRadius)
             tracker.radius = minimumTrackerRadius
+    }
+
+    companion object {
+        val ZERO = RobotView(0.0, 0.0)
     }
 
     fun toFront() {
