@@ -5,6 +5,7 @@ import numpy as np
 import os
 import re
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.font_manager import FontProperties
 from scipy import stats
 
 
@@ -33,6 +34,9 @@ def translate_algorithm_name(alg_name):
     # Specific word formatting
     alg_name = alg_name.replace('DYNAMIC', 'Dynamic')
     alg_name = alg_name.replace('WEIGHTED', 'Weighted')
+    alg_name = alg_name.replace('STATIC', 'Static')
+    alg_name = alg_name.replace('MULTIPLE', 'Mutliple')
+    alg_name = alg_name.replace('SINGLE', 'Single')
     alg_name = alg_name.replace('LSS_', 'LSS-')
     # Handle star (*) names
     alg_name = alg_name.replace('_STAR', '*')
@@ -67,11 +71,25 @@ def median_confidence_intervals(data):
 def mean_confidence_intervals(data):
     if not data:  # empty
         return [0], [0], [0]
-    means = np.nan_to_num([np.mean(x) for x in data])
+
+    means = [np.mean(x) for x in data]
+    safe_means = np.nan_to_num(means)
+
     std = np.nan_to_num([stats.sem(x) if len(x) > 1 else 0.0 for x in data])
-    confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=means, scale=std)
+    confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=safe_means, scale=std)
     confidence_intervals = [np.nan_to_num(ci) for ci in confidence_intervals]
     return means, means - confidence_intervals[0], confidence_intervals[1] - means
+
+
+def save_plot_with_outer_legend(plot, filename, lgd):
+    basename, ext = os.path.splitext(filename)
+    if ext is '.pdf':
+        pp = PdfPages(filename)
+        plot.savefig(pp, format='pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        pp.close()
+    else:
+        # Try and save it
+        plot.savefig(filename, bbox_inches='tight', bbox_extra_artists=(lgd,))
 
 
 def save_plot(plot, filename):
@@ -106,7 +124,9 @@ def plot_gat_bars(data, labels, title=""):
     plt.xlabel("Algorithms")
     axis.set_xticks(x + width)
     axis.set_xticklabels(labels)
-    axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
+    if len(x) > 4:
+        plt.xticks(rotation='vertical')
+    lgd = axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
 
     # Set ylims so we aren't at the top of the graph space for even data
     low = min(min(y))
@@ -119,9 +139,11 @@ def plot_gat_bars(data, labels, title=""):
             height = rect.get_height()
             axis.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
 
-    autolabel(med_bars)
-    autolabel(mean_bars)
+    # autolabel(med_bars)
+    # autolabel(mean_bars)
     plt.gcf().tight_layout()
+
+    return lgd
 
 
 def plot_gat_boxplots(data, labels, title="", showviolin=False):
@@ -146,6 +168,8 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
     plt.title(title)
     plt.ylabel("Goal Achievement Time (ms)")
     plt.xlabel("Algorithms")
+    if len(x) > 4:
+        plt.xticks(rotation='vertical')
 
     ymin, ymax = plt.ylim()
     plt.ylim(ymin - 0.1, ymax + 0.1)
@@ -153,36 +177,38 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
 
 
 # TODO add factor A*
-def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations, title=""):
+def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     handles = []
     astar_gat_per_duration = astar_data
     if not astar_gat_per_duration:  # empty
         print("No data for A*")
-    astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
-        mean_confidence_intervals(astar_gat_per_duration)
-    x_astar = np.arange(1, len(astar_gat_per_duration_means) + 1)
+    # astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
+    #     mean_confidence_intervals(astar_gat_per_duration)
+    x = np.arange(1, len(action_durations) + 1)
 
     # Plot for each provided algorithm
-    for algorithm in algorithms:
-        algorithm_gat_per_duration = data_dict[algorithm]
+    for algorithm, algorithm_gat_per_duration in data_dict.items():
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
             continue
-        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
+        # algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
-        x = np.arange(1, len(algorithm_gat_per_duration_mean) + 1)
-        handle = plt.errorbar(x, algorithm_gat_per_duration_mean,
+        data_mask = np.isfinite(algorithm_gat_per_duration_mean)
+        handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
                               label=translate_algorithm_name(algorithm),
-                              yerr=(algorithm_confidence_interval_low, algorithm_confidence_interval_high))
-        handles.append((handle, algorithm, np.mean(algorithm_gat_per_duration_mean)))
+                              yerr=(algorithm_confidence_interval_low[data_mask], algorithm_confidence_interval_high[data_mask]))
+        handles.append((handle, translate_algorithm_name(algorithm), np.mean(algorithm_gat_per_duration_mean)))
 
     # Set labels
     handles = sorted(handles, key=lambda handle: handle[2], reverse=True)
     ordered_handles = [a[0] for a in handles]
     ordered_labels = [a[1] for a in handles]
-    plt.legend(handles=ordered_handles, labels=ordered_labels)
-    plt.xticks(x_astar, reversed(action_durations))
+    font_properties = FontProperties()
+    font_properties.set_size('small')
+    lgd = plt.legend(handles=ordered_handles, labels=ordered_labels, prop=font_properties, loc="upper center",
+                     bbox_to_anchor=(0.5, -0.1), ncol=2)
+    plt.xticks(x, action_durations)
     plt.title(title)
     plt.ylabel("GAT log10")
     plt.xlabel("Action Duration (ms)")
@@ -192,3 +218,5 @@ def plot_gat_duration_error(data_dict, astar_data, algorithms, action_durations,
     plt.xlim(xmin - 0.1, xmax + 0.1)
 
     plt.gcf().tight_layout()
+
+    return lgd
