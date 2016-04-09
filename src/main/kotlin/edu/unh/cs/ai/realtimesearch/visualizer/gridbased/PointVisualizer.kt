@@ -9,7 +9,10 @@ import javafx.animation.Timeline
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
-import javafx.scene.shape.*
+import javafx.scene.shape.Circle
+import javafx.scene.shape.LineTo
+import javafx.scene.shape.MoveTo
+import javafx.scene.shape.Path
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.*
@@ -84,17 +87,17 @@ class PointVisualizer : GridBasedVisualizer() {
         if (displayLine)
             grid.children.add(path)
 
-        val sq = SequentialTransition()
-        var count = 0
-        while (count != actionList.size) {
-            val x = actionList[count]
-            val y = actionList[count + 1]
-            var pathTransition = animate(grid, x, y, displayLine, robotView.robot, tileSize)
-            sq.children.add(pathTransition)
-            count += 2
+        val sequentialTransition = SequentialTransition()
+        var actionIndex = 0
+        while (actionIndex != actionList.size) {
+            val x = actionList[actionIndex]
+            val y = actionList[actionIndex + 1]
+            var pathTransition = animate(grid, x, y)
+            sequentialTransition.children.add(pathTransition)
+            actionIndex += 2
         }
-        sq.cycleCount = Timeline.INDEFINITE
-        sq.play()
+        sequentialTransition.cycleCount = Timeline.INDEFINITE
+        sequentialTransition.play()
     }
 
     private fun buildAnimation(): Path {
@@ -105,8 +108,10 @@ class PointVisualizer : GridBasedVisualizer() {
         return path
     }
 
-    private fun animate(root: Pane, x: String, y: String, displayLine: Boolean, robot: Rectangle, width: Double): PathTransition {
+    private fun animate(root: Pane, x: String, y: String): PathTransition {
         val path = Path()
+        val robot = robotView.robot
+        val width = tileSize
 
         val xDot = x.toDouble() * width
         val yDot = y.toDouble() * width

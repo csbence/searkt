@@ -12,7 +12,6 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
-import javafx.scene.shape.Shape
 import javafx.stage.Stage
 import javafx.util.Duration
 
@@ -63,7 +62,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
         pathTransition.cycleCount = Timeline.INDEFINITE
         pathTransition.play()
     }
-    
+
     private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
@@ -99,7 +98,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 pIndex++
             } else {
                 //println(action)
-                animate(action, path, robotView.robot, tileSize, tileSize)
+                animate(action, path)
             }
         }
 
@@ -127,8 +126,10 @@ class VacuumVisualizer : GridBasedVisualizer() {
         return paths[pIndex]
     }
 
-    private fun animate(action: String, path: Path, robot: Shape, width: Double, height: Double) {
-        //path.elements.add(MoveTo(arastarX, arastarY))
+    private fun animate(action: String, path: Path) {
+        val robot = robotView.robot
+        val width = tileSize
+        val height = tileSize
         count++
         when (action) {
             "UP" -> {
