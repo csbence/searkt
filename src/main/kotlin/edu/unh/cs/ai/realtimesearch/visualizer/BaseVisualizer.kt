@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.visualizer
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import groovyjarjarcommonscli.*
@@ -10,6 +11,7 @@ import kotlin.system.exitProcess
 
 abstract class BaseVisualizer : Application() {
     protected var experimentResult: ExperimentResult? = null
+    protected var rawDomain: String = ""
 
     /**
      * Process commandline arguments.
@@ -45,6 +47,8 @@ abstract class BaseVisualizer : Application() {
 
         if (experimentResult!!.experimentConfiguration["rawDomain"] == null)
             throw InvalidResultException("Visualizer must have raw domain in result")
+
+        rawDomain = experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
         processOptions(cmd)
     }
