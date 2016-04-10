@@ -11,9 +11,9 @@ from scipy import stats
 # These are the "Tableau 20" colors as RGB.
 # http://tableaufriction.blogspot.ro/2012/11/finally-you-can-use-tableau-data-colors.html
 # http://www.randalolson.com/2014/06/28/how-to-make-beautiful-data-visualizations-in-python-with-matplotlib/
-tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
-             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
-             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (148, 103, 189),
+             (44, 160, 44), (140, 86, 75), (214, 39, 40), (255, 152, 150),
+             (255, 187, 120), (197, 176, 213), (152, 223, 138), (196, 156, 148),
              (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
              (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
 
@@ -113,11 +113,11 @@ def save_plot(plot, filename):
     basename, ext = os.path.splitext(filename)
     if ext is '.pdf':
         pp = PdfPages(filename)
-        plot.savefig(pp, format='pdf')
+        plot.savefig(pp, format='pdf', bbox_inches='tight')
         pp.close()
     else:
         # Try and save it
-        plot.savefig(filename)
+        plot.savefig(filename, bbox_inches='tight')
 
 
 def plot_gat_bars(data, labels, title=""):
@@ -220,6 +220,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
 
     # Plot for each provided algorithm
     offset = 0.1
+    index = 0
     for algorithm, algorithm_gat_per_duration in data_dict.items():
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
@@ -228,29 +229,13 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)
-        # handle = plt.plot(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
-        #                   label=translate_algorithm_name(algorithm))[0]
-        # plt.errorbar(x[data_mask] + offset, np.array(algorithm_gat_per_duration_mean)[data_mask] + offset,
-        #                       fmt='none',
-        #                       yerr=(algorithm_confidence_interval_low[data_mask],
-        #                             algorithm_confidence_interval_high[data_mask]))
-        # if all_zero(algorithm_confidence_interval_high) and all_zero(algorithm_confidence_interval_low):
-        #     handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
-        #                           label=translate_algorithm_name(algorithm))
-        # else:
-        #                   label=translate_algorithm_name(algorithm))[0]
-        # print(algorithm)
-        # print(algorithm_gat_per_duration_mean)
-        # print(algorithm_confidence_interval_low)
-        # print(algorithm_confidence_interval_high)
-        # algorithm_confidence_interval_low = np.array([0, 0, 0, 0, 0, 0])
-        # algorithm_confidence_interval_high = algorithm_confidence_interval_low
+
         handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
                               label=translate_algorithm_name(algorithm),
                               yerr=(algorithm_confidence_interval_low[data_mask],
-                                    algorithm_confidence_interval_high[data_mask]))
+                                    algorithm_confidence_interval_high[data_mask]), color=tableau20[index])
         handles.append((handle, translate_algorithm_name(algorithm), np.mean(algorithm_gat_per_duration_mean)))
-        offset += 0.1
+        index += 1
 
     # Set labels, sort legend by mean value
     handles = sorted(handles, key=lambda handle: handle[2], reverse=True)
