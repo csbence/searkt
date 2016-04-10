@@ -8,6 +8,20 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
 from scipy import stats
 
+# These are the "Tableau 20" colors as RGB.
+# http://tableaufriction.blogspot.ro/2012/11/finally-you-can-use-tableau-data-colors.html
+# http://www.randalolson.com/2014/06/28/how-to-make-beautiful-data-visualizations-in-python-with-matplotlib/
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
+             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
+             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
+             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
+             (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+
+# Scale the RGB values to the [0, 1] range, which is the format matplotlib accepts.
+for i in range(len(tableau20)):
+    r, g, b = tableau20[i]
+    tableau20[i] = (r / 255., g / 255., b / 255.)
+
 
 def cnv_ns_to_ms(ns):
     return ns / 1000000.0
@@ -77,8 +91,11 @@ def mean_confidence_intervals(data):
 
     std = np.nan_to_num([stats.sem(x) if len(x) > 1 else 0.0 for x in data])
     confidence_intervals = stats.t.interval(0.95, len(data) - 1, loc=safe_means, scale=std)
-    confidence_intervals = [np.nan_to_num(ci) for ci in confidence_intervals]
-    return means, means - confidence_intervals[0], confidence_intervals[1] - means
+    confidence_intervals_low = np.array(
+        [mean if math.isnan(ci) else ci for mean, ci in zip(means, confidence_intervals[0])])
+    confidence_intervals_high = np.array(
+        [mean if math.isnan(ci) else ci for mean, ci in zip(means, confidence_intervals[1])])
+    return means, means - confidence_intervals_low, confidence_intervals_high - means
 
 
 def save_plot_with_outer_legend(plot, filename, lgd):
@@ -175,6 +192,15 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
     plt.gcf().tight_layout()
 
 
+def all_zero(arr):
+    is_all_zero = True
+    for val in arr:
+        if val != 0:
+            is_all_zero = False
+            break
+    return is_all_zero
+
+
 # TODO add factor A*
 def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     handles = []
@@ -184,6 +210,13 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     # astar_gat_per_duration_means, astar_confidence_interval_low, astar_confidence_interval_high = \
     #     mean_confidence_intervals(astar_gat_per_duration)
     x = np.arange(1, len(action_durations) + 1)
+
+    fig = plt.figure()
+    ax = plt.subplot()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
 
     # Plot for each provided algorithm
     offset = 0.1
@@ -201,7 +234,18 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
         #                       fmt='none',
         #                       yerr=(algorithm_confidence_interval_low[data_mask],
         #                             algorithm_confidence_interval_high[data_mask]))
-        handle = plt.errorbar(x[data_mask] + offset, np.array(algorithm_gat_per_duration_mean)[data_mask],
+        # if all_zero(algorithm_confidence_interval_high) and all_zero(algorithm_confidence_interval_low):
+        #     handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
+        #                           label=translate_algorithm_name(algorithm))
+        # else:
+        #                   label=translate_algorithm_name(algorithm))[0]
+        # print(algorithm)
+        # print(algorithm_gat_per_duration_mean)
+        # print(algorithm_confidence_interval_low)
+        # print(algorithm_confidence_interval_high)
+        # algorithm_confidence_interval_low = np.array([0, 0, 0, 0, 0, 0])
+        # algorithm_confidence_interval_high = algorithm_confidence_interval_low
+        handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
                               label=translate_algorithm_name(algorithm),
                               yerr=(algorithm_confidence_interval_low[data_mask],
                                     algorithm_confidence_interval_high[data_mask]))
@@ -220,6 +264,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     plt.title(title)
     plt.ylabel("GAT log10")
     plt.xlabel("Action Duration (ms)")
+    ax.autoscale(tight=True)
 
     # Adjust x limits so end errors are visible
     xmin, xmax = plt.xlim()
