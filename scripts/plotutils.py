@@ -124,8 +124,7 @@ def plot_gat_bars(data, labels, title=""):
     plt.xlabel("Algorithms")
     axis.set_xticks(x + width)
     axis.set_xticklabels(labels)
-    if len(x) > 4:
-        plt.xticks(rotation='vertical')
+    fig.autofmt_xdate()
     lgd = axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
 
     # Set ylims so we aren't at the top of the graph space for even data
@@ -153,6 +152,7 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
         return
     med, confidence_interval_low, confidence_interval_high = median_confidence_intervals(y)
 
+    fig, axis = plt.subplots()
     plt.boxplot(y, notch=False, labels=labels)
     # Plot separate error bars without line to show median confidence intervals
     x = np.arange(1, len(y) + 1)
@@ -168,8 +168,7 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
     plt.title(title)
     plt.ylabel("Goal Achievement Time (ms)")
     plt.xlabel("Algorithms")
-    if len(x) > 4:
-        plt.xticks(rotation='vertical')
+    fig.autofmt_xdate()
 
     ymin, ymax = plt.ylim()
     plt.ylim(ymin - 0.1, ymax + 0.1)
@@ -187,6 +186,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     x = np.arange(1, len(action_durations) + 1)
 
     # Plot for each provided algorithm
+    offset = 0.1
     for algorithm, algorithm_gat_per_duration in data_dict.items():
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
@@ -195,12 +195,20 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)
-        handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
+        # handle = plt.plot(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
+        #                   label=translate_algorithm_name(algorithm))[0]
+        # plt.errorbar(x[data_mask] + offset, np.array(algorithm_gat_per_duration_mean)[data_mask] + offset,
+        #                       fmt='none',
+        #                       yerr=(algorithm_confidence_interval_low[data_mask],
+        #                             algorithm_confidence_interval_high[data_mask]))
+        handle = plt.errorbar(x[data_mask] + offset, np.array(algorithm_gat_per_duration_mean)[data_mask],
                               label=translate_algorithm_name(algorithm),
-                              yerr=(algorithm_confidence_interval_low[data_mask], algorithm_confidence_interval_high[data_mask]))
+                              yerr=(algorithm_confidence_interval_low[data_mask],
+                                    algorithm_confidence_interval_high[data_mask]))
         handles.append((handle, translate_algorithm_name(algorithm), np.mean(algorithm_gat_per_duration_mean)))
+        offset += 0.1
 
-    # Set labels
+    # Set labels, sort legend by mean value
     handles = sorted(handles, key=lambda handle: handle[2], reverse=True)
     ordered_handles = [a[0] for a in handles]
     ordered_labels = [a[1] for a in handles]

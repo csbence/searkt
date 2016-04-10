@@ -84,7 +84,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResult')
+    result_status = db.command('collstats', 'experimentResultV2')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -113,7 +113,7 @@ def get_realtime_gat_per_duration_data(db, algorithm, domain, instance, commitme
     assert algorithm is "LSS_LRTA_STAR" or algorithm is "DYNAMIC_F_HAT" or algorithm is "RTA_STAR"
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultV2.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -142,7 +142,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultV2.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -160,7 +160,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
 
 
 def get_realtime_gat_data(db, algorithm, domain, instance, action_duration, commitmentStrategy, timeBoundType):
-    data_tiles = db.experimentResult.find({
+    data_tiles = db.experimentResultV2.find({
         "result.experimentConfiguration.domainName": domain,
         "result.experimentConfiguration.algorithmName": algorithm,
         "result.experimentConfiguration.domainInstanceName": instance,
@@ -182,13 +182,13 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
     gat_data = []
     labels = []
     for algorithm in algorithms:
-
+        full_algorithm = algorithm
         algorithm, commitment_strategy, time_bound_type = get_realtime_configuration(algorithm)
         if commitment_strategy is not None and time_bound_type is not None:
-            data = get_realtime_gat_data(db, "LSS_LRTA_STAR", domain, instance, action_duration,
+            data = get_realtime_gat_data(db, algorithm, domain, instance, action_duration,
                                          commitment_strategy, time_bound_type)
         else:
-            data_tiles = db.experimentResult.find({
+            data_tiles = db.experimentResultV2.find({
                 "result.experimentConfiguration.domainName": domain,
                 "result.experimentConfiguration.algorithmName": algorithm,
                 "result.experimentConfiguration.domainInstanceName": instance,
@@ -202,7 +202,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
 
         if data:  # not empty
             gat_data.append(data)
-            labels.append(plotutils.translate_algorithm_name(algorithm))
+            labels.append(plotutils.translate_algorithm_name(full_algorithm))
 
     return gat_data, labels
 
