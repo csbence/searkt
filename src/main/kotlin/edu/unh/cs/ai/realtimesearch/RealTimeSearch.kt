@@ -29,11 +29,11 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-
-//        val map = "input/racetrack/bigger-track.track"
+        //        val map = "input/racetrack/bigger-track.track"
         val map = "input/pointrobot/wall.pr"
-//        val map = "input/vacuum/big-squiggle.vw"
-//        val map = "input/acrobot/default_0.07-0.07.ab"
+        //        val map = "input/vacuum/big-squiggle.vw"
+        //        val map = "input/acrobot/default_0.07-0.07.ab"
+        //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
