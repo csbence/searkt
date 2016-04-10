@@ -21,6 +21,7 @@ import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.system.measureTimeMillis
 
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
@@ -31,10 +32,13 @@ fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     for (domain in Domains.values()) {
-        if (domain == VACUUM_WORLD)
+        if (domain == VACUUM_WORLD || domain == ACROBOT)
             continue
 
         for (planner in Planners.values()) {
+            if (planner == WEIGHTED_A_STAR)
+                continue
+
             for (actionDuration in actionDurations) {
                 // Skip impossible Acrobot configurations
                 if (domain == ACROBOT) {
@@ -279,21 +283,24 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
 
     print("Upload configurations (y/n)? ")
     val input = readLine()
-    when (input?.toLowerCase()) {
-        "y", "yes" -> {
-            try {
-                val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-                if (responseEntity.statusCode == HttpStatus.OK) {
-                    println("Upload completed! ${configurations.size}")
-                } else {
+    val elapsed = measureTimeMillis {
+        when (input?.toLowerCase()) {
+            "y", "yes" -> {
+                try {
+                    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
+                    if (responseEntity.statusCode == HttpStatus.OK) {
+                        println("Upload completed! ${configurations.size}")
+                    } else {
+                        println("Upload failed!")
+                    }
+                } catch (e: RestClientException) {
                     println("Upload failed!")
                 }
-            } catch (e: RestClientException) {
-                println("Upload failed!")
+            }
+            else -> {
+                println("Not uploading")
             }
         }
-        else -> {
-            println("Not uploading")
-        }
     }
+    println("Upload took $elapsed ms")
 }
