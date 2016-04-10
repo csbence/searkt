@@ -70,8 +70,7 @@ fun main(args: Array<String>) {
                             if (actionDuration <= 80000000) {
                                 if (!instance.equals("0.3-0.3"))
                                     continue
-                            }
-                            else if (actionDuration <= 160000000) {
+                            } else if (actionDuration <= 160000000) {
                                 if (instance.equals("0.07-0.07") || instance.equals("0.08-0.08"))
                                     continue
                             }
@@ -116,13 +115,13 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
 
-    val slidingTileHardMaps = listOf(1, 4, 5, 20, 22, 33, 46, 60, 61, 63, 72, 74, 82, 88, 90, 91)
+    //    val slidingTileHardMaps = listOf(1, 4, 5, 20, 22, 33, 46, 60, 61, 63, 72, 74, 82, 88, 90, 91)
     val slidingTileSolvableMaps = listOf(2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25,
             26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50,
             51, 52, 53, 54, 55, 56, 57, 58, 59, 62, 64, 65, 66, 67, 68, 69, 70, 71, 73, 75,
             76, 77, 78, 79, 80, 81, 83, 84, 85, 86, 87, 89, 92, 93, 94, 95, 96, 97, 98, 99, 100)
 
-    val slidingTile25EasyMapNames = listOf(9, 12, 19, 28, 30, 31, 42, 45, 47, 48, 55, 57, 61, 71, 73, 74, 79, 81, 85, 86, 90, 93, 94, 95, 97)
+    //    val slidingTile25EasyMapNames = listOf(9, 12, 19, 28, 30, 31, 42, 45, 47, 48, 55, 57, 61, 71, 73, 74, 79, 81, 85, 86, 90, 93, 94, 95, 97)
     //    val slidingTileEasyMapNames = listOf (5, 6, 8, 9, 12, 13, 19, 20, 23, 28, 30, 31, 34, 38, 39, 42, 45, 46, 47, 48, 51, 55, 57, 58, 61, 62, 65, 71, 73, 74, 77, 78, 79, 81, 85, 86, 90, 93, 94, 95, 96, 97)
 
     when (domain) {
@@ -178,7 +177,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             }
         }
         SLIDING_TILE_PUZZLE_4 -> {
-//            for (instanceName in 1..100) {
+            //            for (instanceName in 1..100) {
             for (instanceName in slidingTileSolvableMaps) {
                 val map = "$slidingTile4MapRoot$instanceName"
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
@@ -196,6 +195,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                         Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
             }
+        }
+        POINT_ROBOT_LOST -> {
+
         }
     }
 
