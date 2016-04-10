@@ -10,7 +10,7 @@ import java.util.*
  * Double Integrator Domain
  */
 class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Location>,
-                     val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotLOSTState> {
+                     val endLocation: DoubleLocation, val goalRadius: Double, val actionDuration: Long) : Domain<PointRobotLOSTState> {
 
     //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()

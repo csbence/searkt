@@ -25,19 +25,19 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
 class RaceTrack(val width: Int,
                 val height: Int,
                 val track: Set<Location>,
-                val finish_line: Set<Location>
-) : Domain<RaceTrackState> {
+                val finish_line: Set<Location>,
+                val actionDuration: Long) : Domain<RaceTrackState> {
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     val maxXSpeed = getXSpeed()
     val maxYSpeed = getYSpeed()
 
-    fun getXSpeed() : Int{
+    fun getXSpeed(): Int {
         var w = 1
         var xSpeed = 0
 
-        while(w <= width){
+        while (w <= width) {
             w += xSpeed
             xSpeed++
         }
@@ -45,11 +45,11 @@ class RaceTrack(val width: Int,
         return xSpeed - 1
     }
 
-    fun getYSpeed() : Int{
+    fun getYSpeed(): Int {
         var h = 1
         var ySpeed = 0
 
-        while(h <= height){
+        while (h <= height) {
             h += ySpeed
             ySpeed++
         }
@@ -107,10 +107,10 @@ class RaceTrack(val width: Int,
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState) : Double{
+    override fun heuristic(state: RaceTrackState): Double {
         var h = distance(state)
-//        return 0.0
-        if(maxXSpeed > maxYSpeed)
+        //        return 0.0
+        if (maxXSpeed > maxYSpeed)
             return h / maxYSpeed
         return h / maxYSpeed
     }
@@ -173,21 +173,18 @@ class RaceTrack(val width: Int,
 
     override fun getGoal(): List<RaceTrackState> {
         val list: MutableList<RaceTrackState> = arrayListOf()
-        for(it in finish_line){
-            for(xS in 0..maxXSpeed){
-                for(yS in 0..maxYSpeed){
-                    if(xS == 0 && yS == 0){
+        for (it in finish_line) {
+            for (xS in 0..maxXSpeed) {
+                for (yS in 0..maxYSpeed) {
+                    if (xS == 0 && yS == 0) {
                         list.add(RaceTrackState(it.x, it.y, xS, yS))
-                    }
-                    else if(xS == 0){
+                    } else if (xS == 0) {
                         list.add(RaceTrackState(it.x, it.y, xS, yS))
                         list.add(RaceTrackState(it.x, it.y, xS, -yS))
-                    }
-                    else if(yS == 0){
+                    } else if (yS == 0) {
                         list.add(RaceTrackState(it.x, it.y, xS, yS))
                         list.add(RaceTrackState(it.x, it.y, -xS, yS))
-                    }
-                    else{
+                    } else {
                         list.add(RaceTrackState(it.x, it.y, xS, yS))
                         list.add(RaceTrackState(it.x, it.y, -xS, yS))
                         list.add(RaceTrackState(it.x, it.y, xS, -yS))
@@ -207,8 +204,8 @@ class RaceTrack(val width: Int,
             val new_x_speed = state.x_speed
             val new_y_speed = state.y_speed
 
-            var x:Double
-            var y:Double
+            var x: Double
+            var y: Double
             val dt = 0.1
             val nSteps = 10
             var valid = true

@@ -10,22 +10,22 @@ import java.util.*
  * Double Integrator Domain
  */
 class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>,
-                 val endLocation: DoubleLocation, val goalRadius: Double) : Domain<PointRobotState> {
+                 val endLocation: DoubleLocation, val goalRadius: Double, val actionDuration: Long) : Domain<PointRobotState> {
 
     //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotAction> {
-        var a = ArrayList<PointRobotAction>()
-        for (itX in 0..6) {
-            for (itY in 0..6) {
-                var xdot = ((itX) - 3.0);
-                var ydot = ((itY) - 3.0);
+        var actions = ArrayList<PointRobotAction>()
+        for (x in 0..6) {
+            for (y in 0..6) {
+                var xdot = ((x) - 3.0);
+                var ydot = ((y) - 3.0);
                 //                println("" + xdot + " " + ydot)
-                a.add(PointRobotAction(xdot, ydot))
+                actions.add(PointRobotAction(xdot, ydot))
             }
         }
-        return a
+        return actions
     }
 
     override fun successors(state: PointRobotState): List<SuccessorBundle<PointRobotState>> {

@@ -7,7 +7,7 @@ import java.util.*
 
 object PointRobotLOSTIO {
 
-    fun parseFromStream(input: InputStream): PointRobotLOSTInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long): PointRobotLOSTInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -66,7 +66,7 @@ object PointRobotLOSTIO {
             throw InvalidPointRobotLOSTException("DoubleIntegrator is not complete.", e)
         }
 
-        val pointRobotLOST = edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOST(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius)
+        val pointRobotLOST = edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOST(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius, actionDuration)
         val startState = PointRobotLOSTState(startLocation.x, startLocation.y)
         return PointRobotLOSTInstance(pointRobotLOST, startState)
     }

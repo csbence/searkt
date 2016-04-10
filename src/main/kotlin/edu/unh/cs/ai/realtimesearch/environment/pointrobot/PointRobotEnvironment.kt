@@ -44,6 +44,6 @@ class PointRobotEnvironment(private val domain: PointRobot, private val initialS
      * Resets the current state to either initial (if given at construction), or a random state
      */
     override fun reset() {
-        currentState = initialState?.copy() ?: domain.randomState()
+        currentState = initialState.copy()
     }
 }

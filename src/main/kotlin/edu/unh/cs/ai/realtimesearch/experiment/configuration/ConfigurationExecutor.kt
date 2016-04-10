@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
@@ -157,7 +159,7 @@ object ConfigurationExecutor {
 
     private fun executePointRobot(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val pointRobotInstance = PointRobotIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotInstance = PointRobotIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
 
         return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
@@ -165,7 +167,7 @@ object ConfigurationExecutor {
 
     private fun executePointRobotLOST(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val pointRobotLOSTEnvironment = PointRobotLOSTEnvironment(pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
 
         return executeDomain(experimentConfiguration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState, pointRobotLOSTEnvironment)
@@ -173,7 +175,7 @@ object ConfigurationExecutor {
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream())
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
 
         return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
@@ -189,7 +191,7 @@ object ConfigurationExecutor {
 
     private fun executeRaceTrack(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val raceTrackInstance = RaceTrackIO.parseFromStream(rawDomain.byteInputStream())
+        val raceTrackInstance = RaceTrackIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
         val raceTrackEnvironment = RaceTrackEnvironment(raceTrackInstance.domain, raceTrackInstance.initialState)
 
         return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState, raceTrackEnvironment)

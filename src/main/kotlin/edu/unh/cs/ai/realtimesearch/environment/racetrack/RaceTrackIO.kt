@@ -6,7 +6,7 @@ import java.util.*
 
 object RaceTrackIO {
 
-    fun parseFromStream(input: InputStream): RaceTrackInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long): RaceTrackInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -49,7 +49,7 @@ object RaceTrackIO {
             throw InvalidRaceTrackException("Unknown end location. End location has was not defined.")
         }
 
-        val raceTrack = edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack(columnCount, rowCount, blockedCells.toHashSet(), endLocations.toHashSet())
+        val raceTrack = edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack(columnCount, rowCount, blockedCells.toHashSet(), endLocations.toHashSet(), actionDuration)
         val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0)
         return RaceTrackInstance(raceTrack, startState)
     }
