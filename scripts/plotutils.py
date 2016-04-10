@@ -191,7 +191,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
             continue
-        # algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
+        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)
