@@ -86,7 +86,7 @@ class RaceTrack(val width: Int,
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
                         action,
-                        actionCost = 1))
+                        actionCost = actionDuration))
             }
         }
 
@@ -115,8 +115,13 @@ class RaceTrack(val width: Int,
         return h / maxYSpeed
     }
 
-    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = 0.0
-
+    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double{
+        var h = distance(startState, endState)
+        //        return 0.0
+        if (maxXSpeed > maxYSpeed)
+            return h / maxYSpeed * actionDuration
+        return h / maxYSpeed * actionDuration
+    }
 
     // Distance is the max(min(dx), min(dy))
     override fun distance(state: RaceTrackState): Double {
@@ -132,6 +137,15 @@ class RaceTrack(val width: Int,
                 dy = ydist.toDouble()
         }
         val retval = Math.max(dx.toDouble(), dy.toDouble())
+        return retval;
+    }
+
+    // Distance is the max(min(dx), min(dy))
+    fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
+        val xdist = Math.abs(startState.x - endState.x)
+        val ydist = Math.abs(startState.y - endState.y)
+
+        val retval = Math.max(xdist.toDouble(), ydist.toDouble())
         return retval;
     }
 
@@ -225,7 +239,7 @@ class RaceTrack(val width: Int,
                 predecessors.add(SuccessorBundle(
                         RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.getAcceleration().x, new_y_speed - action.getAcceleration().y),
                         action,
-                        actionCost = 1))
+                        actionCost = actionDuration))
             }
         }
         return predecessors

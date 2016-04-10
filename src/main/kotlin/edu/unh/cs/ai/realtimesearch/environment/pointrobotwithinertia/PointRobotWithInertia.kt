@@ -66,7 +66,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
-                        1));
+                        actionDuration));
             }
         }
 
@@ -125,7 +125,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         else
             retval = Math.max(minx, miny)
         //        println(retval)
-        return retval
+        return retval * actionDuration
     }
 
     override fun heuristic(startState: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double {
@@ -159,7 +159,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         else
             retval = Math.max(minx, miny)
         //        println(retval)
-        return retval
+        return retval * actionDuration
     }
 
     fun quadraticFormula(a: Double, b: Double, c: Double): Double {
@@ -246,7 +246,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 predecessors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
-                        1));
+                        actionDuration));
             }
         }
         return predecessors

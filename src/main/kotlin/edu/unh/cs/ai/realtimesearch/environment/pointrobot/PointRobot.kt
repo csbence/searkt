@@ -53,7 +53,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 successors.add(SuccessorBundle(
                         PointRobotState(state.x + it.xdot, state.y + it.ydot),
                         PointRobotAction(it.xdot, it.ydot),
-                        1));
+                        actionDuration));
             }
         }
         return successors
@@ -78,14 +78,14 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
     * */
     override fun heuristic(state: PointRobotState): Double {
         //Distance Formula
-        return distance(state) / 3
+        return (distance(state) / 3) * actionDuration
     }
 
     override fun heuristic(startState: PointRobotState, endState: PointRobotState): Double {
         //Distance Formula
-        return (Math.sqrt(
+        return ((Math.sqrt(
                 Math.pow((endState.x) - startState.x, 2.0)
-                        + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius) / 3
+                        + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius) / 3) * actionDuration
     }
 
     override fun distance(state: PointRobotState): Double {
@@ -150,7 +150,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 predecessors.add(SuccessorBundle(
                         PointRobotState(state.x - it.xdot, state.y - it.ydot),
                         PointRobotAction(it.xdot, it.ydot),
-                        1));
+                        actionDuration));
             }
         }
         return predecessors

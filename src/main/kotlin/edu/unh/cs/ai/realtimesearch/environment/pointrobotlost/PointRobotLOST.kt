@@ -64,7 +64,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 successors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x + it.xdot, state.y + it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        1));
+                        actionDuration));
             }
         }
         return successors
@@ -93,8 +93,8 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         val h = distance(state)
 
         if(maxXSpeed < maxYSpeed)
-            return h / maxYSpeed
-        return h / maxXSpeed
+            return h / maxYSpeed * actionDuration
+        return h / maxXSpeed * actionDuration
     }
 
     override fun heuristic(startState: PointRobotLOSTState, endState: PointRobotLOSTState): Double {
@@ -103,8 +103,8 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         val h = distance(startState, endState)
 
         if(maxXSpeed < maxYSpeed)
-            return h / maxYSpeed
-        return h / maxXSpeed
+            return h / maxYSpeed * actionDuration
+        return h / maxXSpeed * actionDuration
     }
 
     override fun distance(state: PointRobotLOSTState): Double {
@@ -176,7 +176,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 predecessors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x - it.xdot, state.y - it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        1));
+                        actionDuration));
             }
         }
         return predecessors
