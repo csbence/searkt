@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     if (args.size == 0) {
         // Default configuration
         //        val map = "input/racetrack/bigger-track.track"
-        val map = "input/pointrobot/wall.pr"
+        val map = "input/pointrobot/obstacles-1.pr"
         //        val map = "input/vacuum/big-squiggle.vw"
         //        val map = "input/acrobot/default_0.07-0.07.ab"
         //        val map = "input/tiles/korf/4/all/3"
@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
         manualConfiguration = GeneralExperimentConfiguration(
                 Domains.POINT_ROBOT_WITH_INERTIA.toString(),
                 rawDomain,
-                Planners.A_STAR.toString(),
+                Planners.LSS_LRTA_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
