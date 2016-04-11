@@ -70,6 +70,12 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
 
                 g.fillOval(dirtyLocX, dirtyLocY, diameter, diameter)
             }
+
+            // Add start cells
+            g.fill = Color.WHITE
+            for (cell in mapInfo.startCells) {
+                g.fillRect(cell.x.toDouble() * tileSize, cell.y.toDouble() * tileSize, tileSize, tileSize)
+            }
         }
     }
 }
