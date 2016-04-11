@@ -1,6 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import javafx.scene.paint.Color
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Rectangle
 
@@ -10,10 +10,10 @@ import javafx.scene.shape.Rectangle
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
  */
-class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
+class AgentView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     private val TRACKER_SCALE = 4.0
-    val robot = Rectangle(width, width, Color.ORANGE)
-    val tracker = Circle(width * TRACKER_SCALE, Color.YELLOW)
+    val agent = Rectangle(width, width, ThemeColors.AGENT.color)
+    val tracker = Circle(width * TRACKER_SCALE, ThemeColors.AGENT.stroke)
     var trackingEnabled: Boolean
         set(value) {
             tracker.isVisible = value
@@ -24,8 +24,8 @@ class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     init {
         trackingEnabled = false
 
-        tracker.translateXProperty().bind(robot.translateXProperty())
-        tracker.translateYProperty().bind(robot.translateYProperty())
+        tracker.translateXProperty().bind(agent.translateXProperty())
+        tracker.translateYProperty().bind(agent.translateYProperty())
 
         tracker.opacity = 0.25
 
@@ -34,37 +34,37 @@ class RobotView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     }
 
     companion object {
-        val ZERO = RobotView(0.0, 0.0)
+        val ZERO = AgentView(0.0, 0.0)
     }
 
     fun toFront() {
         tracker.toFront()
-        robot.toFront()
+        agent.toFront()
     }
 
     fun toBack() {
-        robot.toBack()
+        agent.toBack()
         tracker.toBack()
     }
 
     private fun relocateTracker() {
-        tracker.centerX = robot.x + width / 2.0
-        tracker.centerY = robot.y + width / 2.0
+        tracker.centerX = agent.x + width / 2.0
+        tracker.centerY = agent.y + width / 2.0
     }
 
     fun setLocation(x: Double, y: Double) {
-        robot.x = x
-        robot.y = y
-        robot.translateX = robot.x
-        robot.translateY = robot.y
+        agent.x = x
+        agent.y = y
+        agent.translateX = agent.x
+        agent.translateY = agent.y
         relocateTracker()
     }
 
     fun translateX(x: Double) {
-        robot.translateX = x
+        agent.translateX = x
     }
 
     fun translateY(y: Double) {
-        robot.translateY = y
+        agent.translateY = y
     }
 }

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.layout.Pane
@@ -18,12 +19,12 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
     val gridHeight = mapInfo.rowCount * tileSize
 
     // Appearance parameters
-    var rowLineColor = Color.WHITE
+    var rowLineColor = ThemeColors.GRID.stroke
     var rowLineWidth = 0.1
-    var blockedCellColor = Color.BLACK
-    var startCellBackgroundColor: Color? = Color.WHITE
-    var goalCellBackgroundColor: Color? = Color.WHITE
-    var goalCircleColor = Color.BLUE
+    var blockedCellColor = ThemeColors.OBSTACLE.color
+    var startCellBackgroundColor: Color? = ThemeColors.EMPTY_SPACE.color
+    var goalCellBackgroundColor: Color? = ThemeColors.EMPTY_SPACE.color
+    var goalCircleColor = ThemeColors.GOAL_CIRCLE.color
     var goalCircleRadius = tileSize / 10.0
 
     init {

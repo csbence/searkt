@@ -28,7 +28,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     protected var actionList: MutableList<String> = arrayListOf()
     protected var mapInfo: MapInfo = MapInfo.ZERO
     protected var grid: GridCanvasPane = GridCanvasPane.ZERO
-    protected var robotView: RobotView = RobotView.ZERO
+    protected var agentView: AgentView = AgentView.ZERO
     protected var timeToRun: Double = 0.0
 
     // Graphical fields
@@ -51,7 +51,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     override fun processOptions(cmd: CommandLine) {
         showTracker = cmd.hasOption(trackerOption.opt)
-        displayLine = cmd.hasOption(displayPathOption.opt)
+//        displayLine = cmd.hasOption(displayPathOption.opt)
+        displayLine = true
     }
 
     data class GridDimensions(val rowCount: Int, val columnCount: Int)
@@ -141,14 +142,14 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
 
         // Robot setup
-        robotView = RobotView(robotWidth)
-        robotView.trackingEnabled = showTracker
-        robotView.toFront()
-        robotView.setLocation(robotLocationX, robotLocationY)
+        agentView = AgentView(robotWidth)
+        agentView.trackingEnabled = showTracker
+        agentView.toFront()
+        agentView.setLocation(robotLocationX, robotLocationY)
 
         // Grid setup
         grid = GridCanvasPane(mapInfo, tileSize)
-        grid.children.add(robotView.robot)
-        grid.children.add(robotView.tracker)
+        grid.children.add(agentView.agent)
+        grid.children.add(agentView.tracker)
     }
 }

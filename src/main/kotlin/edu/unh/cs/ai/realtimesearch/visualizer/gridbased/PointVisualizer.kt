@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -7,8 +8,6 @@ import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.scene.Scene
-import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
@@ -71,13 +70,13 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         /* the goal radius */
         val goalCircle = Circle(goalX * tileSize, goalY * tileSize, goalRadius * tileSize)
-        goalCircle.stroke = Color.BLUE
-        goalCircle.fill = Color.WHITE
-        goalCircle.opacity = 0.5
+        goalCircle.stroke = ThemeColors.GOAL_CIRCLE.stroke
+        goalCircle.fill = ThemeColors.GOAL_CIRCLE.color
+        goalCircle.opacity = ThemeColors.GOAL_CIRCLE.opacity
         grid.children.add(goalCircle)
 
         primaryStage.title = "RTS Visualizer"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, Color.LIGHTSLATEGRAY)
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
         //primaryStage.scene = Scene(root, WIDTH, HEIGHT)
         primaryStage.show()
 
@@ -97,8 +96,8 @@ open class PointVisualizer : GridBasedVisualizer() {
         /* Create the path that the robot will travel */
         if (displayLine) {
             val path = Path()
-            path.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
-            path.stroke = Color.ORANGE
+            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
+            path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
         }
 
@@ -118,7 +117,7 @@ open class PointVisualizer : GridBasedVisualizer() {
 
     open protected fun animate(x: String, y: String): MutableList<PathTransition> {
         val path = Path()
-        val robot = robotView.robot
+        val robot = agentView.agent
         val width = tileSize
 
         val xDot = x.toDouble() * width
@@ -130,7 +129,7 @@ open class PointVisualizer : GridBasedVisualizer() {
         robot.translateY += yDot
 
         if (displayLine) {
-            path.stroke = Color.RED
+            path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
             val action = Circle(robot.translateX, robot.translateY, width / 10.0)
             grid.children.add(action)

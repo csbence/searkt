@@ -12,6 +12,7 @@ import edu.unh.cs.ai.realtimesearch.util.angleDifference
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.InvalidResultException
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Option
 import groovyjarjarcommonscli.Options
@@ -22,7 +23,6 @@ import javafx.scene.Scene
 import javafx.scene.control.Label
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import javafx.stage.Stage
@@ -105,7 +105,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         if (errorMessage.isNotEmpty()) {
             val errorLabel = Label(errorMessage.toString())
-            errorLabel.textFill = Color.RED
+            errorLabel.textFill = ThemeColors.ERROR_TEXT.color
             errorLabel.font = Font.font("Verdana", FontWeight.BOLD, 18.0)
             headerBox.children.add(errorLabel)
         }
@@ -131,8 +131,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
         // Animate a ghost acrobot if desired
         if (ghost) {
             val ghostAcrobot = AcrobotView(linkStartX1, linkStartY1, linkScaledLength1, linkWidth)
-            ghostAcrobot.opacity = 0.5
-            ghostAcrobot.linkColor = Color.GRAY
+            ghostAcrobot.opacity = ThemeColors.LINK.opacity
+            ghostAcrobot.linkColor = ThemeColors.LINK.color
 
             animationPane.children.addAll(ghostAcrobot.getNodes())
             ghostAcrobot.toBack()

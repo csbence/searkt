@@ -2,13 +2,13 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.Timeline
 import javafx.scene.Scene
-import javafx.scene.paint.Color
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
@@ -41,14 +41,14 @@ class VacuumVisualizer : GridBasedVisualizer() {
         if (isARAStar) {
             moveRobot = false
             anytimeMaxCount = experimentResult!!.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
-            araStarXOriginal = robotView.robot.x
-            araStarYOriginal = robotView.robot.y
-            araStarX = robotView.robot.x
-            araStarY = robotView.robot.y
+            araStarXOriginal = agentView.agent.x
+            araStarYOriginal = agentView.agent.y
+            araStarX = agentView.agent.x
+            araStarY = agentView.agent.y
         }
 
         primaryStage.title = "RTS Visualizer"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, Color.LIGHTSLATEGRAY)
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
         val path = buildAnimation()
@@ -57,7 +57,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
         val pathTransition = PathTransition()
         pathTransition.duration = Duration.millis(timeToRun)
         pathTransition.path = path
-        pathTransition.node = robotView.robot
+        pathTransition.node = agentView.agent
         pathTransition.interpolator = Interpolator.LINEAR
         pathTransition.cycleCount = Timeline.INDEFINITE
         pathTransition.play()
@@ -67,7 +67,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
         val p = Path()
-        p.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
+        p.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
         paths.add(p)
         //}
         var pIndex = 0
@@ -93,7 +93,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 //                println(action)
                 moveRobot = true
                 val newPath = Path()
-                newPath.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
+                newPath.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
                 paths.add(newPath)
                 pIndex++
             } else {
@@ -106,7 +106,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
         //for(it in paths) {
         if (displayLine) {
             grid.children.add(paths[pIndex])
-            paths[pIndex].stroke = Color.RED
+            paths[pIndex].stroke = ThemeColors.PATH.stroke
         }
         //}
 
@@ -127,7 +127,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
     }
 
     private fun animate(action: String, path: Path) {
-        val robot = robotView.robot
+        val robot = agentView.agent
         val width = tileSize
         val height = tileSize
         count++

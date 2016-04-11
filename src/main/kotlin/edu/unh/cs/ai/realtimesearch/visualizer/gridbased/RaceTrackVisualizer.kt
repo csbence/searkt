@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -7,7 +8,6 @@ import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.scene.Scene
-import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
@@ -33,7 +33,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         visualizerSetup()
 
         primaryStage.title = "RTS Visualizer"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, Color.LIGHTSLATEGRAY)
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
         val sequentialTransition = buildAnimation()
@@ -49,8 +49,8 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         /* Display the path */
         if (displayLine) {
             val path = Path()
-            path.elements.add(MoveTo(robotView.robot.x, robotView.robot.y))
-            path.stroke = Color.ORANGE
+            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
+            path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
         }
 
@@ -58,7 +58,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
     }
 
     private fun animate(action: String): PathTransition {
-        val robot = robotView.robot
+        val robot = agentView.agent
         val width = tileSize
         val path = Path()
 
@@ -101,7 +101,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         robot.translateY += yDot * width
 
         if (displayLine) {
-            path.stroke = Color.RED
+            path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
             val actionPoint = Circle(robot.translateX, robot.translateY, width / 10.0)
             grid.children.add(actionPoint)

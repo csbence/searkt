@@ -1,20 +1,15 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
-import groovyjarjarcommonscli.CommandLine
-import groovyjarjarcommonscli.Options
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
-import javafx.scene.Scene
-import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
-import javafx.scene.shape.*
-import javafx.stage.Stage
+import javafx.scene.shape.Circle
+import javafx.scene.shape.LineTo
+import javafx.scene.shape.MoveTo
+import javafx.scene.shape.Path
 import javafx.util.Duration
-import java.util.*
 
 /**
  * Created by Stephen on 2/29/16.
@@ -50,7 +45,7 @@ class PointInertiaVisualizer : PointVisualizer() {
     }
 
     override fun animate(x: String, y: String): MutableList<PathTransition> {
-        val robot = robotView.robot
+        val robot = agentView.agent
         val width = tileSize
         val retval: MutableList<PathTransition> = arrayListOf()
 
@@ -72,7 +67,7 @@ class PointInertiaVisualizer : PointVisualizer() {
             robot.translateY += ydot * dt;
 
             if(displayLine){
-                path.stroke = Color.RED
+                path.stroke = ThemeColors.PATH.stroke
                 grid.children.add(path)
             }
             /* Animate the robot */
