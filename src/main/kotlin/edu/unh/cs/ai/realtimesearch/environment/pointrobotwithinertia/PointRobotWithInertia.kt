@@ -2,8 +2,6 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.util.doubleNearGreaterThanOrEquals
@@ -258,6 +256,39 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         //            if (!inBound && !verticalLine)
         //                return false
         //        }
+    }
+
+    private fun octileDistance(state: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double {
+        var bx = state.xdot
+        var cx = state.x - endLocation.x
+
+        var by = state.ydot
+        var cy = state.y - endLocation.y
+
+        var resultx1 = quadraticFormula(0.5, bx, cx)
+        var resultx2 = quadraticFormula(-0.5, bx, cx)
+
+        var resulty1 = quadraticFormula(0.5, by, cy)
+        var resulty2 = quadraticFormula(-0.5, by, cy)
+
+        //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
+        //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
+
+        var minx = Math.min(resultx1, resultx2)
+        var miny = Math.min(resulty1, resulty2)
+
+        var retval: Double
+
+        if (minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
+            retval = miny
+        else if (minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+            retval = minx
+        else if (minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
+            retval = 0.0
+        else
+            retval = Math.max(minx, miny)
+        //        println(retval)
+        return retval * actionDuration
     }
 
     /*

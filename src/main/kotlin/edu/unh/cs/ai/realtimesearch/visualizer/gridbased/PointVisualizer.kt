@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -25,7 +26,7 @@ open class PointVisualizer : GridBasedVisualizer() {
     var startY: Double = 0.0
     var goalX: Double = 0.0
     var goalY: Double = 0.0
-    var goalRadius: Double = 0.0
+    var header: PointRobotHeader? = null
     var actionDuration: Long = 0
 
     override var robotScale: Double = 4.0
@@ -37,13 +38,8 @@ open class PointVisualizer : GridBasedVisualizer() {
     open protected fun setupDomain() {}
 
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
-        val dimensions = super.parseMapHeader(inputScanner)
-        startX = inputScanner.nextLine().toDouble()
-        startY = inputScanner.nextLine().toDouble()
-        goalX = inputScanner.nextLine().toDouble()
-        goalY = inputScanner.nextLine().toDouble()
-        goalRadius = inputScanner.nextLine().toDouble()
-        return dimensions
+        header = PointRobotIO.parseHeader(inputScanner)
+        return GridDimensions(header!!.rowCount, header!!.columnCount)
     }
 
     override fun parseActions(): MutableList<String> {
@@ -67,11 +63,15 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
         actionDuration = experimentResult!!.experimentConfiguration["actionDuration"] as Long
+        startX = mapInfo.startCells.first().x + header!!.startLocationOffset.x
+        startY = mapInfo.startCells.first().y + header!!.startLocationOffset.y
+        goalX = mapInfo.goalCells.first().x + header!!.goalLocationOffset.x
+        goalY = mapInfo.goalCells.first().y + header!!.goalLocationOffset.y
 
         setupDomain()
 
         /* the goal radius */
-        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, goalRadius * tileSize)
+        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header!!.goalRadius * tileSize)
         goalCircle.stroke = ThemeColors.GOAL_CIRCLE.stroke
         goalCircle.fill = ThemeColors.GOAL_CIRCLE.color
         goalCircle.opacity = ThemeColors.GOAL_CIRCLE.opacity

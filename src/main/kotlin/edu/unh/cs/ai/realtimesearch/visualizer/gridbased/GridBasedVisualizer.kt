@@ -88,7 +88,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
                     '_' -> {
                     }
                     '*' -> {
-                        mapInfo.endCells.add(Location(x, y))
+                        mapInfo.goalCells.add(Location(x, y))
                     }
                     '@' -> {
                         mapInfo.startCells.add(Location(x, y))

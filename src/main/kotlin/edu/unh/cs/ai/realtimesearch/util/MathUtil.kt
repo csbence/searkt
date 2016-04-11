@@ -19,6 +19,12 @@ fun doubleNearLessThanOrEquals(a: Double, b: Double, accuracy: Double = defaultF
 fun doubleNearGreaterThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
         = (a > b) || doubleNearEquals(a, b, accuracy)
 
+fun doubleNearLessThan(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = !doubleNearEquals(a, b, accuracy) && a < b
+
+fun doubleNearGreaterThan(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = !doubleNearEquals(a, b, accuracy) && a > b
+
 /**
  * Round a number to a given decimal provided the type of rounding operation.
  */
@@ -74,4 +80,4 @@ fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Doubl
  * applied over the time period.  Assumes the units of the parameters provided are the same.
  */
 fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) =
-        initialVelocity * time + 0.5 * acceleration * (time * time)
+        (initialVelocity * time) + (0.5 * acceleration * (time * time))

@@ -13,7 +13,7 @@ data class MapInfo(
         val columnCount: Int,
         val blockedCells: MutableList<Location> = mutableListOf(),
         val startCells: MutableList<Location> = mutableListOf(),
-        val endCells: MutableList<Location> = mutableListOf()) {
+        val goalCells: MutableList<Location> = mutableListOf()) {
     companion object {
         val ZERO = MapInfo(0, 0)
     }

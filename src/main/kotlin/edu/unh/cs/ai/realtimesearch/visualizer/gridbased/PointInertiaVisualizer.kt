@@ -31,9 +31,9 @@ class PointInertiaVisualizer : PointVisualizer() {
         domain = DiscretizedDomain(PointRobotWithInertia(
                 mapInfo.columnCount,
                 mapInfo.rowCount,
-                mapInfo.blockedCells.toSet(),
-                mapInfo.endCells.first().toDoubleLocation(),
-                goalRadius,
+                mapInfo.blockedCells.toHashSet(),
+                mapInfo.goalCells.first().toDoubleLocation(),
+                header!!.goalRadius,
                 actionDuration
         ))
         environment = DiscretizedEnvironment(domain!!, DiscretizedState(PointRobotWithInertiaState(startX, startY, 0.0, 0.0)))
