@@ -50,8 +50,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
-//        visualizerParameters.add("--path")
-//        visualizerParameters.add("--tracker")
+        visualizerParameters.add("--path")
+        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
