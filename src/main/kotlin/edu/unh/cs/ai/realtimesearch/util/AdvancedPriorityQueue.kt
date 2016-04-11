@@ -10,6 +10,8 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     var resizable = false
     var size = 0
+        private set
+
     val backingArray: Array<T?>
         get() = queue
 
@@ -201,4 +203,20 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     fun isNotEmpty() = !isEmpty()
 
+    inline fun forEach(action: (T) -> Unit) {
+        for (i in 0..size - 1) {
+            action(backingArray[i]!!)
+        }
+    }
+
+    /**
+     * Apply the given action to every item in the priority queue and clear the priority queue.
+     */
+    inline fun applyAndClear(action: (T) -> Unit) {
+        for (i in 0..size - 1) {
+            action(backingArray[i]!!)
+            backingArray[i] = null
+        }
+        size = 0
+    }
 }

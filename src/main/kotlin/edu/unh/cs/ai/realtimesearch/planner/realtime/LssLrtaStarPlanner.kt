@@ -71,18 +71,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var iterationCounter = 0L
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
-        if (lhs.f == rhs.f) {
-            when {
-                lhs.cost > rhs.cost -> -1
-                lhs.cost < rhs.cost -> 1
-                else -> 0
-            }
-        } else {
-            when {
-                lhs.f < rhs.f -> -1
-                lhs.f > rhs.f -> 1
-                else -> 0
-            }
+        when {
+            lhs.f < rhs.f -> -1
+            lhs.f > rhs.f -> 1
+            lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
+            lhs.cost < rhs.cost -> 1
+            else -> 0
         }
     }
 
@@ -416,12 +410,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        for (it in openList.backingArray) {
-            if (it != null) {
-                it.open = false
-            }
+        openList.applyAndClear {
+            it.open = false
         }
-        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
