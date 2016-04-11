@@ -176,9 +176,11 @@ object ConfigurationExecutor {
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
         val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
-        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+        val discretizedDomain = DiscretizedDomain(pointRobotWithInertiaInstance.domain)
+        val discretizedInitialState = DiscretizedState(pointRobotWithInertiaInstance.initialState)
+        val pointRobotWithInertiaEnvironment = DiscretizedEnvironment(discretizedDomain, discretizedInitialState)
 
-        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
+        return executeDomain(experimentConfiguration, discretizedDomain, discretizedInitialState, pointRobotWithInertiaEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {

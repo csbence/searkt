@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -25,12 +26,15 @@ open class PointVisualizer : GridBasedVisualizer() {
     var goalX: Double = 0.0
     var goalY: Double = 0.0
     var goalRadius: Double = 0.0
+    var actionDuration: Long = 0
 
     override var robotScale: Double = 4.0
 
     override fun getOptions(): Options = super.getOptions()
 
     override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
+
+    open protected fun setupDomain() {}
 
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
         val dimensions = super.parseMapHeader(inputScanner)
@@ -62,11 +66,9 @@ open class PointVisualizer : GridBasedVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         visualizerSetup()
+        actionDuration = experimentResult!!.experimentConfiguration["actionDuration"] as Long
 
-        //        /* the dirty cell */
-        //        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
-        //        dirtyCell.fill = Color.BLUE
-        //        root.children.add(dirtyCell)
+        setupDomain()
 
         /* the goal radius */
         val goalCircle = Circle(goalX * tileSize, goalY * tileSize, goalRadius * tileSize)
@@ -102,14 +104,13 @@ open class PointVisualizer : GridBasedVisualizer() {
         }
 
         val pathTransitions = mutableListOf<PathTransition>()
-        var actionIndex = 0
-        while (actionIndex != actionList.size) {
-            val x = actionList[actionIndex]
-            val y = actionList[actionIndex + 1]
+        val actionIterator = actionList.iterator()
+        while (actionIterator.hasNext()) {
+            val x = actionIterator.next()
+            assert(actionIterator.hasNext(), { "Action has no matching y value" })
+            val y = actionIterator.next()
             var pathTransition = animate(x, y)
             pathTransitions.addAll(pathTransition)
-            //            sequentialTransition.children.add()
-            actionIndex += 2
         }
 
         return pathTransitions
