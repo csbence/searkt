@@ -28,7 +28,7 @@ class GraphType(Enum):
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-all_action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+all_action_durations = (6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 all_action_durations_ms = [plotutils.cnv_ns_to_ms(duration) for duration in all_action_durations]
 all_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
 plot_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR_STATIC_SINGLE", "LSS_LRTA_STAR_STATIC_MULTIPLE",
@@ -234,10 +234,7 @@ def do_plot(file_header, file_suffix, plot):
     # file_header = "{}_{}".format(domain, instance_file_name)
     filename = "plots/{}_{}.pdf".format(file_header, file_suffix)
     lgd = plot()
-    if lgd:
-        plotutils.save_plot_with_outer_legend(plt, filename, lgd)
-    else:
-        plotutils.save_plot(plt, filename)
+    plotutils.save_plot(plt, filename, lgd)
     plt.close('all')
     return "![{}]({})\n\n\\clearpage\n\n".format(file_header, filename)
 
@@ -387,7 +384,7 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
         lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
                                                 title="{} data over all instances".format(
                                                     plotutils.translate_domain_name(domain)))
-        plotutils.save_plot_with_outer_legend(plt, "plots/{}_average.pdf".format(domain), lgd)
+        plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain), lgd)
         plt.close('all')
 
         # Plot Sliding tile puzzle average without RTA*
@@ -396,7 +393,7 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
             lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
                                                     title="{} data over all instances".format(
                                                         plotutils.translate_domain_name(domain)))
-            plotutils.save_plot_with_outer_legend(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
+            plotutils.save_plot(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
             plt.close('all')
 
 
@@ -429,7 +426,7 @@ def plot_all(db):
     plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
     plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
     plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
-    plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
+    # plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
     plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
 

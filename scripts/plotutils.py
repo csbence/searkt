@@ -98,26 +98,21 @@ def mean_confidence_intervals(data):
     return means, means - confidence_intervals_low, confidence_intervals_high - means
 
 
-def save_plot_with_outer_legend(plot, filename, lgd):
+def save_plot(plot, filename, lgd=None):
     basename, ext = os.path.splitext(filename)
     if ext is '.pdf':
         pp = PdfPages(filename)
-        plot.savefig(pp, format='pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        if lgd:
+            plot.savefig(pp, format='pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        else:
+            plot.savefig(pp, format='pdf', bbox_inches='tight')
         pp.close()
     else:
         # Try and save it
-        plot.savefig(filename, bbox_inches='tight', bbox_extra_artists=(lgd,))
-
-
-def save_plot(plot, filename):
-    basename, ext = os.path.splitext(filename)
-    if ext is '.pdf':
-        pp = PdfPages(filename)
-        plot.savefig(pp, format='pdf', bbox_inches='tight')
-        pp.close()
-    else:
-        # Try and save it
-        plot.savefig(filename, bbox_inches='tight')
+        if lgd:
+            plot.savefig(filename, bbox_inches='tight', bbox_extra_artists=(lgd,))
+        else:
+            plot.savefig(filename, bbox_inches='tight')
 
 
 def plot_gat_bars(data, labels, title=""):
