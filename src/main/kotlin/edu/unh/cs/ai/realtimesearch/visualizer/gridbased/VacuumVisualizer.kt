@@ -25,7 +25,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
     var araStarYOriginal = 0.0
     var araStarX = 0.0
     var araStarY = 0.0
-    var count = 0L
+    var anytimeCount = 0L
     var anytimeMaxCount = 3L
 
     override fun getOptions(): Options = super.getOptions()
@@ -85,7 +85,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 newPath.elements.add(MoveTo(araStarX, araStarY))
                 paths.add(newPath)
                 pIndex++
-                count = 0
+                anytimeCount = 0
             } else if (!action.equals("UP")
                     && !action.equals("DOWN")
                     && !action.equals("LEFT")
@@ -103,12 +103,10 @@ class VacuumVisualizer : GridBasedVisualizer() {
         }
 
         /* Display the path */
-        //for(it in paths) {
         if (displayLine) {
             grid.children.add(paths[pIndex])
             paths[pIndex].stroke = ThemeColors.PATH.stroke
         }
-        //}
 
         //        if(isARAStar) {
         //            paths.get(0).stroke = Color.RED
@@ -130,16 +128,19 @@ class VacuumVisualizer : GridBasedVisualizer() {
         val robot = agentView.agent
         val width = tileSize
         val height = tileSize
-        count++
+
+        if (isARAStar)
+            anytimeCount++
+
         when (action) {
             "UP" -> {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY + height))
-                    robot.translateY = robot.translateY + height
+                    robot.translateY += height
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX, araStarY + height))
                     araStarY += height
-                    if (count <= anytimeMaxCount) {
+                    if (anytimeCount <= anytimeMaxCount) {
                         araStarYOriginal = araStarY
                     }
                 }
@@ -147,11 +148,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
             "RIGHT" -> {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX + width, robot.translateY))
-                    robot.translateX = robot.translateX + width
+                    robot.translateX += width
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX + width, araStarY))
                     araStarX += width
-                    if (count <= anytimeMaxCount) {
+                    if (anytimeCount <= anytimeMaxCount) {
                         araStarXOriginal = araStarX
                     }
                 }
@@ -159,11 +160,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
             "DOWN" -> {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX, robot.translateY - height))
-                    robot.translateY = robot.translateY - height
+                    robot.translateY -= height
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX, araStarY - height))
                     araStarY -= height
-                    if (count <= anytimeMaxCount) {
+                    if (anytimeCount <= anytimeMaxCount) {
                         araStarYOriginal = araStarY
                     }
                 }
@@ -171,11 +172,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
             "LEFT" -> {
                 if (moveRobot) {
                     path.elements.add(LineTo(robot.translateX - width, robot.translateY))
-                    robot.translateX = robot.translateX - width
+                    robot.translateX -= width
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX - width, araStarY))
                     araStarX -= width
-                    if (count <= anytimeMaxCount) {
+                    if (anytimeCount <= anytimeMaxCount) {
                         araStarXOriginal = araStarX
                     }
                 }
