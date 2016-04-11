@@ -125,19 +125,20 @@ def plot_gat_bars(data, labels, title=""):
     mean, mean_confidence_interval_low, mean_confidence_interval_high = mean_confidence_intervals(y)
     width = 0.35
 
-    fig, axis = plt.subplots()
-    med_bars = axis.bar(x, med, width, color='r', yerr=(med_confidence_interval_low, med_confidence_interval_high))
-    mean_bars = axis.bar(x + width, mean, width, color='y',
-                         yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
+    fig, ax = plt.subplots()
+    med_bars = ax.bar(x, med, width, color=tableau20[0], ecolor=tableau20[3], capsize=2,
+                      yerr=(med_confidence_interval_low, med_confidence_interval_high))
+    mean_bars = ax.bar(x + width, mean, width, color=tableau20[1], ecolor=tableau20[3], capsize=2,
+                       yerr=(mean_confidence_interval_low, mean_confidence_interval_high))
 
     # Set labels
     plt.title(title)
     plt.ylabel("Goal Achievement Time (ms)")
     plt.xlabel("Algorithms")
-    axis.set_xticks(x + width)
-    axis.set_xticklabels(labels)
+    ax.set_xticks(x + width)
+    ax.set_xticklabels(labels)
     fig.autofmt_xdate()
-    lgd = axis.legend((med_bars, mean_bars), ('Median', 'Mean'))
+    lgd = ax.legend((med_bars, mean_bars), ('Median', 'Mean'))
 
     # Set ylims so we aren't at the top of the graph space for even data
     low = min(min(y))
@@ -148,7 +149,7 @@ def plot_gat_bars(data, labels, title=""):
     def autolabel(rects):
         for rect in rects:
             height = rect.get_height()
-            axis.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
+            ax.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
 
     # autolabel(med_bars)
     # autolabel(mean_bars)
@@ -164,7 +165,7 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
         return
     med, confidence_interval_low, confidence_interval_high = median_confidence_intervals(y)
 
-    fig, axis = plt.subplots()
+    fig, ax = plt.subplots()
     plt.boxplot(y, notch=False, labels=labels)
     # Plot separate error bars without line to show median confidence intervals
     x = np.arange(1, len(y) + 1)
@@ -214,23 +215,27 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     ax.get_yaxis().tick_left()
 
     # Plot for each provided algorithm
-    index = 0
+    color_index = 0
     for algorithm, algorithm_gat_per_duration in data_dict.items():
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
             continue
         # print(algorithm_gat_per_duration)
-        algorithm_gat_per_duration = [np.log10(gat) if gat is not [[]] else [] for gat in algorithm_gat_per_duration]
+        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)
 
-        handle = plt.errorbar(x[data_mask], np.array(algorithm_gat_per_duration_mean)[data_mask],
-                              label=translate_algorithm_name(algorithm),
-                              yerr=(algorithm_confidence_interval_low[data_mask],
-                                    algorithm_confidence_interval_high[data_mask]), color=tableau20[index])
-        handles.append((handle, translate_algorithm_name(algorithm), np.mean(algorithm_gat_per_duration_mean)))
-        index += 1
+        masked_x = x[data_mask]
+        masked_data = np.array(algorithm_gat_per_duration_mean)[data_mask]
+        masked_confidence_low = algorithm_confidence_interval_low[data_mask]
+        masked_confidence_high = algorithm_confidence_interval_high[data_mask]
+        label = translate_algorithm_name(algorithm)
+
+        handle = plt.errorbar(masked_x, masked_data, label=label, color=tableau20[color_index],
+                              yerr=(masked_confidence_low, masked_confidence_high))
+        handles.append((handle, label, masked_data.tolist()))
+        color_index += 1
 
     # Set labels, sort legend by mean value
     handles = sorted(handles, key=lambda handle: handle[2], reverse=True)
