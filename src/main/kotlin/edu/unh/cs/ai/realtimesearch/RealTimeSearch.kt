@@ -29,17 +29,17 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-        //        val map = "input/racetrack/bigger-track.track"
-        //        val map = "input/pointrobot/dylan/wall.pr"
-        //                val map = "input/vacuum/big-squiggle.vw"
+                val map = "input/racetrack/bigger-track.track"
+//        val map = "input/pointrobot/dylan/wall.pr"
+//                val map = "input/vacuum/big-squiggle.vw"
         //        val map = "input/acrobot/default_0.07-0.07.ab"
-        val map = "input/tiles/korf/4/all/3"
+        //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.SLIDING_TILE_PUZZLE_4.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
-                Planners.LSS_LRTA_STAR.toString(),
+                Planners.ARA_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
@@ -50,8 +50,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
-        //        visualizerParameters.add("--path")
-        //        visualizerParameters.add("--tracker")
+        visualizerParameters.add("--path")
+        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)

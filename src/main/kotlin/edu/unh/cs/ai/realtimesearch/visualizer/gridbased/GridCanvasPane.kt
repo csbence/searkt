@@ -17,6 +17,15 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
     val gridWidth = mapInfo.columnCount * tileSize
     val gridHeight = mapInfo.rowCount * tileSize
 
+    // Appearance parameters
+    var rowLineColor = Color.WHITE
+    var rowLineWidth = 0.1
+    var blockedCellColor = Color.BLACK
+    var startCellBackgroundColor: Color? = Color.WHITE
+    var goalCellBackgroundColor: Color? = Color.WHITE
+    var goalCircleColor = Color.BLUE
+    var goalCircleRadius = tileSize / 10.0
+
     init {
         children.add(canvas)
     }
@@ -41,8 +50,8 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
             val g: GraphicsContext = canvas.graphicsContext2D
 
             // Add row lines
-            g.stroke = Color.WHITE
-            g.lineWidth = 0.1
+            g.stroke = rowLineColor
+            g.lineWidth = rowLineWidth
             for (row in 1..mapInfo.rowCount) {
                 val yPosition = row * tileSize
                 g.strokeLine(0.0, yPosition, gridWidth, yPosition)
@@ -55,20 +64,31 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
             }
 
             // Add blocked cells
-            g.fill = Color.BLACK
+            g.fill = blockedCellColor
             for (cell in mapInfo.blockedCells) {
                 g.fillRect(cell.x.toDouble() * tileSize, cell.y.toDouble() * tileSize, tileSize, tileSize)
             }
 
             // Add goal cells
-            g.fill = Color.BLUE
-            val radius = tileSize / 10.0
-            val diameter = radius * 2
+            val diameter = goalCircleRadius * 2
             for (cell in mapInfo.endCells) {
-                val dirtyLocX = cell.x * tileSize + tileSize / 2.0 - radius
-                val dirtyLocY = cell.y * tileSize + tileSize / 2.0 - radius
+                val dirtyLocX = cell.x * tileSize + tileSize / 2.0 - goalCircleRadius
+                val dirtyLocY = cell.y * tileSize + tileSize / 2.0 - goalCircleRadius
 
+                if (goalCellBackgroundColor != null) {
+                    g.fill = goalCellBackgroundColor
+                    g.fillRect(cell.x.toDouble() * tileSize, cell.y.toDouble() * tileSize, tileSize, tileSize)
+                }
+                g.fill = goalCircleColor
                 g.fillOval(dirtyLocX, dirtyLocY, diameter, diameter)
+            }
+
+            // Add start cells
+            if (startCellBackgroundColor != null) {
+                g.fill = startCellBackgroundColor
+                for (cell in mapInfo.startCells) {
+                    g.fillRect(cell.x.toDouble() * tileSize, cell.y.toDouble() * tileSize, tileSize, tileSize)
+                }
             }
         }
     }

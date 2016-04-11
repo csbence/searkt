@@ -2,6 +2,8 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
+import edu.unh.cs.ai.realtimesearch.util.calculateDisplacement
+import edu.unh.cs.ai.realtimesearch.util.calculateVelocity
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import groovy.json.JsonOutput
@@ -43,12 +45,30 @@ data class AcrobotLink(val position: Double, val velocity: Double) {
 }
 
 /**
- * A state in the Acrobot domain consists of the positions and angular velocities of each link.
+ * A state in the Acrobot domain consists of the positions and angular velocities of each link.  Position units are in
+ * radians and velocity units are in radians per second.
  * Instances of this class are immutable.
+ *
+ * @param link1 link 1 properties of the acrobot
+ * @param link2 link 2 properties of the acrobot
+ * @param configuration the state configuration
  */
 data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val configuration: AcrobotStateConfiguration = AcrobotStateConfiguration()) : DiscretizableState<AcrobotState> {
 
-    constructor(linkPosition1: Double, linkPosition2: Double, linkVelocity1: Double, linkVelocity2: Double, configuration: AcrobotStateConfiguration = AcrobotStateConfiguration())
+    /**
+     * Build an acrobot state given individual link properties.
+     *
+     * @param linkPosition1 position of link 1 of the acrobot
+     * @param linkPosition2 position of link 2 of the acrobot
+     * @param linkVelocity1 velocity of link 1 of the acrobot
+     * @param linkVelocity2 velocity of link 2 of the acrobot
+     * @param configuration the state configuration
+     */
+    constructor(linkPosition1: Double,
+                linkPosition2: Double,
+                linkVelocity1: Double,
+                linkVelocity2: Double,
+                configuration: AcrobotStateConfiguration = AcrobotStateConfiguration())
     : this(AcrobotLink(linkPosition1, linkVelocity1), AcrobotLink(linkPosition2, linkVelocity2), configuration)
 
     override fun copy() = copy(link1, link2, configuration)
@@ -100,9 +120,6 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
                 AcrobotLink(roundDownToDecimal(link2.position, configuration.positionGranularity2), roundDownToDecimal(link2.velocity, configuration.velocityGranularity2)),
                 configuration)
     }
-
-    internal fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) = acceleration * time + initialVelocity
-    internal fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) = initialVelocity * time + 0.5 * acceleration * (time * time)
 
     fun calculateNextState(accelerations: Accelerations, actionDuration: Long): AcrobotState {
         val durationSeconds: Double = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)

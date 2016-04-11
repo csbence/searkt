@@ -98,26 +98,21 @@ def mean_confidence_intervals(data):
     return means, means - confidence_intervals_low, confidence_intervals_high - means
 
 
-def save_plot_with_outer_legend(plot, filename, lgd):
+def save_plot(plot, filename, lgd=None):
     basename, ext = os.path.splitext(filename)
     if ext is '.pdf':
         pp = PdfPages(filename)
-        plot.savefig(pp, format='pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        if lgd:
+            plot.savefig(pp, format='pdf', bbox_inches='tight', bbox_extra_artists=(lgd,))
+        else:
+            plot.savefig(pp, format='pdf', bbox_inches='tight')
         pp.close()
     else:
         # Try and save it
-        plot.savefig(filename, bbox_inches='tight', bbox_extra_artists=(lgd,))
-
-
-def save_plot(plot, filename):
-    basename, ext = os.path.splitext(filename)
-    if ext is '.pdf':
-        pp = PdfPages(filename)
-        plot.savefig(pp, format='pdf', bbox_inches='tight')
-        pp.close()
-    else:
-        # Try and save it
-        plot.savefig(filename, bbox_inches='tight')
+        if lgd:
+            plot.savefig(filename, bbox_inches='tight', bbox_extra_artists=(lgd,))
+        else:
+            plot.savefig(filename, bbox_inches='tight')
 
 
 def plot_gat_bars(data, labels, title=""):
@@ -219,13 +214,13 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     ax.get_yaxis().tick_left()
 
     # Plot for each provided algorithm
-    offset = 0.1
     index = 0
     for algorithm, algorithm_gat_per_duration in data_dict.items():
         if not algorithm_gat_per_duration:  # empty
             print("No data for " + algorithm)
             continue
-        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
+        # print(algorithm_gat_per_duration)
+        algorithm_gat_per_duration = [np.log10(gat) if gat is not [[]] else [] for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)

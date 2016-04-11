@@ -57,3 +57,17 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
     val distance = angleDifference(angle, goalAngle)
     return if (distance < 0) distance * -1 else distance
 }
+
+/**
+ * Calculate a new velocity given an initial velocity and a constant acceleration to be applied over the specified time
+ * period.  Assumes the units of the parameters provided are the same.
+ */
+fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) =
+        acceleration * time + initialVelocity
+
+/**
+ * Calculates the distance travelled over a period of time given an initial velocity and a constant acceleration
+ * applied over the time period.  Assumes the units of the parameters provided are the same.
+ */
+fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) =
+        initialVelocity * time + 0.5 * acceleration * (time * time)

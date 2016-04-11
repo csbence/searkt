@@ -28,7 +28,7 @@ class GraphType(Enum):
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-all_action_durations = (10000000, 20000000, 40000000, 80000000, 160000000, 320000000)
+all_action_durations = (6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 all_action_durations_ms = [plotutils.cnv_ns_to_ms(duration) for duration in all_action_durations]
 all_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
 plot_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR_STATIC_SINGLE", "LSS_LRTA_STAR_STATIC_MULTIPLE",
@@ -84,7 +84,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResultV2')
+    result_status = db.command('collstats', 'experimentResult')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -113,7 +113,7 @@ def get_realtime_gat_per_duration_data(db, algorithm, domain, instance, commitme
     assert algorithm is "LSS_LRTA_STAR" or algorithm is "DYNAMIC_F_HAT" or algorithm is "RTA_STAR"
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResultV2.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -142,7 +142,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResultV2.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -160,7 +160,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
 
 
 def get_realtime_gat_data(db, algorithm, domain, instance, action_duration, commitmentStrategy, timeBoundType):
-    data_tiles = db.experimentResultV2.find({
+    data_tiles = db.experimentResult.find({
         "result.experimentConfiguration.domainName": domain,
         "result.experimentConfiguration.algorithmName": algorithm,
         "result.experimentConfiguration.domainInstanceName": instance,
@@ -188,7 +188,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
             data = get_realtime_gat_data(db, algorithm, domain, instance, action_duration,
                                          commitment_strategy, time_bound_type)
         else:
-            data_tiles = db.experimentResultV2.find({
+            data_tiles = db.experimentResult.find({
                 "result.experimentConfiguration.domainName": domain,
                 "result.experimentConfiguration.algorithmName": algorithm,
                 "result.experimentConfiguration.domainInstanceName": instance,
@@ -234,10 +234,7 @@ def do_plot(file_header, file_suffix, plot):
     # file_header = "{}_{}".format(domain, instance_file_name)
     filename = "plots/{}_{}.pdf".format(file_header, file_suffix)
     lgd = plot()
-    if lgd:
-        plotutils.save_plot_with_outer_legend(plt, filename, lgd)
-    else:
-        plotutils.save_plot(plt, filename)
+    plotutils.save_plot(plt, filename, lgd)
     plt.close('all')
     return "![{}]({})\n\n\\clearpage\n\n".format(file_header, filename)
 
@@ -290,9 +287,9 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
 
     for algorithm in plot_algorithms:
         all_error_data[algorithm] = []
-        for action_duration in all_action_durations:
+        for _ in all_action_durations:
             all_error_data[algorithm].append([])
-    for action_duration in all_action_durations:
+    for _ in all_action_durations:
         all_astar_error_data.append([])
 
     for instance in instances:
@@ -355,8 +352,8 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
             for val in values:
                 if val:
                     all_error_data[algorithm][count].append(val[0])
-                else:
-                    all_error_data[algorithm][count].append([])
+                # else:
+                #     all_error_data[algorithm][count].append([])
                 count += 1
 
         count = 0
@@ -387,7 +384,7 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
         lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
                                                 title="{} data over all instances".format(
                                                     plotutils.translate_domain_name(domain)))
-        plotutils.save_plot_with_outer_legend(plt, "plots/{}_average.pdf".format(domain), lgd)
+        plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain), lgd)
         plt.close('all')
 
         # Plot Sliding tile puzzle average without RTA*
@@ -396,7 +393,7 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
             lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
                                                     title="{} data over all instances".format(
                                                         plotutils.translate_domain_name(domain)))
-            plotutils.save_plot_with_outer_legend(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
+            plotutils.save_plot(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
             plt.close('all')
 
 
@@ -429,7 +426,7 @@ def plot_all(db):
     plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
     plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
     plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
-    plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
+    # plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
     plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
 
