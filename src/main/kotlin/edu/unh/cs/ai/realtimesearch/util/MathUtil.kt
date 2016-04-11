@@ -10,9 +10,14 @@ val defaultFloatAccuracy = 0.00001
 /**
  * Compare two double for equality up to a given accuracy.
  */
-fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean {
-    return a == b || Math.abs(a - b) < accuracy
-}
+fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a == b) || Math.abs(a - b) < accuracy
+
+fun doubleNearLessThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a < b) || doubleNearEquals(a, b, accuracy)
+
+fun doubleNearGreaterThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a > b) || doubleNearEquals(a, b, accuracy)
 
 /**
  * Round a number to a given decimal provided the type of rounding operation.
@@ -34,7 +39,6 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
  * Convert time in ns to double in specified time unit
  */
 fun convertNanoUpDouble(time: Long, unit: TimeUnit): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, unit).toDouble()
-//fun convertNanoToSecondsDouble(time: Long): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS).toDouble()
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
