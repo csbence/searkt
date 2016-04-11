@@ -64,7 +64,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 logger.info("No experiment available.")
                 if (System.currentTimeMillis() - lastActiveTimestamp > 600000) {
                     logger.info("Stop application (timeout)")
-                    realTimeSearchClient.disconnect()
+//                    realTimeSearchClient.disconnect() TODO() implement in the server
                     stop()
                 }
 
