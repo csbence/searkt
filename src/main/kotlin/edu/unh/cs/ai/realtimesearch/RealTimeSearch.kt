@@ -29,29 +29,29 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-                val map = "input/racetrack/bigger-track.track"
-//        val map = "input/pointrobot/dylan/wall.pr"
-//                val map = "input/vacuum/big-squiggle.vw"
+        //        val map = "input/racetrack/bigger-track.track"
+        //        val map = "input/pointrobot/dylan/wall.pr"
+        //                val map = "input/vacuum/big-squiggle.vw"
         //        val map = "input/acrobot/default_0.07-0.07.ab"
-        //        val map = "input/tiles/korf/4/all/3"
+        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.RACETRACK.toString(),
+                Domains.SLIDING_TILE_PUZZLE_4.toString(),
                 rawDomain,
-                Planners.ARA_STAR.toString(),
+                Planners.LSS_LRTA_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(320, MILLISECONDS)
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(6, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
 
-//        visualizerParameters.add("--path")
-//        visualizerParameters.add("--tracker")
+        //        visualizerParameters.add("--path")
+        //        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)
