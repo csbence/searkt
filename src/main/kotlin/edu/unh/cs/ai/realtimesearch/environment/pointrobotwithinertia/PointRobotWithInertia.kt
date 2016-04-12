@@ -40,9 +40,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     val velocityGoalRadius = 0.005
     private val goalState = PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0)
     //    private val blockedCellEdges = getAllBlockedCellEdges(blockedCells)
-    private val actions = getAllActions()
 
-    fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
+    val actions: List<PointRobotWithInertiaAction> = {
         val actions = ArrayList<PointRobotWithInertiaAction>()
         val maxAction = actionStepSize * numActions
         var xAcceleration = -maxAction
@@ -57,8 +56,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         assert(actions.size == totalActionCount,
                 { "Calculated action quantity (${actions.size}) != expected ($totalActionCount)" })
 
-        return actions
-    }
+        actions.toList()
+    }()
 
     /**
      * Calculate the next state given the current state and an action
@@ -73,13 +72,13 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     override fun successors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         val successors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = ArrayList(totalActionCount)
-
+//        println("SUCCESSORS FOR: $state")
         for (action in actions) {
             val nextState = calculateNextState(state, action)
 
-            //    println("($state) ($action) ~ $actionDuration -> ($nextState), h: ${heuristic(nextState)}")
+//                println("($state) ($action) ~ $actionDuration -> ($nextState), h: ${heuristic(nextState)}")
             if (!isLegalAction(state.x, state.y, nextState.x, nextState.y)) {
-                //    println("ILLEGAL")
+//                    println("ILLEGAL")
                 continue
             }
 
@@ -91,13 +90,14 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = ArrayList(totalActionCount)
-
+//        println("PREDECESSORS FOR: $state")
         for (action in actions) {
             val previousState = calculatePreviousState(state, action)
 
 //            println("($previousState) ($action) ~ $actionDuration -> ($state)")
-            if (!isLegalAction(previousState.x, previousState.y, state.x, state.y)) {
-                //    println("ILLEGAL")
+            if (!pointInBounds(previousState.x, previousState.y) ||
+                    !isLegalAction(previousState.x, previousState.y, state.x, state.y)) {
+//                println("ILLEGAL")
                 continue
             }
 
@@ -126,6 +126,9 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     fun isLegalAction(initialX: Double, initialY: Double, newX: Double, newY: Double): Boolean {
+        val inBounds = pointInBounds(newX, newY)
+        if (!inBounds)
+            return false
         if (blockedCells.isNotEmpty()) {
             val visitedCells = raytrace(initialX, initialY, newX, newY)
             for (visitedCell in visitedCells) {
@@ -133,13 +136,16 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                     return false
             }
         }
-        return pointInBounds(newX, newY)
+        return true
     }
 
-    override fun heuristic(state: PointRobotWithInertiaState): Double = octileDistance(state, goalState)
+    override fun heuristic(state: PointRobotWithInertiaState): Double //= octileDistance(state, goalState) * actionDuration
+            = distance(state) * actionDuration
 
     override fun heuristic(startState: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double
-            = octileDistance(startState, endState)
+            //            = octileDistance(startState, endState) * actionDuration
+            = distance(startState, endState) * actionDuration
+
 
     /*
     * eight way - octile distance
@@ -173,7 +179,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         else
             retval = Math.max(minx, miny)
 
-        return retval * actionDuration
+        return retval
     }
 
     fun quadraticFormula(a: Double, b: Double, c: Double): Double {
@@ -199,11 +205,13 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     /**
      * Retrieve the Euclidean distance between the given state and the goal radius.
      */
-    override fun distance(state: PointRobotWithInertiaState): Double {
+    override fun distance(state: PointRobotWithInertiaState): Double = distance(state, goalState)
+
+    fun distance(startState: PointRobotWithInertiaState, endState: PointRobotWithInertiaState): Double {
         //Distance Formula
         val distance = Math.sqrt(
-                Math.pow((endLocation.x) - state.x, 2.0)
-                        + Math.pow((endLocation.y) - state.y, 2.0))
+                Math.pow((endState.x) - startState.x, 2.0)
+                        + Math.pow((endState.y) - startState.y, 2.0))
         return if (doubleNearGreaterThanOrEqual(distance, goalRadius)) distance - goalRadius else 0.0
     }
 

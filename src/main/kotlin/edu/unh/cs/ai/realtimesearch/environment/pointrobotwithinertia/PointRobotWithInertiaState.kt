@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
 import edu.unh.cs.ai.realtimesearch.util.*
+import org.codehaus.groovy.util.HashCodeHelper
 import java.util.concurrent.TimeUnit
 
 /**
@@ -29,7 +30,7 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
     //    val xGranularity = 0.20
     //    val xGranularity = 0.25
     //    val xGranularity = 0.5
-    val xGranularity = 0.5
+    val xGranularity = 0.25
     val xDotGranularity = 0.32
     val yGranularity = xGranularity
     val yDotGranularity = xDotGranularity
@@ -52,8 +53,8 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
 
     fun calculatePreviousState(previousAction: PointRobotWithInertiaAction, actionDuration: Long): PointRobotWithInertiaState {
         val durationSeconds: Double = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
-        var previousXDot = calculatePreviousVelocity(previousAction.xDoubleDot, xdot, durationSeconds)
-        var previousYDot = calculatePreviousVelocity(previousAction.yDoubleDot, ydot, durationSeconds)
+        var previousXDot = calculateVelocity(previousAction.xDoubleDot, xdot, durationSeconds)
+        var previousYDot = calculateVelocity(previousAction.yDoubleDot, ydot, durationSeconds)
         var previousX = x - calculatePreviousDisplacement(previousAction.xDoubleDot, previousXDot, durationSeconds)
         var previousY = y - calculatePreviousDisplacement(previousAction.yDoubleDot, previousYDot, durationSeconds)
 
@@ -64,5 +65,25 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
      * Copy simply calls the data class implemented copy
      */
     override fun copy() = copy(x, y, xdot, ydot)
-}
 
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other !is PointRobotWithInertiaState -> false
+            else -> doubleNearEqual(x, other.x)
+                    && doubleNearEqual(y, other.y)
+                    && doubleNearEqual(xdot, other.xdot)
+                    && doubleNearEqual(ydot, other.ydot)
+        }
+    }
+
+    override fun hashCode(): Int {
+        var hashCode = HashCodeHelper.initHash()
+        hashCode = HashCodeHelper.updateHash(hashCode, roundToNearestDecimal(x, defaultFloatAccuracy))
+        hashCode = HashCodeHelper.updateHash(hashCode, roundToNearestDecimal(y, defaultFloatAccuracy))
+        hashCode = HashCodeHelper.updateHash(hashCode, roundToNearestDecimal(xdot, defaultFloatAccuracy))
+        hashCode = HashCodeHelper.updateHash(hashCode, roundToNearestDecimal(ydot, defaultFloatAccuracy))
+        return hashCode
+    }
+}

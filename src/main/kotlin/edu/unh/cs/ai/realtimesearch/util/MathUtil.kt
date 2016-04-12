@@ -76,9 +76,6 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
 fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) =
         acceleration * time + initialVelocity
 
-fun calculatePreviousVelocity(previousAcceleration: Double, currentVelocity: Double, time: Double) =
-        currentVelocity - previousAcceleration * time
-
 /**
  * Calculates the distance travelled over a period of time given an initial velocity and a constant acceleration
  * applied over the time period.  Assumes the units of the parameters provided are the same.
