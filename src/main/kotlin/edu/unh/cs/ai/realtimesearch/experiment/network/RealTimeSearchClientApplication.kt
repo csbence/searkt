@@ -49,7 +49,6 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
                 System.gc() // Make sure that we have not garbage in the memory
 
-
                 // Execute configuration
                 val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration)
                 System.gc()
@@ -64,8 +63,9 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 logger.info("No experiment available.")
                 if (System.currentTimeMillis() - lastActiveTimestamp > 600000) {
                     logger.info("Stop application (timeout)")
-//                    realTimeSearchClient.disconnect() TODO() implement in the server
+                    //                    realTimeSearchClient.disconnect() TODO() implement in the server
                     stop()
+                    return
                 }
 
                 // Failed to get a a configuration wait a second to avoid busy wait
@@ -80,6 +80,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
     fun stop() {
         stopPeriodicCheckIn()
         running = false
+        timer.cancel()
     }
 
     private fun startPeriodicCheckIn() {
@@ -111,8 +112,9 @@ fun main(args: Array<String>) {
     val formatter = HelpFormatter()
     if (commandLine.hasOption(helpOption.opt) || !commandLine.hasOption(serverUrlOption.opt)) {
         formatter.printHelp("Real-time Search Client", mainOptions)
-        return
     } else {
         RealTimeSearchClientApplication(commandLine.getOptionValue(serverUrlOption.opt)).start()
     }
+
+    println("\nReal-time search client has stopped.")
 }
