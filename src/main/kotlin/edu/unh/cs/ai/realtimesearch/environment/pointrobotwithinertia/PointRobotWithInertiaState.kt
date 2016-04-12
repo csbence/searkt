@@ -15,14 +15,24 @@ import java.util.concurrent.TimeUnit
  * @param ydot y velocity
  */
 data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Double, val ydot: Double) : DiscretizableState<PointRobotWithInertiaState> {
-//    val xGranularity = 0.08
-//    val xDotGranularity = 0.08
-//    val yGranularity = 0.08
-//    val yDotGranularity = 0.08
-    val xGranularity = 0.32
-    val xDotGranularity = xGranularity
+    //    val xGranularity = 0.01
+    //    val xGranularity = 0.0125
+    //    val xGranularity = 0.015625
+    //    val xGranularity = 0.02
+    //    val xGranularity = 0.025
+    //    val xGranularity = 0.03125
+    //    val xGranularity = 0.04
+    //    val xGranularity = 0.05
+    //    val xGranularity = 0.0625
+    //    val xGranularity = 0.10
+    //    val xGranularity = 0.125
+    //    val xGranularity = 0.20
+    //    val xGranularity = 0.25
+    //    val xGranularity = 0.5
+    val xGranularity = 0.5
+    val xDotGranularity = 0.32
     val yGranularity = xGranularity
-    val yDotGranularity = xGranularity
+    val yDotGranularity = xDotGranularity
 
     override fun discretize(): PointRobotWithInertiaState {
         return PointRobotWithInertiaState(
