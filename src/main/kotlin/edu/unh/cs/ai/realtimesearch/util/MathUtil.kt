@@ -74,17 +74,17 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
  * period.  Assumes the units of the parameters provided are the same.
  */
 fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) =
-        acceleration * time + initialVelocity
+        initialVelocity + acceleration * time
+
+fun calculatePreviousVelocity(previousAcceleration: Double, currentVelocity: Double, time: Double) =
+        currentVelocity - previousAcceleration * time
 
 /**
  * Calculates the distance travelled over a period of time given an initial velocity and a constant acceleration
  * applied over the time period.  Assumes the units of the parameters provided are the same.
  */
 fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) =
-        (initialVelocity * time) + (0.5 * acceleration * (time * time))
-
-fun calculatePreviousDisplacement(previousAcceleration: Double, previousVelocity: Double, time: Double) =
-        previousVelocity * time - previousAcceleration * 0.5 * (time * time)
+        (initialVelocity * time) + (acceleration * 0.5 * (time * time))
 
 /**
  * Perform raytracing to find all cells the line connecting the two given points pass through.

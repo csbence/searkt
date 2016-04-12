@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEqual
 import edu.unh.cs.ai.realtimesearch.util.doubleNearGreaterThan
 import org.junit.Test
@@ -93,14 +94,20 @@ class PointRobotWithInertiaTest {
         val pointRobotWithInertia = pointRobotWithInertia1
         val actions = pointRobotWithInertia.actions
         val state = PointRobotWithInertiaState(pointRobotWithInertia.width / 2.0, pointRobotWithInertia.height / 2.0, 0.0, 0.0)
-        val successors = pointRobotWithInertia.successors(state)
 
+        logger.debug { "STATE: $state" }
+
+        val successors = pointRobotWithInertia.successors(state)
         for (successor in successors) {
+            logger.debug { "SUCCESSOR: $successor" }
+
             val predecessors = pointRobotWithInertia.predecessors(successor.state)
             assertTrue { predecessors.size == actions.size }
 
             var foundState = false
             for (predecessor in predecessors) {
+                logger.debug { "PREDECESSOR: $predecessor" }
+
                 if (predecessor.state.equals(state)) {
                     foundState = true
                     break

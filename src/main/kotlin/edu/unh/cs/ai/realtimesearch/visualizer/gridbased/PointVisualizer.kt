@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -62,7 +63,7 @@ open class PointVisualizer : GridBasedVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         visualizerSetup()
-        actionDuration = experimentResult!!.experimentConfiguration["actionDuration"] as Long
+        actionDuration = experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
         startX = mapInfo.startCells.first().x + header!!.startLocationOffset.x
         startY = mapInfo.startCells.first().y + header!!.startLocationOffset.y
         goalX = mapInfo.goalCells.first().x + header!!.goalLocationOffset.x

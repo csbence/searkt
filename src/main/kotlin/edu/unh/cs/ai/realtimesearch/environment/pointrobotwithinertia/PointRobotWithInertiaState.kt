@@ -53,10 +53,10 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
 
     fun calculatePreviousState(previousAction: PointRobotWithInertiaAction, actionDuration: Long): PointRobotWithInertiaState {
         val durationSeconds: Double = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
-        var previousXDot = calculateVelocity(previousAction.xDoubleDot, xdot, durationSeconds)
-        var previousYDot = calculateVelocity(previousAction.yDoubleDot, ydot, durationSeconds)
-        var previousX = x - calculatePreviousDisplacement(previousAction.xDoubleDot, previousXDot, durationSeconds)
-        var previousY = y - calculatePreviousDisplacement(previousAction.yDoubleDot, previousYDot, durationSeconds)
+        var previousXDot = calculatePreviousVelocity(previousAction.xDoubleDot, xdot, durationSeconds)
+        var previousYDot = calculatePreviousVelocity(previousAction.yDoubleDot, ydot, durationSeconds)
+        var previousX = x - calculateDisplacement(previousAction.xDoubleDot, previousXDot, durationSeconds)
+        var previousY = y - calculateDisplacement(previousAction.yDoubleDot, previousYDot, durationSeconds)
 
         return PointRobotWithInertiaState(previousX, previousY, previousXDot, previousYDot)
     }
