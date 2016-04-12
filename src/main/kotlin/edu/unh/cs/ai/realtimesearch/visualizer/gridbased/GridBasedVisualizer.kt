@@ -42,6 +42,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     open protected var robotScale = 2.0
 
     init {
+        trackerOption.setOptionalArg(true)
         gridOptions.addOption(trackerOption)
         gridOptions.addOption(displayPathOption)
     }
