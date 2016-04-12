@@ -17,11 +17,12 @@ import java.util.*
 abstract class GridBasedVisualizer : BaseVisualizer() {
     // Options
     protected val gridOptions = Options()
-    protected val trackerOption = Option("t", "tracker", false, "show tracker around agent")
+    protected val trackerOption = Option("t", "tracker", true, "show tracker around agent")
     protected val displayPathOption = Option("p", "path", false, "display line for agent's path")
 
     // Option fields
     protected var showTracker: Boolean = false
+    protected var trackerSize: Double = 10.0
     protected var displayLine: Boolean = false
 
     // State fields
@@ -51,8 +52,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     override fun processOptions(cmd: CommandLine) {
         showTracker = cmd.hasOption(trackerOption.opt)
-//        displayLine = cmd.hasOption(displayPathOption.opt)
-        displayLine = true
+        trackerSize = cmd.getOptionValue(trackerOption.opt, trackerSize.toString()).toDouble()
+        displayLine = cmd.hasOption(displayPathOption.opt)
     }
 
     data class GridDimensions(val rowCount: Int, val columnCount: Int)
@@ -142,7 +143,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
 
         // Robot setup
-        agentView = AgentView(robotWidth)
+        agentView = AgentView(robotWidth, trackerSize)
         agentView.trackingEnabled = showTracker
         agentView.toFront()
         agentView.setLocation(robotLocationX, robotLocationY)
