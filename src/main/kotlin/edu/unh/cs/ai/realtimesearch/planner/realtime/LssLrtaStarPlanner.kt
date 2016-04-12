@@ -371,7 +371,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
                     openList.update(predecessorNode) // Update priority
 
-                    assert(predecessorNode.iteration == iterationCounter)
+                    assert(predecessorNode.iteration == iterationCounter) {
+                        "Expected iteration stamp $iterationCounter got ${predecessorNode.iteration}"
+                    }
                 }
             }
         }
