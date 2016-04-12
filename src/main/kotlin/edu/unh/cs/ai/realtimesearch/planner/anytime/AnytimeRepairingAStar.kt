@@ -25,17 +25,16 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
     data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int)
 
-
     private fun improvePath() {
         // This is analogue to Likhachev's CLOSED list
         val localClosedList: MutableSet<StateType> = hashSetOf()
 
-        while (goalCost() > inflatedFValue(openList.element())) {
+        while (goalCost() > inflatedFValue(openList.peek())) {
             val currentNode = openList.poll() ?: return // Return if the frontier is empty
             val currentState = currentNode.state
 
             localClosedList.add(currentState)
-            expandedNodeCount++;
+            expandedNodeCount++
 
             domain.predecessors(currentState).forEach {
                 val predecessorNode = closedList[it.state]
@@ -112,7 +111,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         inflationFactor /= 100
 
         if (inflationFactor < 1)
-            return inflationFactor;
+            return inflationFactor
         val tempOpen = openList.toMutableList()
         openList.clear()
         openList.addAll(tempOpen)
@@ -120,7 +119,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         inconsistentStates.clear()
         closedList.clear()
         goal = null
-        return inflationFactor;
+        return inflationFactor
     }
 
     private fun fValue(state: StateType): Double {
@@ -128,7 +127,9 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         return node.cost + domain.heuristic(node.state, targetgoal!!)
     }
 
-    private fun inflatedFValue(node: Node<StateType>): Double {
+    private fun inflatedFValue(node: Node<StateType>?): Double {
+        if (node == null)
+            return -1.0
         return node.cost + inflationFactor * domain.heuristic(node.state, targetgoal!!)
     }
 
