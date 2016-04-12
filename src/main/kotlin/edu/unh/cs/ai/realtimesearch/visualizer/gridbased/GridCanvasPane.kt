@@ -24,7 +24,7 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
     var blockedCellColor = ThemeColors.OBSTACLE.color
     var startCellBackgroundColor: Color? = ThemeColors.EMPTY_SPACE.color
     var goalCellBackgroundColor: Color? = ThemeColors.EMPTY_SPACE.color
-    var goalCircleColor = ThemeColors.GOAL_CIRCLE.color
+    var goalCircleColor = ThemeColors.GOAL.color
     var goalCircleRadius = tileSize / 10.0
 
     init {

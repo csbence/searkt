@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
 import getopt
-import matplotlib.pyplot as plt
 import os
-import plotutils
 import sys
 import warnings
 from enum import Enum
-from pymongo import MongoClient
 from subprocess import call
+
+import matplotlib.pyplot as plt
+from pymongo import MongoClient
+
+import plotutils
 
 warnings.filterwarnings("ignore", message=".*Source ID.*", module="matplotlib")
 warnings.filterwarnings("ignore", message="Attempting to set identical bottom==top results", module="matplotlib")
@@ -84,7 +86,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResult')
+    result_status = db.command('collstats', 'experimentResultV2')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -113,7 +115,7 @@ def get_realtime_gat_per_duration_data(db, algorithm, domain, instance, commitme
     assert algorithm is "LSS_LRTA_STAR" or algorithm is "DYNAMIC_F_HAT" or algorithm is "RTA_STAR"
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultV2.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -142,7 +144,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResult.find({
+        data_tiles = db.experimentResultV2.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -160,7 +162,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
 
 
 def get_realtime_gat_data(db, algorithm, domain, instance, action_duration, commitmentStrategy, timeBoundType):
-    data_tiles = db.experimentResult.find({
+    data_tiles = db.experimentResultV2.find({
         "result.experimentConfiguration.domainName": domain,
         "result.experimentConfiguration.algorithmName": algorithm,
         "result.experimentConfiguration.domainInstanceName": instance,
@@ -188,7 +190,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
             data = get_realtime_gat_data(db, algorithm, domain, instance, action_duration,
                                          commitment_strategy, time_bound_type)
         else:
-            data_tiles = db.experimentResult.find({
+            data_tiles = db.experimentResultV2.find({
                 "result.experimentConfiguration.domainName": domain,
                 "result.experimentConfiguration.algorithmName": algorithm,
                 "result.experimentConfiguration.domainInstanceName": instance,
