@@ -1,10 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizableState
-import edu.unh.cs.ai.realtimesearch.util.calculateDisplacement
-import edu.unh.cs.ai.realtimesearch.util.calculateVelocity
-import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
+import edu.unh.cs.ai.realtimesearch.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -43,24 +40,15 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
         return PointRobotWithInertiaState(newX, newY, newXDot, newYDot)
     }
 
+    fun calculatePreviousState(previousAction: PointRobotWithInertiaAction, actionDuration: Long): PointRobotWithInertiaState {
+        val durationSeconds: Double = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
+        var previousXDot = calculatePreviousVelocity(previousAction.xDoubleDot, xdot, durationSeconds)
+        var previousYDot = calculatePreviousVelocity(previousAction.yDoubleDot, ydot, durationSeconds)
+        var previousX = x - calculatePreviousDisplacement(previousAction.xDoubleDot, previousXDot, durationSeconds)
+        var previousY = y - calculatePreviousDisplacement(previousAction.yDoubleDot, previousYDot, durationSeconds)
 
-//    override fun equals(other: Any?): Boolean {
-////        println("" + other + " " + this)
-//        val fractions = 0.5; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
-//
-//        return when {
-//            other !is PointRobotWithInertiaState -> false
-//            roundToNearestDecimal(other.x, fractions) == roundToNearestDecimal(x, fractions)
-//                    && roundToNearestDecimal(other.y, fractions) == roundToNearestDecimal(y, fractions)
-//                    && other.xdot == xdot
-//                    && other.ydot == ydot -> true
-//            else -> false
-//        }
-//    }
-//
-//    override fun hashCode(): Int {
-//        return x.toInt() xor Integer.reverse(y.toInt())
-//    }
+        return PointRobotWithInertiaState(previousX, previousY, previousXDot, previousYDot)
+    }
 
     /**
      * Copy simply calls the data class implemented copy

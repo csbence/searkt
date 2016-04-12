@@ -1,6 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEqual
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertFalse
@@ -29,8 +29,8 @@ class AcrobotStateTest {
         val state = AcrobotState.defaultInitialState
 
         val (accelerationNone1, accelerationNone2) = state.calculateLinkAccelerations(AcrobotAction.NONE)
-        assertTrue { doubleNearEquals(accelerationNone1, 0.0) }
-        assertTrue { doubleNearEquals(accelerationNone2, 0.0) }
+        assertTrue { doubleNearEqual(accelerationNone1, 0.0) }
+        assertTrue { doubleNearEqual(accelerationNone2, 0.0) }
 
         val (accelerationPositive1, accelerationPositive2) = state.calculateLinkAccelerations(AcrobotAction.POSITIVE)
         assertTrue { accelerationPositive1 < 0.0 }

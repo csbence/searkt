@@ -10,7 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.ai.realtimesearch.util.doubleNearEqual
 import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
@@ -31,9 +31,9 @@ class AcrobotTest {
         val heuristic2 = acrobot.heuristic(endStateUpperBound)
         val heuristic3 = acrobot.heuristic(AcrobotState(acrobot.configuration.endState.link1.position, acrobot.configuration.endState.link2.position, 0.0, 0.0))
 
-        assertTrue { doubleNearEquals(heuristic1, 0.0) }
-        assertTrue { doubleNearEquals(heuristic2, 0.0) }
-        assertTrue { doubleNearEquals(heuristic3, 0.0) }
+        assertTrue { doubleNearEqual(heuristic1, 0.0) }
+        assertTrue { doubleNearEqual(heuristic2, 0.0) }
+        assertTrue { doubleNearEqual(heuristic3, 0.0) }
     }
 
     @Test

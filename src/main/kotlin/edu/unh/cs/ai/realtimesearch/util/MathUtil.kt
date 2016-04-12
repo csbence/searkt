@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.concurrent.TimeUnit
 
 /**
@@ -10,27 +11,27 @@ val defaultFloatAccuracy = 0.00001
 /**
  * Compare two double for equality up to a given accuracy.
  */
-fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+fun doubleNearEqual(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
         = (a == b) || Math.abs(a - b) < accuracy
 
-fun doubleNearLessThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
-        = (a < b) || doubleNearEquals(a, b, accuracy)
+fun doubleNearLessThanOrEqual(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a < b) || doubleNearEqual(a, b, accuracy)
 
-fun doubleNearGreaterThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
-        = (a > b) || doubleNearEquals(a, b, accuracy)
+fun doubleNearGreaterThanOrEqual(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a > b) || doubleNearEqual(a, b, accuracy)
 
 fun doubleNearLessThan(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
-        = !doubleNearEquals(a, b, accuracy) && a < b
+        = !doubleNearEqual(a, b, accuracy) && a < b
 
 fun doubleNearGreaterThan(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
-        = !doubleNearEquals(a, b, accuracy) && a > b
+        = !doubleNearEqual(a, b, accuracy) && a > b
 
 /**
  * Round a number to a given decimal provided the type of rounding operation.
  */
 fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Double, accuracy: Double = defaultFloatAccuracy): Double {
     val fraction = 1.0 / decimal
-    val operand = if (doubleNearEquals(decimal, number)) 1.0 else number * fraction
+    val operand = if (doubleNearEqual(decimal, number)) 1.0 else number * fraction
     return op(operand, accuracy) / fraction
 }
 
@@ -75,9 +76,75 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
 fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) =
         acceleration * time + initialVelocity
 
+fun calculatePreviousVelocity(previousAcceleration: Double, currentVelocity: Double, time: Double) =
+        currentVelocity - previousAcceleration * time
+
 /**
  * Calculates the distance travelled over a period of time given an initial velocity and a constant acceleration
  * applied over the time period.  Assumes the units of the parameters provided are the same.
  */
 fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) =
         (initialVelocity * time) + (0.5 * acceleration * (time * time))
+
+fun calculatePreviousDisplacement(previousAcceleration: Double, previousVelocity: Double, time: Double) =
+        previousVelocity * time - previousAcceleration * 0.5 * (time * time)
+
+/**
+ * Perform raytracing to find all cells the line connecting the two given points pass through.
+ * Implementation adapted from {@link http://playtechs.blogspot.ca/2007/03/raytracing-on-grid.html}
+ */
+fun raytrace(x0: Double, y0: Double, x1: Double, y1: Double): Set<Location> {
+    val visitedCells = mutableSetOf<Location>()
+    val dx = Math.abs(x1 - x0)
+    val dy = Math.abs(y1 - y0)
+
+    var x = Math.floor(x0).toInt()
+    var y = Math.floor(y0).toInt()
+
+    var n = 1
+    var x_inc: Int
+    var y_inc: Int
+    var error: Double
+
+    if (dx == 0.0) {
+        x_inc = 0
+        error = Double.POSITIVE_INFINITY
+    } else if (x1 > x0) {
+        x_inc = 1
+        n += Math.floor(x1).toInt() - x
+        error = (Math.floor(x0) + 1 - x0) * dy
+    } else {
+        x_inc = -1;
+        n += x - Math.floor(x1).toInt()
+        error = (x0 - Math.floor(x0)) * dy
+    }
+
+    if (dy == 0.0) {
+        y_inc = 0
+        error -= Double.POSITIVE_INFINITY
+    } else if (y1 > y0) {
+        y_inc = 1;
+        n += Math.floor(y1).toInt() - y
+        error -= (Math.floor(y0) + 1 - y0) * dx
+    } else {
+        y_inc = -1;
+        n += y - Math.floor(y1).toInt()
+        error -= (y0 - Math.floor(y0)) * dx
+    }
+
+    while (n > 0) {
+        visitedCells.add(Location(x, y))
+
+        if (error > 0) {
+            y += y_inc
+            error -= dx
+        } else {
+            x += x_inc
+            error += dy
+        }
+
+        n -= 1
+    }
+
+    return visitedCells
+}
