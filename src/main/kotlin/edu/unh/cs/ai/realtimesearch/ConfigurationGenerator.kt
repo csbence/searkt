@@ -99,14 +99,17 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     val gridMaps = listOf(
-//            "input/vacuum/dylan/cups.vw",
-//            "input/vacuum/dylan/slalom.vw",
-//            "input/vacuum/dylan/uniform.vw",
-//            "input/vacuum/dylan/wall.vw"
-            "input/vacuum/random1k.vw",
-            "input/vacuum/randomShapes1k.vw",
-            "input/vacuum/randomNoisy1k.vw"
-//            "input/vacuum/random5k.vw"
+            "input/vacuum/dylan/cups.vw",
+            "input/vacuum/dylan/slalom.vw",
+            "input/vacuum/dylan/uniform.vw",
+            "input/vacuum/dylan/wall.vw",
+            //            "input/vacuum/random1k.vw",
+            //            "input/vacuum/randomShapes1k.vw",
+            //            "input/vacuum/randomNoisy1k.vw"
+            //            "input/vacuum/random5k.vw"
+            "input/vacuum/squiggle_800.vw",
+            "input/vacuum/openBox_800.vw",
+            "input/vacuum/slalom_03.vw"
     )
 
     val racetrackMaps = listOf(
@@ -114,11 +117,18 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/racetrack/barto-small.track"
     )
 
+    val pointRobotWithInertiaActionFractions = 1..2
+    val pointRobotWithInertiaNumActions = 3..6
+    val pointRobotWithInertiaStateFractions = listOf(0.5, 1.0)
+
     val pointRobotMaps = listOf(
             "input/pointrobot/dylan/cups.pr",
             "input/pointrobot/dylan/slalom.pr",
             "input/pointrobot/dylan/uniform.pr",
-            "input/pointrobot/dylan/wall.pr"
+            "input/pointrobot/dylan/wall.pr",
+            "input/pointrobot/squiggle_800.pr",
+            "input/pointrobot/openBox_800.pr",
+            "input/pointrobot/slalom_03.pr"
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
@@ -166,13 +176,31 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                 ))
             }
         }
-        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+        POINT_ROBOT -> {
             for (map in pointRobotMaps) {
                 val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
                 configurations.add(mutableMapOf(
                         Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
                         Configurations.DOMAIN_INSTANCE_NAME.toString() to map
                 ))
+            }
+        }
+        POINT_ROBOT_WITH_INERTIA -> {
+            for (actionFraction in pointRobotWithInertiaActionFractions) {
+                for (numActions in pointRobotWithInertiaNumActions) {
+                    for (stateFraction in pointRobotWithInertiaStateFractions) {
+                        for (map in pointRobotMaps) {
+                            val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+                            configurations.add(mutableMapOf(
+                                    Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
+                                    Configurations.DOMAIN_INSTANCE_NAME.toString() to map,
+                                    Configurations.ACTION_FRACTION.toString() to actionFraction,
+                                    Configurations.NUM_ACTIONS.toString() to numActions,
+                                    Configurations.STATE_FRACTION.toString() to stateFraction
+                            ))
+                        }
+                    }
+                }
             }
         }
         RACETRACK -> {
@@ -288,13 +316,14 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     print("Upload configurations (y/n)? ")
     val input = readLine()
     val elapsed = measureTimeMillis {
+        var count = 1
         for (configuration in configurations) {
             when (input?.toLowerCase()) {
                 "y", "yes" -> {
                     try {
                         val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
                         if (responseEntity.statusCode == HttpStatus.OK) {
-                            println("Upload completed! ${configurations.size}")
+                            println("Upload completed! (${count++} / ${configurations.size})")
                         } else {
                             println("Upload failed!")
                         }
