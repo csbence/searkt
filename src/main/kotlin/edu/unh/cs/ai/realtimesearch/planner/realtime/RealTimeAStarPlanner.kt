@@ -22,7 +22,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
     private val heuristicTable: HashMap<StateType, Double> = HashMap<StateType, Double>(100000000, 1F).resize()
 
     val openList: Queue<MiniminNode<StateType>> = ArrayDeque(1000000)
-    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
+//    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
 
     init {
         depthLimit = 20
@@ -83,7 +83,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
         for (successor in successors) {
             val heuristicLookahead = heuristicLookahead(successor, depth, terminationChecker) ?: return null
-//            println(heuristicLookahead)
             successorHeuristicPairs.add(SuccessorHeuristicPair(successor, heuristicLookahead))
         }
 
@@ -138,7 +137,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                 if (domain.isGoal(successor.state)) {
                     // Korf: If the goal state is encountered before the search horizon,
                     // then the path is terminated and a heuristic value of zero is returned [...].
-                    println("Goal located")
                     return miniminNode.cost + successor.actionCost
                 }
 
