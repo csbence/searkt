@@ -29,9 +29,7 @@ import java.util.concurrent.TimeUnit
  */
 class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
                                                       val experimentConfiguration: GeneralExperimentConfiguration,
-        /*val agent: RTSAgent<StateType>,*/
-                                                      val world: Environment<StateType>
-        /*val terminationChecker: TimeTerminationChecker*/) : Experiment() {
+                                                      val world: Environment<StateType>) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
@@ -46,8 +44,8 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
         val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
 
         logger.info { "Starting experiment from state ${world.getState()}" }
-        var totalPlanningNanoTime = 1L
-        //var timeBound = staticStepDuration
+        var idlePlanningTime = 1L
+        var totalPlanningTime = 0L
 
         while (!world.isGoal()) {
             logger.debug { "Start anytime search" }
@@ -56,10 +54,11 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
             val tempActions = planner.solve(world.getState(), world.getGoal());
 
             val endTime = getThreadCpuNanotTime()
+            totalPlanningTime += endTime - startTime
 
             logger.debug { "time: " + (endTime - startTime) }
             if (actions.size == 0) {
-                totalPlanningNanoTime = endTime - startTime
+                idlePlanningTime = endTime - startTime
                 actionList = tempActions
             } else if (experimentConfiguration.actionDuration * maxCount < endTime - startTime) {
                 for (i in 1..maxCount) {
@@ -108,21 +107,24 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
 
         val pathLength = actions.size.toLong()
         val totalExecutionNanoTime = pathLength * experimentConfiguration.actionDuration
-        val goalAchievementTime = totalPlanningNanoTime + totalExecutionNanoTime // TODO fix for overlap
+        val goalAchievementTime = idlePlanningTime + totalExecutionNanoTime
+
         logger.info {
             "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
-                    "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
+                    "and ${planner.generatedNodeCount} generated nodes in ${idlePlanningTime} ns. " +
+                    "(${planner.expandedNodeCount / convertNanoUpDouble(idlePlanningTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
+
         return ExperimentResult(
-                experimentConfiguration.valueStore,
-                planner.expandedNodeCount,
-                planner.generatedNodeCount,
-                totalPlanningNanoTime,
-                totalExecutionNanoTime,
-                goalAchievementTime,
-                pathLength,
-                actions.map { it.toString() }
+                experimentConfiguration = experimentConfiguration.valueStore,
+                expandedNodes = planner.expandedNodeCount,
+                generatedNodes = planner.generatedNodeCount,
+                planningTime = totalPlanningTime,
+                actionExecutionTime = totalExecutionNanoTime,
+                goalAchievementTime = goalAchievementTime,
+                idlePlanningTime = idlePlanningTime,
+                pathLength = pathLength,
+                actions = actions.map { it.toString() }
         )
     }
 }

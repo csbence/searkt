@@ -91,14 +91,15 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         }
 
         return ExperimentResult(
-                experimentConfiguration.valueStore,
-                agent.planner.expandedNodeCount,
-                agent.planner.generatedNodeCount,
-                totalPlanningNanoTime,
-                totalExecutionNanoTime,
-                goalAchievementTime,
-                pathLength,
-                actions.map { it.toString() })
+                experimentConfiguration = experimentConfiguration.valueStore,
+                expandedNodes = agent.planner.expandedNodeCount,
+                generatedNodes = agent.planner.generatedNodeCount,
+                planningTime = totalPlanningNanoTime,
+                actionExecutionTime = totalExecutionNanoTime,
+                goalAchievementTime = goalAchievementTime,
+                idlePlanningTime = actionDuration,
+                pathLength = pathLength,
+                actions = actions.map { it.toString() })
     }
 
     private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
