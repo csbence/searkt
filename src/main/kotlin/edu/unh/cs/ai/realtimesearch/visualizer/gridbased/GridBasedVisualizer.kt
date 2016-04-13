@@ -17,18 +17,19 @@ import java.util.*
 abstract class GridBasedVisualizer : BaseVisualizer() {
     // Options
     protected val gridOptions = Options()
-    protected val trackerOption = Option("t", "tracker", false, "show tracker around agent")
+    protected val trackerOption = Option("t", "tracker", true, "show tracker around agent")
     protected val displayPathOption = Option("p", "path", false, "display line for agent's path")
 
     // Option fields
     protected var showTracker: Boolean = false
+    protected var trackerSize: Double = 10.0
     protected var displayLine: Boolean = false
 
     // State fields
     protected var actionList: MutableList<String> = arrayListOf()
     protected var mapInfo: MapInfo = MapInfo.ZERO
     protected var grid: GridCanvasPane = GridCanvasPane.ZERO
-    protected var robotView: RobotView = RobotView.ZERO
+    protected var agentView: AgentView = AgentView.ZERO
     protected var timeToRun: Double = 0.0
 
     // Graphical fields
@@ -41,6 +42,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     open protected var robotScale = 2.0
 
     init {
+        trackerOption.setOptionalArg(true)
         gridOptions.addOption(trackerOption)
         gridOptions.addOption(displayPathOption)
     }
@@ -51,6 +53,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     override fun processOptions(cmd: CommandLine) {
         showTracker = cmd.hasOption(trackerOption.opt)
+        trackerSize = cmd.getOptionValue(trackerOption.opt, trackerSize.toString()).toDouble()
         displayLine = cmd.hasOption(displayPathOption.opt)
     }
 
@@ -141,14 +144,14 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
 
         // Robot setup
-        robotView = RobotView(robotWidth)
-        robotView.trackingEnabled = showTracker
-        robotView.toFront()
-        robotView.setLocation(robotLocationX, robotLocationY)
+        agentView = AgentView(robotWidth, trackerSize)
+        agentView.trackingEnabled = showTracker
+        agentView.toFront()
+        agentView.setLocation(robotLocationX, robotLocationY)
 
         // Grid setup
         grid = GridCanvasPane(mapInfo, tileSize)
-        grid.children.add(robotView.robot)
-        grid.children.add(robotView.tracker)
+        grid.children.add(agentView.agent)
+        grid.children.add(agentView.tracker)
     }
 }

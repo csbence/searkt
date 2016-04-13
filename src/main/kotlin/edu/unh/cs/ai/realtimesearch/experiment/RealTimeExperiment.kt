@@ -77,9 +77,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
             validateInteration(actionList, iterationNanoTime)
 
-            //            System.gc()
-            //            Thread.sleep(500)
-
             totalPlanningNanoTime += iterationNanoTime
 
         }
@@ -106,7 +103,14 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
     private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
         if (actionList.isEmpty()) {
-            throw RuntimeException("Select action did not return actions in the given time bound. The agent is confused.")
+            val planner = agent.planner
+            val extras = if (planner is LssLrtaStarPlanner) {
+                "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
+            } else {
+                ""
+            }
+
+            throw RuntimeException("Select action did not return actions in the given time bound: ${terminationChecker.timeLimit}. The agent is confused. $extras")
         }
 
         // Check if the algorithm satisfies the real-time bound

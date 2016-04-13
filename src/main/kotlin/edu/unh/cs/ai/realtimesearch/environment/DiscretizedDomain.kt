@@ -39,7 +39,8 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      */
     override fun heuristic(state: DiscretizedState<StateType>): Double = domain.heuristic(state.state)
 
-    override fun heuristic(startState: DiscretizedState<StateType>, endState: DiscretizedState<StateType>): Double = domain.heuristic(startState.state, endState.state)
+    override fun heuristic(startState: DiscretizedState<StateType>, endState: DiscretizedState<StateType>): Double
+            = domain.heuristic(startState.state, endState.state)
 
     /**
      * Goal distance estimate.  Equal to the difference between the goal positions and actual positions.
@@ -69,11 +70,11 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      */
     override fun randomState(): DiscretizedState<StateType> = DiscretizedState(domain.randomState())
 
-    override fun getGoal(): List<DiscretizedState<StateType>>{
-        val list : MutableList<DiscretizedState<StateType>> = arrayListOf<DiscretizedState<StateType>>()
+    override fun getGoal(): List<DiscretizedState<StateType>> {
+        val list: MutableList<DiscretizedState<StateType>> = arrayListOf()
 
-        for(it in domain.getGoal()){
-            list.add(DiscretizedState<StateType>(it))
+        for (goal in domain.getGoal()) {
+            list.add(DiscretizedState(goal))
         }
 
         return list

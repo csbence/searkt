@@ -68,11 +68,15 @@ class RealTimeSearchClient(val url: String) {
      * Notify the server that the client is not available anymore.
      */
     fun disconnect() {
-        val responseEntity = restTemplate.exchange("$url/disconnect/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), Nothing::class.java)
-        if (responseEntity.statusCode == HttpStatus.OK) {
-            logger.info("Disconnection successful")
-        } else {
-            logger.info("Disconnection failed")
+        try {
+            val responseEntity = restTemplate.exchange("$url/disconnect/$connectionId", HttpMethod.POST, HttpEntity(ClientInformation(systemProperties)), Nothing::class.java)
+            if (responseEntity.statusCode == HttpStatus.OK) {
+                logger.info("Disconnection successful")
+            } else {
+                logger.info("Disconnection failed")
+            }
+        } catch(e: RestClientException) {
+            logger.error("Disconnection: failed", e)
         }
     }
 

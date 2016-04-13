@@ -1,9 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
+import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.event.EventHandler
 import javafx.scene.Node
-import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
@@ -72,8 +72,8 @@ data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val lin
     }
 
     init {
-        jointColor = Color.RED
-        linkColor = Color.BLACK
+        jointColor = ThemeColors.JOINT.color
+        linkColor = ThemeColors.LINK.color
 
         link1.strokeWidth = linkWidth
         link2.strokeWidth = linkWidth

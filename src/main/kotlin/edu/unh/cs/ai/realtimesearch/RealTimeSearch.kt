@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(320, MILLISECONDS)
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(6, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
@@ -54,8 +54,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.25
 
 
-//        visualizerParameters.add("--path")
-//        visualizerParameters.add("--tracker")
+        visualizerParameters.add("--path")
+        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)

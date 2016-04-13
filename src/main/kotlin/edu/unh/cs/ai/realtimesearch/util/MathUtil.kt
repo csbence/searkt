@@ -10,9 +10,14 @@ val defaultFloatAccuracy = 0.00001
 /**
  * Compare two double for equality up to a given accuracy.
  */
-fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean {
-    return a == b || Math.abs(a - b) < accuracy
-}
+fun doubleNearEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a == b) || Math.abs(a - b) < accuracy
+
+fun doubleNearLessThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a < b) || doubleNearEquals(a, b, accuracy)
+
+fun doubleNearGreaterThanOrEquals(a: Double, b: Double, accuracy: Double = defaultFloatAccuracy): Boolean
+        = (a > b) || doubleNearEquals(a, b, accuracy)
 
 /**
  * Round a number to a given decimal provided the type of rounding operation.
@@ -34,7 +39,6 @@ fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(n
  * Convert time in ns to double in specified time unit
  */
 fun convertNanoUpDouble(time: Long, unit: TimeUnit): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, unit).toDouble()
-//fun convertNanoToSecondsDouble(time: Long): Double = time.toDouble() / TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS).toDouble()
 
 /**
  * Calculate the difference between an angle and a goal angle.  The resulting difference will be in the range
@@ -57,3 +61,17 @@ fun angleDistance(angle: Double, goalAngle: Double): Double {
     val distance = angleDifference(angle, goalAngle)
     return if (distance < 0) distance * -1 else distance
 }
+
+/**
+ * Calculate a new velocity given an initial velocity and a constant acceleration to be applied over the specified time
+ * period.  Assumes the units of the parameters provided are the same.
+ */
+fun calculateVelocity(acceleration: Double, initialVelocity: Double, time: Double) =
+        acceleration * time + initialVelocity
+
+/**
+ * Calculates the distance travelled over a period of time given an initial velocity and a constant acceleration
+ * applied over the time period.  Assumes the units of the parameters provided are the same.
+ */
+fun calculateDisplacement(acceleration: Double, initialVelocity: Double, time: Double) =
+        initialVelocity * time + 0.5 * acceleration * (time * time)
