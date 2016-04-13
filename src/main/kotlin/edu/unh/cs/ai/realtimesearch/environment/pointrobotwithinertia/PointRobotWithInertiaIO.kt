@@ -7,7 +7,8 @@ import java.util.*
 
 object PointRobotWithInertiaIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long): PointRobotWithInertiaInstance {
+    fun parseFromStream(input: InputStream, numAction: Int,
+                        actionFraction: Double, stateFraction: Double, actionDuration: Long): PointRobotWithInertiaInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -67,8 +68,8 @@ object PointRobotWithInertiaIO {
         }
 
         val doubleIntegrator = edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.
-                PointRobotWithInertia(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius, actionDuration)
-        val startState = PointRobotWithInertiaState(startLocation.x, startLocation.y, 0.0, 0.0)
+                PointRobotWithInertia(columnCount, rowCount, blockedCells.toHashSet(), endLocation, radius, numAction, actionFraction, stateFraction, actionDuration)
+        val startState = PointRobotWithInertiaState(startLocation.x, startLocation.y, 0.0, 0.0, stateFraction)
         return PointRobotWithInertiaInstance(doubleIntegrator, startState)
     }
 

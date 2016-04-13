@@ -175,7 +175,11 @@ object ConfigurationExecutor {
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream(), experimentConfiguration.actionDuration)
+        val numActions = experimentConfiguration.getTypedValue<Int>(Configurations.NUM_ACTIONS.toString()) ?: throw InvalidFieldException("\"${Configurations.NUM_ACTIONS}\" is not found. Please add it the the experiment configuration.")
+        val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: throw InvalidFieldException("\"${Configurations.ACTION_FRACTION}\" is not found. Please add it the the experiment configuration.")
+        val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: throw InvalidFieldException("\"${Configurations.STATE_FRACTION}\" is not found. Please add it the the experiment configuration.")
+
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream(), numActions, actionFraction, stateFraction, experimentConfiguration.actionDuration)
         val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
 
         return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
