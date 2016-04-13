@@ -45,14 +45,15 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
         logger.info { "Path length: [$pathLength] After ${agent.planner.expandedNodeCount} expanded and ${agent.planner.generatedNodeCount} generated nodes" }
 
         return ExperimentResult(
-                experimentConfiguration.valueStore,
-                agent.planner.expandedNodeCount,
-                agent.planner.generatedNodeCount,
-                cpuNanoTime,
-                pathLength * experimentConfiguration.actionDuration,
-                cpuNanoTime + pathLength * experimentConfiguration.actionDuration,
-                pathLength,
-                actions.map { it.toString() })
+                experimentConfiguration = experimentConfiguration.valueStore,
+                expandedNodes = agent.planner.expandedNodeCount,
+                generatedNodes = agent.planner.generatedNodeCount,
+                planningTime = cpuNanoTime,
+                actionExecutionTime = pathLength * experimentConfiguration.actionDuration,
+                goalAchievementTime = cpuNanoTime + pathLength * experimentConfiguration.actionDuration,
+                idlePlanningTime = cpuNanoTime,
+                pathLength = pathLength,
+                actions = actions.map { it.toString() })
 
     }
 }

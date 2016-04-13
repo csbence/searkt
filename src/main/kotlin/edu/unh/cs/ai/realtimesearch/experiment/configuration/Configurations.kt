@@ -26,7 +26,12 @@ enum class Configurations {
     // Anytime search configurations
     ANYTIME_MAX_COUNT       ("anytimeMaxCount",     Long::class.java,           ARA_STAR),
     // Weighted A* configurations
-    WEIGHT                  ("weight",              Double::class.java,         WEIGHTED_A_STAR);
+    WEIGHT                  ("weight",              Double::class.java,         WEIGHTED_A_STAR),
+    NUM_ACTIONS             ("numActions",          Int::class.java),
+    ACTION_FRACTION         ("actionFraction",      Double::class.java),
+    STATE_FRACTION          ("stateFraction",       Double::class.java);
+
+
 
     val configurationName: String
     val valueType: Class<*>

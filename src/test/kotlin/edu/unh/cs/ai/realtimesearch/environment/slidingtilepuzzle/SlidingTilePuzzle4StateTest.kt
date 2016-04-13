@@ -9,7 +9,6 @@ import kotlin.test.assertTrue
  */
 class SlidingTilePuzzle4StateTest {
 
-
     @Test
     fun testHeuristic() {
         val slidingTilePuzzle = SlidingTilePuzzle(4, 0)
@@ -36,6 +35,33 @@ class SlidingTilePuzzle4StateTest {
         }
 
         assertTrue(slidingTilePuzzle.initialHeuristic(slidingTilePuzzle4State) == 0.0)
+    }
 
+
+    @Test
+    fun testTwoStateHeuristic() {
+        val slidingTilePuzzle = SlidingTilePuzzle(4, 0)
+        val stateA = SlidingTilePuzzle4State(0, 0, 0.0)
+        val stateB = SlidingTilePuzzle4State(0, 0, 0.0)
+
+        for (i in 0..15) {
+            stateA[i] = i.toByte()
+        }
+
+        assertTrue(slidingTilePuzzle.heuristic(stateA, stateA) == 0.0)
+
+        for (i in 15 downTo 0) {
+            stateB[i] = i.toByte()
+        }
+
+        assertTrue(slidingTilePuzzle.heuristic(stateA, stateB) == slidingTilePuzzle.heuristic(stateB, stateA))
+
+        val stateC = SlidingTilePuzzle4State(0, 0, 0.0)
+
+        for (i in 15 downTo 0) {
+            stateC[i] = 10
+        }
+
+        assertFalse(slidingTilePuzzle.heuristic(stateC, stateB) == slidingTilePuzzle.heuristic(stateB, stateC))
     }
 }

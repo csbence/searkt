@@ -10,10 +10,12 @@ import java.util.*
  * Double Integrator Domain
  */
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
-                            val endLocation: DoubleLocation, val goalRadius: Double, val actionDuration: Long) : Domain<PointRobotWithInertiaState> {
+                            val endLocation: DoubleLocation, val goalRadius: Double,
+                            val numActions: Int, val actionFraction: Double,
+                            val stateFraction: Double, val actionDuration: Long) : Domain<PointRobotWithInertiaState> {
 
-    val numAction = 3; // total number of accelerations avaliable in one direction
-    val fractions = 1; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+    val numAction = numActions; // total number of accelerations avaliable in one direction
+    val fractions = actionFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
@@ -26,7 +28,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             for (y in 0..numAction - 1) {
                 var xDoubleDot = ((x) - ((numAction - (1.0)) / 2)) / fractions;
                 var yDoubleDot = ((y) - ((numAction - (1.0)) / 2)) / fractions;
-                //                println("" + xDoubleDot + " " + yDoubleDot)
+//                                println("" + xDoubleDot + " " + yDoubleDot)
                 actions.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
             }
         }
@@ -64,7 +66,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 //                println0("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
                 //                println("\t" + PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot))
                 successors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot),
+                        PointRobotWithInertiaState(x, y, state.xdot + it.xDoubleDot, state.ydot + it.yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         actionDuration));
             }
@@ -214,7 +216,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     override fun getGoal(): List<PointRobotWithInertiaState> {
-        return listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0))
+        return listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0, stateFraction))
     }
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
@@ -244,7 +246,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             if (valid) {
                 //                println("" + x + " " + y + " " + (state.loc.x + state.xdot) + " " + (state.loc.y + state.ydot))
                 predecessors.add(SuccessorBundle(
-                        PointRobotWithInertiaState(x, y, state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot),
+                        PointRobotWithInertiaState(x, y, state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
                         actionDuration));
             }

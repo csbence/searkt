@@ -26,6 +26,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
                 planningTime: Long,
                 actionExecutionTime: Long,
                 goalAchievementTime: Long,
+                idlePlanningTime: Long,
                 pathLength: Long,
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
@@ -37,6 +38,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         this.planningTime = planningTime
         this.actionExecutionTime = actionExecutionTime
         this.goalAchievementTime = goalAchievementTime
+        this.idlePlanningTime = idlePlanningTime
         this.actions = actions
         this.pathLength = pathLength
         this.timestamp = timestamp
@@ -56,6 +58,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
     var planningTime: Long by valueStore
     var actionExecutionTime: Long by valueStore
     var goalAchievementTime: Long by valueStore
+    var idlePlanningTime: Long by valueStore
     var actions: List<String> by valueStore
     var timestamp: Long by valueStore
     var success: Boolean by valueStore

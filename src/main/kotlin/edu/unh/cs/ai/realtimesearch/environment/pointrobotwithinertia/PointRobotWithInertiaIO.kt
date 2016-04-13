@@ -6,7 +6,8 @@ import java.util.*
 
 object PointRobotWithInertiaIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long): PointRobotWithInertiaInstance {
+    fun parseFromStream(input: InputStream, numAction: Int,
+                        actionFraction: Double, stateFraction: Double, actionDuration: Long): PointRobotWithInertiaInstance {
         val inputScanner = Scanner(input)
 
         val header = PointRobotIO.parseHeader(inputScanner)
@@ -16,8 +17,8 @@ object PointRobotWithInertiaIO {
         val endLocation = mapInfo.endCells.first()
 
         val pointRobotWithInertia = PointRobotWithInertia(header.columnCount, header.rowCount,
-                mapInfo.blockedCells.toHashSet(), endLocation, header.goalRadius, actionDuration)
-        val startState = PointRobotWithInertiaState(startLocation.x, startLocation.y, 0.0, 0.0)
+                mapInfo.blockedCells.toHashSet(), endLocation, header.goalRadius, numAction, actionFraction, stateFraction, actionDuration)
+        val startState = PointRobotWithInertiaState(startLocation.x, startLocation.y, 0.0, 0.0, actionFraction)
         return PointRobotWithInertiaInstance(pointRobotWithInertia, startState)
     }
 }
