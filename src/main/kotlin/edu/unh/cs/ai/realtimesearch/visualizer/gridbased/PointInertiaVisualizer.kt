@@ -1,9 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaAction
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaState
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
@@ -19,19 +15,27 @@ import javafx.util.Duration
  * Created by Stephen on 2/29/16.
  */
 class PointInertiaVisualizer : PointVisualizer() {
-    private var domain: PointRobotWithInertia? = null
-    private var environment: PointRobotWithInertiaEnvironment? = null
+    private var xDot = 0.0
+    private var yDot = 0.0
+//    private var domain: PointRobotWithInertia? = null
+//    private var environment: PointRobotWithInertiaEnvironment? = null
 
     override fun setupDomain() {
-        domain = PointRobotWithInertia(
-                mapInfo.columnCount,
-                mapInfo.rowCount,
-                mapInfo.blockedCells.toHashSet(),
-                mapInfo.goalCells.first().toDoubleLocation(),
-                header!!.goalRadius,
-                actionDuration
-        )
-        environment = PointRobotWithInertiaEnvironment(domain!!,PointRobotWithInertiaState(startX, startY, 0.0, 0.0))
+//        val numActions = (experimentResult!!.experimentConfiguration[Configurations.NUM_ACTIONS.toString()] as Long?)?.toInt() ?: PointRobotWithInertia.defaultNumActions
+//        val stateFraction = experimentResult!!.experimentConfiguration[Configurations.STATE_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultStateFraction
+//        val actionFraction = experimentResult!!.experimentConfiguration[Configurations.ACTION_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultActionFraction
+//        domain = PointRobotWithInertia(
+//                mapInfo.columnCount,
+//                mapInfo.rowCount,
+//                mapInfo.blockedCells.toHashSet(),
+//                mapInfo.goalCells.first().toDoubleLocation(),
+//                header!!.goalRadius,
+//                numActions,
+//                actionFraction,
+//                stateFraction,
+//                actionDuration
+//        )
+//        environment = PointRobotWithInertiaEnvironment(domain!!, PointRobotWithInertiaState(startX, startY, 0.0, 0.0, actionFraction))
     }
 
     override fun playAnimation(transitions: List<PathTransition>) {
@@ -66,44 +70,47 @@ class PointInertiaVisualizer : PointVisualizer() {
     }
 
     override fun animate(x: String, y: String): MutableList<PathTransition> {
-        val agent = agentView.agent
+        val robot = agentView.agent
         val width = tileSize
         val retval: MutableList<PathTransition> = arrayListOf()
-        val xAcceleration = x.toDouble()
-        val yAcceleration = y.toDouble()
-        val action = PointRobotWithInertiaAction(xAcceleration, yAcceleration)
 
-//        domain.calculateNextState(PointRobotWithInertiaState(x, y))
-        val previousState = environment!!.getState()
-        environment!!.step(action)
-        val newState = environment!!.getState()
-//println("Animating from $previousState to $newState ($action)")
-        val xChange = (newState.x - previousState.x) * tileSize
-        val yChange = (newState.y - previousState.y) * tileSize
-//println("x: ${agent.translateX} | y: ${agent.translateY}")
-//println("xChange: $xChange | yChange: $yChange")
+        val xDDot = x.toDouble() * width
+        val yDDot = y.toDouble() * width
 
-        val path = Path()
-        path.elements.add(MoveTo(agent.translateX, agent.translateY))
-        path.elements.add(LineTo(agent.translateX + xChange, agent.translateY + yChange))
-        agent.translateX += xChange
-        agent.translateY += yChange
+        val nSteps = 100
+        val dt = 1.0 / nSteps
 
-        if(displayLine){
-            path.stroke = ThemeColors.PATH.stroke
-            grid.children.add(path)
-            val actionCircle = Circle(agent.translateX, agent.translateY, width / 10.0)
-            grid.children.add(actionCircle)
+        for (i in 0..nSteps-1) {
+            val path = Path()
+            path.elements.add(MoveTo(robot.translateX, robot.translateY))
+
+            var xdot = xDot + xDDot * (dt * i)
+            var ydot = yDot + yDDot * (dt * i)
+
+            path.elements.add(LineTo(robot.translateX + (xdot * dt), robot.translateY + (ydot * dt)))
+            robot.translateX += xdot * dt;
+            robot.translateY += ydot * dt;
+
+            if(displayLine){
+                path.stroke = ThemeColors.PATH.stroke
+                grid.children.add(path)
+            }
+            /* Animate the robot */
+            val pathTransition = PathTransition()
+            pathTransition.duration = Duration.millis(10.0)
+            pathTransition.path = path
+            pathTransition.node = robot
+            pathTransition.interpolator = Interpolator.LINEAR
+            retval.add(pathTransition)
         }
 
-        /* Animate the robot */
-        val pathTransition = PathTransition()
-        pathTransition.duration = Duration.millis(animationTime)
-        pathTransition.path = path
-        pathTransition.node = agent
-        pathTransition.interpolator = Interpolator.LINEAR
-        retval.add(pathTransition)
+        xDot += xDDot
+        yDot += yDDot
 
+        if(displayLine){
+            val action = Circle(robot.translateX, robot.translateY, width / 10.0)
+            grid.children.add(action)
+        }
         return retval
     }
 }

@@ -11,11 +11,18 @@ import java.util.*
  */
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
                             val endLocation: DoubleLocation, val goalRadius: Double,
-                            val numActions: Int, val actionFraction: Double,
-                            val stateFraction: Double, val actionDuration: Long) : Domain<PointRobotWithInertiaState> {
+                            val numActions: Int = defaultNumActions,
+                            val actionFraction: Double = defaultActionFraction,
+                            val stateFraction: Double = defaultStateFraction,
+                            val actionDuration: Long) : Domain<PointRobotWithInertiaState> {
+    companion object {
+        val defaultNumActions = 3
+        val defaultActionFraction = 1.0
+        val defaultStateFraction = 0.5
+    }
 
-    val numAction = numActions; // total number of accelerations avaliable in one direction
-    val fractions = actionFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+    val numAction = numActions // total number of accelerations avaliable in one direction
+    val fractions = actionFraction // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {

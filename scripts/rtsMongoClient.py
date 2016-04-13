@@ -8,9 +8,8 @@ from enum import Enum
 from subprocess import call
 
 import matplotlib.pyplot as plt
-from pymongo import MongoClient
-
 import plotutils
+from pymongo import MongoClient
 
 warnings.filterwarnings("ignore", message=".*Source ID.*", module="matplotlib")
 warnings.filterwarnings("ignore", message="Attempting to set identical bottom==top results", module="matplotlib")
@@ -45,7 +44,11 @@ all_acrobot_instances = ["0.07-0.07",
 all_dylan_instances = ["dylan/cups",
                        "dylan/slalom",
                        "dylan/uniform",
-                       "dylan/wall"]
+                       "dylan/wall"
+                       ]
+big_uniform_instances = ["random1k",
+                         "randomShapes1k",
+                         "randomNoisy1k"]
 all_racetrack_instances = ["input/racetrack/barto-big.track",
                            "input/racetrack/barto-small.track"]
 sliding_tile_4_map_root = "input/tiles/korf/4/all"
@@ -86,7 +89,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResultV2')
+    result_status = db.command('collstats', 'experimentResult')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -115,7 +118,7 @@ def get_realtime_gat_per_duration_data(db, algorithm, domain, instance, commitme
     assert algorithm is "LSS_LRTA_STAR" or algorithm is "DYNAMIC_F_HAT" or algorithm is "RTA_STAR"
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResultV2.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -144,7 +147,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
     data_action_durations = []
 
     for action_duration in all_action_durations:
-        data_tiles = db.experimentResultV2.find({
+        data_tiles = db.experimentResult.find({
             "result.experimentConfiguration.domainName": domain,
             "result.experimentConfiguration.algorithmName": algorithm,
             "result.experimentConfiguration.domainInstanceName": instance,
@@ -162,7 +165,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance):
 
 
 def get_realtime_gat_data(db, algorithm, domain, instance, action_duration, commitmentStrategy, timeBoundType):
-    data_tiles = db.experimentResultV2.find({
+    data_tiles = db.experimentResult.find({
         "result.experimentConfiguration.domainName": domain,
         "result.experimentConfiguration.algorithmName": algorithm,
         "result.experimentConfiguration.domainInstanceName": instance,
@@ -190,7 +193,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
             data = get_realtime_gat_data(db, algorithm, domain, instance, action_duration,
                                          commitment_strategy, time_bound_type)
         else:
-            data_tiles = db.experimentResultV2.find({
+            data_tiles = db.experimentResult.find({
                 "result.experimentConfiguration.domainName": domain,
                 "result.experimentConfiguration.algorithmName": algorithm,
                 "result.experimentConfiguration.domainInstanceName": instance,
@@ -308,8 +311,8 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
             algorithm_gat_per_duration[algorithm] = get_gat_per_duration_data(db, algorithm, domain, instance)
         remove_empty_data(algorithm_gat_per_duration)
 
-        # Errorbar plot
         if not average_only:
+            # Errorbar plot
             if not quiet:
                 print("Plotting error plot: {} - {}".format(domain, instance))
             file_header = "{}_{}".format(domain, instance_file_name)
@@ -317,10 +320,20 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
             plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
                                               all_action_durations_ms,
                                               title=plotutils.translate_domain_name(domain) + " - " + instance))
+            # Also plot without RTA*
+            rta_star_data = algorithm_gat_per_duration.pop("RTA_STAR", None)
+            if rta_star_data is not None:
+                if not quiet:
+                    print("Plotting error plot: {} - {} without RTA*".format(domain, instance))
+                file_header = "{}_{}_NO_RTA_STAR".format(domain, instance_file_name)
+                markdown_document += do_plot(file_header, "error", lambda:
+                plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
+                                                  all_action_durations_ms,
+                                                  title=plotutils.translate_domain_name(domain) + " - " + instance))
+                algorithm_gat_per_duration["RTA_STAR"] = rta_star_data  # put it back
 
-        if not average_only:
             for action_duration in all_action_durations:
-                # Gather data
+                # Gather gat data
                 y_gat, labels_gat = get_gat_data(db, plot_algorithms, domain, instance, action_duration)
                 # instance_gat_data.append(y_gat)
 
@@ -389,19 +402,20 @@ def plot_all_for_domain(db, domain, instances, plot_average=False, average_only=
         plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain), lgd)
         plt.close('all')
 
-        # Plot Sliding tile puzzle average without RTA*
-        if domain is "SLIDING_TILE_PUZZLE_4":
-            all_error_data.pop("RTA_STAR")
-            lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
-                                                    title="{} data over all instances".format(
-                                                        plotutils.translate_domain_name(domain)))
-            plotutils.save_plot(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
-            plt.close('all')
+        # Plot averages without RTA*
+        all_error_data.pop("RTA_STAR")
+        lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
+                                                title="{} data over all instances no RTA*".format(
+                                                    plotutils.translate_domain_name(domain)))
+        plotutils.save_plot(plt, "plots/{}_NO_RTA_STAR_average.pdf".format(domain), lgd)
+        plt.close('all')
 
 
 def get_all_grid_world_instances():
     instances = []
-    for instance in all_dylan_instances:
+    # for instance in all_dylan_instances:
+    #     instances.append("input/vacuum/{}.vw".format(instance))
+    for instance in big_uniform_instances:
         instances.append("input/vacuum/{}.vw".format(instance))
     return instances
 
@@ -425,11 +439,11 @@ def plot_all(db):
         os.makedirs("plots")
 
     plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
-    plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
-    plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
-    plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
+    # plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
+    # plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
+    # plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
     # plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
-    plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
+    # plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
 
 if __name__ == '__main__':

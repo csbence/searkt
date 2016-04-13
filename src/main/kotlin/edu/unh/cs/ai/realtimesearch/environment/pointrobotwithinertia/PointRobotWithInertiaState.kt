@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
 
 /**

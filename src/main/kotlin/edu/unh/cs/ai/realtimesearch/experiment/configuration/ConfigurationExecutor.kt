@@ -13,6 +13,7 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
+import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
@@ -175,9 +176,9 @@ object ConfigurationExecutor {
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val numActions = experimentConfiguration.getTypedValue<Int>(Configurations.NUM_ACTIONS.toString()) ?: throw InvalidFieldException("\"${Configurations.NUM_ACTIONS}\" is not found. Please add it the the experiment configuration.")
-        val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: throw InvalidFieldException("\"${Configurations.ACTION_FRACTION}\" is not found. Please add it the the experiment configuration.")
-        val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: throw InvalidFieldException("\"${Configurations.STATE_FRACTION}\" is not found. Please add it the the experiment configuration.")
+        val numActions = experimentConfiguration.getTypedValue<Int>(Configurations.NUM_ACTIONS.toString()) ?: PointRobotWithInertia.defaultNumActions
+        val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: PointRobotWithInertia.defaultActionFraction
+        val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
 
         val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(rawDomain.byteInputStream(), numActions, actionFraction, stateFraction, experimentConfiguration.actionDuration)
         val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)

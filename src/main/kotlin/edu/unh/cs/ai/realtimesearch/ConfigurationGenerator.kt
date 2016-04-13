@@ -99,10 +99,14 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     val gridMaps = listOf(
-            "input/vacuum/dylan/cups.vw",
-            "input/vacuum/dylan/slalom.vw",
-            "input/vacuum/dylan/uniform.vw",
-            "input/vacuum/dylan/wall.vw"
+//            "input/vacuum/dylan/cups.vw",
+//            "input/vacuum/dylan/slalom.vw",
+//            "input/vacuum/dylan/uniform.vw",
+//            "input/vacuum/dylan/wall.vw"
+            "input/vacuum/random1k.vw",
+            "input/vacuum/randomShapes1k.vw",
+            "input/vacuum/randomNoisy1k.vw"
+//            "input/vacuum/random5k.vw"
     )
 
     val racetrackMaps = listOf(
@@ -284,21 +288,23 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
     print("Upload configurations (y/n)? ")
     val input = readLine()
     val elapsed = measureTimeMillis {
-        when (input?.toLowerCase()) {
-            "y", "yes" -> {
-                try {
-                    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-                    if (responseEntity.statusCode == HttpStatus.OK) {
-                        println("Upload completed! ${configurations.size}")
-                    } else {
+        for (configuration in configurations) {
+            when (input?.toLowerCase()) {
+                "y", "yes" -> {
+                    try {
+                        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
+                        if (responseEntity.statusCode == HttpStatus.OK) {
+                            println("Upload completed! ${configurations.size}")
+                        } else {
+                            println("Upload failed!")
+                        }
+                    } catch (e: RestClientException) {
                         println("Upload failed!")
                     }
-                } catch (e: RestClientException) {
-                    println("Upload failed!")
                 }
-            }
-            else -> {
-                println("Not uploading")
+                else -> {
+                    println("Not uploading")
+                }
             }
         }
     }
