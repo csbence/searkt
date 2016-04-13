@@ -176,7 +176,7 @@ object ConfigurationExecutor {
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration): ExperimentResult {
         val rawDomain: String = experimentConfiguration.rawDomain
-        val numActions = experimentConfiguration.getTypedValue<Int>(Configurations.NUM_ACTIONS.toString()) ?: PointRobotWithInertia.defaultNumActions
+        val numActions = experimentConfiguration.getTypedValue<Long>(Configurations.NUM_ACTIONS.toString())?.toInt() ?: PointRobotWithInertia.defaultNumActions
         val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: PointRobotWithInertia.defaultActionFraction
         val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
 
