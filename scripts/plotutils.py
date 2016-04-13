@@ -44,8 +44,10 @@ class Results:
 def translate_algorithm_name(alg_name):
     # Handle hat (^) names
     if "HAT" in alg_name:
-        alg_name = re.sub(r"(.*)_(.*)_(HAT)", r"\1", alg_name) \
-                   + re.sub(r"(.*)_(.*)_(HAT)", r"_$\\hat{\2}$", alg_name).lower()
+        alg_name = re.sub(r"(.*)_(.*)_(HAT)(.*)", r"\1", alg_name) \
+                   + re.sub(r"(.*)_(.*)_(HAT)(.*)", r"_$\\hat{\2}$", alg_name).lower() \
+                   + re.sub(r"(.*)_(.*)_(HAT)(.*)", r"\4", alg_name)
+
     # Specific word formatting
     alg_name = alg_name.replace('DYNAMIC_MULTIPLE', 'DM')
     alg_name = alg_name.replace('STATIC_MULTIPLE', 'SM')
