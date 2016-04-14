@@ -192,9 +192,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                     for (stateFraction in pointRobotWithInertiaStateFractions) {
                         for (map in pointRobotMaps) {
                             val valueMap = getDomainConfigurationMap(map)
-                            valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction)
-                            valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions)
-                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction)
+                            valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction.toDouble())
+                            valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions.toLong())
+                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction.toDouble())
                             configurations.add(valueMap)
                         }
                     }
