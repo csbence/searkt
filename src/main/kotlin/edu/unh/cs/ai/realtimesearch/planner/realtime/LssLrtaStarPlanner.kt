@@ -96,6 +96,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private var rootState: StateType? = null
 
+    // Performance measurement
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
@@ -119,7 +120,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         dijkstraTimer = 0L
 
         clearOpenList()
-        //        closedList.clear()
     }
 
     /**
@@ -163,12 +163,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
+
             plan = extractPlan(targetNode, state)
             rootState = targetNode.state
         }
 
-        //        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        //        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         return plan!!
     }
@@ -209,7 +210,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun initializeAStar() {
         iterationCounter++
         clearOpenList()
-        //        closedList.clear() XXX
 
         openList.reorder(fValueComparator)
     }
@@ -221,7 +221,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        //        closedList.add(sourceNode) XXX
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -336,7 +335,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             node.iteration = iterationCounter
 
             val currentHeuristicValue = node.heuristic
-            //            logger.debug { "Checking for predecessors of $node (h value: $currentHeuristicValue)" }
 
             // update heuristic value for each predecessor
             for (predecessor in node.predecessors) {
@@ -358,23 +356,23 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
                 //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
-
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
+
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
                     addToOpenList(predecessorNode)
-                } else if (predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
                     openList.update(predecessorNode) // Update priority
 
                     // Frontier nodes could be also visited TODO
-//                    assert(predecessorNode.iteration == iterationCounter) {
-//                        "Expected iteration stamp $iterationCounter got ${predecessorNode.iteration}"
-//                    }
+                    //                    assert(predecessorNode.iteration == iterationCounter) {
+                    //                        "Expected iteration stamp $iterationCounter got ${predecessorNode.iteration}"
+                    //                    }
                 }
             }
         }
@@ -394,7 +392,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
 
-        //        logger.debug() { "Extracting plan" }
+        logger.debug() { "Extracting plan" }
 
         if (targetNode.state == sourceState) {
             return emptyList()
@@ -406,7 +404,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
-        //        logger.debug() { "Plan extracted" }
+        logger.debug() { "Plan extracted" }
 
         return actions.reversed()
     }

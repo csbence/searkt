@@ -99,7 +99,7 @@ class RealTimeSearchClient(val url: String) {
             }
 
         } catch(e: RestClientException) {
-            logger.error("Get configuration: failed", e)
+            logger.error("Get configuration: failed", e.message)
         }
 
         return null

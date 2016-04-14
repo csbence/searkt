@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package edu.unh.cs.ai.realtimesearch.util
 
 import java.util.*

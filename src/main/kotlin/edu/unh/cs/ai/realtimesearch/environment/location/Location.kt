@@ -28,4 +28,6 @@ data class Location(val x: Int, val y: Int) {
     public fun inBounds(upperBound: Int, lowerBound: Int = 0): Boolean {
         return x >= lowerBound && y >= lowerBound && x < upperBound && y < upperBound
     }
+
+    fun toDoubleLocation(): DoubleLocation = DoubleLocation(x.toDouble(), y.toDouble())
 }

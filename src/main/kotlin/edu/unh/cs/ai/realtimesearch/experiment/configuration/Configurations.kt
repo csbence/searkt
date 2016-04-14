@@ -11,11 +11,12 @@ import edu.unh.cs.ai.realtimesearch.planner.Planners.*
  * @since 4/3/16
  */
 enum class Configurations {
-    // General configurations
+    // General configurations                    // Type cannot be Int (use Long)
     ALGORITHM_NAME          ("algorithmName",       String::class.java),
     DOMAIN_NAME             ("domainName",          String::class.java),
     DOMAIN_INSTANCE_NAME    ("domainInstanceName",  String::class.java),
     RAW_DOMAIN              ("rawDomain",           String::class.java),
+    DOMAIN_PATH             ("domainPath",          String::class.java),
     TIME_LIMIT              ("timeLimit",           Long::class.java),
     ACTION_DURATION         ("actionDuration",      Long::class.java),
     TERMINATION_TYPE        ("terminationType",     String::class.java),
@@ -27,7 +28,7 @@ enum class Configurations {
     ANYTIME_MAX_COUNT       ("anytimeMaxCount",     Long::class.java,           ARA_STAR),
     // Weighted A* configurations
     WEIGHT                  ("weight",              Double::class.java,         WEIGHTED_A_STAR),
-    NUM_ACTIONS             ("numActions",          Int::class.java),
+    NUM_ACTIONS             ("numActions",          Long::class.java),
     ACTION_FRACTION         ("actionFraction",      Double::class.java),
     STATE_FRACTION          ("stateFraction",       Double::class.java);
 
@@ -47,14 +48,15 @@ enum class Configurations {
     }
 
     companion object {
-        fun fromName(name: String): Configurations? {
+        val valueMap by lazy {
+            val map = mutableMapOf<String,Configurations>()
             val values = values()
             for (value in values) {
-                if (value.configurationName.equals(name))
-                    return value
+                map.put(value.configurationName, value)
             }
-            return null
+            map
         }
+        fun fromName(name: String): Configurations? = valueMap[name]
     }
 
     override fun toString(): String {

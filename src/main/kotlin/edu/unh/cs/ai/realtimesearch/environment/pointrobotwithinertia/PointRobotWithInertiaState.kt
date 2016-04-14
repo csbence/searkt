@@ -1,18 +1,17 @@
 package edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
 import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
 
 /**
  *
  */
-data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Double, val ydot: Double, val actionFraction: Double) : State<PointRobotWithInertiaState> {
+data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Double, val ydot: Double, val stateFraction: Double) : State<PointRobotWithInertiaState> {
 
 
     override fun equals(other: Any?): Boolean {
 //        println("" + other + " " + this)
-        val fractions = actionFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+        val fractions = stateFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
 
         return when {
             other !is PointRobotWithInertiaState -> false

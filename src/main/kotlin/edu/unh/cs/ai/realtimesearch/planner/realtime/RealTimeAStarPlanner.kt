@@ -11,33 +11,52 @@ import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, val depthLimit: Int) : RealTimePlanner<StateType>(domain) {
+class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, var depthLimit: Int) : RealTimePlanner<StateType>(domain) {
 
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
+    data class MiniminNode<StateType : State<StateType>>(val state: StateType, val cost: Double, val depth: Int)
+    data class HeuristicNode<StateType : State<StateType>>(var heuristic: Double, var interation: Int)
 
     val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
 
     private val heuristicTable: HashMap<StateType, Double> = HashMap<StateType, Double>(100000000, 1F).resize()
 
+    val openList: Queue<MiniminNode<StateType>> = ArrayDeque(1000000)
+//    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
+
+    init {
+        depthLimit = 20
+    }
+
     override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
         val successors = domain.successors(state)
-        val sortedSuccessors = evaluateSuccessors(successors, terminationChecker).sortedBy { it.successorBundle.actionCost + it.heuristicLookahead }
+        val unsortedSuccessors = evaluateSuccessors(successors, terminationChecker)
+
+        var bestSuccessor: SuccessorHeuristicPair<StateType>? = null
+        var secondBestSuccessor: SuccessorHeuristicPair<StateType>? = null
+
+        for (successor in unsortedSuccessors) {
+            if (bestSuccessor == null) {
+                bestSuccessor = successor
+            } else if (bestSuccessor.successorBundle.actionCost + bestSuccessor.heuristicLookahead >= successor.successorBundle.actionCost + successor.heuristicLookahead) {
+                secondBestSuccessor = bestSuccessor
+                bestSuccessor = successor
+            }
+        }
 
         val action = when {
-            sortedSuccessors.size == 1 -> {
+            bestSuccessor == null -> throw RuntimeException("Cannot expand a state with no successors.")
+            secondBestSuccessor == null -> {
                 // Only one action is available
-                val successorHeuristicPair = sortedSuccessors[0]
-                heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
-                ActionBundle(successorHeuristicPair.successorBundle.action, successorHeuristicPair.successorBundle.actionCost)
+                heuristicTable[state] = bestSuccessor.heuristicLookahead + bestSuccessor.successorBundle.actionCost
+                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }
-            sortedSuccessors.size >= 2 -> {
+            else -> {
                 // Save the second best action's f value
-                val successorHeuristicPair = sortedSuccessors[1]
-                heuristicTable[state] = successorHeuristicPair.heuristicLookahead + successorHeuristicPair.successorBundle.actionCost
+                heuristicTable[state] = secondBestSuccessor.heuristicLookahead + secondBestSuccessor.successorBundle.actionCost
                 // Use the best action
-                ActionBundle(sortedSuccessors[0].successorBundle.action, sortedSuccessors[0].successorBundle.actionCost)
+                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }
-            else -> throw RuntimeException("Cannot expand a state with no successors.")
         }
 
         logger.debug { "Selected action: $action" }
@@ -92,15 +111,16 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
             return 0.0
         }
 
-        data class MiniminNode(val state: StateType, val cost: Double, val depth: Int)
-
+        // Initialize
         var bestAvailable = Double.POSITIVE_INFINITY
+        openList.clear()
+//        closedList.clear()
 
-        val openList: Queue<MiniminNode> = ArrayDeque()
         openList.add(MiniminNode(sourceState, 0.0, depthLimit))
 
         while (openList.isNotEmpty()) {
             val miniminNode = openList.remove()
+//            closedList.add(miniminNode.state)
             expandedNodeCount++
 
             if (terminationChecker.reachedTermination()) {
@@ -108,6 +128,10 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
             }
 
             for (successor in domain.successors(miniminNode.state)) {
+//                if (successor.state in closedList) {
+//                    continue // Skip the already visited items
+//                }
+
                 val successorCost = successor.actionCost + domain.heuristic(successor.state) + miniminNode.cost
 
                 if (domain.isGoal(successor.state)) {
@@ -117,11 +141,9 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
                 }
 
                 if (successorCost > bestAvailable) {
-                    // Prune if the current cost is higher then the best available
-                    continue
+                    continue // Prune if the current cost is higher then the best available
                 } else if (miniminNode.depth == 0) {
-                    // Leaf level reached
-                    bestAvailable = Math.min(bestAvailable, successorCost)
+                    bestAvailable = Math.min(bestAvailable, successorCost) // Leaf level reached
                 } else {
                     openList.add(MiniminNode(successor.state, miniminNode.cost + successor.actionCost, miniminNode.depth - 1))
                     generatedNodeCount++

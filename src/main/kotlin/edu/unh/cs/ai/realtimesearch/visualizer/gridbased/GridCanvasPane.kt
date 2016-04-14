@@ -72,7 +72,7 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
 
             // Add goal cells
             val diameter = goalCircleRadius * 2
-            for (cell in mapInfo.endCells) {
+            for (cell in mapInfo.goalCells) {
                 val dirtyLocX = cell.x * tileSize + tileSize / 2.0 - goalCircleRadius
                 val dirtyLocY = cell.y * tileSize + tileSize / 2.0 - goalCircleRadius
 

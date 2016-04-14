@@ -1,5 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
+import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -15,6 +19,7 @@ import javafx.scene.shape.Path
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by Stephen on 2/29/16.
@@ -24,7 +29,10 @@ open class PointVisualizer : GridBasedVisualizer() {
     var startY: Double = 0.0
     var goalX: Double = 0.0
     var goalY: Double = 0.0
-    var goalRadius: Double = 0.0
+    var header: PointRobotHeader? = null
+    var actionDuration: Long = 0
+    var animationTime: Double = 0.0
+    val minimumAnimationTime: Double = 500.0
 
     override var robotScale: Double = 4.0
 
@@ -32,14 +40,12 @@ open class PointVisualizer : GridBasedVisualizer() {
 
     override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
 
+    open protected fun setupDomain() {
+    }
+
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
-        val dimensions = super.parseMapHeader(inputScanner)
-        startX = inputScanner.nextLine().toDouble()
-        startY = inputScanner.nextLine().toDouble()
-        goalX = inputScanner.nextLine().toDouble()
-        goalY = inputScanner.nextLine().toDouble()
-        goalRadius = inputScanner.nextLine().toDouble()
-        return dimensions
+        header = PointRobotIO.parseHeader(inputScanner)
+        return GridDimensions(header!!.rowCount, header!!.columnCount)
     }
 
     override fun parseActions(): MutableList<String> {
@@ -62,14 +68,20 @@ open class PointVisualizer : GridBasedVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         visualizerSetup()
+        actionDuration = experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
+        animationTime = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
+        //        if (animationTime < minimumAnimationTime)
+        animationTime = minimumAnimationTime
 
-        //        /* the dirty cell */
-        //        val dirtyCell = Circle(goalX * TILE_SIZE, goalY * TILE_SIZE, TILE_SIZE / 4.0)
-        //        dirtyCell.fill = Color.BLUE
-        //        root.children.add(dirtyCell)
+        startX = mapInfo.startCells.first().x + header!!.startLocationOffset.x
+        startY = mapInfo.startCells.first().y + header!!.startLocationOffset.y
+        goalX = mapInfo.goalCells.first().x + header!!.goalLocationOffset.x
+        goalY = mapInfo.goalCells.first().y + header!!.goalLocationOffset.y
+
+        setupDomain()
 
         /* the goal radius */
-        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, goalRadius * tileSize)
+        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header!!.goalRadius * tileSize)
         goalCircle.stroke = ThemeColors.GOAL_CIRCLE.stroke
         goalCircle.fill = ThemeColors.GOAL_CIRCLE.color
         goalCircle.opacity = ThemeColors.GOAL_CIRCLE.opacity
@@ -102,14 +114,13 @@ open class PointVisualizer : GridBasedVisualizer() {
         }
 
         val pathTransitions = mutableListOf<PathTransition>()
-        var actionIndex = 0
-        while (actionIndex != actionList.size) {
-            val x = actionList[actionIndex]
-            val y = actionList[actionIndex + 1]
+        val actionIterator = actionList.iterator()
+        while (actionIterator.hasNext()) {
+            val x = actionIterator.next()
+            assert(actionIterator.hasNext(), { "Action has no matching y value" })
+            val y = actionIterator.next()
             var pathTransition = animate(x, y)
             pathTransitions.addAll(pathTransition)
-            //            sequentialTransition.children.add()
-            actionIndex += 2
         }
 
         return pathTransitions
@@ -137,7 +148,7 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         /* Animate the robot */
         val pathTransition = PathTransition()
-        pathTransition.duration = Duration.millis(2000.0)
+        pathTransition.duration = Duration.millis(animationTime)
         pathTransition.path = path
         pathTransition.node = robot
         pathTransition.interpolator = Interpolator.LINEAR

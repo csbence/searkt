@@ -1,9 +1,10 @@
 import math
+import os
+import re
+
 import matplotlib.cbook as cbook
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import re
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
 from scipy import stats
@@ -12,9 +13,9 @@ from scipy import stats
 # http://tableaufriction.blogspot.ro/2012/11/finally-you-can-use-tableau-data-colors.html
 # http://www.randalolson.com/2014/06/28/how-to-make-beautiful-data-visualizations-in-python-with-matplotlib/
 tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (148, 103, 189),
-             (44, 160, 44), (140, 86, 75), (214, 39, 40), (255, 152, 150),
+             (44, 160, 44), (227, 119, 194), (214, 39, 40), (255, 152, 150),
              (255, 187, 120), (197, 176, 213), (152, 223, 138), (196, 156, 148),
-             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
+             (140, 86, 75), (247, 182, 210), (127, 127, 127), (199, 199, 199),
              (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
 
 # Scale the RGB values to the [0, 1] range, which is the format matplotlib accepts.
@@ -43,9 +44,14 @@ class Results:
 def translate_algorithm_name(alg_name):
     # Handle hat (^) names
     if "HAT" in alg_name:
-        alg_name = re.sub(r"(.*)_(.*)_(HAT)", r"\1", alg_name) \
-                   + re.sub(r"(.*)_(.*)_(HAT)", r"_$\\hat{\2}$", alg_name).lower()
+        alg_name = re.sub(r"(.*)_(.*)_(HAT)(.*)", r"\1", alg_name) \
+                   + re.sub(r"(.*)_(.*)_(HAT)(.*)", r"_$\\hat{\2}$", alg_name).lower() \
+                   + re.sub(r"(.*)_(.*)_(HAT)(.*)", r"\4", alg_name)
+
     # Specific word formatting
+    alg_name = alg_name.replace('DYNAMIC_MULTIPLE', 'DM')
+    alg_name = alg_name.replace('STATIC_MULTIPLE', 'SM')
+    alg_name = alg_name.replace('STATIC_SINGLE', 'SS')
     alg_name = alg_name.replace('DYNAMIC', 'Dynamic')
     alg_name = alg_name.replace('WEIGHTED', 'Weighted')
     alg_name = alg_name.replace('STATIC', 'Static')
@@ -115,10 +121,72 @@ def save_plot(plot, filename, lgd=None):
             plot.savefig(filename, bbox_inches='tight')
 
 
+def plot_gat_stacked_bars(data: dict, labels: list, title="", stats_type="median", log10=True):
+    if stats_type is not "median" and stats_type is not "mean":
+        print("invalid type passed to plotutils.plot_gat_stacked_bars (must be median or mean)")
+        return None
+
+    gat_name = "goalAchievementTime"
+    idle_name = "idlePlanningTime"
+
+    if gat_name not in data or idle_name not in data:
+        print("Missing data for plotutils.plot_gat_stacked_bars")
+        return None
+
+    y_gat = data[gat_name]
+    y_idle = data[idle_name]
+
+    if not y_gat:  # empty
+        print("No data provided to plotutils.plot_gat_stacked_bars")
+        return
+    if len(y_gat) != len(y_idle):
+        print("WARNING: Uneven data passed to plotutils.plot_gat_stacked_bars")
+    x = np.arange(1, len(y_gat) + 1) + 0.1
+
+    if stats_type is "median":
+        gat_stats, gat_stats_confidence_interval_low, gat_stats_confidence_interval_high = \
+            median_confidence_intervals(y_gat)
+        idle_stats, idle_stats_confidence_interval_low, idle_stats_confidence_interval_high = \
+            median_confidence_intervals(y_idle)
+    else:  # assured to be mean
+        gat_stats, gat_stats_confidence_interval_low, gat_stats_confidence_interval_high = \
+            mean_confidence_intervals(y_gat)
+        idle_stats, idle_stats_confidence_interval_low, idle_stats_confidence_interval_high = \
+            mean_confidence_intervals(y_idle)
+
+    width = 0.35
+    fig, ax = plt.subplots()
+    gat_bars = ax.bar(x, gat_stats, width, color=tableau20[0], ecolor=tableau20[5], capsize=2,
+                      label="Goal Achievement Time", edgecolor='none',
+                      yerr=(gat_stats_confidence_interval_low, gat_stats_confidence_interval_high))
+    init_bars = ax.bar(x, idle_stats, width, color=tableau20[1], ecolor=tableau20[3], capsize=2,
+                       label="Idle Planning Time", edgecolor='none',
+                       yerr=(idle_stats_confidence_interval_low, idle_stats_confidence_interval_high))
+
+    # Set labels
+    plt.title(title, fontsize=16)
+    if log10:
+        plt.ylabel("Time log10", fontsize=16)
+    else:
+        plt.ylabel("Time (ms)", fontsize=16)
+    plt.xlabel("Algorithms", fontsize=16)
+    ax.set_xticks(x + width / 2.)
+    ax.set_xticklabels(labels, fontsize=14)
+    ax.set_yscale('symlog', basey=10)
+    ax.autoscale(tight=True)
+    # ax.set_yscale('log', nonposy='clip')
+    fig.autofmt_xdate()
+    lgd = ax.legend(loc='best', frameon=False)
+
+    plt.gcf().tight_layout()
+
+    return lgd
+
+
 def plot_gat_bars(data, labels, title=""):
     y = data
     if not y:  # empty
-        print("No data provided to plotutills.plot_gat_boxplots")
+        print("No data provided to plotutils.plot_gat_boxplots")
         return
     x = np.arange(1, len(y) + 1)
     med, med_confidence_interval_low, med_confidence_interval_high = median_confidence_intervals(y)
@@ -138,12 +206,13 @@ def plot_gat_bars(data, labels, title=""):
     ax.set_xticks(x + width)
     ax.set_xticklabels(labels)
     fig.autofmt_xdate()
-    lgd = ax.legend((med_bars, mean_bars), ('Median', 'Mean'))
+    lgd = ax.legend((med_bars, mean_bars), ('Median', 'Mean'), loc='best', frameon=False)
 
+    ax.autoscale(tight=True)
     # Set ylims so we aren't at the top of the graph space for even data
-    low = min(min(y))
-    high = max(max(y))
-    plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
+    # low = min(min(y))
+    # high = max(max(y))
+    # plt.ylim([math.ceil(low - 0.5 * (high - low)), math.ceil(high + 0.5 * (high - low))])
 
     # Add numbers to top of bars
     def autolabel(rects):
@@ -161,7 +230,7 @@ def plot_gat_bars(data, labels, title=""):
 def plot_gat_boxplots(data, labels, title="", showviolin=False):
     y = data
     if not y:  # empty
-        print("No data provided to plotutills.plot_gat_boxplots")
+        print("No data provided to plotutils.plot_gat_boxplots")
         return
     med, confidence_interval_low, confidence_interval_high = median_confidence_intervals(y)
 
@@ -183,12 +252,15 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
     plt.xlabel("Algorithms")
     fig.autofmt_xdate()
 
-    ymin, ymax = plt.ylim()
-    plt.ylim(ymin - 0.1, ymax + 0.1)
+    ax.autoscale(tight=True)
+    # ymin, ymax = plt.ylim()
+    # plt.ylim(ymin - 0.1, ymax + 0.1)
     plt.gcf().tight_layout()
 
+    return None
 
-def all_zero(arr):
+
+def array_is_all_zero(arr):
     is_all_zero = True
     for val in arr:
         if val != 0:
@@ -198,7 +270,7 @@ def all_zero(arr):
 
 
 # TODO add factor A*
-def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
+def plot_gat_duration_error(data_dict, astar_data, action_durations, title="", log10=True):
     handles = []
     astar_gat_per_duration = astar_data
     if not astar_gat_per_duration:  # empty
@@ -211,6 +283,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     ax = plt.subplot()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.tick_params(direction='out')
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
@@ -221,7 +294,8 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
             print("No data for " + algorithm)
             continue
         # print(algorithm_gat_per_duration)
-        algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
+        # if log10:
+        #     algorithm_gat_per_duration = [np.log10(gat) for gat in algorithm_gat_per_duration]
         algorithm_gat_per_duration_mean, algorithm_confidence_interval_low, algorithm_confidence_interval_high = \
             mean_confidence_intervals(algorithm_gat_per_duration)
         data_mask = np.isfinite(algorithm_gat_per_duration_mean)
@@ -243,17 +317,19 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title=""):
     ordered_labels = [a[1] for a in handles]
     font_properties = FontProperties()
     font_properties.set_size('small')
-    lgd = plt.legend(handles=ordered_handles, labels=ordered_labels, prop=font_properties, loc="upper center",
-                     bbox_to_anchor=(0.5, -0.1), ncol=2)
-    plt.xticks(x, action_durations)
+    lgd = plt.legend(handles=ordered_handles, labels=ordered_labels, prop=font_properties, ncol=2, frameon=False,
+                     # loc="upper center",bbox_to_anchor=(0.5, -0.1)
+                     loc='best'
+                     )
+    plt.xticks(x, [duration if duration - int(duration) > 0 else int(duration) for duration in action_durations])
     plt.title(title)
-    plt.ylabel("GAT log10")
+    if log10:
+        plt.yscale('symlog', basey=10)
+        plt.ylabel("Goal Achievement Time log10")
+    else:
+        plt.ylabel("Goal Achievement Time (ms)")
     plt.xlabel("Action Duration (ms)")
     ax.autoscale(tight=True)
-
-    # Adjust x limits so end errors are visible
-    xmin, xmax = plt.xlim()
-    plt.xlim(xmin - 0.1, xmax + 0.1)
 
     plt.gcf().tight_layout()
 

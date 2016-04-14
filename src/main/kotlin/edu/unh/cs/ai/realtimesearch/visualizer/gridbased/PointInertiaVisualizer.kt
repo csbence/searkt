@@ -17,31 +17,56 @@ import javafx.util.Duration
 class PointInertiaVisualizer : PointVisualizer() {
     private var xDot = 0.0
     private var yDot = 0.0
+//    private var domain: PointRobotWithInertia? = null
+//    private var environment: PointRobotWithInertiaEnvironment? = null
 
+    override fun setupDomain() {
+//        val numActions = (experimentResult!!.experimentConfiguration[Configurations.NUM_ACTIONS.toString()] as Long?)?.toInt() ?: PointRobotWithInertia.defaultNumActions
+//        val stateFraction = experimentResult!!.experimentConfiguration[Configurations.STATE_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultStateFraction
+//        val actionFraction = experimentResult!!.experimentConfiguration[Configurations.ACTION_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultActionFraction
+//        domain = PointRobotWithInertia(
+//                mapInfo.columnCount,
+//                mapInfo.rowCount,
+//                mapInfo.blockedCells.toHashSet(),
+//                mapInfo.goalCells.first().toDoubleLocation(),
+//                header!!.goalRadius,
+//                numActions,
+//                actionFraction,
+//                stateFraction,
+//                actionDuration
+//        )
+//        environment = PointRobotWithInertiaEnvironment(domain!!, PointRobotWithInertiaState(startX, startY, 0.0, 0.0, actionFraction))
+    }
 
-//        val sq = SequentialTransition()
-//        var count = 0
-//        while (count != actionList.size) {
-//            val x = actionList.get(count)
-//            val y = actionList.get(count + 1)
-//            val ptList = animate(root, x, y, DISPLAY_LINE, robot, TILE_SIZE)
-//            for(pt in ptList)
-//                sq.children.add(pt)
-//            count+=2
-//        }
-//        sq.setCycleCount(Timeline.INDEFINITE);
-//        sq.play()
-//    }
-
-
-
-    override protected fun playAnimation(transitions: List<PathTransition>) {
+    override fun playAnimation(transitions: List<PathTransition>) {
         val sequentialTransition = SequentialTransition()
         for (pathTransition in transitions) {
             sequentialTransition.children.add(pathTransition)
         }
         sequentialTransition.cycleCount = Timeline.INDEFINITE
         sequentialTransition.play()
+    }
+
+    override fun buildAnimation(): List<PathTransition> {
+        /* Create the path that the robot will travel */
+        if (displayLine) {
+            val path = Path()
+            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
+            path.stroke = ThemeColors.PATH.stroke
+            grid.children.add(path)
+        }
+
+        val pathTransitions = mutableListOf<PathTransition>()
+        val actionIterator = actionList.iterator()
+        while (actionIterator.hasNext()) {
+            val x = actionIterator.next()
+            assert(actionIterator.hasNext(), { "Action has no matching y value" })
+            val y = actionIterator.next()
+            var pathTransition = animate(x, y)
+            pathTransitions.addAll(pathTransition)
+        }
+
+        return pathTransitions
     }
 
     override fun animate(x: String, y: String): MutableList<PathTransition> {
