@@ -23,7 +23,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
     }
 
     var domainName: String by valueStore
-    var rawDomain: String by valueStore
+    var rawDomain: String? by valueStore
     var domainPath: String by valueStore
     var algorithmName: String by valueStore
     var terminationCheckerType: String by valueStore

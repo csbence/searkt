@@ -146,7 +146,7 @@ object ConfigurationExecutor {
     private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult? {
         val domainName: String = experimentConfiguration.domainName
 
-        val domainStream: InputStream = if (experimentConfiguration.valueStore["rawDomain"] != null) {
+        val domainStream: InputStream = if (experimentConfiguration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
             experimentConfiguration.rawDomain!!.byteInputStream()
         } else {
             dataRootPath ?: throw RuntimeException("Data root path is not specified.")
@@ -310,7 +310,6 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
-        //val depthLimit = experimentConfiguration.getTypedValue<Int>("lookahead depth limit") ?: throw InvalidFieldException("\"lookahead depth limit\" is not found. Please add it to the experiment configuration.")
         val anytimeRepairingAStarPlanner = AnytimeRepairingAStar(domain)
         /*val atsAgent = ATSAgent(anytimeRepairingAStarPlanner)*/
         val atsExperiment = AnytimeExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
