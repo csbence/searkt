@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val checkInInterval: Long = 60000) {
+class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val domainPathRoot: String? = null) {
 
     val logger = LoggerFactory.getLogger(RealTimeSearchClientApplication::class.java)
     //    private val timer: Timer = Timer()
@@ -48,7 +48,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 System.gc() // Make sure that we have not garbage in the memory
 
                 // Execute configuration
-                val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration)
+                val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration, domainPathRoot)
                 System.gc()
 
                 // Submit results
@@ -99,9 +99,12 @@ fun main(args: Array<String>) {
     val mainOptions = Options()
 
     val serverUrlOption = Option("u", "server-url", true, "RTS server address")
+    val domainPathOption = Option("d", "domainPath", true, "Domain path root")
+
     val helpOption = Option("h", "help", false, "Print this help and exit")
 
     mainOptions.addOption(serverUrlOption)
+    mainOptions.addOption(domainPathOption)
 
     val parser: CommandLineParser = DefaultParser();
 
@@ -111,7 +114,15 @@ fun main(args: Array<String>) {
     if (commandLine.hasOption(helpOption.opt) || !commandLine.hasOption(serverUrlOption.opt)) {
         formatter.printHelp("Real-time Search Client", mainOptions)
     } else {
-        RealTimeSearchClientApplication(commandLine.getOptionValue(serverUrlOption.opt)).start()
+        val rtsServerUrl = commandLine.getOptionValue(serverUrlOption.opt)
+
+        val domainPathRoot = if (commandLine.hasOption(domainPathOption.opt)) {
+            commandLine.getOptionValue(serverUrlOption.opt)
+        } else {
+            null
+        }
+
+        RealTimeSearchClientApplication(rtsServerUrl, domainPathRoot).start()
     }
 
     println("\nReal-time search client has stopped.")
