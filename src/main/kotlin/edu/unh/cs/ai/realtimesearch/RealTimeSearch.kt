@@ -29,17 +29,17 @@ fun main(args: Array<String>) {
 
     if (args.size == 0) {
         // Default configuration
-//                val map = "input/racetrack/bigger-track.track"
-        val map = "input/pointrobot/dylan/wall.pr"
+                val map = "input/racetrack/long.track"
+//        val map = "input/pointrobot/dylan/wall.pr"
 //                val map = "input/vacuum/dylan/wall.vw"
         //        val map = "input/acrobot/default_0.07-0.07.ab"
         //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.POINT_ROBOT_WITH_INERTIA.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
-                Planners.ARA_STAR.toString(),
+                Planners.A_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
