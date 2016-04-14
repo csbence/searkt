@@ -122,6 +122,8 @@ fun main(args: Array<String>) {
             null
         }
 
+        println("Start application with the following parameters: url: $rtsServerUrl, domain path root: $domainPathRoot")
+
         RealTimeSearchClientApplication(rtsServerUrl, domainPathRoot).start()
     }
 
