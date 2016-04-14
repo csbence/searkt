@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     if (args.size == 0) {
         // Default configuration
 //                val map = "input/racetrack/bigger-track.track"
-        val map = "input/pointrobot/empty.pr"
+        val map = "input/pointrobot/dylan/wall.pr"
 //                val map = "input/vacuum/dylan/wall.vw"
         //        val map = "input/acrobot/default_0.07-0.07.ab"
         //        val map = "input/tiles/korf/4/all/3"
@@ -50,8 +50,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
-        manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 2.0
-        manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.25
+        manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
+        manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
 
 
         visualizerParameters.add("--path")
