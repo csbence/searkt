@@ -24,9 +24,9 @@ import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 val terminationType = "time"
-val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
+val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
 val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
-val lookaheadLimits = 1..6
+val lookaheadLimits = listOf(20)
 
 fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
@@ -109,7 +109,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             //            "input/vacuum/random5k.vw"
             "input/vacuum/squiggle_800.vw",
             "input/vacuum/openBox_800.vw",
-            "input/vacuum/slalom_03.vw",
+//            "input/vacuum/slalom_03.vw",
             "input/vacuum/openBox_400.vw",
             "input/vacuum/slalom_04.vw"
     )
@@ -130,7 +130,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/pointrobot/dylan/wall.pr",
             "input/pointrobot/squiggle_800.pr",
             "input/pointrobot/openBox_800.pr",
-            "input/pointrobot/slalom_03.pr",
+//            "input/pointrobot/slalom_03.pr",
             "input/pointrobot/openBox_400.pr",
             "input/pointrobot/slalom_04.pr"
     )
