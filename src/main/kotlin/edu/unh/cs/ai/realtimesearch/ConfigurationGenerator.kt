@@ -124,10 +124,6 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/racetrack/barto-small.track"
     )
 
-    val pointRobotWithInertiaActionFractions = 1..2
-    val pointRobotWithInertiaNumActions = 3..6
-    val pointRobotWithInertiaStateFractions = listOf(0.5, 1.0)
-
     val pointRobotMaps = listOf(
             "input/pointrobot/dylan/cups.pr",
             "input/pointrobot/dylan/slalom.pr",
@@ -137,6 +133,20 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/pointrobot/openBox_800.pr",
             //            "input/pointrobot/slalom_03.pr",
             "input/pointrobot/openBox_400.pr",
+            "input/pointrobot/slalom_04.pr"
+    )
+
+    val pointRobotWithInertiaActionFractions = 1..2
+    val pointRobotWithInertiaNumActions = 3..6
+    val pointRobotWithInertiaStateFractions = listOf(0.5, 1.0)
+
+    val pointRobotWithInertiaMaps = listOf(
+            "input/pointrobot/dylan/cups.pr",
+            "input/pointrobot/dylan/slalom.pr",
+            "input/pointrobot/dylan/uniform.pr",
+            "input/pointrobot/dylan/wall.pr",
+            "input/pointrobot/squiggle.pr",
+            "input/pointrobot/openBox_25.pr",
             "input/pointrobot/slalom_04.pr"
     )
 
@@ -190,7 +200,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             for (actionFraction in pointRobotWithInertiaActionFractions) {
                 for (numActions in pointRobotWithInertiaNumActions) {
                     for (stateFraction in pointRobotWithInertiaStateFractions) {
-                        for (map in pointRobotMaps) {
+                        for (map in pointRobotWithInertiaMaps) {
                             val valueMap = getDomainConfigurationMap(map)
                             valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction.toDouble())
                             valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions.toLong())
