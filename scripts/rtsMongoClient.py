@@ -77,7 +77,9 @@ big_uniform_instances = ["random1k",
                          "randomNoisy1k"]
 special_grid_instances = ["openBox_800",
                           "squiggle_800",
-                          "slalom_03"]
+                          "slalom_03",
+                          "slalom_04",
+                          "openBox_400"]
 all_racetrack_instances = ["input/racetrack/barto-big.track",
                            "input/racetrack/barto-small.track"]
 sliding_tile_4_map_root = "input/tiles/korf/4/all"
