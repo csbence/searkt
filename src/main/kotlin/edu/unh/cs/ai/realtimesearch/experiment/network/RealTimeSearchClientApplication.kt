@@ -117,7 +117,7 @@ fun main(args: Array<String>) {
         val rtsServerUrl = commandLine.getOptionValue(serverUrlOption.opt)
 
         val domainPathRoot = if (commandLine.hasOption(domainPathOption.opt)) {
-            commandLine.getOptionValue(serverUrlOption.opt)
+            commandLine.getOptionValue(domainPathOption.opt)
         } else {
             null
         }
