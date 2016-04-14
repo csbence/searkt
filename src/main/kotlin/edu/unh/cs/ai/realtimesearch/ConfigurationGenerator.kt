@@ -27,12 +27,17 @@ val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
 val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 val lookaheadLimits = listOf(20)
+private var useDomainPaths = false
 
 fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
+    if (args.size > 0 && args.first().equals("-p")) {
+        useDomainPaths = true
+    }
+
     for (domain in Domains.values()) {
-        if (domain == VACUUM_WORLD || domain == ACROBOT)
+        if (domain == VACUUM_WORLD || domain == ACROBOT || domain == POINT_ROBOT_LOST)
             continue
 
         for (planner in Planners.values()) {
@@ -109,7 +114,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             //            "input/vacuum/random5k.vw"
             "input/vacuum/squiggle_800.vw",
             "input/vacuum/openBox_800.vw",
-//            "input/vacuum/slalom_03.vw",
+            //            "input/vacuum/slalom_03.vw",
             "input/vacuum/openBox_400.vw",
             "input/vacuum/slalom_04.vw"
     )
@@ -130,7 +135,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/pointrobot/dylan/wall.pr",
             "input/pointrobot/squiggle_800.pr",
             "input/pointrobot/openBox_800.pr",
-//            "input/pointrobot/slalom_03.pr",
+            //            "input/pointrobot/slalom_03.pr",
             "input/pointrobot/openBox_400.pr",
             "input/pointrobot/slalom_04.pr"
     )
@@ -173,20 +178,12 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
         }
         GRID_WORLD, VACUUM_WORLD -> {
             for (map in gridMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
         }
-        POINT_ROBOT -> {
+        POINT_ROBOT, POINT_ROBOT_LOST -> {
             for (map in pointRobotMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
         }
         POINT_ROBOT_WITH_INERTIA -> {
@@ -194,14 +191,11 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                 for (numActions in pointRobotWithInertiaNumActions) {
                     for (stateFraction in pointRobotWithInertiaStateFractions) {
                         for (map in pointRobotMaps) {
-                            val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                            configurations.add(mutableMapOf(
-                                    Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                                    Configurations.DOMAIN_INSTANCE_NAME.toString() to map,
-                                    Configurations.ACTION_FRACTION.toString() to actionFraction,
-                                    Configurations.NUM_ACTIONS.toString() to numActions,
-                                    Configurations.STATE_FRACTION.toString() to stateFraction
-                            ))
+                            val valueMap = getDomainConfigurationMap(map)
+                            valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction)
+                            valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions)
+                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction)
+                            configurations.add(valueMap)
                         }
                     }
                 }
@@ -209,39 +203,30 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
         }
         RACETRACK -> {
             for (map in racetrackMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
         }
         SLIDING_TILE_PUZZLE_4 -> {
             //            for (instanceName in 1..100) {
             for (instanceName in slidingTileSolvableMaps) {
                 val map = "$slidingTile4MapRoot$instanceName"
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
-        }
-        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
-            for (map in pointRobotMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
-            }
-        }
-        POINT_ROBOT_LOST -> {
-
         }
     }
 
     return configurations
+}
+
+fun getDomainConfigurationMap(map: String): MutableMap<String, Any?> {
+    val valueMap = mutableMapOf<String, Any?>(
+            Configurations.DOMAIN_INSTANCE_NAME.toString() to map,
+            Configurations.DOMAIN_PATH.toString() to map)
+    if (useDomainPaths) {
+        val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+        valueMap.put(Configurations.RAW_DOMAIN.toString(), Scanner(input).useDelimiter("\\Z").next())
+    }
+    return valueMap
 }
 
 fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
@@ -319,27 +304,28 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
 
     print("Upload configurations (y/n)? ")
     val input = readLine()
-    val elapsed = measureTimeMillis {
-        var count = 1
-        for (configuration in configurations) {
-            when (input?.toLowerCase()) {
-                "y", "yes" -> {
+    when (input?.toLowerCase()) {
+        "y", "yes" -> {
+            var count = 1
+            val elapsed = measureTimeMillis {
+                for (configuration in configurations) {
                     try {
                         val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
                         if (responseEntity.statusCode == HttpStatus.OK) {
-                            println("Upload completed! (${count++} / ${configurations.size})")
+                            println("Upload completed! (${count} / ${configurations.size})")
                         } else {
                             println("Upload failed!")
                         }
                     } catch (e: RestClientException) {
                         println("Upload failed!")
                     }
-                }
-                else -> {
-                    println("Not uploading")
+                    count += 1
                 }
             }
+            println("Upload took $elapsed ms")
+        }
+        else -> {
+            println("Not uploading")
         }
     }
-    println("Upload took $elapsed ms")
 }
