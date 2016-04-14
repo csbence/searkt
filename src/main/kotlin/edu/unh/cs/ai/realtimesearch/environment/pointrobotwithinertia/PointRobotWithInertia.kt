@@ -21,8 +21,9 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         val defaultStateFraction = 0.5
     }
 
-    val numAction = numActions // total number of accelerations avaliable in one direction
-    val fractions = actionFraction // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+    val numAction = numActions; // total number of accelerations avaliable in one direction
+    val fractions = actionFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+    var maxAcc = -1.0;
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotWithInertiaAction> {
@@ -35,8 +36,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             for (y in 0..numAction - 1) {
                 var xDoubleDot = ((x) - ((numAction - (1.0)) / 2)) / fractions;
                 var yDoubleDot = ((y) - ((numAction - (1.0)) / 2)) / fractions;
+                if(maxAcc < 0)
+                    maxAcc = -1 * xDoubleDot;
 //                                println("" + xDoubleDot + " " + yDoubleDot)
                 actions.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
+//                println(maxAcc);
             }
         }
 
@@ -111,11 +115,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         var by = state.ydot
         var cy = state.y - endLocation.y
 
-        var resultx1 = quadraticFormula(0.5, bx, cx)
-        var resultx2 = quadraticFormula(-0.5, bx, cx)
+        var resultx1 = quadraticFormula(0.5 * maxAcc, bx, cx)
+        var resultx2 = quadraticFormula(-0.5 * maxAcc, bx, cx)
 
-        var resulty1 = quadraticFormula(0.5, by, cy)
-        var resulty2 = quadraticFormula(-0.5, by, cy)
+        var resulty1 = quadraticFormula(0.5 * maxAcc, by, cy)
+        var resulty2 = quadraticFormula(-0.5 * maxAcc, by, cy)
 
         //        println("" + resultx1 + " " + resultx2 + " "+ resulty1 + " " + resulty2 + " "
         //                + Math.max(Math.min(resultx1, resultx2), Math.min(resulty1, resulty2)))
