@@ -40,6 +40,9 @@ fun main(args: Array<String>) {
         if (domain == VACUUM_WORLD || domain == ACROBOT || domain == POINT_ROBOT_LOST)
             continue
 
+        //        if (domain != POINT_ROBOT_WITH_INERTIA)
+        //            continue
+
         for (planner in Planners.values()) {
             if (planner == WEIGHTED_A_STAR)
                 continue
@@ -137,8 +140,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     )
 
     val pointRobotWithInertiaActionFractions = 1..2
-    val pointRobotWithInertiaNumActions = 3..6
-    val pointRobotWithInertiaStateFractions = listOf(0.5, 1.0)
+    val pointRobotWithInertiaNumActions = listOf(3, 5, 7)
+    val pointRobotWithInertiaStateFractions = listOf(0.25, 0.5)
 
     val pointRobotWithInertiaMaps = listOf(
             "input/pointrobot/dylan/cups.pr",
@@ -232,7 +235,7 @@ fun getDomainConfigurationMap(map: String): MutableMap<String, Any?> {
     val valueMap = mutableMapOf<String, Any?>(
             Configurations.DOMAIN_INSTANCE_NAME.toString() to map,
             Configurations.DOMAIN_PATH.toString() to map)
-    if (useDomainPaths) {
+    if (!useDomainPaths) {
         val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
         valueMap.put(Configurations.RAW_DOMAIN.toString(), Scanner(input).useDelimiter("\\Z").next())
     }
