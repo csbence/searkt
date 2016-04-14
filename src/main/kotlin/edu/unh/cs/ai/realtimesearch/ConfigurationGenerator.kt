@@ -109,7 +109,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             //            "input/vacuum/random5k.vw"
             "input/vacuum/squiggle_800.vw",
             "input/vacuum/openBox_800.vw",
-            "input/vacuum/slalom_03.vw"
+            "input/vacuum/slalom_03.vw",
+            "input/vacuum/openBox_400.vw",
+            "input/vacuum/slalom_04.vw"
     )
 
     val racetrackMaps = listOf(
@@ -128,7 +130,9 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             "input/pointrobot/dylan/wall.pr",
             "input/pointrobot/squiggle_800.pr",
             "input/pointrobot/openBox_800.pr",
-            "input/pointrobot/slalom_03.pr"
+            "input/pointrobot/slalom_03.pr",
+            "input/pointrobot/openBox_400.pr",
+            "input/pointrobot/slalom_04.pr"
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
