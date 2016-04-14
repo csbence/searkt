@@ -49,7 +49,7 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
-        manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
+        manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3L
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 2.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.25
 
