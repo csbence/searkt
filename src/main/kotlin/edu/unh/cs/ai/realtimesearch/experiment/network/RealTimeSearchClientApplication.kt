@@ -4,8 +4,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import org.apache.commons.cli.*
 import org.slf4j.LoggerFactory
-import java.util.*
-import kotlin.concurrent.timerTask
 
 
 /**
@@ -14,15 +12,15 @@ import kotlin.concurrent.timerTask
 class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val checkInInterval: Long = 60000) {
 
     val logger = LoggerFactory.getLogger(RealTimeSearchClientApplication::class.java)
-    private val timer: Timer = Timer()
+    //    private val timer: Timer = Timer()
     private val realTimeSearchClient: RealTimeSearchClient
-    private var checkInTask: TimerTask? = null
+    //    private var checkInTask: TimerTask? = null
     private @Volatile var running = false
 
     init {
-        if (checkInInterval !in 0..3600000) {
-            throw RuntimeException("Invalid check-in interval [$checkInInterval]. The check-in interval has to be between 0 and 3600000 ms.")
-        }
+        //        if (checkInInterval !in 0..3600000) {
+        //            throw RuntimeException("Invalid check-in interval [$checkInInterval]. The check-in interval has to be between 0 and 3600000 ms.")
+        //        }
 
         if (rtsServerUrl.isBlank()) {
             throw RuntimeException("Invalid server url. The server url was empty.")
@@ -37,7 +35,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
      * It will periodically checkIn to the server.
      */
     fun start() {
-        startPeriodicCheckIn()
+        //        startPeriodicCheckIn()
         running = true
         var lastActiveTimestamp = System.currentTimeMillis()
 
@@ -46,7 +44,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
             val experimentConfiguration = realTimeSearchClient.getExperimentConfiguration()
             if (experimentConfiguration != null) {
                 logger.info("Experiment configuration has been received. [̵̵̵̵domain:${experimentConfiguration.domainName} :: algorithm:${experimentConfiguration.algorithmName} :: instance:${experimentConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()]}]")
-                stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
+                //                stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
                 System.gc() // Make sure that we have not garbage in the memory
 
                 // Execute configuration
@@ -56,7 +54,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
                 // Submit results
                 realTimeSearchClient.submitResult(experimentResult)
                 logger.info("Result submitted")
-                startPeriodicCheckIn()
+                //                startPeriodicCheckIn()
 
                 lastActiveTimestamp = System.currentTimeMillis()
             } else {
@@ -78,23 +76,23 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
      * Stop the application gracefully.
      */
     fun stop() {
-        stopPeriodicCheckIn()
+        //        stopPeriodicCheckIn()
         running = false
-        timer.cancel()
+        //        timer.cancel()
     }
 
-    private fun startPeriodicCheckIn() {
-        checkInTask = timerTask { realTimeSearchClient.checkIn() }
-        timer.schedule(checkInTask, 0, checkInInterval)
-    }
-
-    private fun stopPeriodicCheckIn() {
-        if (checkInTask != null) {
-            checkInTask?.cancel()
-            checkInTask = null
-            timer.purge()
-        }
-    }
+    //    private fun startPeriodicCheckIn() {
+    //        checkInTask = timerTask { realTimeSearchClient.checkIn() }
+    //        timer.schedule(checkInTask, 0, checkInInterval)
+    //    }
+    //
+    //    private fun stopPeriodicCheckIn() {
+    //        if (checkInTask != null) {
+    //            checkInTask?.cancel()
+    //            checkInTask = null
+    //            timer.purge()
+    //        }
+    //    }
 }
 
 fun main(args: Array<String>) {
