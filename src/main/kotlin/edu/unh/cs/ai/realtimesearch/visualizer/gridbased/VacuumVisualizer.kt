@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -14,6 +15,7 @@ import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
 import javafx.stage.Stage
 import javafx.util.Duration
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by Stephen on 2/11/16.
@@ -27,6 +29,9 @@ class VacuumVisualizer : GridBasedVisualizer() {
     var araStarY = 0.0
     var anytimeCount = 0L
     var anytimeMaxCount = 3L
+    private var animationX = 0.0
+    private var animationY = 0.0
+    private val animationTime = 200.0
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -37,10 +42,12 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        isARAStar = experimentResult!!.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
+        val timeToRun = actionList.size * animationTime
+
+        isARAStar = experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
         if (isARAStar) {
             moveRobot = false
-            anytimeMaxCount = experimentResult!!.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
+            anytimeMaxCount = experimentResult.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
             araStarXOriginal = agentView.agent.x
             araStarYOriginal = agentView.agent.y
             araStarX = agentView.agent.x
@@ -60,17 +67,26 @@ class VacuumVisualizer : GridBasedVisualizer() {
         pathTransition.node = agentView.agent
         pathTransition.interpolator = Interpolator.LINEAR
         pathTransition.cycleCount = Timeline.INDEFINITE
-        pathTransition.play()
+
+        Thread({
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            println("Delay:  $delayTime")
+            Thread.sleep(delayTime.toLong())
+            pathTransition.play()
+        }).start()
     }
 
     private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
         val p = Path()
-        p.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
+        p.elements.add(MoveTo(initialAgentXLocation, initialAgentYLocation))
         paths.add(p)
         //}
         var pIndex = 0
+
+        animationX = initialAgentXLocation
+        animationY = initialAgentYLocation
 
         for (action in actionList) {
             val path = paths[pIndex]
@@ -93,7 +109,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
                 //                println(action)
                 moveRobot = true
                 val newPath = Path()
-                newPath.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
+                newPath.elements.add(MoveTo(animationX, animationY))
                 paths.add(newPath)
                 pIndex++
             } else {
@@ -125,7 +141,6 @@ class VacuumVisualizer : GridBasedVisualizer() {
     }
 
     private fun animate(action: String, path: Path) {
-        val robot = agentView.agent
         val width = tileSize
         val height = tileSize
 
@@ -135,8 +150,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
         when (action) {
             "UP" -> {
                 if (moveRobot) {
-                    path.elements.add(LineTo(robot.translateX, robot.translateY + height))
-                    robot.translateY += height
+                    path.elements.add(LineTo(animationX, animationY + height))
+                    animationY += height
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX, araStarY + height))
                     araStarY += height
@@ -147,8 +162,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
             }
             "RIGHT" -> {
                 if (moveRobot) {
-                    path.elements.add(LineTo(robot.translateX + width, robot.translateY))
-                    robot.translateX += width
+                    path.elements.add(LineTo(animationX + width, animationY))
+                    animationX += width
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX + width, araStarY))
                     araStarX += width
@@ -159,8 +174,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
             }
             "DOWN" -> {
                 if (moveRobot) {
-                    path.elements.add(LineTo(robot.translateX, robot.translateY - height))
-                    robot.translateY -= height
+                    path.elements.add(LineTo(animationX, animationY - height))
+                    animationY -= height
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX, araStarY - height))
                     araStarY -= height
@@ -171,8 +186,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
             }
             "LEFT" -> {
                 if (moveRobot) {
-                    path.elements.add(LineTo(robot.translateX - width, robot.translateY))
-                    robot.translateX -= width
+                    path.elements.add(LineTo(animationX - width, animationY))
+                    animationX -= width
                 } else if (isARAStar) {
                     path.elements.add(LineTo(araStarX - width, araStarY))
                     araStarX -= width

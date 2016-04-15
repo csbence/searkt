@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
@@ -10,6 +12,7 @@ import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
 import javafx.util.Duration
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by Stephen on 2/29/16.
@@ -44,7 +47,13 @@ class PointInertiaVisualizer : PointVisualizer() {
             sequentialTransition.children.add(pathTransition)
         }
         sequentialTransition.cycleCount = Timeline.INDEFINITE
-        sequentialTransition.play()
+
+        Thread({
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            println("Delay:  $delayTime")
+            Thread.sleep(delayTime.toLong())
+            sequentialTransition.play()
+        }).start()
     }
 
     override fun buildAnimation(): List<PathTransition> {

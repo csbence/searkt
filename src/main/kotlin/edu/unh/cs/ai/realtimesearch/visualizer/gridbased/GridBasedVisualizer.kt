@@ -30,7 +30,6 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     protected var mapInfo: MapInfo = MapInfo.ZERO
     protected var grid: GridCanvasPane = GridCanvasPane.ZERO
     protected var agentView: AgentView = AgentView.ZERO
-    protected var timeToRun: Double = 0.0
 
     // Graphical fields
     private val primaryScreenBounds = Screen.getPrimary().visualBounds
@@ -123,7 +122,6 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     protected fun visualizerSetup() {
         actionList = parseActions()
-        timeToRun = actionList.size * 200.0
 
         // Parse map
         mapInfo = parseMap(rawDomain)

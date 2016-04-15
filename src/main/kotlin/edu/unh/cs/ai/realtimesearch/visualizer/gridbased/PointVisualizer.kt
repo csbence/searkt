@@ -29,7 +29,7 @@ open class PointVisualizer : GridBasedVisualizer() {
     var startY: Double = 0.0
     var goalX: Double = 0.0
     var goalY: Double = 0.0
-    var header: PointRobotHeader? = null
+    lateinit var header: PointRobotHeader
     var actionDuration: Long = 0
     var animationTime: Double = 0.0
     val minimumAnimationTime: Double = 500.0
@@ -47,12 +47,12 @@ open class PointVisualizer : GridBasedVisualizer() {
 
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
         header = PointRobotIO.parseHeader(inputScanner)
-        return GridDimensions(header!!.rowCount, header!!.columnCount)
+        return GridDimensions(header.rowCount, header.columnCount)
     }
 
     override fun parseActions(): MutableList<String> {
         val actionList: MutableList<String> = arrayListOf()
-        for (action in experimentResult!!.actions) {
+        for (action in experimentResult.actions) {
             var xStart = action.indexOf('(') + 1
             var xEnd = action.indexOf(',')
             var yStart = xEnd + 2
@@ -70,20 +70,20 @@ open class PointVisualizer : GridBasedVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         visualizerSetup()
-        actionDuration = experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
+        actionDuration = experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
         animationTime = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
         //        if (animationTime < minimumAnimationTime)
         animationTime = minimumAnimationTime
 
-        startX = mapInfo.startCells.first().x + header!!.startLocationOffset.x
-        startY = mapInfo.startCells.first().y + header!!.startLocationOffset.y
-        goalX = mapInfo.goalCells.first().x + header!!.goalLocationOffset.x
-        goalY = mapInfo.goalCells.first().y + header!!.goalLocationOffset.y
+        startX = mapInfo.startCells.first().x + header.startLocationOffset.x
+        startY = mapInfo.startCells.first().y + header.startLocationOffset.y
+        goalX = mapInfo.goalCells.first().x + header.goalLocationOffset.x
+        goalY = mapInfo.goalCells.first().y + header.goalLocationOffset.y
 
         setupDomain()
 
         /* the goal radius */
-        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header!!.goalRadius * tileSize)
+        val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header.goalRadius * tileSize)
         goalCircle.stroke = ThemeColors.GOAL_CIRCLE.stroke
         goalCircle.fill = ThemeColors.GOAL_CIRCLE.color
         goalCircle.opacity = ThemeColors.GOAL_CIRCLE.opacity
