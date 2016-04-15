@@ -29,12 +29,23 @@ class GraphType(Enum):
     gatStacked = 6
 
 
-def get_algorithm_configuration_name(algorithm: str, configuration: dict):
-    name = algorithm
-    if "timeBoundType" in configuration:
-        name += "_" + configuration["timeBoundType"]
-    if "commitmentStrategy" in configuration:
-        name += "_" + configuration["commitmentStrategy"]
+def get_configuration_plot_name(owner: str, configuration: dict):
+    return owner + "_" + concatenate_configuration(configuration)
+
+
+def concatenate_configuration(configuration: dict, separator: str = "_", include_names: bool = False):
+    name = ""
+    for key, value in configuration.items():
+        to_concatenate = ""
+        if include_names:
+            to_concatenate += str(key) + ":" + str(value)
+        else:
+            to_concatenate += str(value)
+
+        if name:
+            name += separator + to_concatenate
+        else:
+            name += to_concatenate
     return name
 
 
@@ -45,8 +56,22 @@ def get_plot_algorithm_names():
             names[algorithm] = algorithm
         else:
             for configuration in configurations:
-                names[get_algorithm_configuration_name(algorithm, configuration)] = algorithm
+                names[get_configuration_plot_name(algorithm, configuration)] = algorithm
     return names
+
+
+def get_pri_configurations():
+    pri_action_fractions = [1.0, 2.0]
+    pri_num_actions = [3, 5, 7]
+    pri_state_fractions = [0.25, 0.5]
+    configurations = []
+    for num_actions in pri_num_actions:
+        for action_fraction in pri_action_fractions:
+            for state_fraction in pri_state_fractions:
+                configurations.append({"numActions": num_actions,
+                                       "actionFraction": action_fraction,
+                                       "stateFraction": state_fraction})
+    return configurations
 
 
 script = os.path.basename(sys.argv[0])
@@ -62,7 +87,13 @@ all_algorithms = {"A_STAR": [], "ARA_STAR": [], "RTA_STAR": [],
                   "LSS_LRTA_STAR": [ss_configuration, sm_configuration, dm_configuration],
                   "DYNAMIC_F_HAT": [ss_configuration, sm_configuration, dm_configuration]}
 plot_algorithm_names = get_plot_algorithm_names()
-all_domains = ["GRID_WORLD", "SLIDING_TILE_PUZZLE_4", "ACROBOT", "POINT_ROBOT", "POINT_ROBOT_WITH_INERTIA", "RACETRACK"]
+# all_domains = ["GRID_WORLD", "SLIDING_TILE_PUZZLE_4", "ACROBOT", "POINT_ROBOT", "POINT_ROBOT_WITH_INERTIA", "RACETRACK"]
+all_domains = {"GRID_WORLD": [],
+               "SLIDING_TILE_PUZZLE_4": [],
+               "ACROBOT": [],
+               "POINT_ROBOT": [],
+               "POINT_ROBOT_WITH_INERTIA": get_pri_configurations(),
+               "RACETRACK": []}
 all_acrobot_instances = ["0.07-0.07",
                          "0.08-0.08",
                          "0.09-0.09",
@@ -79,9 +110,15 @@ special_grid_instances = ["openBox_800",
                           "squiggle_800",
                           "slalom_03",
                           "slalom_04",
-                          "openBox_400"]
+                          "openBox_400",
+                          "openBox_25",
+                          "squiggle"
+                          "h_400",
+                          "hole_400"]
 all_racetrack_instances = ["input/racetrack/barto-big.track",
-                           "input/racetrack/barto-small.track"]
+                           "input/racetrack/barto-small.track",
+                           "input/racetrack/hansen-bigger.track",
+                           "input/racetrack/long.track"]
 sliding_tile_4_map_root = "input/tiles/korf/4/all"
 all_sliding_tile_4_instances = [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25, 26, 27, 28,
                                 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50,
@@ -120,7 +157,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResult')
+    result_status = db.command('collstats', 'experimentResultV5_inertia')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -129,7 +166,8 @@ def get_configuration_query(configuration):
     return "result.experimentConfiguration.{}".format(configuration)
 
 
-def get_gat_per_duration_data(db, algorithm, domain, instance, configuration: dict = None):
+def get_gat_per_duration_data(db, algorithm, domain, instance, planner_configuration: dict = None,
+                              domain_configuration: dict = None):
     data_action_durations = []
 
     query = {
@@ -139,13 +177,17 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, configuration: di
         "result.success": True
     }
 
-    if configuration is not None:
-        for name, value in configuration.items():
+    if planner_configuration:
+        for name, value in planner_configuration.items():
+            query[get_configuration_query(name)] = value
+
+    if domain_configuration:
+        for name, value in domain_configuration.items():
             query[get_configuration_query(name)] = value
 
     for action_duration in all_action_durations:
         query[get_configuration_query("actionDuration")] = action_duration
-        data_tiles = db.experimentResult.find(query)
+        data_tiles = db.experimentResultV5_inertia.find(query)
 
         times_for_durations = []
         for result in data_tiles:
@@ -158,7 +200,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, configuration: di
 
 
 def gather_gat_data(db, query):
-    data_tiles = db.experimentResult.find(query)
+    data_tiles = db.experimentResultV5_inertia.find(query)
 
     data = []
     idle_data = []
@@ -168,7 +210,7 @@ def gather_gat_data(db, query):
     return data, idle_data
 
 
-def get_gat_data(db, algorithms, domain, instance, action_duration):
+def get_gat_data(db, algorithms, domain, instance, action_duration, domain_configuration: dict = None):
     gat_data = []
     idle_planning_data = []
     labels = []
@@ -178,7 +220,7 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
             gat_data.append(data)
             if configuration is not None:
                 labels.append(
-                    plotutils.translate_algorithm_name(get_algorithm_configuration_name(algorithm, configuration)))
+                    plotutils.translate_algorithm_name(get_configuration_plot_name(algorithm, configuration)))
             else:
                 labels.append(plotutils.translate_algorithm_name(algorithm))
         if idle_data:
@@ -191,23 +233,35 @@ def get_gat_data(db, algorithms, domain, instance, action_duration):
         "result.success": True
     }
 
-    for algorithm in algorithms:
-        configurations = all_algorithms[algorithm]
-        query[get_configuration_query("algorithmName")] = algorithm
-        if not configurations:
-            data, idle_data = gather_gat_data(db, query)
-            add_data(data, idle_data, algorithm)
-        else:
-            for configuration in configurations:
-                for name, value in configuration.items():
-                    query[get_configuration_query(name)] = value
+    def gather_data_per_algorithm():
+        for algorithm in algorithms:
+            planner_configurations = all_algorithms[algorithm]
+            query[get_configuration_query("algorithmName")] = algorithm
+            if planner_configurations:
+                for configuration in planner_configurations:
+                    for name, value in configuration.items():
+                        query[get_configuration_query(name)] = value
 
+                    data, idle_data = gather_gat_data(db, query)
+                    add_data(data, idle_data, algorithm, configuration)
+
+                    # Make sure the previous configuration is not used in the next query
+                    for name, value in configuration.items():
+                        del query[get_configuration_query(name)]
+            else:
                 data, idle_data = gather_gat_data(db, query)
-                add_data(data, idle_data, algorithm, configuration)
+                add_data(data, idle_data, algorithm)
 
-                # Make sure the previous configuration is not used in the next query
-                for name, value in configuration.items():
-                    del query[get_configuration_query(name)]
+    if domain_configuration:
+        for name, value in domain_configuration.items():
+            query[get_configuration_query(name)] = value
+
+    gather_data_per_algorithm()
+
+    # Make sure the previous configuration is not used in the next query
+    if domain_configuration:
+        for name, value in domain_configuration.items():
+            del query[get_configuration_query(name)]
 
     return {"goalAchievementTime": gat_data, "idlePlanningTime": idle_planning_data}, labels
 
@@ -288,12 +342,14 @@ def remove_empty_data(dict: dict):
 
 
 def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = False, average_only: bool = False,
-                        markdown_summary: bool = True, error_only: bool = False, plot_without: tuple = ("RTA_STAR",)):
+                        markdown_summary: bool = True, error_only: bool = False, plot_without: tuple = (
+                "RTA_STAR", "LSS_LRTA_STAR_STATIC_MULTIPLE", "DYNAMIC_F_HAT_STATIC_MULTIPLE",)):
     if average_only:
         markdown_summary = False
         plot_average = True
 
     translated_domain_name = plotutils.translate_domain_name(domain)
+    domain_configurations = all_domains[domain]
 
     all_error_data = {}
     all_astar_error_data = []
@@ -308,28 +364,33 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
     for _ in all_action_durations:
         all_astar_error_data.append([])
 
-    for instance in instances:
+    def plot_domain_instance(instance, domain_configuration):
         instance_file_name = instance.replace("/", "_")
         plot_title = translated_domain_name + " - " + instance
+        plots_markdown = ""
 
-        markdown_document += "## Instance: {}\n\n".format(instance)
+        instance_level = "#"
+        if domain_configuration:
+            instance_level += "#"
+            instance_file_name += "_" + concatenate_configuration(domain_configuration)
+
         if not quiet:
             print("Processing {} - {}".format(domain, instance))
 
         # Gather error data for each algorithm
-        astar_gat_per_duration = get_gat_per_duration_data(db, "A_STAR", domain, instance)
+        astar_gat_per_duration = get_gat_per_duration_data(db, "A_STAR", domain, instance, domain_configuration)
         algorithm_gat_per_duration = {}
         for algorithm, configurations in all_algorithms.items():
             if not configurations:
                 algorithm_gat_per_duration[algorithm] = \
-                    get_gat_per_duration_data(db, algorithm, domain, instance)
+                    get_gat_per_duration_data(db, algorithm, domain, instance, domain_configuration)
             else:
                 for configuration in configurations:
-                    algorithm_gat_per_duration[get_algorithm_configuration_name(algorithm, configuration)] = \
-                        get_gat_per_duration_data(db, algorithm, domain, instance, configuration)
+                    algorithm_gat_per_duration[get_configuration_plot_name(algorithm, configuration)] = \
+                        get_gat_per_duration_data(db, algorithm, domain, instance, configuration, domain_configuration)
         remove_empty_data(algorithm_gat_per_duration)
 
-        # Store data to compute average
+        # Store data to compute average later
         for algorithm, values in algorithm_gat_per_duration.items():
             count = 0
             for val in values:
@@ -345,242 +406,272 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                 all_astar_error_data[count].append([])
             count += 1
 
+        # Do individual plots if average_only not specified
         if not average_only:
             # Errorbar plot
+            if algorithm_gat_per_duration:
+                if not quiet:
+                    print("Plotting error plot: {} - {} - {}".format(domain, instance, domain_configuration))
+                file_header = "{}_{}".format(domain, instance_file_name)
+                plots_markdown += do_plot(file_header, "error", lambda:
+                plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
+                                                  all_action_durations_ms, title=plot_title))
+
+                # Also plot errorbar without exception algorithms
+                removed = ""
+                for algorithm in plot_without:
+                    algorithm_data = algorithm_gat_per_duration.pop(algorithm, None)
+                    if algorithm_data is not None:
+                        if not removed:  # empty
+                            removed += algorithm
+                        else:
+                            removed += "_" + algorithm
+
+                # Plot it if there was anything to remove and there is still data left over
+                if removed and algorithm_gat_per_duration:
+                    if not quiet:
+                        print("Plotting error plot: {} - {} - {} without {}".format(domain, instance,
+                                                                                    domain_configuration, removed))
+                    file_header = "{}_{}_NO_{}".format(domain, instance_file_name, removed)
+                    plots_markdown += do_plot(file_header, "error", lambda:
+                    plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
+                                                      all_action_durations_ms, title=plot_title))
+
+            if not error_only:
+                for action_duration in all_action_durations:
+                    # Gather gat data
+                    gat_data, labels_gat = get_gat_data(db, all_algorithms.keys(), domain, instance, action_duration,
+                                                        domain_configuration)
+                    y_gat = gat_data['goalAchievementTime']
+                    y_idle = gat_data['idlePlanningTime']
+
+                    if y_gat and y_idle:
+                        action_duration_level = instance_level + "#"
+                        plots_markdown += "{} Action Duration: {} ns\n\n".format(action_duration_level, action_duration)
+
+                        # Stacked
+                        if not quiet:
+                            print("Plotting stacked bars: {} - {} - {} - {}".format(domain, instance, action_duration,
+                                                                                    domain_configuration))
+                        file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
+                        plots_markdown += do_plot(file_header, "stacked", lambda:
+                        plotutils.plot_gat_stacked_bars(gat_data, labels_gat, title=plot_title))
+
+                        # # Boxplots
+                        # if not quiet:
+                        #     print("Plotting boxplot: {} - {} - {}".format(domain, instance, action_duration))
+                        # file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
+                        # plots_markdown += do_plot(file_header, "boxplots", lambda:
+                        # plotutils.plot_gat_boxplots(y_gat, labels_gat, title=plot_title))
+                        #
+                        # # Bars
+                        # if not quiet:
+                        #     print("Plotting bars: {} - {} - {}".format(domain, instance, action_duration))
+                        # plots_markdown += do_plot(file_header, "bars", lambda:
+                        # plotutils.plot_gat_bars(y_gat, labels_gat, title=plot_title))
+                        #
+                        # # Violin
+                        # if not quiet:
+                        #     print("Plotting violin: {} - {} - {}".format(domain, instance, action_duration))
+                        # plots_markdown += do_plot(file_header, "boxplots_dist", lambda:
+                        # plotutils.plot_gat_boxplots(y_gat, labels_gat, showviolin=True, title=plot_title))
+
+                        # Plot without exceptions
+                        removed = ""
+                        local_indices = copy.deepcopy(gat_data_indices)
+                        for algorithm in plot_without:
+                            should_remove = True
+                            if local_indices[algorithm] >= len(gat_data['goalAchievementTime']) or \
+                                            local_indices[algorithm] >= len(gat_data['idlePlanningTime']):
+                                should_remove = False
+                            if should_remove:
+                                algorithm_gat_data = gat_data['goalAchievementTime'].pop(local_indices[algorithm])
+                                algorithm_idle_data = gat_data['idlePlanningTime'].pop(local_indices[algorithm])
+                                labels_gat.pop(local_indices[algorithm])
+                                if not removed:  # empty
+                                    removed += algorithm
+                                else:
+                                    removed += "_" + algorithm
+                                # Update indices
+                                for alg, index in local_indices.items():
+                                    if index > local_indices[algorithm]:
+                                        local_indices[alg] -= 1
+                                del local_indices[algorithm]
+
+                        # Plot it if there was anything to remove and there is still data left over
+                        if removed and gat_data['goalAchievementTime'] and gat_data["idlePlanningTime"]:
+                            if not quiet:
+                                print("Plotting stacked bars: {} - {} - {} - {} without {}".format(domain, instance,
+                                                                                                   action_duration,
+                                                                                                   domain_configuration,
+                                                                                                   removed))
+                                file_header = "{}_{}_{}_NO_{}".format(domain, instance_file_name, action_duration,
+                                                                      removed)
+                                plots_markdown += do_plot(file_header, "stacked", lambda:
+                                plotutils.plot_gat_stacked_bars(gat_data, labels_gat, title=plot_title))
+
+            if not plots_markdown:
+                return ""
+            else:
+                instance_markdown_document = "{} Instance: {}\n\n".format(instance_level, instance)
+                return instance_markdown_document + plots_markdown
+
+        markdown_document = ""
+        if domain_configurations:
+            for domain_configuration in domain_configurations:
+                instance_markdown = ""
+                for instance in instances:
+                    instance_markdown += plot_domain_instance(instance, domain_configuration)
+                if instance_markdown:
+                    markdown_document += "# Configuration {}\n\n".format(
+                        concatenate_configuration(domain_configuration, separator=" ", include_names=True))
+                    markdown_document += instance_markdown
+        else:
+            for instance in instances:
+                markdown_document += plot_domain_instance(instance, None)
+
+        # Produce markdown file and convert to pdf if pandoc present
+        if markdown_summary:
             if not quiet:
-                print("Plotting error plot: {} - {}".format(domain, instance))
-            file_header = "{}_{}".format(domain, instance_file_name)
-            markdown_document += do_plot(file_header, "error", lambda:
-            plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
-                                              all_action_durations_ms, title=plot_title))
-            # Also plot errorbar without exception algorithms
+                print("Saving markdown file")
+            file_header = "plots/{}_plots".format(domain)
+            markdown_file = "{}.md".format(file_header)
+            pdf_file = "{}.pdf".format(file_header)
+            save_to_file(markdown_file, markdown_document)
+            pandoc = which("pandoc")
+            if pandoc:
+                call([pandoc, "-o", pdf_file, markdown_file])
+
+        # Plot average data
+        remove_empty_data(all_error_data)
+        if plot_average:
+            if not quiet:
+                print("Plotting {} averages".format(domain))
+            lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
+                                                    title="{} data over all instances".format(
+                                                        plotutils.translate_domain_name(domain)))
+            plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain), lgd)
+            plt.close('all')
+
+            # Plot averages without exception algorithms
             removed = ""
             for algorithm in plot_without:
-                algorithm_data = algorithm_gat_per_duration.pop(algorithm, None)
+                algorithm_data = all_error_data.pop(algorithm, None)
                 if algorithm_data is not None:
                     if not removed:  # empty
                         removed += algorithm
                     else:
                         removed += "_" + algorithm
-
             if removed:
-                if not quiet:
-                    print("Plotting error plot: {} - {} without {}".format(domain, instance, removed))
-                file_header = "{}_{}_NO_{}".format(domain, instance_file_name, removed)
-                markdown_document += do_plot(file_header, "error", lambda:
-                plotutils.plot_gat_duration_error(algorithm_gat_per_duration, astar_gat_per_duration,
-                                                  all_action_durations_ms, title=plot_title))
+                lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
+                                                        title="{} data over all instances no {}".format(
+                                                            plotutils.translate_domain_name(domain), removed))
+                plotutils.save_plot(plt, "plots/{}_NO_{}_average.pdf".format(domain, removed), lgd)
+                plt.close('all')
 
-            if not error_only:
-                for action_duration in all_action_durations:
-                    # Gather gat data
-                    gat_data, labels_gat = get_gat_data(db, all_algorithms.keys(), domain, instance, action_duration)
-                    y_gat = gat_data['goalAchievementTime']
+    def get_all_grid_world_instances():
+        instances = []
+        for instance in all_dylan_instances:
+            instances.append("input/vacuum/{}.vw".format(instance))
+        # for instance in big_uniform_instances:
+        #     instances.append("input/vacuum/{}.vw".format(instance))
+        for instance in special_grid_instances:
+            instances.append("input/vacuum/{}.vw".format(instance))
+        return instances
 
-                    markdown_document += "### Action Duration: {} ns\n\n".format(action_duration)
+    def get_all_point_robot_instances():
+        instances = []
+        for instance in all_dylan_instances:
+            instances.append("input/pointrobot/{}.pr".format(instance))
+        for instance in special_grid_instances:
+            instances.append("input/pointrobot/{}.pr".format(instance))
+        return instances
 
-                    # Stacked
-                    if not quiet:
-                        print("Plotting stacked bars: {} - {} - {}".format(domain, instance, action_duration))
-                    file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
-                    markdown_document += do_plot(file_header, "stacked", lambda:
-                    plotutils.plot_gat_stacked_bars(gat_data, labels_gat, title=plot_title))
+    def get_all_sliding_tile_instances():
+        instances = []
+        for instance in all_sliding_tile_4_instances:
+            instances.append("{}/{}".format(sliding_tile_4_map_root, instance))
+        return instances
 
-                    # # Boxplots
-                    # if not quiet:
-                    #     print("Plotting boxplot: {} - {} - {}".format(domain, instance, action_duration))
-                    # file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
-                    # markdown_document += do_plot(file_header, "boxplots", lambda:
-                    # plotutils.plot_gat_boxplots(y_gat, labels_gat, title=plot_title))
-                    #
-                    # # Bars
-                    # if not quiet:
-                    #     print("Plotting bars: {} - {} - {}".format(domain, instance, action_duration))
-                    # markdown_document += do_plot(file_header, "bars", lambda:
-                    # plotutils.plot_gat_bars(y_gat, labels_gat, title=plot_title))
-                    #
-                    # # Violin
-                    # if not quiet:
-                    #     print("Plotting violin: {} - {} - {}".format(domain, instance, action_duration))
-                    # markdown_document += do_plot(file_header, "boxplots_dist", lambda:
-                    # plotutils.plot_gat_boxplots(y_gat, labels_gat, showviolin=True, title=plot_title))
+    def plot_all(db):
+        if not os.path.exists("plots"):
+            os.makedirs("plots")
 
-                    # Plot without exceptions
-                    removed = ""
-                    local_indices = copy.deepcopy(gat_data_indices)
-                    for algorithm in plot_without:
-                        should_remove = True
-                        if local_indices[algorithm] >= len(gat_data['goalAchievementTime']) or \
-                                        local_indices[algorithm] >= len(gat_data['idlePlanningTime']):
-                            should_remove = False
-                        if should_remove:
-                            algorithm_gat_data = gat_data['goalAchievementTime'].pop(local_indices[algorithm])
-                            algorithm_idle_data = gat_data['idlePlanningTime'].pop(local_indices[algorithm])
-                            labels_gat.pop(local_indices[algorithm])
-                            if not removed:  # empty
-                                removed += algorithm
-                            else:
-                                removed += "_" + algorithm
-                            # Update indices
-                            for alg, index in local_indices.items():
-                                if index > local_indices[algorithm]:
-                                    local_indices[alg] -= 1
-                            del local_indices[algorithm]
+        plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
+        plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
+        plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
+        plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
+        plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
+        plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
-                    if removed:
-                        if not quiet:
-                            print("Plotting stacked bars: {} - {} without {}".format(domain, instance, removed))
-                        file_header = "{}_{}_{}_NO_{}".format(domain, instance_file_name, action_duration, removed)
-                        markdown_document += do_plot(file_header, "stacked", lambda:
-                        plotutils.plot_gat_stacked_bars(gat_data, labels_gat, title=plot_title))
+    if __name__ == '__main__':
+        save_file = None
+        quiet = False
+        algorithms = []
+        domain = None
+        instance = None
+        action_duration = all_action_durations[0]
+        graph_type = default_graph_type
 
-    # Produce markdown file and convert to pdf if pandoc present
-    if markdown_summary:
+        try:
+            opts, args = getopt.gnu_getopt(sys.argv[1:], options)
+        except getopt.GetoptError as e:
+            print("Getopt error: {0}".format(e.strerror))
+            usage()
+            sys.exit(2)
+
+        for opt, arg in opts:
+            if opt in ('-h', '--help'):
+                usage()
+                sys.exit(0)
+            elif opt in ('-a', '--algorithm'):
+                algorithms.append(arg)
+            elif opt in ('-d', '--domain'):
+                domain = arg
+            elif opt in ('-i', '--instance'):
+                instance = arg
+            elif opt in ('-c', '--action'):
+                action_duration = arg
+            elif opt in ('-t', '--type'):
+                graph_type = getattr(GraphType, arg)
+            elif opt in ('-s', '--save'):
+                save_file = arg
+            elif opt in ('-q', '--quiet'):
+                quiet = True
+            else:
+                print("invalid switch '%s'" % opt)
+                usage()
+                sys.exit(2)
+
+        if graph_type is not GraphType.all:
+            if not algorithms:
+                print("Must provide at least 1 algorithm")
+                usage()
+                sys.exit(2)
+            elif domain is None or instance is None:
+                print("Must provide domain and instance")
+                usage()
+                sys.exit(2)
+
+        db = open_connection()
         if not quiet:
-            print("Saving markdown file")
-        file_header = "plots/{}_plots".format(domain)
-        markdown_file = "{}.md".format(file_header)
-        pdf_file = "{}.pdf".format(file_header)
-        save_to_file(markdown_file, markdown_document)
-        pandoc = which("pandoc")
-        if pandoc:
-            call([pandoc, "-o", pdf_file, markdown_file])
+            print_counts(db)
 
-    # Plot average data
-    remove_empty_data(all_error_data)
-    if plot_average:
-        if not quiet:
-            print("Plotting {} averages".format(domain))
-        lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
-                                                title="{} data over all instances".format(
-                                                    plotutils.translate_domain_name(domain)))
-        plotutils.save_plot(plt, "plots/{}_average.pdf".format(domain), lgd)
-        plt.close('all')
+        plotter = {
+            GraphType.all: lambda: plot_all(db),
+            GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
+            GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration),
+            GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance, action_duration),
+            GraphType.gatViolin: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration,
+                                                           showviolin=True),
+            GraphType.gatStacked: lambda: plot_gat_stacked(db, algorithms, domain, instance, action_duration)
+        }[graph_type]
 
-        # Plot averages without exception algorithms
-        removed = ""
-        for algorithm in plot_without:
-            algorithm_data = all_error_data.pop(algorithm, None)
-            if algorithm_data is not None:
-                if not removed:  # empty
-                    removed += algorithm
-                else:
-                    removed += "_" + algorithm
-        if removed:
-            lgd = plotutils.plot_gat_duration_error(all_error_data, all_astar_error_data, all_action_durations_ms,
-                                                    title="{} data over all instances no {}".format(
-                                                        plotutils.translate_domain_name(domain), removed))
-            plotutils.save_plot(plt, "plots/{}_NO_{}_average.pdf".format(domain, removed), lgd)
-            plt.close('all')
+        plotter()
 
+        # Save before showing since show resets the figures
+        if save_file is not None:
+            plotutils.save_plot(plt, save_file)
 
-def get_all_grid_world_instances():
-    instances = []
-    for instance in all_dylan_instances:
-        instances.append("input/vacuum/{}.vw".format(instance))
-    # for instance in big_uniform_instances:
-    #     instances.append("input/vacuum/{}.vw".format(instance))
-    for instance in special_grid_instances:
-        instances.append("input/vacuum/{}.vw".format(instance))
-    return instances
-
-
-def get_all_point_robot_instances():
-    instances = []
-    for instance in all_dylan_instances:
-        instances.append("input/pointrobot/{}.pr".format(instance))
-    for instance in special_grid_instances:
-        instances.append("input/pointrobot/{}.pr".format(instance))
-    return instances
-
-
-def get_all_sliding_tile_instances():
-    instances = []
-    for instance in all_sliding_tile_4_instances:
-        instances.append("{}/{}".format(sliding_tile_4_map_root, instance))
-    return instances
-
-
-def plot_all(db):
-    if not os.path.exists("plots"):
-        os.makedirs("plots")
-
-    plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
-    plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
-    plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
-    plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
-    # plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
-    plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
-
-
-if __name__ == '__main__':
-    save_file = None
-    quiet = False
-    algorithms = []
-    domain = None
-    instance = None
-    action_duration = all_action_durations[0]
-    graph_type = default_graph_type
-
-    try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], options)
-    except getopt.GetoptError as e:
-        print("Getopt error: {0}".format(e.strerror))
-        usage()
-        sys.exit(2)
-
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage()
-            sys.exit(0)
-        elif opt in ('-a', '--algorithm'):
-            algorithms.append(arg)
-        elif opt in ('-d', '--domain'):
-            domain = arg
-        elif opt in ('-i', '--instance'):
-            instance = arg
-        elif opt in ('-c', '--action'):
-            action_duration = arg
-        elif opt in ('-t', '--type'):
-            graph_type = getattr(GraphType, arg)
-        elif opt in ('-s', '--save'):
-            save_file = arg
-        elif opt in ('-q', '--quiet'):
-            quiet = True
-        else:
-            print("invalid switch '%s'" % opt)
-            usage()
-            sys.exit(2)
-
-    if graph_type is not GraphType.all:
-        if not algorithms:
-            print("Must provide at least 1 algorithm")
-            usage()
-            sys.exit(2)
-        elif domain is None or instance is None:
-            print("Must provide domain and instance")
-            usage()
-            sys.exit(2)
-
-    db = open_connection()
-    if not quiet:
-        print_counts(db)
-
-    plotter = {
-        GraphType.all: lambda: plot_all(db),
-        GraphType.gatPerDuration: lambda: plot_gat_duration_error(db, algorithms, domain, instance),
-        GraphType.gatBoxPlot: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration),
-        GraphType.gatBars: lambda: plot_gat_bars(db, algorithms, domain, instance, action_duration),
-        GraphType.gatViolin: lambda: plot_gat_boxplots(db, algorithms, domain, instance, action_duration,
-                                                       showviolin=True),
-        GraphType.gatStacked: lambda: plot_gat_stacked(db, algorithms, domain, instance, action_duration)
-    }[graph_type]
-
-    plotter()
-
-    # Save before showing since show resets the figures
-    if save_file is not None:
-        plotutils.save_plot(plt, save_file)
-
-    if not quiet and graph_type is not GraphType.all:
-        plt.show()
+        if not quiet and graph_type is not GraphType.all:
+            plt.show()
