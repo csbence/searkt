@@ -41,6 +41,9 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     protected var tileSize = 0.0
     open protected var robotScale = 2.0
 
+    protected var initialAgentXLocation = 0.0
+    protected var initialAgentYLocation = 0.0
+
     init {
         trackerOption.setOptionalArg(true)
         gridOptions.addOption(trackerOption)
@@ -137,17 +140,19 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         }
 
         // Calculate robot parameters
-        val robotWidth = tileSize / robotScale
-        val robotStartX = mapInfo.startCells.first().x
-        val robotStartY = mapInfo.startCells.first().y
-        val robotLocationX = robotStartX * tileSize + (tileSize / 2.0)
-        val robotLocationY = robotStartY * tileSize + (tileSize / 2.0)
+        val agentWidth = tileSize / robotScale
+        val agentStartX = mapInfo.startCells.first().x
+        val agentStartY = mapInfo.startCells.first().y
+        initialAgentXLocation = agentStartX * tileSize + (tileSize / 2.0)
+        initialAgentYLocation = agentStartY * tileSize + (tileSize / 2.0)
+        val actualRobotXLocation = initialAgentXLocation - agentWidth / 2.0
+        val actualRobotYLocation = initialAgentYLocation - agentWidth / 2.0
 
-        // Robot setup
-        agentView = AgentView(robotWidth, trackerSize)
+        // Agent setup
+        agentView = AgentView(agentWidth, trackerSize)
         agentView.trackingEnabled = showTracker
         agentView.toFront()
-        agentView.setLocation(robotLocationX, robotLocationY)
+        agentView.setLocation(actualRobotXLocation, actualRobotYLocation)
 
         // Grid setup
         grid = GridCanvasPane(mapInfo, tileSize)

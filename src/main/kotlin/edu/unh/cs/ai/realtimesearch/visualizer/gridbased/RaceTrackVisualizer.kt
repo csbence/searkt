@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
@@ -44,7 +45,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         val sequentialTransition = buildAnimation()
         sequentialTransition.cycleCount = Timeline.INDEFINITE
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration["actionDuration"] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()
@@ -53,20 +54,12 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
     private fun buildAnimation(): SequentialTransition {
         val sequentialTransition = SequentialTransition()
-        animationX = agentView.agent.x
-        animationY = agentView.agent.y
-        agentView.agent.translateX = -agentView.width / 2.0
-        agentView.agent.translateY = -agentView.width / 2.0
+
+        animationX = initialAgentXLocation
+        animationY = initialAgentYLocation
+
         for (action in actionList)
             sequentialTransition.children.add(animate(action))
-
-        /* Display the path */
-        if (displayLine) {
-            val path = Path()
-            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
-            path.stroke = ThemeColors.PATH.stroke
-            grid.children.add(path)
-        }
 
         return sequentialTransition
     }

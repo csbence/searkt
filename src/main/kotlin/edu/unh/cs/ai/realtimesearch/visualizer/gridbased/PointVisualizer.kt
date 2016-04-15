@@ -33,6 +33,8 @@ open class PointVisualizer : GridBasedVisualizer() {
     var actionDuration: Long = 0
     var animationTime: Double = 0.0
     val minimumAnimationTime: Double = 500.0
+    var animationX = 0.0
+    var animationY = 0.0
 
     override var robotScale: Double = 4.0
 
@@ -101,19 +103,22 @@ open class PointVisualizer : GridBasedVisualizer() {
             sequentialTransition.children.add(pathTransition)
         }
         sequentialTransition.cycleCount = Timeline.INDEFINITE
-        sequentialTransition.play()
+
+        Thread({
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            println("Delay:  $delayTime")
+            Thread.sleep(delayTime.toLong())
+            Thread.sleep(5000)
+            sequentialTransition.play()
+        }).start()
     }
 
     open protected fun buildAnimation(): List<PathTransition> {
-        /* Create the path that the robot will travel */
-        if (displayLine) {
-            val path = Path()
-            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
-            path.stroke = ThemeColors.PATH.stroke
-            grid.children.add(path)
-        }
-
         val pathTransitions = mutableListOf<PathTransition>()
+
+        animationX = initialAgentXLocation
+        animationY = initialAgentYLocation
+
         val actionIterator = actionList.iterator()
         while (actionIterator.hasNext()) {
             val x = actionIterator.next()
@@ -134,15 +139,15 @@ open class PointVisualizer : GridBasedVisualizer() {
         val xDot = x.toDouble() * width
         val yDot = y.toDouble() * width
 
-        path.elements.add(MoveTo(robot.translateX, robot.translateY))
-        path.elements.add(LineTo(robot.translateX + xDot, robot.translateY + yDot))
-        robot.translateX += xDot
-        robot.translateY += yDot
+        path.elements.add(MoveTo(animationX, animationY))
+        path.elements.add(LineTo(animationX + xDot, animationY + yDot))
+        animationX += xDot
+        animationY += yDot
 
         if (displayLine) {
             path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
-            val action = Circle(robot.translateX, robot.translateY, width / 10.0)
+            val action = Circle(animationX, animationY, width / 10.0)
             grid.children.add(action)
         }
 
