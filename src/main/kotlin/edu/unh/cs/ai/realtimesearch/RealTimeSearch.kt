@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
 import kotlin.system.exitProcess
 
@@ -71,10 +72,10 @@ fun main(args: Array<String>) {
     } else if (result.errorMessage != null) {
         logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        logger.info("Action duration: ${convertNanoUpDouble(result.experimentConfiguration["actionDuration"] as Long, MICROSECONDS)} ms")
+        logger.info("Action duration: ${convertNanoUpDouble(result.experimentConfiguration["actionDuration"] as Long, MILLISECONDS)} ms")
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
-        logger.info("Idle planning time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
+        logger.info("Idle planning time: ${convertNanoUpDouble(result.idlePlanningTime, MILLISECONDS)} ms")
         logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
         logger.info("Path Length: ${result.pathLength}")
         logger.info("Generated Nodes: ${result.generatedNodes}, Expanded Nodes ${result.expandedNodes}")
