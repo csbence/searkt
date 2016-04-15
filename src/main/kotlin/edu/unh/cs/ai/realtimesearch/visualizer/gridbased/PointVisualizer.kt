@@ -108,7 +108,6 @@ open class PointVisualizer : GridBasedVisualizer() {
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
-            Thread.sleep(5000)
             sequentialTransition.play()
         }).start()
     }
