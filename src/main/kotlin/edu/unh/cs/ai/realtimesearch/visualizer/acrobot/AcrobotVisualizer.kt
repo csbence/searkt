@@ -60,16 +60,16 @@ open class AcrobotVisualizer : BaseVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         // Parse results
-        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
-        actionDuration = (experimentResult!!.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
+        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
+        actionDuration = (experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
 
-        for (action in experimentResult!!.actions) {
+        for (action in experimentResult.actions) {
             actionList.add(AcrobotAction.valueOf(action))
         }
 
         val errorMessage = StringBuilder()
-        if (experimentResult!!.errorMessage != null) {
-            errorMessage.appendln(experimentResult!!.errorMessage)
+        if (experimentResult.errorMessage != null) {
+            errorMessage.appendln(experimentResult.errorMessage)
         }
 
         val stateList = getStateList(actionList, acrobotConfiguration, actionDuration)
@@ -111,11 +111,11 @@ open class AcrobotVisualizer : BaseVisualizer() {
         }
 
         val info = StringBuilder()
-        info.append("Algorithm: ").appendln(experimentResult!!.experimentConfiguration["algorithmName"])
-        info.append("Instance: ").appendln(experimentResult!!.experimentConfiguration["domainInstanceName"])
-        info.append("Path Length: ").appendln(experimentResult!!.pathLength)
-        info.append("Action Duration: ").append(experimentResult!!.experimentConfiguration["actionDuration"]).appendln(" ns")
-        info.append("Action Execution Time: ").append(experimentResult!!.actionExecutionTime).appendln(" ns")
+        info.append("Algorithm: ").appendln(experimentResult.experimentConfiguration["algorithmName"])
+        info.append("Instance: ").appendln(experimentResult.experimentConfiguration["domainInstanceName"])
+        info.append("Path Length: ").appendln(experimentResult.pathLength)
+        info.append("Action Duration: ").append(experimentResult.experimentConfiguration["actionDuration"]).appendln(" ns")
+        info.append("Action Execution Time: ").append(experimentResult.actionExecutionTime).appendln(" ns")
         val infoLabel = Label(info.toString())
         headerBox.children.add(infoLabel)
 

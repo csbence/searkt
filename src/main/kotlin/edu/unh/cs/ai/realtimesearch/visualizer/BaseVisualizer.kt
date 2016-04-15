@@ -10,7 +10,7 @@ import javafx.application.Application
 import kotlin.system.exitProcess
 
 abstract class BaseVisualizer : Application() {
-    protected var experimentResult: ExperimentResult? = null
+    protected lateinit var experimentResult: ExperimentResult
     protected var rawDomain: String = ""
 
     /**
@@ -45,10 +45,10 @@ abstract class BaseVisualizer : Application() {
             throw InvalidResultException("Failed to parse result", e)
         }
 
-        if (experimentResult!!.experimentConfiguration["rawDomain"] == null)
+        if (experimentResult.experimentConfiguration["rawDomain"] == null)
             throw InvalidResultException("Visualizer must have raw domain in result")
 
-        rawDomain = experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
+        rawDomain = experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
         processOptions(cmd)
     }
