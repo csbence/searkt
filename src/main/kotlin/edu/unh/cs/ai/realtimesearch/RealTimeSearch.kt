@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
         manualConfiguration = GeneralExperimentConfiguration(
                 Domains.RACETRACK.toString(),
                 rawDomain,
-                Planners.ARA_STAR.toString(),
+                Planners.A_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
