@@ -166,15 +166,15 @@ def plot_gat_stacked_bars(data: dict, labels: list, title="", stats_type="median
     # Set labels
     plt.title(title, fontsize=16)
     if log10:
+        ax.set_yscale('symlog', basey=10)
+        # ax.set_yscale('log', nonposy='clip')
         plt.ylabel("Time log10", fontsize=16)
     else:
         plt.ylabel("Time (ms)", fontsize=16)
     plt.xlabel("Algorithms", fontsize=16)
     ax.set_xticks(x + width / 2.)
     ax.set_xticklabels(labels, fontsize=14)
-    ax.set_yscale('symlog', basey=10)
     ax.autoscale(tight=True)
-    # ax.set_yscale('log', nonposy='clip')
     fig.autofmt_xdate()
     lgd = ax.legend(loc='best', frameon=False)
 
@@ -209,6 +209,7 @@ def plot_gat_bars(data, labels, title=""):
     lgd = ax.legend((med_bars, mean_bars), ('Median', 'Mean'), loc='best', frameon=False)
 
     ax.autoscale(tight=True)
+
     # Set ylims so we aren't at the top of the graph space for even data
     # low = min(min(y))
     # high = max(max(y))
@@ -325,6 +326,7 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title="", l
     plt.title(title)
     if log10:
         plt.yscale('symlog', basey=10)
+        # plt.yscale('log', basey=10, nonposy='clip')
         plt.ylabel("Goal Achievement Time log10")
     else:
         plt.ylabel("Goal Achievement Time (ms)")
