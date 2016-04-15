@@ -12,14 +12,14 @@ enum class ThemeColors(val color: Color, val stroke: Color = color, val opacity:
     BACKGROUND(WHITE),
 
     // Grid based
-    GRID(Color.grayRgb(170, 0.5)),
-    OBSTACLE(Color.grayRgb(50)),
+    GRID(UNH_SECODARY_GRAY),
+    OBSTACLE(UNH_SECODARY_BLUE),
     PATH(INDIANRED),
-    AGENT(ORANGE),
-    START(SALMON),
-    GOAL(BLUEVIOLET),
-    GOAL_CIRCLE(WHITE, BLUE, 0.5),
-    EMPTY_SPACE(WHITE, WHITE),
+    AGENT(UNH_ACCENT),
+    START(UNH_PRIMARY_BLUE),
+    GOAL(UNH_PRIMARY_BLUE),
+    GOAL_CIRCLE(WHITE, UNH_PRIMARY_BLUE, 0.5),
+    EMPTY_SPACE(UNH_WHITE, UNH_WHITE),
 
     // Acrobot
     LINK(BLACK, BLACK, 0.5),
