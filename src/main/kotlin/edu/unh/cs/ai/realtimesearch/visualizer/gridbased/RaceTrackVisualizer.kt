@@ -45,6 +45,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         sequentialTransition.cycleCount = Timeline.INDEFINITE
         Thread({
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration["actionDuration"] as Long, TimeUnit.MILLISECONDS)
+            println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()
         }).start()
