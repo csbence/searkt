@@ -37,11 +37,8 @@ fun main(args: Array<String>) {
     }
 
     for (domain in Domains.values()) {
-        if (domain == VACUUM_WORLD || domain == ACROBOT || domain == POINT_ROBOT_LOST)
+        if (domain == VACUUM_WORLD || domain == POINT_ROBOT_LOST || domain == SLIDING_TILE_PUZZLE_4)
             continue
-
-        //        if (domain != POINT_ROBOT_WITH_INERTIA)
-        //            continue
 
         for (planner in Planners.values()) {
             if (planner == WEIGHTED_A_STAR)
@@ -107,36 +104,42 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     val gridMaps = listOf(
-            "input/vacuum/dylan/cups.vw",
-            "input/vacuum/dylan/slalom.vw",
-            "input/vacuum/dylan/uniform.vw",
-            "input/vacuum/dylan/wall.vw",
-            //            "input/vacuum/random1k.vw",
-            //            "input/vacuum/randomShapes1k.vw",
-            //            "input/vacuum/randomNoisy1k.vw"
-            //            "input/vacuum/random5k.vw"
-            "input/vacuum/squiggle_800.vw",
-            "input/vacuum/openBox_800.vw",
-            //            "input/vacuum/slalom_03.vw",
-            "input/vacuum/openBox_400.vw",
-            "input/vacuum/slalom_04.vw"
+            //            "input/vacuum/dylan/cups.vw",
+            //            "input/vacuum/dylan/slalom.vw",
+            //            "input/vacuum/dylan/uniform.vw",
+            //            "input/vacuum/dylan/wall.vw",
+            //            //            "input/vacuum/random1k.vw",
+            //            //            "input/vacuum/randomShapes1k.vw",
+            //            //            "input/vacuum/randomNoisy1k.vw"
+            //            //            "input/vacuum/random5k.vw"
+            //            "input/vacuum/squiggle_800.vw",
+            //            "input/vacuum/openBox_800.vw",
+            //            //            "input/vacuum/slalom_03.vw",
+            //            "input/vacuum/openBox_400.vw",
+            //            "input/vacuum/slalom_04.vw"
+            "input/vacuum/h_400.vw",
+            "input/vacuum/hole_400.vw"
     )
 
     val racetrackMaps = listOf(
-            "input/racetrack/barto-big.track",
-            "input/racetrack/barto-small.track"
+            //            "input/racetrack/barto-big.track",
+            //            "input/racetrack/barto-small.track"
+            "input/racetrack/hansen-bigger.track",
+            "input/racetrack/long.track"
     )
 
     val pointRobotMaps = listOf(
-            "input/pointrobot/dylan/cups.pr",
-            "input/pointrobot/dylan/slalom.pr",
-            "input/pointrobot/dylan/uniform.pr",
-            "input/pointrobot/dylan/wall.pr",
-            "input/pointrobot/squiggle_800.pr",
-            "input/pointrobot/openBox_800.pr",
-            //            "input/pointrobot/slalom_03.pr",
-            "input/pointrobot/openBox_400.pr",
-            "input/pointrobot/slalom_04.pr"
+            //            "input/pointrobot/dylan/cups.pr",
+            //            "input/pointrobot/dylan/slalom.pr",
+            //            "input/pointrobot/dylan/uniform.pr",
+            //            "input/pointrobot/dylan/wall.pr",
+            //            "input/pointrobot/squiggle_800.pr",
+            //            "input/pointrobot/openBox_800.pr",
+            //            //            "input/pointrobot/slalom_03.pr",
+            //            "input/pointrobot/openBox_400.pr",
+            //            "input/pointrobot/slalom_04.pr"
+            "input/pointrobot/h_400.pr",
+            "input/pointrobot/hole_400.pr"
     )
 
     val pointRobotWithInertiaActionFractions = 1..2
@@ -144,13 +147,15 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val pointRobotWithInertiaStateFractions = listOf(0.25, 0.5)
 
     val pointRobotWithInertiaMaps = listOf(
-            "input/pointrobot/dylan/cups.pr",
-            "input/pointrobot/dylan/slalom.pr",
-            "input/pointrobot/dylan/uniform.pr",
-            "input/pointrobot/dylan/wall.pr",
-            "input/pointrobot/squiggle.pr",
-            "input/pointrobot/openBox_25.pr",
-            "input/pointrobot/slalom_04.pr"
+            //            "input/pointrobot/dylan/cups.pr",
+            //            "input/pointrobot/dylan/slalom.pr",
+            //            "input/pointrobot/dylan/uniform.pr",
+            //            "input/pointrobot/dylan/wall.pr",
+            //            "input/pointrobot/squiggle.pr",
+            //            "input/pointrobot/openBox_25.pr",
+            //            "input/pointrobot/slalom_04.pr"
+            "input/pointrobot/h_400.pr",
+            "input/pointrobot/hole_400.pr"
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
