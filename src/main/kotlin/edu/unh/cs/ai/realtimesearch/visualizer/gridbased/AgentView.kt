@@ -55,8 +55,6 @@ class AgentView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     fun setLocation(x: Double, y: Double) {
         agent.x = x
         agent.y = y
-        agent.translateX = agent.x
-        agent.translateY = agent.y
         relocateTracker()
     }
 

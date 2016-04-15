@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
@@ -14,14 +15,18 @@ import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
 import javafx.stage.Stage
 import javafx.util.Duration
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by Stephen on 2/29/16.
  */
 class RacetrackVisualizer : GridBasedVisualizer() {
+    private var animationX = 0.0
+    private var animationY = 0.0
     private var xDot = 0
     private var yDot = 0
     override var robotScale: Double = 4.0
+    private var animationStepDuration = 1000.0 // ms
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -38,11 +43,19 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         val sequentialTransition = buildAnimation()
         sequentialTransition.cycleCount = Timeline.INDEFINITE
-        sequentialTransition.play()
+        Thread({
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration["actionDuration"] as Long, TimeUnit.MILLISECONDS)
+            Thread.sleep(delayTime.toLong())
+            sequentialTransition.play()
+        }).start()
     }
 
     private fun buildAnimation(): SequentialTransition {
         val sequentialTransition = SequentialTransition()
+        animationX = agentView.agent.x
+        animationY = agentView.agent.y
+        agentView.agent.translateX = -agentView.width / 2.0
+        agentView.agent.translateY = -agentView.width / 2.0
         for (action in actionList)
             sequentialTransition.children.add(animate(action))
 
@@ -95,21 +108,21 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
             }
         }
-        path.elements.add(MoveTo(robot.translateX, robot.translateY))
-        path.elements.add(LineTo(robot.translateX + (xDot * width), robot.translateY + (yDot * width)))
-        robot.translateX += xDot * width
-        robot.translateY += yDot * width
+        path.elements.add(MoveTo(animationX, animationY))
+        path.elements.add(LineTo(animationX + (xDot * width), animationY + (yDot * width)))
+        animationX += xDot * width
+        animationY += yDot * width
 
         if (displayLine) {
             path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
-            val actionPoint = Circle(robot.translateX, robot.translateY, width / 10.0)
+            val actionPoint = Circle(animationX, animationY, width / 10.0)
             grid.children.add(actionPoint)
         }
 
         /* Animate the robot */
         val pathTransition = PathTransition()
-        pathTransition.duration = Duration.millis(1000.0)
+        pathTransition.duration = Duration.millis(animationStepDuration)
         pathTransition.path = path
         pathTransition.node = robot
         pathTransition.interpolator = Interpolator.LINEAR

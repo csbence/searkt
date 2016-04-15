@@ -140,8 +140,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         val robotWidth = tileSize / robotScale
         val robotStartX = mapInfo.startCells.first().x
         val robotStartY = mapInfo.startCells.first().y
-        val robotLocationX = robotStartX * tileSize + ((tileSize) / 2.0)
-        val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
+        val robotLocationX = robotStartX * tileSize + (tileSize / 2.0)
+        val robotLocationY = robotStartY * tileSize + (tileSize / 2.0)
 
         // Robot setup
         agentView = AgentView(robotWidth, trackerSize)
