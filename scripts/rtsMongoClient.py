@@ -35,7 +35,9 @@ def get_configuration_plot_name(owner: str, configuration: dict):
 
 def concatenate_configuration(configuration: dict, separator: str = "_", include_names: bool = False):
     name = ""
-    for key, value in configuration.items():
+    sorted_keys = sorted(configuration, reverse=True)
+    for key in sorted_keys:
+        value = configuration[key]
         to_concatenate = ""
         if include_names:
             to_concatenate += str(key) + ":" + str(value)
