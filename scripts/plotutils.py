@@ -183,6 +183,77 @@ def plot_gat_stacked_bars(data: dict, labels: list, title="", stats_type="median
     return lgd
 
 
+def plot_node_count_bars(data, labels, title="", stats_type="median", log10=True):
+    if stats_type is not "median" and stats_type is not "mean":
+        print("invalid type passed to plotutils.plot_node_count_bars (must be median or mean)")
+        return None
+
+    generated_name = "generatedNodes"
+    expanded_name = "expandedNodes"
+
+    if generated_name not in data or expanded_name not in data:
+        print("Missing data for plotutils.plot_node_count_bars")
+        return None
+
+    y_generated = data[generated_name]
+    y_expanded = data[expanded_name]
+
+    if not y_generated:  # empty
+        print("No data provided to plotutils.plot_node_count_bars")
+        return
+    if len(y_generated) != len(y_expanded):
+        print("WARNING: Uneven data passed to plotutils.plot_node_count_bars")
+
+    x = np.arange(1, len(y_generated) + 1)
+
+    if stats_type is "median":
+        generated_stats, generated_confidence_interval_low, generated_confidence_interval_high = \
+            median_confidence_intervals(y_generated)
+        expanded_stats, expanded_confidence_interval_low, expanded_confidence_interval_high = \
+            median_confidence_intervals(y_expanded)
+    else:  # assured to be mean
+        generated_stats, generated_confidence_interval_low, generated_confidence_interval_high = \
+            mean_confidence_intervals(y_generated)
+        expanded_stats, expanded_confidence_interval_low, expanded_confidence_interval_high = \
+            mean_confidence_intervals(y_expanded)
+
+    width = 0.35
+
+    fig, ax = plt.subplots()
+    generated_count_bars = ax.bar(x, generated_stats, width, color=tableau20[0], ecolor=tableau20[3], capsize=2,
+                                  edgecolor='none',
+                                  yerr=(generated_confidence_interval_low, generated_confidence_interval_high))
+    expanded_count_bars = ax.bar(x + width, expanded_stats, width, color=tableau20[1], ecolor=tableau20[3], capsize=2,
+                                 edgecolor='none',
+                                 yerr=(expanded_confidence_interval_low, expanded_confidence_interval_high))
+
+    # Set labels
+    plt.title(title, fontsize=16)
+    plt.xlabel("Algorithms", fontsize=16)
+    if log10:
+        ax.set_yscale('symlog', basey=10)
+        plt.ylabel("Node Count log10", fontsize=16)
+    else:
+        plt.ylabel("Node Count", fontsize=16)
+    ax.set_xticks(x + width)
+    ax.set_xticklabels(labels, fontsize=14)
+    ax.autoscale(tight=True)
+    fig.autofmt_xdate()
+    lgd = ax.legend((generated_count_bars, expanded_count_bars), ('Expanded', 'Generated'), loc='best', frameon=False)
+
+    # Add numbers to top of bars
+    def autolabel(rects):
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width() / 2., 1.0 * height, '%d' % int(height), ha='center', va='bottom')
+
+    # autolabel(med_bars)
+    # autolabel(mean_bars)
+    plt.gcf().tight_layout()
+
+    return lgd
+
+
 def plot_gat_bars(data, labels, title=""):
     y = data
     if not y:  # empty
