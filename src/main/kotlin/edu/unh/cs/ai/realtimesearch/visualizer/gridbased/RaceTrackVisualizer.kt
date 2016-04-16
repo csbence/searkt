@@ -38,7 +38,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        primaryStage.title = "RTS Visualizer"
+        primaryStage.title = "RTS RaceTrack Visualizer: ${experimentResult.experimentConfiguration["algorithmName"]}"
         primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
@@ -46,7 +46,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         sequentialTransition.cycleCount = Timeline.INDEFINITE
         Thread({
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
-            println("Delay:  $delayTime")
+            println("Relative IPT: $delayTime ms")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()
         }).start()
