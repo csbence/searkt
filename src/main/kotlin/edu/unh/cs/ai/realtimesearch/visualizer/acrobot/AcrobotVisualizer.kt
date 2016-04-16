@@ -88,7 +88,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val linkScale = 175.0 // pixel size per meter
         val linkScaledLength1 = AcrobotState.linkLength1 * linkScale
         val linkScaledLength2 = AcrobotState.linkLength2 * linkScale
-        val linkWidth = linkScaledLength1 / 7.5
+        val linkWidth = linkScaledLength1 / 8.0
         val WIDTH = (linkScaledLength1 + linkScaledLength2) * 2 + stageBorder * 2
         val HEIGHT = WIDTH
 
@@ -124,7 +124,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         rootBox.children.add(headerBox)
         rootBox.children.add(animationPane)
-        primaryStage.scene = Scene(rootBox, WIDTH, HEIGHT, ThemeColors.UNH_ACCENT.color)
+        primaryStage.scene = Scene(rootBox, WIDTH, HEIGHT, ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
         // Create the animations
@@ -147,9 +147,17 @@ open class AcrobotVisualizer : BaseVisualizer() {
             animations.add(ghostTransition)
         }
 
-        // Play the animations
-        for (animation in animations)
-            animation.play()
+
+        Thread({
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS)
+            println("Idle planning time: $delayTime ms")
+            Thread.sleep(delayTime.toLong())
+            // Play the animations
+            for (animation in animations)
+                animation.play()
+        }).start()
+
+
     }
 
     /**

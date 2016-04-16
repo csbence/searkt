@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
 import javafx.scene.paint.Color
-import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.WHITE
 
 /**
@@ -31,8 +30,6 @@ enum class ThemeColors(val color: Color, val stroke: Color = color, val opacity:
     EMPTY_SPACE(UNH_WHITE.color, UNH_WHITE.color),
 
     // Acrobot
-    LINK(UNH_WHITE.color, BLACK, 0.5),
-    JOINT(UNH_SECONDARY_BLUE.color);
-
-
+    LINK(UNH_WHITE.color, UNH_SECONDARY_BLUE.color, 0.5),
+    JOINT(UNH_ACCENT.color);
 }
