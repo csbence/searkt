@@ -91,19 +91,20 @@ class PointInertiaVisualizer : PointVisualizer() {
 
         for (i in 0..nSteps-1) {
             val path = Path()
-            path.elements.add(MoveTo(robot.translateX, robot.translateY))
+            path.elements.add(MoveTo(animationX, animationY))
 
             var xdot = xDot + xDDot * (dt * i)
             var ydot = yDot + yDDot * (dt * i)
 
-            path.elements.add(LineTo(robot.translateX + (xdot * dt), robot.translateY + (ydot * dt)))
-            robot.translateX += xdot * dt;
-            robot.translateY += ydot * dt;
+            path.elements.add(LineTo(animationX + (xdot * dt), animationY + (ydot * dt)))
+            animationX += xdot * dt
+            animationY += ydot * dt
 
             if(displayLine){
                 path.stroke = ThemeColors.PATH.stroke
                 grid.children.add(path)
             }
+
             /* Animate the robot */
             val pathTransition = PathTransition()
             pathTransition.duration = Duration.millis(10.0)
@@ -117,7 +118,7 @@ class PointInertiaVisualizer : PointVisualizer() {
         yDot += yDDot
 
         if(displayLine){
-            val action = Circle(robot.translateX, robot.translateY, width / 10.0)
+            val action = Circle(animationX, animationY, width / 10.0)
             grid.children.add(action)
         }
         return retval
