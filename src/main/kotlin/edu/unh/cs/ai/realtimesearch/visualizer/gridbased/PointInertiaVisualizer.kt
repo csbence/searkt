@@ -57,13 +57,8 @@ class PointInertiaVisualizer : PointVisualizer() {
     }
 
     override fun buildAnimation(): List<PathTransition> {
-        /* Create the path that the robot will travel */
-        if (displayLine) {
-            val path = Path()
-            path.elements.add(MoveTo(agentView.agent.x, agentView.agent.y))
-            path.stroke = ThemeColors.PATH.stroke
-            grid.children.add(path)
-        }
+        animationX = initialAgentXLocation
+        animationY = initialAgentYLocation
 
         val pathTransitions = mutableListOf<PathTransition>()
         val actionIterator = actionList.iterator()
