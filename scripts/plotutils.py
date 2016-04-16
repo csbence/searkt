@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import itertools
 
 import matplotlib.cbook as cbook
 import matplotlib.pyplot as plt
@@ -8,6 +9,11 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
 from scipy import stats
+
+plot_markers = ('x', 'D', 'o', '^', 's', 'p', '*', 'h', 'd', '8', r'$\lambda$', '_',
+                'H', 'v', '<', '>', '1', '2', '3', '4', '.', '|', '+', ',', )
+
+plot_linestyles = ('-', '--', '-.', ':')
 
 # These are the "Tableau 20" colors as RGB.
 # http://tableaufriction.blogspot.ro/2012/11/finally-you-can-use-tableau-data-colors.html
@@ -66,11 +72,32 @@ def translate_algorithm_name(alg_name):
 
 
 def translate_domain_name(domain_name):
+    if domain_name is "POINT_ROBOT_WITH_INERTIA":
+        return "Double Integrator"
     # Replace underscores
     domain_name = domain_name.replace('_', ' ')
     # Convert case
     domain_name = domain_name.title()
     return domain_name
+
+
+def translate_instance_name(instance_name, domain):
+    if domain is "ACROBOT":
+        return instance_name
+    else:
+        # Strip path and extension
+        name = os.path.splitext(os.path.basename(instance_name))[0]
+
+        # Strip ending numbers
+        if re.match(r'(.*)_[0-9]*', name):
+            name = name.split('_')[0]
+
+        # Convert casing and return
+        return re.sub("([a-z])([A-Z])", "\g<1> \g<2>", name).title()
+
+
+def translate_domain_instance_name(domain_name, instance_name):
+    return translate_domain_name(domain_name) + " - " + translate_instance_name(instance_name, domain_name)
 
 
 def median_confidence_intervals(data):
@@ -343,6 +370,9 @@ def array_is_all_zero(arr):
 
 # TODO add factor A*
 def plot_gat_duration_error(data_dict, astar_data, action_durations, title="", log10=True):
+    markers = itertools.cycle(plot_markers)
+    linestyles = itertools.cycle(plot_linestyles)
+
     handles = []
     astar_gat_per_duration = astar_data
     if not astar_gat_per_duration:  # empty
@@ -378,7 +408,9 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title="", l
         masked_confidence_high = algorithm_confidence_interval_high[data_mask]
         label = translate_algorithm_name(algorithm)
 
-        handle = plt.errorbar(masked_x, masked_data, label=label, color=tableau20[color_index],
+        # linestyle=next(linestyles),
+        handle = plt.errorbar(masked_x, masked_data, label=label, color=tableau20[color_index], marker=next(markers),
+                              markeredgecolor='none',
                               yerr=(masked_confidence_low, masked_confidence_high))
         handles.append((handle, label, masked_data.tolist()))
         color_index += 1

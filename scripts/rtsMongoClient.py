@@ -19,6 +19,8 @@ warnings.filterwarnings("ignore", message="Mean of empty slice", module="numpy")
 warnings.filterwarnings("ignore", message="invalid value encountered in double_scalars", module="numpy")
 warnings.filterwarnings("ignore", message="invalid value encountered in multiply", module="scipy")
 
+file_format = "pdf"
+
 
 class GraphType(Enum):
     all = 1
@@ -79,7 +81,9 @@ def get_pri_configurations():
 script = os.path.basename(sys.argv[0])
 options = "hs:qa:d:i:t:c:"
 default_graph_type = GraphType.gatPerDuration
-all_action_durations = (6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
+all_action_durations = (
+6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000, 850000000, 960000000, 1070000000,
+1280000000)
 # all_action_durations = (850000000, 960000000, 1070000000, 1280000000)
 all_action_durations_ms = [plotutils.cnv_ns_to_ms(duration) for duration in all_action_durations]
 # all_algorithms = ["A_STAR", "ARA_STAR", "RTA_STAR", "LSS_LRTA_STAR", "DYNAMIC_F_HAT"]
@@ -95,33 +99,43 @@ all_domains = {"GRID_WORLD": [],
                "SLIDING_TILE_PUZZLE_4": [],
                "ACROBOT": [],
                "POINT_ROBOT": [],
-               "POINT_ROBOT_WITH_INERTIA": [],  # get_pri_configurations(),
+               "POINT_ROBOT_WITH_INERTIA": get_pri_configurations(),
                "RACETRACK": []}
-all_acrobot_instances = ["0.07-0.07",
-                         "0.08-0.08",
-                         "0.09-0.09",
-                         "0.1-0.1",
-                         "0.3-0.3"]
-all_dylan_instances = ["dylan/cups",
-                       "dylan/slalom",
-                       "dylan/uniform",
-                       "dylan/wall"]
-big_uniform_instances = ["random1k",
-                         "randomShapes1k",
-                         "randomNoisy1k"]
-special_grid_instances = ["openBox_800",
-                          "squiggle_800",
-                          "slalom_03",
-                          "slalom_04",
-                          "openBox_400",
-                          "openBox_25",
-                          "squiggle",
-                          "h_400",
-                          "hole_400"]
-all_racetrack_instances = ["input/racetrack/barto-big.track",
-                           "input/racetrack/barto-small.track",
-                           "input/racetrack/hansen-bigger.track",
-                           "input/racetrack/long.track"]
+all_acrobot_instances = [
+    "0.07-0.07",
+    "0.08-0.08",
+    "0.09-0.09",
+    "0.1-0.1",
+    "0.3-0.3"
+]
+all_dylan_instances = [
+    "dylan/cups",
+    "dylan/slalom",
+    "dylan/uniform",
+    "dylan/wall"
+]
+big_uniform_instances = [
+    "random1k",
+    "randomShapes1k",
+    "randomNoisy1k"
+]
+special_grid_instances = [
+    "openBox_800",
+    "squiggle_800",
+    "slalom_03",
+    "slalom_04",
+    "openBox_400",
+    "openBox_25",
+    "squiggle",
+    "h_400",
+    "hole_400"
+]
+all_racetrack_instances = [
+    "input/racetrack/barto-big.track",
+    "input/racetrack/barto-small.track",
+    "input/racetrack/hansen-bigger.track",
+    "input/racetrack/long.track"
+]
 sliding_tile_4_map_root = "input/tiles/korf/4/all"
 all_sliding_tile_4_instances = [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25, 26, 27, 28,
                                 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50,
@@ -160,7 +174,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResultV3')
+    result_status = db.command('collstats', 'experimentResult')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -190,7 +204,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, planner_configura
 
     for action_duration in all_action_durations:
         query[get_configuration_query("actionDuration")] = action_duration
-        data_tiles = db.experimentResultV3.find(query)
+        data_tiles = db.experimentResult.find(query)
 
         times_for_durations = []
         for result in data_tiles:
@@ -203,7 +217,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, planner_configura
 
 
 def gather_gat_data(db, query, old_idle_time: bool = False):
-    data_tiles = db.experimentResultV3.find(query)
+    data_tiles = db.experimentResult.find(query)
 
     data = []
     idle_data = []
@@ -223,7 +237,7 @@ def gather_gat_data(db, query, old_idle_time: bool = False):
 
 
 def gather_node_data(db, query):
-    data_tiles = db.experimentResultV3.find(query)
+    data_tiles = db.experimentResult.find(query)
 
     generated_data = []
     expanded_data = []
@@ -395,7 +409,7 @@ def plot_gat_stacked(db, algorithms, domain, instance, action_duration, old_idle
 
 def do_plot(file_header, file_suffix, plot):
     # file_header = "{}_{}".format(domain, instance_file_name)
-    filename = "plots/{}_{}.pdf".format(file_header, file_suffix)
+    filename = "plots/{}_{}.{}".format(file_header, file_suffix, file_format)
     lgd = plot()
     plotutils.save_plot(plt, filename, lgd)
     plt.close('all')
@@ -471,7 +485,7 @@ def remove_algorithms(data: dict, labels: list, indices: dict, plot_without: tup
                 if index > local_indices[algorithm]:
                     local_indices[alg] -= 1
             del local_indices[algorithm]
-    #         print(labels)
+    # print(labels)
     #         print(local_indices)
     # print("----------------------------------")
     return removed
@@ -485,7 +499,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
         markdown_summary = False
         plot_average = True
 
-    translated_domain_name = plotutils.translate_domain_name(domain)
+    # translated_domain_name = plotutils.translate_domain_name(domain)
     domain_configurations = all_domains[domain]
 
     all_error_data = {}
@@ -501,7 +515,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
 
     def plot_domain_instance(instance, domain_configuration):
         instance_file_name = instance.replace("/", "_")
-        plot_title = translated_domain_name + " - " + instance
+        plot_title = plotutils.translate_domain_instance_name(domain, instance)  # translated_domain_name + " - " + instance
         plots_markdown = ""
 
         instance_level = "#"
@@ -584,7 +598,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
 
                     # Gather node data
                     node_data, node_labels, node_indices = get_node_data(db, all_algorithms.keys(), domain, instance,
-                                                                        action_duration, domain_configuration)
+                                                                         action_duration, domain_configuration)
                     y_generated = node_data['generatedNodes']
                     y_expanded = node_data['expandedNodes']
 
@@ -714,8 +728,8 @@ def get_all_point_robot_instances():
     instances = []
     for instance in all_dylan_instances:
         instances.append("input/pointrobot/{}.pr".format(instance))
-    # for instance in special_grid_instances:
-    #     instances.append("input/pointrobot/{}.pr".format(instance))
+    for instance in special_grid_instances:
+        instances.append("input/pointrobot/{}.pr".format(instance))
     return instances
 
 
@@ -730,11 +744,11 @@ def plot_all(db):
     if not os.path.exists("plots"):
         os.makedirs("plots")
 
-    # plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
-    # plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
-    plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances(), old_idle_time=True)
-    # plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
-    # plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
+    plot_all_for_domain(db, "GRID_WORLD", get_all_grid_world_instances())
+    plot_all_for_domain(db, "POINT_ROBOT", get_all_point_robot_instances())
+    plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
+    plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
+    plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
     # plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
 
