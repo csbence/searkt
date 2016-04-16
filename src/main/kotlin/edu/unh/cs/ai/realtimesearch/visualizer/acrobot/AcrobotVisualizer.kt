@@ -103,6 +103,9 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val animationPane = Pane()
         animationPane.children.addAll(acrobotView.getNodes())
 
+        rootBox.style = "-fx-background-color: rgba(0, 0, 0, 0);"
+        headerBox.style = "-fx-background-color: rgba(0, 0, 0, 0);"
+
         if (errorMessage.isNotEmpty()) {
             val errorLabel = Label(errorMessage.toString())
             errorLabel.textFill = ThemeColors.ERROR_TEXT.color
