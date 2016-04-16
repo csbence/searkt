@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
@@ -32,7 +33,7 @@ fun main(args: Array<String>) {
         //                val map = "input/racetrack/hansen-bigger.track"
         //        val map = "input/pointrobot/squiggle.pr"
         //                val map = "input/vacuum/openBox_25.vw"
-        val map = "input/acrobot/default_0.03-0.03.ab"
+        val map = "input/acrobot/default_0.3-0.3.ab"
         //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
@@ -43,8 +44,8 @@ fun main(args: Array<String>) {
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(6, MILLISECONDS)
-        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = "STATIC"
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
+        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = TimeBoundType.DYNAMIC.toString()
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
@@ -54,7 +55,7 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
 
 
-        visualizerParameters.add("--path")
+        //        visualizerParameters.add("--path")
         //        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line

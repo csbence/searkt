@@ -121,7 +121,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         rootBox.children.add(headerBox)
         rootBox.children.add(animationPane)
-        primaryStage.scene = Scene(rootBox, WIDTH, HEIGHT)
+        primaryStage.scene = Scene(rootBox, WIDTH, HEIGHT, ThemeColors.UNH_ACCENT.color)
         primaryStage.show()
 
         // Create the animations
