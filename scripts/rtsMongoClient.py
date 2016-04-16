@@ -65,9 +65,12 @@ def get_plot_algorithm_names():
 
 
 def get_pri_configurations():
-    pri_action_fractions = [1.0, 2.0]
-    pri_num_actions = [3, 5, 7]
-    pri_state_fractions = [0.25, 0.5]
+    # pri_action_fractions = [1.0, 2.0]
+    # pri_num_actions = [3, 5, 7]
+    # pri_state_fractions = [0.25, 0.5]
+    pri_action_fractions = [1.0]
+    pri_num_actions = [3]
+    pri_state_fractions = [0.5]
     configurations = []
     for num_actions in pri_num_actions:
         for action_fraction in pri_action_fractions:
@@ -174,7 +177,7 @@ def print_counts(db):
     print('Configuration count: %d' % configuration_status['count'])
     task_status = db.command('collstats', 'experimentTask')
     print('Task count: %d' % task_status['count'])
-    result_status = db.command('collstats', 'experimentResult')
+    result_status = db.command('collstats', 'experimentResultV5_inertia')
     print('Result count: %d' % result_status['count'])
     # pprint.pprint(configuration_status, width=1)
 
@@ -204,7 +207,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, planner_configura
 
     for action_duration in all_action_durations:
         query[get_configuration_query("actionDuration")] = action_duration
-        data_tiles = db.experimentResult.find(query)
+        data_tiles = db.experimentResultV5_inertia.find(query)
 
         times_for_durations = []
         for result in data_tiles:
@@ -217,7 +220,7 @@ def get_gat_per_duration_data(db, algorithm, domain, instance, planner_configura
 
 
 def gather_gat_data(db, query, old_idle_time: bool = False):
-    data_tiles = db.experimentResult.find(query)
+    data_tiles = db.experimentResultV5_inertia.find(query)
 
     data = []
     idle_data = []
@@ -237,7 +240,7 @@ def gather_gat_data(db, query, old_idle_time: bool = False):
 
 
 def gather_node_data(db, query):
-    data_tiles = db.experimentResult.find(query)
+    data_tiles = db.experimentResultV5_inertia.find(query)
 
     generated_data = []
     expanded_data = []
@@ -588,6 +591,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
 
             if not error_only:
                 for action_duration in all_action_durations:
+                    action_plot_title = plot_title + " - " + str(int(plotutils.cnv_ns_to_ms(action_duration))) + " ms"
                     file_header = "{}_{}_{}".format(domain, instance_file_name, action_duration)
                     # Gather GAT data
                     gat_data, gat_labels, gat_indices = get_gat_data(db, all_algorithms.keys(), domain, instance,
@@ -615,7 +619,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                                 msg += " - {}".format(print_suffix)
                             print(msg)
                         stacked_markdown += do_plot(file_header, "stacked", lambda:
-                        plotutils.plot_gat_stacked_bars(data, labels, title=plot_title, log10=log10))
+                        plotutils.plot_gat_stacked_bars(data, labels, title=action_plot_title, log10=log10))
                         return stacked_markdown
 
                     def plot_node_bars(data, labels, file_header=file_header, print_suffix=""):
@@ -627,7 +631,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                                 msg += " - {}".format(print_suffix)
                             print(msg)
                         nodes_markdown += do_plot(file_header, "nodes", lambda:
-                        plotutils.plot_node_count_bars(data, labels, title=plot_title, log10=log10))
+                        plotutils.plot_node_count_bars(data, labels, title=action_plot_title, log10=log10))
                         return nodes_markdown
 
                     if y_gat and y_idle:
@@ -749,7 +753,7 @@ def plot_all(db):
     plot_all_for_domain(db, "POINT_ROBOT_WITH_INERTIA", get_all_point_robot_instances())
     plot_all_for_domain(db, "RACETRACK", all_racetrack_instances)
     plot_all_for_domain(db, "ACROBOT", all_acrobot_instances, plot_average=True)
-    # plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
+    plot_all_for_domain(db, "SLIDING_TILE_PUZZLE_4", get_all_sliding_tile_instances(), plot_average=True)
 
 
 if __name__ == '__main__':
