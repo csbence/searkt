@@ -7,11 +7,12 @@ package edu.unh.cs.ai.realtimesearch.environment
  *
  * @param state the state to be discretized
  */
-open class DiscretizedState<ActualState: DiscretizableState<ActualState>>(val state: ActualState): State<DiscretizedState<ActualState>> {
+open class DiscretizedState<ActualState : DiscretizableState<ActualState>>(val state: ActualState) : State<DiscretizedState<ActualState>> {
     fun copy(state: ActualState): DiscretizedState<ActualState> = DiscretizedState(state.copy())
     override fun copy(): DiscretizedState<ActualState> = copy(state)
 
     val discretizedState: ActualState
+
     init {
         discretizedState = state.discretize()
     }

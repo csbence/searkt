@@ -115,7 +115,7 @@ class RaceTrack(val width: Int,
         return h / maxYSpeed
     }
 
-    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double{
+    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double {
         var h = distance(startState, endState)
         //        return 0.0
         if (maxXSpeed > maxYSpeed)

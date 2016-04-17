@@ -7,7 +7,9 @@ package edu.unh.cs.ai.realtimesearch.visualizer
  * @since 4/6/16
  */
 class InvalidResultException : Exception {
-    constructor(): super()
-    constructor(msg: String): super(msg)
-    constructor(msg: String, cause: Throwable): super(msg, cause)
+    constructor() : super()
+
+    constructor(msg: String) : super(msg)
+
+    constructor(msg: String, cause: Throwable) : super(msg, cause)
 }

@@ -39,7 +39,7 @@ abstract class BaseVisualizer : Application() {
 
         try {
             experimentResult = experimentResultFromJson(cmd.args.first())
-        } catch (e: JsonParseException ) {
+        } catch (e: JsonParseException) {
             throw InvalidResultException("Failed to parse result", e)
         } catch (e: JsonMappingException) {
             throw InvalidResultException("Failed to parse result", e)

@@ -36,11 +36,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
             for (y in 0..numAction - 1) {
                 var xDoubleDot = ((x) - ((numAction - (1.0)) / 2)) / fractions;
                 var yDoubleDot = ((y) - ((numAction - (1.0)) / 2)) / fractions;
-                if(maxAcc < 0)
+                if (maxAcc < 0)
                     maxAcc = -1 * xDoubleDot;
-//                                println("" + xDoubleDot + " " + yDoubleDot)
+                //                                println("" + xDoubleDot + " " + yDoubleDot)
                 actions.add(PointRobotWithInertiaAction(xDoubleDot, yDoubleDot))
-//                println(maxAcc);
+                //                println(maxAcc);
             }
         }
 

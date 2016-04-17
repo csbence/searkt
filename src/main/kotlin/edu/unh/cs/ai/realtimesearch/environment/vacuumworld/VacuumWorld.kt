@@ -152,7 +152,7 @@ class VacuumWorld(val width: Int,
         )
     }
 
-    override fun getGoal(): List<VacuumWorldState>{
+    override fun getGoal(): List<VacuumWorldState> {
         throw UnsupportedOperationException()
     }
 

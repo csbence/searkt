@@ -10,7 +10,7 @@ data class PointRobotWithInertiaState(val x: Double, val y: Double, val xdot: Do
 
 
     override fun equals(other: Any?): Boolean {
-//        println("" + other + " " + this)
+        //        println("" + other + " " + this)
         val fractions = stateFraction; // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
 
         return when {
