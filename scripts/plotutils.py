@@ -10,8 +10,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
 from scipy import stats
 
-plot_markers = ('x', 'D', 'o', '^', 's', 'p', '*', 'h', 'd', '8', r'$\lambda$', '_',
-                'H', 'v', '<', '>', '1', '2', '3', '4', '.', '|', '+', ',', )
+plot_markers = ('D', 'o', '^', 's', 'p', 'd', 'h', '8', r'$\lambda$', '_', '*', 'x',
+                'H', 'v', '<', '>', '1', '2', '3', '4', '.', '|', '+', ',',)
 
 plot_linestyles = ('-', '--', '-.', ':')
 
@@ -82,7 +82,7 @@ def translate_domain_name(domain_name):
 
 
 def translate_instance_name(instance_name, domain):
-    if domain is "ACROBOT":
+    if domain == "ACROBOT":
         return instance_name
     else:
         # Strip path and extension
@@ -93,7 +93,15 @@ def translate_instance_name(instance_name, domain):
             name = name.split('_')[0]
 
         # Convert casing and return
-        return re.sub("([a-z])([A-Z])", "\g<1> \g<2>", name).title()
+        final = re.sub("([a-z])([A-Z])", "\g<1> \g<2>", name).title()
+
+        # Special replacements
+        if final == 'H':
+            final = 'HBox'
+        elif final == 'Barto-Big':
+            final = 'Barto Large'
+
+        return final
 
 
 def translate_domain_instance_name(domain_name, instance_name):
@@ -183,6 +191,7 @@ def plot_gat_stacked_bars(data: dict, labels: list, title="", stats_type="median
 
     width = 0.35
     fig, ax = plt.subplots()
+
     gat_bars = ax.bar(x, gat_stats, width, color=tableau20[0], ecolor=tableau20[5], capsize=2,
                       label="Goal Achievement Time", edgecolor='none',
                       yerr=(gat_stats_confidence_interval_low, gat_stats_confidence_interval_high))
@@ -247,10 +256,10 @@ def plot_node_count_bars(data, labels, title="", stats_type="median", log10=True
     width = 0.35
 
     fig, ax = plt.subplots()
-    generated_count_bars = ax.bar(x, generated_stats, width, color=tableau20[0], ecolor=tableau20[3], capsize=2,
+    generated_count_bars = ax.bar(x, generated_stats, width, color=tableau20[4], ecolor=tableau20[2], capsize=2,
                                   edgecolor='none',
                                   yerr=(generated_confidence_interval_low, generated_confidence_interval_high))
-    expanded_count_bars = ax.bar(x + width, expanded_stats, width, color=tableau20[1], ecolor=tableau20[3], capsize=2,
+    expanded_count_bars = ax.bar(x + width, expanded_stats, width, color=tableau20[10], ecolor=tableau20[6], capsize=2,
                                  edgecolor='none',
                                  yerr=(expanded_confidence_interval_low, expanded_confidence_interval_high))
 
@@ -408,9 +417,8 @@ def plot_gat_duration_error(data_dict, astar_data, action_durations, title="", l
         masked_confidence_high = algorithm_confidence_interval_high[data_mask]
         label = translate_algorithm_name(algorithm)
 
-        # linestyle=next(linestyles),
-        handle = plt.errorbar(masked_x, masked_data, label=label, color=tableau20[color_index], marker=next(markers),
-                              markeredgecolor='none',
+        handle = plt.errorbar(masked_x, masked_data, label=label, color=tableau20[color_index], markeredgecolor='none',
+                              linestyle=next(linestyles), marker=next(markers), clip_on=False,
                               yerr=(masked_confidence_low, masked_confidence_high))
         handles.append((handle, label, masked_data.tolist()))
         color_index += 1
