@@ -29,7 +29,7 @@ data class VacuumWorldState(val agentLocation: Location, val dirtyCells: List<Lo
      */
     override fun copy() = copy(agentLocation, dirtyCells)
 
-    public override fun toString(): String {
+    override fun toString(): String {
         return "Agent location: " + agentLocation.toString() + ", dirty: " + dirtyCells.toString()
     }
 

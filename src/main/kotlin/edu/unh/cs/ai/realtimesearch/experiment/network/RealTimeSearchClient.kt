@@ -131,6 +131,7 @@ class RealTimeSearchClient(val url: String) {
     }
 
     private fun cleanUpResult(experimentResult: ExperimentResult) {
+        @Suppress("UNCHECKED_CAST")
         val experimentConfiguration = experimentResult.valueStore["experimentConfiguration"] as MutableMap<String, Any?>
         experimentConfiguration.remove("rawDomain")
     }

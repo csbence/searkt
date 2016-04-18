@@ -21,7 +21,7 @@ class ClassicalAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTy
      *
      * In a priority queue the least element will be at the head.
      */
-    public class AStarNodeComparator<State>(val domain: Domain<State>, val weight: Double) : Comparator<Node<State>> {
+    class AStarNodeComparator<State>(val domain: Domain<State>, val weight: Double) : Comparator<Node<State>> {
         override fun compare(node1: Node<State>?, n2: Node<State>?): Int {
             if (node1 != null && n2 != null) {
                 val node1Value = (domain.heuristic(node1.state) * weight) + node1.cost

@@ -21,7 +21,7 @@ abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<St
     /**
      * Clears closed list
      */
-    override protected fun initiatePlan() {
+    override fun initiatePlan() {
         closedList.clear();
         super.initiatePlan()
     }
@@ -29,7 +29,7 @@ abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<St
     /**
      * Adds the state of the node to the closedlist
      */
-    protected override fun generateNode(node: Node<StateType>) {
+    override fun generateNode(node: Node<StateType>) {
         closedList.add(node.state)
     }
 
@@ -41,6 +41,6 @@ abstract class ClosedListPlanner<StateType : State<StateType>>(domain: Domain<St
      * @param state is the state to check for
      * @return whether state has been seen before
      */
-    protected override fun visitedBefore(state: StateType, leave: Node<StateType>) = state in closedList
+    override fun visitedBefore(state: StateType, leave: Node<StateType>) = state in closedList
 
 }
