@@ -74,6 +74,7 @@ jar {
 
 task clientJar(type: Jar) {
     manifest {
+        //noinspection GroovyAssignabilityCheck
         attributes 'Main-Class': 'edu.unh.cs.ai.realtimesearch.experiment.network.RealTimeSearchClientApplicationKt'
     }
     baseName = project.name + '-client'
