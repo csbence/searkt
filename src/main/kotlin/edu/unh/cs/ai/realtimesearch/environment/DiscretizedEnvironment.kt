@@ -27,6 +27,7 @@ class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainTy
      * Returns current state of the world
      */
     override fun getState(): DiscretizedState<StateType> = currentState
+
     override fun getGoal(): List<DiscretizedState<StateType>> = domain.getGoal()
 
     /**

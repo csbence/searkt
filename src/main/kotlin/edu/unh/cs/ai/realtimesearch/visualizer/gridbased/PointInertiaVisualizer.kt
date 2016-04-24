@@ -20,25 +20,25 @@ import java.util.concurrent.TimeUnit
 class PointInertiaVisualizer : PointVisualizer() {
     private var xDot = 0.0
     private var yDot = 0.0
-//    private var domain: PointRobotWithInertia? = null
-//    private var environment: PointRobotWithInertiaEnvironment? = null
+    //    private var domain: PointRobotWithInertia? = null
+    //    private var environment: PointRobotWithInertiaEnvironment? = null
 
     override fun setupDomain() {
-//        val numActions = (experimentResult!!.experimentConfiguration[Configurations.NUM_ACTIONS.toString()] as Long?)?.toInt() ?: PointRobotWithInertia.defaultNumActions
-//        val stateFraction = experimentResult!!.experimentConfiguration[Configurations.STATE_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultStateFraction
-//        val actionFraction = experimentResult!!.experimentConfiguration[Configurations.ACTION_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultActionFraction
-//        domain = PointRobotWithInertia(
-//                mapInfo.columnCount,
-//                mapInfo.rowCount,
-//                mapInfo.blockedCells.toHashSet(),
-//                mapInfo.goalCells.first().toDoubleLocation(),
-//                header!!.goalRadius,
-//                numActions,
-//                actionFraction,
-//                stateFraction,
-//                actionDuration
-//        )
-//        environment = PointRobotWithInertiaEnvironment(domain!!, PointRobotWithInertiaState(startX, startY, 0.0, 0.0, actionFraction))
+        //        val numActions = (experimentResult!!.experimentConfiguration[Configurations.NUM_ACTIONS.toString()] as Long?)?.toInt() ?: PointRobotWithInertia.defaultNumActions
+        //        val stateFraction = experimentResult!!.experimentConfiguration[Configurations.STATE_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultStateFraction
+        //        val actionFraction = experimentResult!!.experimentConfiguration[Configurations.ACTION_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultActionFraction
+        //        domain = PointRobotWithInertia(
+        //                mapInfo.columnCount,
+        //                mapInfo.rowCount,
+        //                mapInfo.blockedCells.toHashSet(),
+        //                mapInfo.goalCells.first().toDoubleLocation(),
+        //                header!!.goalRadius,
+        //                numActions,
+        //                actionFraction,
+        //                stateFraction,
+        //                actionDuration
+        //        )
+        //        environment = PointRobotWithInertiaEnvironment(domain!!, PointRobotWithInertiaState(startX, startY, 0.0, 0.0, actionFraction))
     }
 
     override fun playAnimation(transitions: List<PathTransition>) {
@@ -84,7 +84,7 @@ class PointInertiaVisualizer : PointVisualizer() {
         val nSteps = 100
         val dt = 1.0 / nSteps
 
-        for (i in 0..nSteps-1) {
+        for (i in 0..nSteps - 1) {
             val path = Path()
             path.elements.add(MoveTo(animationX, animationY))
 
@@ -95,7 +95,7 @@ class PointInertiaVisualizer : PointVisualizer() {
             animationX += xdot * dt
             animationY += ydot * dt
 
-            if(displayLine){
+            if (displayLine) {
                 path.stroke = ThemeColors.PATH.stroke
                 grid.children.add(path)
             }
@@ -112,7 +112,7 @@ class PointInertiaVisualizer : PointVisualizer() {
         xDot += xDDot
         yDot += yDDot
 
-        if(displayLine){
+        if (displayLine) {
             val action = Circle(animationX, animationY, width / 10.0)
             grid.children.add(action)
         }

@@ -20,7 +20,7 @@ open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domai
     /**
      * Clears open list
      */
-    override protected fun initiatePlan() {
+    override fun initiatePlan() {
         openList.clear();
         super.initiatePlan()
     }
@@ -28,7 +28,7 @@ open class ClassicalHeuristicPlanner<StateType : State<StateType>>(domain: Domai
     /**
      * Adds the node to back of openList
      */
-    protected override fun generateNode(node: Node<StateType>) {
+    override fun generateNode(node: Node<StateType>) {
         openList.add(node)
         super.generateNode(node)
     }

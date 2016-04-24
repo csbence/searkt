@@ -22,7 +22,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
     private val heuristicTable: HashMap<StateType, Double> = HashMap<StateType, Double>(100000000, 1F).resize()
 
     val openList: Queue<MiniminNode<StateType>> = ArrayDeque(1000000)
-//    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
+    //    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
 
     init {
         depthLimit = 20
@@ -114,13 +114,13 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         // Initialize
         var bestAvailable = Double.POSITIVE_INFINITY
         openList.clear()
-//        closedList.clear()
+        //        closedList.clear()
 
         openList.add(MiniminNode(sourceState, 0.0, depthLimit))
 
         while (openList.isNotEmpty()) {
             val miniminNode = openList.remove()
-//            closedList.add(miniminNode.state)
+            //            closedList.add(miniminNode.state)
             expandedNodeCount++
 
             if (terminationChecker.reachedTermination()) {
@@ -128,9 +128,9 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
             }
 
             for (successor in domain.successors(miniminNode.state)) {
-//                if (successor.state in closedList) {
-//                    continue // Skip the already visited items
-//                }
+                //                if (successor.state in closedList) {
+                //                    continue // Skip the already visited items
+                //                }
 
                 val successorCost = successor.actionCost + domain.heuristic(successor.state) + miniminNode.cost
 

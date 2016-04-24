@@ -36,15 +36,15 @@ data class AcrobotStateConfiguration(
          * Returns an AcrobotStateConfiguration from the given map.
          * @param map a map containing AcrobotStateConfiguration values
          */
-        fun fromMap(map: Map<*,*>): AcrobotStateConfiguration = AcrobotStateConfiguration(
-                    (map["maxAngularVelocity1"] as BigDecimal).toDouble(),
-                    (map["maxAngularVelocity2"] as BigDecimal).toDouble(),
-                    (map["minAngularVelocity1"] as BigDecimal).toDouble(),
-                    (map["minAngularVelocity2"] as BigDecimal).toDouble(),
-                    (map["positionGranularity1"] as BigDecimal).toDouble(),
-                    (map["positionGranularity2"] as BigDecimal).toDouble(),
-                    (map["velocityGranularity1"] as BigDecimal).toDouble(),
-                    (map["velocityGranularity2"] as BigDecimal).toDouble()
+        fun fromMap(map: Map<*, *>): AcrobotStateConfiguration = AcrobotStateConfiguration(
+                (map["maxAngularVelocity1"] as BigDecimal).toDouble(),
+                (map["maxAngularVelocity2"] as BigDecimal).toDouble(),
+                (map["minAngularVelocity1"] as BigDecimal).toDouble(),
+                (map["minAngularVelocity2"] as BigDecimal).toDouble(),
+                (map["positionGranularity1"] as BigDecimal).toDouble(),
+                (map["positionGranularity2"] as BigDecimal).toDouble(),
+                (map["velocityGranularity1"] as BigDecimal).toDouble(),
+                (map["velocityGranularity2"] as BigDecimal).toDouble()
         )
     }
 

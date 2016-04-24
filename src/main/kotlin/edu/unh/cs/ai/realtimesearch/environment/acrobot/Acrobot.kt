@@ -16,6 +16,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
               val actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration) : Domain<AcrobotState> {
     companion object {
         data class AcrobotBoundStates(val lowerBound: AcrobotState, val upperBound: AcrobotState)
+
         fun getBoundStates(endState: AcrobotState, configuration: AcrobotConfiguration): AcrobotBoundStates {
             val absoluteLink1LowerBound = endState.link1 - configuration.endLink1LowerBound
             val absoluteLink2LowerBound = endState.link2 - configuration.endLink2LowerBound
@@ -45,7 +46,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
      */
     override fun successors(state: AcrobotState): List<SuccessorBundle<AcrobotState>> {
         // to return
-        val successors : MutableList<SuccessorBundle<AcrobotState>> = arrayListOf()
+        val successors: MutableList<SuccessorBundle<AcrobotState>> = arrayListOf()
 
         for (action in AcrobotAction.values()) {
             // add the legal movement actions
@@ -63,7 +64,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
      * @param state the state to provide a heuristic for
      */
     override fun heuristic(state: AcrobotState): Double {
-            return distanceHeuristic(state)
+        return distanceHeuristic(state)
     }
 
     /**
@@ -109,7 +110,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
      */
     override fun distance(state: AcrobotState): Double {
         return angleDistance(state.link1.position, configuration.endState.link1.position) +
-               angleDistance(state.link2.position, configuration.endState.link2.position)
+                angleDistance(state.link2.position, configuration.endState.link2.position)
     }
 
     /**
@@ -135,7 +136,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
         return AcrobotState(0.0, 0.0, 0.0, 0.0, configuration.stateConfiguration)
     }
 
-    override fun getGoal(): List<AcrobotState>{
+    override fun getGoal(): List<AcrobotState> {
         return listOf(configuration.endState)
     }
 

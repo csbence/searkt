@@ -43,9 +43,9 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         val successors: MutableList<SuccessorBundle<PointRobotLOSTState>> = arrayListOf()
 
         for (it in actions) {
-//            println(it)
+            //            println(it)
             val nSteps = 1000
-            val dt = 1.0/nSteps
+            val dt = 1.0 / nSteps
             var valid = true
 
             for (i in 1..nSteps) {
@@ -89,20 +89,20 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
     * */
     override fun heuristic(state: PointRobotLOSTState): Double {
         //Distance Formula
-//                return 0.0
+        //                return 0.0
         val h = distance(state)
 
-        if(maxXSpeed < maxYSpeed)
+        if (maxXSpeed < maxYSpeed)
             return h / maxYSpeed * actionDuration
         return h / maxXSpeed * actionDuration
     }
 
     override fun heuristic(startState: PointRobotLOSTState, endState: PointRobotLOSTState): Double {
         //Distance Formula
-//        return 0.0
+        //        return 0.0
         val h = distance(startState, endState)
 
-        if(maxXSpeed < maxYSpeed)
+        if (maxXSpeed < maxYSpeed)
             return h / maxYSpeed * actionDuration
         return h / maxXSpeed * actionDuration
     }
@@ -150,7 +150,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): List<PointRobotLOSTState>{
+    override fun getGoal(): List<PointRobotLOSTState> {
         return listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
     }
 
@@ -159,7 +159,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
 
         for (it in actions) {
             val nSteps = 1000
-            val dt = 1.0/nSteps
+            val dt = 1.0 / nSteps
             var valid = true
 
             for (i in 1..nSteps) {

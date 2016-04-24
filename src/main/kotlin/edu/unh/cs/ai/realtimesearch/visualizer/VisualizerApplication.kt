@@ -17,7 +17,7 @@ import java.io.File
  * Created by Stephen on 3/10/16.
  */
 fun main(args: Array<String>) {
-    if (args.size < 1){
+    if (args.size < 1) {
         throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
     }
     val argsIterator = args.iterator()
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
 fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutableListOf()) {
     val domainName = result.experimentConfiguration[Configurations.DOMAIN_NAME.toString()] as String
     params.add(0, result.toJson())
-    when (Domains.valueOf(domainName)){
+    when (Domains.valueOf(domainName)) {
         Domains.VACUUM_WORLD -> {
             Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
         }

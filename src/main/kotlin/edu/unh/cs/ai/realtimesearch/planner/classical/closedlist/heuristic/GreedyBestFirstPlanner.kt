@@ -20,7 +20,7 @@ class GreedyBestFirstPlanner<StateType : State<StateType>>(domain: Domain<StateT
      *
      * In a priority queue the least element will be at the head.
      */
-    public class GreedyBestFirstNodeComparator<StateType : State<StateType>>(val domain: Domain<StateType>) : Comparator<Node<StateType>> {
+    class GreedyBestFirstNodeComparator<StateType : State<StateType>>(val domain: Domain<StateType>) : Comparator<Node<StateType>> {
         override fun compare(n1: Node<StateType>?, n2: Node<StateType>?): Int {
             if (n1 != null && n2 != null) {
                 return domain.heuristic(n1.state).compareTo(domain.heuristic(n2.state))

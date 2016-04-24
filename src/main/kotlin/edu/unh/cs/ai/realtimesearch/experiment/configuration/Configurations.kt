@@ -12,26 +12,25 @@ import edu.unh.cs.ai.realtimesearch.planner.Planners.*
  */
 enum class Configurations {
     // General configurations                    // Type cannot be Int (use Long)
-    ALGORITHM_NAME          ("algorithmName",       String::class.java),
-    DOMAIN_NAME             ("domainName",          String::class.java),
-    DOMAIN_INSTANCE_NAME    ("domainInstanceName",  String::class.java),
-    RAW_DOMAIN              ("rawDomain",           String::class.java),
-    DOMAIN_PATH             ("domainPath",          String::class.java),
-    TIME_LIMIT              ("timeLimit",           Long::class.java),
-    ACTION_DURATION         ("actionDuration",      Long::class.java),
-    TERMINATION_TYPE        ("terminationType",     String::class.java),
+    ALGORITHM_NAME          ("algorithmName", String::class.java),
+    DOMAIN_NAME             ("domainName", String::class.java),
+    DOMAIN_INSTANCE_NAME    ("domainInstanceName", String::class.java),
+    RAW_DOMAIN              ("rawDomain", String::class.java),
+    DOMAIN_PATH             ("domainPath", String::class.java),
+    TIME_LIMIT              ("timeLimit", Long::class.java),
+    ACTION_DURATION         ("actionDuration", Long::class.java),
+    TERMINATION_TYPE        ("terminationType", String::class.java),
     // Realtime search configurations
-    TIME_BOUND_TYPE         ("timeBoundType",       TimeBoundType::class.java,  LSS_LRTA_STAR, RTA_STAR, DYNAMIC_F_HAT),
-    COMMITMENT_STRATEGY     ("commitmentStrategy",  String::class.java,         LSS_LRTA_STAR, RTA_STAR, DYNAMIC_F_HAT),
-    LOOKAHEAD_DEPTH_LIMIT   ("lookaheadDepthLimit", Long::class.java,           RTA_STAR),
+    TIME_BOUND_TYPE         ("timeBoundType", TimeBoundType::class.java, LSS_LRTA_STAR, RTA_STAR, DYNAMIC_F_HAT),
+    COMMITMENT_STRATEGY     ("commitmentStrategy", String::class.java, LSS_LRTA_STAR, RTA_STAR, DYNAMIC_F_HAT),
+    LOOKAHEAD_DEPTH_LIMIT   ("lookaheadDepthLimit", Long::class.java, RTA_STAR),
     // Anytime search configurations
-    ANYTIME_MAX_COUNT       ("anytimeMaxCount",     Long::class.java,           ARA_STAR),
+    ANYTIME_MAX_COUNT       ("anytimeMaxCount", Long::class.java, ARA_STAR),
     // Weighted A* configurations
-    WEIGHT                  ("weight",              Double::class.java,         WEIGHTED_A_STAR),
-    NUM_ACTIONS             ("numActions",          Long::class.java),
-    ACTION_FRACTION         ("actionFraction",      Double::class.java),
-    STATE_FRACTION          ("stateFraction",       Double::class.java);
-
+    WEIGHT                  ("weight", Double::class.java, WEIGHTED_A_STAR),
+    NUM_ACTIONS             ("numActions", Long::class.java),
+    ACTION_FRACTION         ("actionFraction", Double::class.java),
+    STATE_FRACTION          ("stateFraction", Double::class.java);
 
 
     val configurationName: String
@@ -49,13 +48,14 @@ enum class Configurations {
 
     companion object {
         val valueMap by lazy {
-            val map = mutableMapOf<String,Configurations>()
+            val map = mutableMapOf<String, Configurations>()
             val values = values()
             for (value in values) {
                 map.put(value.configurationName, value)
             }
             map
         }
+
         fun fromName(name: String): Configurations? = valueMap[name]
     }
 

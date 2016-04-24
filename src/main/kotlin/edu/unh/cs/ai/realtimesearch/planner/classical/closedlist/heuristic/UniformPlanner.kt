@@ -20,7 +20,7 @@ class UniformPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : 
      *
      * In a priority queue the least element will be at the head.
      */
-    public class UniformNodeComparator<StateType : State<StateType>> : Comparator<Node<StateType>> {
+    class UniformNodeComparator<StateType : State<StateType>> : Comparator<Node<StateType>> {
         override fun compare(n1: Node<StateType>?, n2: Node<StateType>?): Int {
             if (n1 != null && n2 != null) {
                 return n1.cost.compareTo(n2.cost)

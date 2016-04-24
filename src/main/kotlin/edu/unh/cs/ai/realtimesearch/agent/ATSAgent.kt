@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.agent
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 
 /**

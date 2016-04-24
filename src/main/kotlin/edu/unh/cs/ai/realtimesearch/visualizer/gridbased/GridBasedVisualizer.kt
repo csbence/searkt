@@ -114,7 +114,7 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     open protected fun parseActions(): MutableList<String> {
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (action in experimentResult!!.actions) {
+        for (action in experimentResult.actions) {
             actionList.add(action)
         }
         return actionList
