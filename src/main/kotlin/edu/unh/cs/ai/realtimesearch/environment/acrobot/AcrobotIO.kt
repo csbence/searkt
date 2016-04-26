@@ -7,6 +7,11 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotCon
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import java.io.InputStream
 
+/**
+ * Acrobot domain configuration I/O class.  Acrobot domain configurations are stored in JSON format.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
+ */
 object AcrobotIO {
     fun parseFromStream(input: InputStream, actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration): AcrobotInstance {
         val configuration = AcrobotConfiguration.fromJsonStream(input)

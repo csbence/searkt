@@ -28,10 +28,10 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     // State fields
     protected var actionList: MutableList<String> = arrayListOf()
     protected var mapInfo: MapInfo = MapInfo.ZERO
-    protected var grid: GridCanvasPane = GridCanvasPane.ZERO
-    protected var agentView: AgentView = AgentView.ZERO
 
     // Graphical fields
+    protected var grid: GridCanvasPane = GridCanvasPane.ZERO
+    protected var agentView: AgentView = AgentView.ZERO
     private val primaryScreenBounds = Screen.getPrimary().visualBounds
     protected val windowWidth = primaryScreenBounds.width - 100
     protected val windowHeight = primaryScreenBounds.height - 100
@@ -108,8 +108,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     /**
      * Parse the experiment result for actions.  If the domain includes actions which cannot be directly translated
-     * from the results as strings then the implementing visualizer should override this method.  GridBasedVisualizer
-     * will call this method after calling {@link BaseVisualizer#processCommandLine).
+     * from the results as strings then the implementing visualizer should override this method.
+     * {@link GridBasedVisualizer} will call this method after calling {@link BaseVisualizer#processCommandLine).
      */
     open protected fun parseActions(): MutableList<String> {
         /* Get action list from Application */
@@ -120,6 +120,10 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         return actionList
     }
 
+    /**
+     * Performs parsing of results and graphical setup.  After this method is called, all {@link GridBasedVisualizer}
+     * fields will be properly initialized.
+     */
     protected fun visualizerSetup() {
         actionList = parseActions()
 

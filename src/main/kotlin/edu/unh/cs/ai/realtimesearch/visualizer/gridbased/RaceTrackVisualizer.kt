@@ -19,15 +19,38 @@ import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
 /**
- * Created by Stephen on 2/29/16.
+ * Visualizer for the racetrack domain.
+ *
+ * @author Stephen Chambers, Mike Bogochow
+ * @since 2/29/16
  */
 class RacetrackVisualizer : GridBasedVisualizer() {
-    private var animationX = 0.0
-    private var animationY = 0.0
+    /**
+     * The current x position of the agent in the animation that is being built.
+     */
+    protected var animationX = 0.0
+
+    /**
+     * The current y position of the agent in the animation that is being built.
+     */
+    protected var animationY = 0.0
+
+    /**
+     * The current x velocity of the agent in the animation that is being built.
+     */
     private var xDot = 0
+
+    /**
+     * The current y velocity of the agent in the animation that is being built.
+     */
     private var yDot = 0
+
+    /**
+     * The animation time for a single transition in the animation in milliseconds.
+     */
+    private var animationStepDuration = 1000.0
+
     override var robotScale: Double = 4.0
-    private var animationStepDuration = 1000.0 // ms
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -44,6 +67,8 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         val sequentialTransition = buildAnimation()
         sequentialTransition.cycleCount = Timeline.INDEFINITE
+
+        // Delay startup of animation to simulate idle planning time
         Thread({
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Relative IPT: $delayTime ms")
@@ -52,6 +77,9 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         }).start()
     }
 
+    /**
+     * Create a sequential transition from the action list.
+     */
     private fun buildAnimation(): SequentialTransition {
         val sequentialTransition = SequentialTransition()
 
@@ -64,6 +92,9 @@ class RacetrackVisualizer : GridBasedVisualizer() {
         return sequentialTransition
     }
 
+    /**
+     * Create a transition from the action.
+     */
     private fun animate(action: String): PathTransition {
         val robot = agentView.agent
         val width = tileSize

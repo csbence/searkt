@@ -3,6 +3,8 @@ package edu.unh.cs.ai.realtimesearch.environment
 /**
  * Wrapper around a domain which takes {@link DiscretizableState}s.  All method implementations are based on actual
  * states and not their discretized versions.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  */
 class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : Domain<StateType>>(val domain: DomainType) : Domain<DiscretizedState<StateType>> {
     /**

@@ -14,7 +14,10 @@ import javafx.application.Application
 import java.io.File
 
 /**
- * Created by Stephen on 3/10/16.
+ * Main launcher for visualizers.
+ *
+ * @author Stephen Chambers, Mike Bogochow
+ * @since 3/10/16
  */
 fun main(args: Array<String>) {
     if (args.size < 1) {

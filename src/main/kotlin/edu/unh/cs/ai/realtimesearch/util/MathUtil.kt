@@ -2,6 +2,10 @@ package edu.unh.cs.ai.realtimesearch.util
 
 import java.util.concurrent.TimeUnit
 
+/*
+ * Author: Mike Bogochow (mgp36@unh.edu)
+ */
+
 /**
  * The accuracy to use when comparing double numbers.
  */

@@ -26,9 +26,15 @@ import kotlin.system.measureTimeMillis
 val terminationType = "time"
 val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
 val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
+//val actionDurations = listOf(850000000, 960000000, 1070000000, 1280000000)
 val lookaheadLimits = listOf(20)
 private var useDomainPaths = false
 
+/**
+ * Generator for planner/domain configurations.
+ *
+ * @author Mike Bogochow, Bence Cserna
+ */
 fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
@@ -182,10 +188,10 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
 
             for (bound in bounds) {
                 val acrobotConfiguration = AcrobotConfiguration(
-                        endLink1LowerBound = AcrobotLink(bound, bound),
-                        endLink2LowerBound = AcrobotLink(bound, bound),
-                        endLink1UpperBound = AcrobotLink(bound, bound),
-                        endLink2UpperBound = AcrobotLink(bound, bound),
+                        goalLink1LowerBound = AcrobotLink(bound, bound),
+                        goalLink2LowerBound = AcrobotLink(bound, bound),
+                        goalLink1UpperBound = AcrobotLink(bound, bound),
+                        goalLink2UpperBound = AcrobotLink(bound, bound),
                         stateConfiguration = stateConfiguration
                 )
                 configurations.add(mutableMapOf(
@@ -313,6 +319,11 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
     return configurations
 }
 
+/**
+ * Upload the configurations to the DB.
+ *
+ * @param configurations the configurations to upload
+ */
 fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
     val restTemplate = RestTemplate()
     val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
@@ -330,7 +341,7 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
                     try {
                         val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
                         if (responseEntity.statusCode == HttpStatus.OK) {
-                            println("Upload completed! (${count} / ${configurations.size})")
+                            println("Upload completed! ($count / ${configurations.size})")
                         } else {
                             println("Upload failed!")
                         }

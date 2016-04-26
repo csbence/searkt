@@ -15,31 +15,14 @@ import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
 /**
- * Created by Stephen on 2/29/16.
+ * Visualizer for the point robot with inertia domain.
+ *
+ * @author Stephen Chambers, Mike Bogochow
+ * @since 2/29/16
  */
 class PointInertiaVisualizer : PointVisualizer() {
     private var xDot = 0.0
     private var yDot = 0.0
-    //    private var domain: PointRobotWithInertia? = null
-    //    private var environment: PointRobotWithInertiaEnvironment? = null
-
-    override fun setupDomain() {
-        //        val numActions = (experimentResult!!.experimentConfiguration[Configurations.NUM_ACTIONS.toString()] as Long?)?.toInt() ?: PointRobotWithInertia.defaultNumActions
-        //        val stateFraction = experimentResult!!.experimentConfiguration[Configurations.STATE_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultStateFraction
-        //        val actionFraction = experimentResult!!.experimentConfiguration[Configurations.ACTION_FRACTION.toString()] as Double? ?: PointRobotWithInertia.defaultActionFraction
-        //        domain = PointRobotWithInertia(
-        //                mapInfo.columnCount,
-        //                mapInfo.rowCount,
-        //                mapInfo.blockedCells.toHashSet(),
-        //                mapInfo.goalCells.first().toDoubleLocation(),
-        //                header!!.goalRadius,
-        //                numActions,
-        //                actionFraction,
-        //                stateFraction,
-        //                actionDuration
-        //        )
-        //        environment = PointRobotWithInertiaEnvironment(domain!!, PointRobotWithInertiaState(startX, startY, 0.0, 0.0, actionFraction))
-    }
 
     override fun playAnimation(transitions: List<PathTransition>) {
         val sequentialTransition = SequentialTransition()
@@ -48,6 +31,7 @@ class PointInertiaVisualizer : PointVisualizer() {
         }
         sequentialTransition.cycleCount = Timeline.INDEFINITE
 
+        // Delay startup of animation to simulate idle planning time
         Thread({
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
@@ -73,13 +57,13 @@ class PointInertiaVisualizer : PointVisualizer() {
         return pathTransitions
     }
 
-    override fun animate(x: String, y: String): MutableList<PathTransition> {
+    override fun animate(xAcceleration: String, yAcceleration: String): MutableList<PathTransition> {
         val robot = agentView.agent
         val width = tileSize
         val retval: MutableList<PathTransition> = arrayListOf()
 
-        val xDDot = x.toDouble() * width
-        val yDDot = y.toDouble() * width
+        val xDDot = xAcceleration.toDouble() * width
+        val yDDot = yAcceleration.toDouble() * width
 
         val nSteps = 100
         val dt = 1.0 / nSteps

@@ -22,28 +22,47 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
- * Created by Stephen on 2/29/16.
+ * Visualizer for the point robot domain.
+ *
+ * @author Stephen Chambers, Mike Bogochow
+ * @since 2/29/16
  */
 open class PointVisualizer : GridBasedVisualizer() {
-    var startX: Double = 0.0
-    var startY: Double = 0.0
-    var goalX: Double = 0.0
-    var goalY: Double = 0.0
-    lateinit var header: PointRobotHeader
-    var actionDuration: Long = 0
-    var animationTime: Double = 0.0
-    val minimumAnimationTime: Double = 500.0
-    var animationX = 0.0
-    var animationY = 0.0
+    /**
+     * Parsed header information from the raw domain.
+     */
+    protected lateinit var header: PointRobotHeader
+
+    /**
+     * The action duration of the experiment configuration.
+     */
+    protected var actionDuration: Long = 0
+
+    /**
+     * The total time the animation will run for.
+     */
+    protected var animationTime: Double = 0.0
+
+    /**
+     * The minimum animation time to ensure that the animation does not end too quickly.
+     */
+    protected val minimumAnimationTime: Double = 500.0
+
+    /**
+     * The current x position of the agent in the animation that is being built.
+     */
+    protected var animationX = 0.0
+
+    /**
+     * The current y position of the agent in the animation that is being built.
+     */
+    protected var animationY = 0.0
 
     override var robotScale: Double = 4.0
 
     override fun getOptions(): Options = super.getOptions()
 
     override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
-
-    open protected fun setupDomain() {
-    }
 
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
         header = PointRobotIO.parseHeader(inputScanner)
@@ -75,12 +94,8 @@ open class PointVisualizer : GridBasedVisualizer() {
         //        if (animationTime < minimumAnimationTime)
         animationTime = minimumAnimationTime
 
-        startX = mapInfo.startCells.first().x + header.startLocationOffset.x
-        startY = mapInfo.startCells.first().y + header.startLocationOffset.y
-        goalX = mapInfo.goalCells.first().x + header.goalLocationOffset.x
-        goalY = mapInfo.goalCells.first().y + header.goalLocationOffset.y
-
-        setupDomain()
+        val goalX = mapInfo.goalCells.first().x + header.goalLocationOffset.x
+        val goalY = mapInfo.goalCells.first().y + header.goalLocationOffset.y
 
         /* the goal radius */
         val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header.goalRadius * tileSize)
@@ -97,6 +112,9 @@ open class PointVisualizer : GridBasedVisualizer() {
         playAnimation(buildAnimation())
     }
 
+    /**
+     * Forms a sequential transition from the given transitions and plays it.
+     */
     open protected fun playAnimation(transitions: List<PathTransition>) {
         val sequentialTransition = SequentialTransition()
         for (pathTransition in transitions) {
@@ -104,6 +122,7 @@ open class PointVisualizer : GridBasedVisualizer() {
         }
         sequentialTransition.cycleCount = Timeline.INDEFINITE
 
+        // Delay startup of animation to simulate idle planning time
         Thread({
             val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
@@ -112,6 +131,9 @@ open class PointVisualizer : GridBasedVisualizer() {
         }).start()
     }
 
+    /**
+     * Builds a list of transitions from the action list.
+     */
     open protected fun buildAnimation(): List<PathTransition> {
         val pathTransitions = mutableListOf<PathTransition>()
 
@@ -123,20 +145,27 @@ open class PointVisualizer : GridBasedVisualizer() {
             val x = actionIterator.next()
             assert(actionIterator.hasNext(), { "Action has no matching y value" })
             val y = actionIterator.next()
-            var pathTransition = animate(x, y)
+            val pathTransition = animate(x, y)
             pathTransitions.addAll(pathTransition)
         }
 
         return pathTransitions
     }
 
-    open protected fun animate(x: String, y: String): MutableList<PathTransition> {
+    /**
+     * Forms necessary transitions for animation given x and y accelerations.
+     *
+     * @param xAcceleration acceleration on x-axis
+     * @param yAcceleration acceleration on y-axis
+     * @return list of transitions for animating the acceleration
+     */
+    open protected fun animate(xAcceleration: String, yAcceleration: String): MutableList<PathTransition> {
         val path = Path()
         val robot = agentView.agent
         val width = tileSize
 
-        val xDot = x.toDouble() * width
-        val yDot = y.toDouble() * width
+        val xDot = xAcceleration.toDouble() * width
+        val yDot = yAcceleration.toDouble() * width
 
         path.elements.add(MoveTo(animationX, animationY))
         path.elements.add(LineTo(animationX + xDot, animationY + yDot))

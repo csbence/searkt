@@ -18,7 +18,10 @@ import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
 /**
- * Created by Stephen on 2/11/16.
+ * Visualizer for the vacuum world and grid world domains.
+ *
+ * @author Stephen Chambers, Mike Bogochow
+ * @since 2/11/16
  */
 class VacuumVisualizer : GridBasedVisualizer() {
     var isARAStar = false
@@ -29,9 +32,21 @@ class VacuumVisualizer : GridBasedVisualizer() {
     var araStarY = 0.0
     var anytimeCount = 0L
     var anytimeMaxCount = 3L
-    private var animationX = 0.0
-    private var animationY = 0.0
-    private val animationTime = 200.0
+
+    /**
+     * The current x position of the agent in the animation that is being built.
+     */
+    protected var animationX = 0.0
+
+    /**
+     * The current y position of the agent in the animation that is being built.
+     */
+    protected var animationY = 0.0
+
+    /**
+     * The animation time for a single transition in the animation in milliseconds.
+     */
+    private val animationStepDuration = 200.0
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -42,7 +57,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        val timeToRun = actionList.size * animationTime
+        val timeToRun = actionList.size * animationStepDuration
 
         isARAStar = experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
         if (isARAStar) {
@@ -68,14 +83,18 @@ class VacuumVisualizer : GridBasedVisualizer() {
         pathTransition.interpolator = Interpolator.LINEAR
         pathTransition.cycleCount = Timeline.INDEFINITE
 
+        // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             pathTransition.play()
         }).start()
     }
 
+    /**
+     * Build a path for the agent to follow from the action list.
+     */
     private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
@@ -140,6 +159,12 @@ class VacuumVisualizer : GridBasedVisualizer() {
         return paths[pIndex]
     }
 
+    /**
+     * Add the proper animations to the path for the given action.
+     *
+     * @param path the path to add to
+     * @param action the action to animate
+     */
     private fun animate(action: String, path: Path) {
         val width = tileSize
         val height = tileSize

@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Visualizer for the Acrobot domain.  Given a set of results, produces and runs an animation of the Acrobot domain
  * execution.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  */
 open class AcrobotVisualizer : BaseVisualizer() {
     private val logger = LoggerFactory.getLogger(AcrobotVisualizer::class.java)
@@ -60,7 +62,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         // Parse results
-        acrobotConfiguration = AcrobotConfiguration.fromJson(experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
+        acrobotConfiguration = AcrobotConfiguration.fromJson(
+                experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
         actionDuration = (experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
 
         for (action in experimentResult.actions) {
@@ -77,10 +80,11 @@ open class AcrobotVisualizer : BaseVisualizer() {
         if (stateList.size <= 0)
             throw InvalidResultException("Must have at least one state to animate")
 
-        val endBounds = Acrobot.getBoundStates(acrobotConfiguration.endState, acrobotConfiguration)
+        val endBounds = Acrobot.getBoundStates(acrobotConfiguration.goalState, acrobotConfiguration)
         if (!stateList.last().state.inBounds(endBounds.lowerBound, endBounds.upperBound)) {
             errorMessage.appendln("Last state not in goal bounds!!!!!")
-            assert(!Acrobot(AcrobotConfiguration()).isGoal(stateList.last().state), { "Found last state not in goal but Acrobot environment isGoal true" })
+            assert(!Acrobot(AcrobotConfiguration()).isGoal(stateList.last().state),
+                    { "Found last state not in goal but Acrobot environment isGoal true" })
         }
 
         /* Graphical parameters */
@@ -103,6 +107,7 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val animationPane = Pane()
         animationPane.children.addAll(acrobotView.getNodes())
 
+        // Make the boxes transparent so we can easily set the background color of the scene
         rootBox.style = "-fx-background-color: rgba(0, 0, 0, 0);"
         headerBox.style = "-fx-background-color: rgba(0, 0, 0, 0);"
 
@@ -117,7 +122,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
         info.append("Algorithm: ").appendln(experimentResult.experimentConfiguration["algorithmName"])
         info.append("Instance: ").appendln(experimentResult.experimentConfiguration["domainInstanceName"])
         info.append("Path Length: ").appendln(experimentResult.pathLength)
-        info.append("Action Duration: ").append(experimentResult.experimentConfiguration["actionDuration"]).appendln(" ns")
+        info.append("Action Duration: ").append(experimentResult.experimentConfiguration["actionDuration"])
+        info.appendln(" ns")
         info.append("Action Execution Time: ").append(experimentResult.actionExecutionTime).appendln(" ns")
         val infoLabel = Label(info.toString())
         headerBox.children.add(infoLabel)
@@ -140,7 +146,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
             animationPane.children.addAll(ghostAcrobot.getNodes())
             ghostAcrobot.toBack()
 
-            val ghostTransition = animateAcrobot(ghostAcrobot, stateList.subList(1, stateList.size), Interpolator.DISCRETE)
+            val ghostTransition = animateAcrobot(ghostAcrobot, stateList.subList(1, stateList.size),
+                    Interpolator.DISCRETE)
             ghostTransition.onFinished = EventHandler {
                 ghostAcrobot.isVisible = false
             }
@@ -198,8 +205,10 @@ open class AcrobotVisualizer : BaseVisualizer() {
             val newState = environment.getState()
 
             // Assign interpolator for each link
-            val linkInterpolation1: Interpolator = getLinkInterpolator(currentState.link1.velocity, newState.link1.velocity)
-            val linkInterpolation2: Interpolator = getLinkInterpolator(currentState.link2.velocity, newState.link2.velocity)
+            val linkInterpolation1: Interpolator =
+                    getLinkInterpolator(currentState.link1.velocity, newState.link1.velocity)
+            val linkInterpolation2: Interpolator =
+                    getLinkInterpolator(currentState.link2.velocity, newState.link2.velocity)
 
             // Add the state info to list
             stateList.add(StateInfo(currentState, newState, action, linkInterpolation1, linkInterpolation2))
@@ -233,7 +242,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val time = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
         for (state in stateList) {
             val diff1 = Math.toDegrees(angleDifference(state.previousState.link1.position, state.state.link1.position))
-            val diff2 = Math.toDegrees(angleDifference(state.previousState.link2.position, state.state.link2.position)) + diff1
+            val diff2 = Math.toDegrees(
+                    angleDifference(state.previousState.link2.position, state.state.link2.position)) + diff1
 
             val newRotate1 = acrobotView.addRotate1()
             val newRotate2 = acrobotView.addRotate2()
@@ -241,8 +251,10 @@ open class AcrobotVisualizer : BaseVisualizer() {
             logger.debug { "Adding (${String.format("%.3f", time)}: $diff1, $diff2) to timeline" }
             @Suppress("UNCHECKED_CAST")
             sequentialTransition.children.add(Timeline(KeyFrame(Duration.seconds(time),
-                    KeyValue(newRotate1.angleProperty() as WritableValue<Any>, -diff1, interpolator1 ?: state.interpolator1),
-                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>, -diff2, interpolator2 ?: state.interpolator2))))
+                    KeyValue(newRotate1.angleProperty() as WritableValue<Any>,
+                            -diff1, interpolator1 ?: state.interpolator1),
+                    KeyValue(newRotate2.angleProperty() as WritableValue<Any>,
+                            -diff2, interpolator2 ?: state.interpolator2))))
         }
 
         return sequentialTransition
@@ -253,4 +265,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
  * Info about an AcrobotState.  Contains the previous state, the current state, the action that produced the state, and
  * the interpolator to be used for animation.
  */
-data class StateInfo(val previousState: AcrobotState, val state: AcrobotState, val action: AcrobotAction, val interpolator1: Interpolator = Interpolator.EASE_IN, val interpolator2: Interpolator = interpolator1)
+data class StateInfo(val previousState: AcrobotState,
+                     val state: AcrobotState,
+                     val action: AcrobotAction,
+                     val interpolator1: Interpolator = Interpolator.EASE_IN,
+                     val interpolator2: Interpolator = interpolator1)

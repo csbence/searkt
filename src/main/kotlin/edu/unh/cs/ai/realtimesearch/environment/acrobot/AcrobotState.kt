@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Represents one link of an Acrobot.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  */
 data class AcrobotLink(val position: Double, val velocity: Double) {
     companion object {
@@ -47,7 +49,15 @@ data class AcrobotLink(val position: Double, val velocity: Double) {
 /**
  * A state in the Acrobot domain consists of the positions and angular velocities of each link.  Position units are in
  * radians and velocity units are in radians per second.
+ *
  * Instances of this class are immutable.
+ *
+ * Constant values and equations of motion are from:
+ *
+ * * Boone, Gary. "Minimum-time control of the acrobot." In Robotics and Automation, 1997. Proceedings., 1997 IEEE International Conference on, vol. 4, pp. 3281-3287. IEEE, 1997.
+ * * Sutton, Richard S. "Generalization in reinforcement learning: Successful examples using sparse coarse coding." Advances in neural information processing systems (1996): 1038-1044.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  *
  * @param link1 link 1 properties of the acrobot
  * @param link2 link 2 properties of the acrobot
@@ -81,7 +91,7 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
         val defaultInitialState = verticalDownState
 
         // Constants
-        // Given in Sutton and Barto 1998 as well as Boone 1997
+        // Given in Sutton as well as Boone
         val linkMass1: Double = 1.0
         val linkMass2: Double = 1.0
         val linkLength1: Double = 1.0
@@ -100,7 +110,10 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
             val configurationObject = map["configuration"]
 
             if (configurationObject != null)
-                return AcrobotState(AcrobotLink.fromMap(link1), AcrobotLink.fromMap(link2), AcrobotStateConfiguration.fromMap(configurationObject as Map<*, *>))
+                return AcrobotState(
+                        AcrobotLink.fromMap(link1),
+                        AcrobotLink.fromMap(link2),
+                        AcrobotStateConfiguration.fromMap(configurationObject as Map<*, *>))
             else
                 return AcrobotState(AcrobotLink.fromMap(link1), AcrobotLink.fromMap(link2))
         }
@@ -116,11 +129,21 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
 
     override fun discretize(): AcrobotState {
         return AcrobotState(
-                AcrobotLink(roundDownToDecimal(link1.position, configuration.positionGranularity1), roundDownToDecimal(link1.velocity, configuration.velocityGranularity1)),
-                AcrobotLink(roundDownToDecimal(link2.position, configuration.positionGranularity2), roundDownToDecimal(link2.velocity, configuration.velocityGranularity2)),
+                AcrobotLink(
+                        roundDownToDecimal(link1.position, configuration.positionGranularity1),
+                        roundDownToDecimal(link1.velocity, configuration.velocityGranularity1)),
+                AcrobotLink(
+                        roundDownToDecimal(link2.position, configuration.positionGranularity2),
+                        roundDownToDecimal(link2.velocity, configuration.velocityGranularity2)),
                 configuration)
     }
 
+    /**
+     * Calculate what the next state would be by applying the given link accelerations for the given action duration.
+     *
+     * @param accelerations the link accelerations to apply
+     * @param actionDuration the action duration to apply the accelerations for
+     */
     fun calculateNextState(accelerations: Accelerations, actionDuration: Long): AcrobotState {
         val durationSeconds: Double = convertNanoUpDouble(actionDuration, TimeUnit.SECONDS)
         var newLinkPosition1 = link1.position + calculateDisplacement(accelerations.linkAcceleration1, link1.velocity, durationSeconds)
@@ -137,7 +160,8 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
     operator fun plus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 + rhs.link1, link2 + rhs.link2, configuration)
     operator fun minus(rhs: AcrobotState): AcrobotState = AcrobotState(link1 - rhs.link1, link2 - rhs.link2, configuration)
 
-    // Implementation note: Changing the properties to lazy actually decreases A* planner time significantly.
+    // Implementation note: Changing the properties to lazy actually increases A* planner time significantly.
+    // Values are multiplied by themselves instead of using Math.pow for marginal performance increase.
 
     // Inertial acceleration matrix equations
     private val d11 = linkMass1 * (linkCenterOfMass1 * linkCenterOfMass1) + linkMass2 * ((linkLength1 * linkLength1) + (linkCenterOfMass2 * linkCenterOfMass2) + 2 * linkLength1 * linkCenterOfMass2 * Math.cos(link2.position)) + linkMomentOfInertia1 + linkMomentOfInertia2

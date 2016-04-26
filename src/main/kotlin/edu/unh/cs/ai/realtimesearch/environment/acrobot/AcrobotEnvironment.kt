@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory
 /**
  * The Acrobot environment.  Contains the domain and a current state.
  *
+ * @author Mike Bogochow (mgp36@unh.edu)
+ *
  * @param domain is the Acrobot domain
  * @param initialState is the initial state.  Will use default initial state if not provided
  */

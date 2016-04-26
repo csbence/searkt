@@ -9,12 +9,19 @@ import groovyjarjarcommonscli.*
 import javafx.application.Application
 import kotlin.system.exitProcess
 
+/**
+ * Base application for visualizers.  Handles command line parsing and provides framework for easily adding custom
+ * options per visualizer implementation.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
+ */
 abstract class BaseVisualizer : Application() {
     protected lateinit var experimentResult: ExperimentResult
     protected var rawDomain: String = ""
 
     /**
-     * Process commandline arguments.
+     * Process commandline arguments.  Converts retrieved experiment result into a {@link ExperimentResult} and
+     * retrieves the raw domain from the configuration.  Then calls {@link #processOptions} for custom options.
      */
     protected fun processCommandLine(args: Array<String>) {
         val options = getOptions()
