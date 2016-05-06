@@ -13,8 +13,6 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
@@ -32,7 +30,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTer
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
+import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
@@ -308,7 +306,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
-        val anytimeRepairingAStarPlanner = AnytimeRepairingAStar(domain)
+        val anytimeRepairingAStarPlanner = AnytimeRepairingAStarPlanner(domain)
         /*val atsAgent = ATSAgent(anytimeRepairingAStarPlanner)*/
         val atsExperiment = AnytimeExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
 

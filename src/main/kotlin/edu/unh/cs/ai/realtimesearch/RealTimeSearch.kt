@@ -32,13 +32,13 @@ fun main(args: Array<String>) {
         // Default configuration
         //                val map = "input/racetrack/hansen-bigger.track"
         //        val map = "input/pointrobot/squiggle.pr"
-        //                val map = "input/vacuum/openBox_25.vw"
-        val map = "input/acrobot/default_0.3-0.3.ab"
+        val map = "input/vacuum/openBox_25.vw"
+//        val map = "input/acrobot/default_0.3-0.3.ab"
         //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.ACROBOT.toString(),
+                Domains.GRID_WORLD.toString(),
                 rawDomain,
                 Planners.A_STAR.toString(),
                 "time")
@@ -54,9 +54,8 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
 
-
-        //        visualizerParameters.add("--path")
-        //        visualizerParameters.add("--tracker")
+        visualizerParameters.add("--path")
+        visualizerParameters.add("--tracker")
     } else {
         // Read configuration from command line
         createCommandLineMenu(args)

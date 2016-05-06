@@ -41,6 +41,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
     private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
     private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
+    private val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
     /**
      * Runs the experiment
@@ -50,7 +51,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         logger.info { "Starting experiment from state ${world.getState()}" }
 
         var totalPlanningNanoTime = 0L
-        val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
@@ -59,7 +59,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.init(timeBound)
 
-                actionList = agent.selectAction(world.getState(), terminationChecker);
+                actionList = agent.selectAction(world.getState(), terminationChecker)
 
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
@@ -78,7 +78,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
             validateInteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
-
         }
 
         val pathLength: Long = actions.size.toLong()
@@ -86,7 +85,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         val goalAchievementTime = actionDuration + totalExecutionNanoTime // We only plan during execution plus the first iteration
         logger.info {
             "Path length: [$pathLength] After ${agent.planner.expandedNodeCount} expanded " +
-                    "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                    "and ${agent.planner.generatedNodeCount} generated nodes in $totalPlanningNanoTime ns. " +
                     "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 

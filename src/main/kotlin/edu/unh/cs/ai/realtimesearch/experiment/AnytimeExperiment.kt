@@ -9,9 +9,10 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldExcepti
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
+import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -27,21 +28,26 @@ import java.util.concurrent.TimeUnit
  *
  * @param world is the environment
  */
-class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
+class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStarPlanner<StateType>,
                                                       val experimentConfiguration: GeneralExperimentConfiguration,
                                                       val world: Environment<StateType>) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
+    private val maxCount: Long =
+            experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?:
+                    throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
+    private val maxPlanningTime: Long = experimentConfiguration.actionDuration * maxCount
+
     /**
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
-        val actions: MutableList<String> = arrayListOf()
-        val actionsLists: MutableList<String> = arrayListOf()
-        var actionList: MutableList<Action?> = arrayListOf()
-        //        val maxCount = 6
-        val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
+        val executedActions: MutableList<Action> = arrayListOf()
+        val allPlannedActions: MutableMap<Double, List<String>> = mutableMapOf()
+        var workingActionList: List<Action?> = listOf()
+        var actionIterator: Iterator<Action?> = workingActionList.iterator()
+        var solvedPlan: List<Action?> = listOf()
 
         logger.info { "Starting experiment from state ${world.getState()}" }
         var idlePlanningTime = 1L
@@ -49,73 +55,68 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
 
         while (!world.isGoal()) {
             logger.debug { "Start anytime search" }
-            val startTime = getThreadCpuNanotTime()
 
-            val tempActions = planner.solve(world.getState(), world.getGoal());
-
-            val endTime = getThreadCpuNanotTime()
-            totalPlanningTime += endTime - startTime
-
-            logger.debug { "time: " + (endTime - startTime) }
-            if (actions.size == 0) {
-                idlePlanningTime = endTime - startTime
-                actionList = tempActions
-            } else if (experimentConfiguration.actionDuration * maxCount < endTime - startTime) {
-                for (i in 1..maxCount) {
-                    actionList.removeAt(0)
-                }
-            } else {
-                actionList = tempActions
+            val iterationNanoTime = measureThreadCpuNanoTime {
+                solvedPlan = planner.solve(world.getState(), world.getGoal())
             }
+            totalPlanningTime += iterationNanoTime
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+            logger.debug { "time: $iterationNanoTime" }
+            if (executedActions.size == 0) {
+                // First plan
+                idlePlanningTime = iterationNanoTime
+                workingActionList = solvedPlan
+                actionIterator = workingActionList.iterator()
+            } else if (iterationNanoTime <= maxPlanningTime) {
+                // TODO could try to keep planning if have extra time
+                workingActionList = solvedPlan
+                actionIterator = workingActionList.iterator()
+            }
+            // else {
+            // Didn't finish within planning time so keep current plan
 
-            val update = planner.update()
-            if (update < 1.0) {
-                actionList.forEach {
-                    if (it != null) {
-                        world.step(it) // Move the agent
-                        actions.add(it.toString()) // Save the action
+            logger.debug { "Agent return actions: |${workingActionList.size}| to state ${world.getState()}" }
+
+            val updatedInflationFactor = planner.update()
+            if (updatedInflationFactor < 1.0) {
+                // TODO paper says while inflation > 1, so should be <= 1.0 here?
+                // Done planning; execute remaining actions
+                while (actionIterator.hasNext()) {
+                    val action = actionIterator.next()
+                    if (action != null) {
+                        world.step(action) // Move the agent
+                        executedActions.add(action) // Save the action
                     }
                 }
             } else {
-
+                // Have agent perform next maxCount actions
                 var count = 0
-                for (it in actionList) {
-                    if (it != null) {
-
-                        if (count < maxCount) {
-                            world.step(it) // Move the agent
-                            actions.add(it.toString())
-                        }// Save the action
-                        actionsLists.add(it.toString())
-                        count++;
+                while (actionIterator.hasNext() && count < maxCount) {
+                    val action = actionIterator.next()
+                    if (action != null) {
+                        world.step(action) // Move the agent
+                        executedActions.add(action) // Save the action
                     }
+                    count++
                 }
             }
-            if (!world.isGoal()) {
-                actionsLists.add("" + update + " ")
-            }
 
-        }
-        actionsLists.add("" + maxCount)
-        for (it in actions) {
-            actionsLists.add(it.toString())
+            allPlannedActions.put(updatedInflationFactor, solvedPlan.filter { it != null }.map { it.toString() })
         }
 
-        logger.info { actionsLists.toString() }
+        logger.info { allPlannedActions.toString() }
 
-        val pathLength = actions.size.toLong()
+        val pathLength = executedActions.size.toLong()
         val totalExecutionNanoTime = pathLength * experimentConfiguration.actionDuration
         val goalAchievementTime = idlePlanningTime + totalExecutionNanoTime
 
         logger.info {
             "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in ${idlePlanningTime} ns. " +
+                    "and ${planner.generatedNodeCount} generated nodes in $idlePlanningTime ns. " +
                     "(${planner.expandedNodeCount / convertNanoUpDouble(idlePlanningTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
-        return ExperimentResult(
+        val result = ExperimentResult(
                 experimentConfiguration = experimentConfiguration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
@@ -124,8 +125,12 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = idlePlanningTime,
                 pathLength = pathLength,
-                actions = actions.map { it.toString() }
+                actions = executedActions.map { it.toString() }
         )
+
+        result["allPlans"] = allPlannedActions
+
+        return result
     }
 }
 

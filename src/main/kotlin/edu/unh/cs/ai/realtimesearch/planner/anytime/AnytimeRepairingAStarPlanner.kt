@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.comparisons.compareBy
 
-class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateType>) : AnytimePlanner<StateType>(domain) {
+class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : AnytimePlanner<StateType>(domain) {
 
-    private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)
+    private val logger = LoggerFactory.getLogger(AnytimeRepairingAStarPlanner::class.java)
 
     private var inflationFactor = 3.0
     private val openList: Queue<Node<StateType>> = PriorityQueue(compareBy<Node<StateType>> { inflatedFValue(it) })
@@ -21,7 +21,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     private var targetgoal: StateType? = null
     private var goalNode: Node<StateType>? = null
     private val allNodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1F).resize()
-    private var iterationCount = 0;
+    private var iterationCount = 0
 
     data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int)
 
@@ -71,11 +71,10 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    fun solve(startState: StateType, gS: List<StateType>): MutableList<Action?> {
+    fun solve(startState: StateType, goalStates: List<StateType>): List<Action?> {
         //Solving backwards, so flip start and goal states
-
         targetgoal = startState
-        for (goalState in gS) {
+        for (goalState in goalStates) {
             var tempNode = allNodes[goalState]
 
             if (tempNode == null) {
@@ -92,10 +91,11 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
             closedList[goalState] = tempNode
             openList.add(closedList[goalState])
         }
+
         improvePath()
 
         iterationCount++
-        val result: MutableList<Action?> = arrayListOf()
+        val result: MutableList<Action?> = mutableListOf()
         var cur = goalNode
         while (cur != null) {
             result.add(cur.action)
