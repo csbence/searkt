@@ -13,12 +13,24 @@ import java.lang.Math.abs
  * @param y: y index of the location
  */
 data class DoubleLocation(val x: Double, val y: Double) {
+    companion object {
+        val ZERO = DoubleLocation(0.0, 0.0)
+    }
+
     operator fun plus(rhs: DoubleLocation): DoubleLocation {
         return DoubleLocation(x + rhs.x, y + rhs.y)
     }
 
+    operator fun plus(rhs: Double): DoubleLocation {
+        return DoubleLocation(x + rhs, y + rhs)
+    }
+
     operator fun minus(rhs: DoubleLocation): DoubleLocation {
         return DoubleLocation(x - rhs.x, y - rhs.y)
+    }
+
+    operator fun minus(rhs: Double): DoubleLocation {
+        return DoubleLocation(x - rhs, y - rhs)
     }
 
     fun manhattanDistance(other: DoubleLocation): Double {

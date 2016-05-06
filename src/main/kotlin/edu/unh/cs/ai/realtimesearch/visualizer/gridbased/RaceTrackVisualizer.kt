@@ -83,8 +83,8 @@ class RacetrackVisualizer : GridBasedVisualizer() {
     private fun buildAnimation(): SequentialTransition {
         val sequentialTransition = SequentialTransition()
 
-        animationX = initialAgentXLocation
-        animationY = initialAgentYLocation
+        animationX = initialAgentAnimationLocation.x
+        animationY = initialAgentAnimationLocation.y
 
         for (action in actionList)
             sequentialTransition.children.add(animate(action))

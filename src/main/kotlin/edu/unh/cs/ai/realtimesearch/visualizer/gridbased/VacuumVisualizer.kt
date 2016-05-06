@@ -85,7 +85,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+//            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = 5000.0
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             pathTransition.play()
@@ -97,15 +98,17 @@ class VacuumVisualizer : GridBasedVisualizer() {
      */
     private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
+
+        animationX = initialAgentAnimationLocation.x
+        animationY = initialAgentAnimationLocation.y
+
         //if(isARAStar){
         val p = Path()
-        p.elements.add(MoveTo(initialAgentXLocation, initialAgentYLocation))
+        p.elements.add(MoveTo(animationX, animationY))
         paths.add(p)
         //}
         var pIndex = 0
 
-        animationX = initialAgentXLocation
-        animationY = initialAgentYLocation
 
         for (action in actionList) {
             val path = paths[pIndex]

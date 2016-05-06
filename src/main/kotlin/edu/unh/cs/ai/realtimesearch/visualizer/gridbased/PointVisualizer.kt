@@ -3,9 +3,6 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import groovyjarjarcommonscli.CommandLine
@@ -143,8 +140,8 @@ open class PointVisualizer : GridBasedVisualizer() {
     open protected fun buildAnimation(): List<PathTransition> {
         val pathTransitions = mutableListOf<PathTransition>()
 
-        animationX = initialAgentXLocation
-        animationY = initialAgentYLocation
+        animationX = initialAgentAnimationLocation.x
+        animationY = initialAgentAnimationLocation.y
 
         val actionIterator = actionList.iterator()
         while (actionIterator.hasNext()) {

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
+import edu.unh.cs.ai.realtimesearch.environment.location.DoubleLocation
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
 import groovyjarjarcommonscli.CommandLine
@@ -35,13 +36,14 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     private val primaryScreenBounds = Screen.getPrimary().visualBounds
     protected val windowWidth = primaryScreenBounds.width - 100
     protected val windowHeight = primaryScreenBounds.height - 100
-    protected var tileWidth = 0.0
-    protected var tileHeight = 0.0
     protected var tileSize = 0.0
     open protected var robotScale = 2.0
 
-    protected var initialAgentXLocation = 0.0
-    protected var initialAgentYLocation = 0.0
+    /** Initial coordinates of agent in map. */
+    protected lateinit var initialAgentMapCoordinate: DoubleLocation
+
+    /** Initial location of agent in animation. */
+    protected lateinit var initialAgentAnimationLocation: DoubleLocation
 
     init {
         trackerOption.setOptionalArg(true)
@@ -121,6 +123,23 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     }
 
     /**
+     * Parse the map information for the initial relative coordinates of the agent within its start cell.  The
+     * {@link #parseMap} and {@link #parseMapHeader} methods are guaranteed to have been called before this method is
+     * called and therefore the {@link #mapInfo} field will be initialized.  The returned values must be in the range
+     * [0.0, 1.0).
+     * <p>
+     * Default implementation is the center of the cell (0.5, 0.5).
+     *
+     * @return the initial agent coordinates on the map
+     */
+    open protected fun getInitialCellOffset(): DoubleLocation = DoubleLocation(0.5, 0.5)
+
+    // Uses #tileSize so should not be used until tileSize is initialized
+    private fun convertMapToGrid(value: Double): Double = value * tileSize
+    private fun convertMapToGrid(value: DoubleLocation): DoubleLocation
+            = DoubleLocation(convertMapToGrid(value.x), convertMapToGrid(value.y))
+
+    /**
      * Performs parsing of results and graphical setup.  After this method is called, all {@link GridBasedVisualizer}
      * fields will be properly initialized.
      */
@@ -133,28 +152,30 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
             throw IllegalArgumentException("${mapInfo.startCells.size} start cells found in map; required 1")
         }
 
-        // Calculate tile sizes
-        tileWidth = windowWidth / mapInfo.columnCount
-        tileHeight = windowHeight / mapInfo.rowCount
-        tileSize = Math.min(tileWidth, tileHeight)
+        val initialCellOffset = getInitialCellOffset()
+        initialAgentMapCoordinate = DoubleLocation(
+                mapInfo.startCells.first().x.toDouble() + initialCellOffset.x,
+                mapInfo.startCells.first().y.toDouble() + initialCellOffset.y)
+
+        // Calculate grid tile sizes
+        val maxTileWidth = windowWidth / mapInfo.columnCount
+        val maxTileHeight = windowHeight / mapInfo.rowCount
+        tileSize = Math.min(maxTileWidth, maxTileHeight)
         while (((tileSize * mapInfo.columnCount) > windowWidth) || ((tileSize * mapInfo.rowCount) > windowHeight)) {
             tileSize /= 1.05
         }
 
         // Calculate robot parameters
-        val agentWidth = tileSize / robotScale
-        val agentStartX = mapInfo.startCells.first().x
-        val agentStartY = mapInfo.startCells.first().y
-        initialAgentXLocation = agentStartX * tileSize + (tileSize / 2.0)
-        initialAgentYLocation = agentStartY * tileSize + (tileSize / 2.0)
-        val actualRobotXLocation = initialAgentXLocation - agentWidth / 2.0
-        val actualRobotYLocation = initialAgentYLocation - agentWidth / 2.0
+        val agentSize = tileSize / robotScale
+        initialAgentAnimationLocation = convertMapToGrid(initialAgentMapCoordinate)
+        // Actual display location is offset to center of agent
+        val actualAgentLocation = initialAgentAnimationLocation - agentSize / 2.0
 
         // Agent setup
-        agentView = AgentView(agentWidth, trackerSize)
+        agentView = AgentView(agentSize, trackerSize)
         agentView.trackingEnabled = showTracker
         agentView.toFront()
-        agentView.setLocation(actualRobotXLocation, actualRobotYLocation)
+        agentView.setLocation(actualAgentLocation.x, actualAgentLocation.y)
 
         // Grid setup
         grid = GridCanvasPane(mapInfo, tileSize)

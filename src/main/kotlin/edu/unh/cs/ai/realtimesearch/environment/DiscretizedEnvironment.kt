@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainType : Domain<DiscretizedState<StateType>>>(
-        private val domain: DomainType, private val initialState: DiscretizedState<StateType>? = null) :
-        Environment<DiscretizedState<StateType>> {
+        private val domain: DomainType,
+        private val initialState: DiscretizedState<StateType>? = null) : Environment<DiscretizedState<StateType>> {
     private val logger = LoggerFactory.getLogger(DiscretizedEnvironment::class.java)
     private var currentState: DiscretizedState<StateType> = initialState ?: domain.randomState()
 
@@ -33,7 +33,7 @@ class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainTy
     override fun getGoal(): List<DiscretizedState<StateType>> = domain.getGoal()
 
     /**
-     * Returns wHether current state is the goal
+     * Returns whether current state is the goal
      */
     override fun isGoal(): Boolean {
         val goal = domain.isGoal(currentState)

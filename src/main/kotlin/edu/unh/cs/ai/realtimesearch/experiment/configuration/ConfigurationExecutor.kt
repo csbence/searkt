@@ -183,14 +183,12 @@ object ConfigurationExecutor {
     }
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val numActions = experimentConfiguration.getTypedValue<Long>(Configurations.NUM_ACTIONS.toString())?.toInt() ?: PointRobotWithInertia.defaultNumActions
-        val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: PointRobotWithInertia.defaultActionFraction
-        val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
+        val discretizedDomain = DiscretizedDomain(pointRobotWithInertiaInstance.domain)
+        val discretizedInitialState = DiscretizedState(pointRobotWithInertiaInstance.initialState)
+        val pointRobotWithInertiaEnvironment = DiscretizedEnvironment(discretizedDomain, discretizedInitialState)
 
-        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, numActions, actionFraction, stateFraction, experimentConfiguration.actionDuration)
-        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
-
-        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
+        return executeDomain(experimentConfiguration, discretizedDomain, discretizedInitialState, pointRobotWithInertiaEnvironment)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
