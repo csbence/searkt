@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import edu.unh.cs.ai.realtimesearch.visualizer.delayPlay
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
+import javafx.animation.Animation
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.Timeline
@@ -16,6 +17,7 @@ import javafx.scene.Scene
 import javafx.scene.shape.LineTo
 import javafx.scene.shape.MoveTo
 import javafx.scene.shape.Path
+import javafx.scene.shape.PathElement
 import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.concurrent.TimeUnit
@@ -27,15 +29,6 @@ import java.util.concurrent.TimeUnit
  * @since 2/11/16
  */
 class VacuumVisualizer : GridBasedVisualizer() {
-    var isARAStar = false
-    var moveRobot = true
-    var araStarXOriginal = 0.0
-    var araStarYOriginal = 0.0
-    var araStarX = 0.0
-    var araStarY = 0.0
-    var anytimeCount = 0L
-    var anytimeMaxCount = 3L
-
     /**
      * The current x position of the agent in the animation that is being built.
      */
@@ -62,29 +55,41 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        val timeToRun = actionList.size * animationStepDuration
-
-        isARAStar =
-                experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] ==
-                        Planners.ARA_STAR.toString()
-        if (isARAStar) {
-            moveRobot = false
-            anytimeMaxCount = experimentResult.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()]
-                    as Long
-            araStarXOriginal = agentView.agent.x
-            araStarYOriginal = agentView.agent.y
-            araStarX = agentView.agent.x
-            araStarY = agentView.agent.y
-        }
-
         primaryStage.title = "RTS Visualizer"
         primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount,
                 ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
-        val path = buildAnimation()
+        val animation = buildAnimation()
+
+        // Delay startup of animation to simulate idle planning time
+        delayPlay(animation, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
+    }
+
+    /**
+     * Build a path for the agent to follow from the action list.
+     */
+    private fun buildAnimation(): Animation {
+        animationX = initialAgentAnimationLocation.x
+        animationY = initialAgentAnimationLocation.y
+
+        val path = Path()
+        path.elements.add(MoveTo(animationX, animationY))
+
+        for (action in actionList) {
+            path.elements.add(animate(action))
+            path.elements.add(MoveTo(animationX, animationY))
+        }
+
+println("display line: $displayLine")
+        /* Display the path */
+        if (displayLine) {
+            path.stroke = ThemeColors.PATH.stroke
+            grid.children.add(path)
+        }
 
         /* Animate the robot */
+        val timeToRun = actionList.size * animationStepDuration
         val pathTransition = PathTransition()
         pathTransition.duration = Duration.millis(timeToRun)
         pathTransition.path = path
@@ -92,141 +97,34 @@ class VacuumVisualizer : GridBasedVisualizer() {
         pathTransition.interpolator = Interpolator.LINEAR
         pathTransition.cycleCount = Timeline.INDEFINITE
 
-        // Delay startup of animation to simulate idle planning time
-        delayPlay(pathTransition, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
+        return pathTransition
     }
 
     /**
-     * Build a path for the agent to follow from the action list.
-     */
-    private fun buildAnimation(): Path {
-        val paths: MutableList<Path> = arrayListOf()
-
-        animationX = initialAgentAnimationLocation.x
-        animationY = initialAgentAnimationLocation.y
-
-        //if(isARAStar){
-        val p = Path()
-        p.elements.add(MoveTo(animationX, animationY))
-        paths.add(p)
-        //}
-        var pIndex = 0
-
-
-        for (action in actionList) {
-            val path = paths[pIndex]
-
-            if (isARAStar && action.contains(".")) {
-                araStarX = araStarXOriginal
-                araStarY = araStarYOriginal
-                //path.stroke = Color.RED
-
-                val newPath = Path()
-                //println("" + arastarX + " " + arastarY)
-                newPath.elements.add(MoveTo(araStarX, araStarY))
-                paths.add(newPath)
-                pIndex++
-                anytimeCount = 0
-            } else if (!action.equals("UP")
-                    && !action.equals("DOWN")
-                    && !action.equals("LEFT")
-                    && !action.equals("RIGHT")) {
-                //                println(action)
-                moveRobot = true
-                val newPath = Path()
-                newPath.elements.add(MoveTo(animationX, animationY))
-                paths.add(newPath)
-                pIndex++
-            } else {
-                //println(action)
-                animate(action, path)
-            }
-        }
-
-        /* Display the path */
-        if (displayLine) {
-            grid.children.add(paths[pIndex])
-            paths[pIndex].stroke = ThemeColors.PATH.stroke
-        }
-
-        //        if(isARAStar) {
-        //            paths.get(0).stroke = Color.RED
-        //            paths.get(1).stroke = Color.YELLOW
-        //            paths.get(2).stroke = Color.BLACK
-        //            paths.get(3).stroke = Color.CYAN
-        //            paths.get(4).stroke = Color.BLUE
-        //            paths.get(5).stroke = Color.MAGENTA
-        //            paths.get(6).stroke = Color.GREEN
-        //            paths.get(7).stroke = Color.WHITE
-        //            paths.get(8).stroke = Color.GOLD
-        //            paths.get(9).stroke = Color.PLUM
-        //        }
-
-        return paths[pIndex]
-    }
-
-    /**
-     * Add the proper animations to the path for the given action.
+     * Get the PathElement for the given action.
      *
-     * @param path the path to add to
      * @param action the action to animate
+     * @return the path element for animating the given action
      */
-    private fun animate(action: String, path: Path) {
+    private fun animate(action: String): PathElement {
         val width = tileSize
         val height = tileSize
 
-        if (isARAStar)
-            anytimeCount++
-
         when (action) {
             "UP" -> {
-                if (moveRobot) {
-                    path.elements.add(LineTo(animationX, animationY + height))
-                    animationY += height
-                } else if (isARAStar) {
-                    path.elements.add(LineTo(araStarX, araStarY + height))
-                    araStarY += height
-                    if (anytimeCount <= anytimeMaxCount) {
-                        araStarYOriginal = araStarY
-                    }
-                }
+                animationY += height
             }
             "RIGHT" -> {
-                if (moveRobot) {
-                    path.elements.add(LineTo(animationX + width, animationY))
-                    animationX += width
-                } else if (isARAStar) {
-                    path.elements.add(LineTo(araStarX + width, araStarY))
-                    araStarX += width
-                    if (anytimeCount <= anytimeMaxCount) {
-                        araStarXOriginal = araStarX
-                    }
-                }
+                animationX += width
             }
             "DOWN" -> {
-                if (moveRobot) {
-                    path.elements.add(LineTo(animationX, animationY - height))
-                    animationY -= height
-                } else if (isARAStar) {
-                    path.elements.add(LineTo(araStarX, araStarY - height))
-                    araStarY -= height
-                    if (anytimeCount <= anytimeMaxCount) {
-                        araStarYOriginal = araStarY
-                    }
-                }
+                animationY -= height
             }
             "LEFT" -> {
-                if (moveRobot) {
-                    path.elements.add(LineTo(animationX - width, animationY))
-                    animationX -= width
-                } else if (isARAStar) {
-                    path.elements.add(LineTo(araStarX - width, araStarY))
-                    araStarX -= width
-                    if (anytimeCount <= anytimeMaxCount) {
-                        araStarXOriginal = araStarX
-                    }
-                }
+                animationX -= width
             }
         }
+
+        return LineTo(animationX, animationY)
     }
 }
