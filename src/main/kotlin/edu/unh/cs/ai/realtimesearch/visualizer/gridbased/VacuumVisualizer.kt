@@ -81,7 +81,6 @@ class VacuumVisualizer : GridBasedVisualizer() {
             path.elements.add(MoveTo(animationX, animationY))
         }
 
-println("display line: $displayLine")
         /* Display the path */
         if (displayLine) {
             path.stroke = ThemeColors.PATH.stroke
