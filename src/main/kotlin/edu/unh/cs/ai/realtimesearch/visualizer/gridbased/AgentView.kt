@@ -11,9 +11,9 @@ import javafx.scene.shape.Rectangle
  * @since April 8, 2016
  */
 class AgentView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
-    private val TRACKER_SCALE = 4.0
+    private val trackerScale = 4.0
     val agent = Rectangle(width, width, ThemeColors.AGENT.color)
-    val tracker = Circle(width * TRACKER_SCALE, ThemeColors.AGENT.stroke)
+    val tracker = Circle(width * trackerScale, ThemeColors.AGENT.stroke)
     var trackingEnabled: Boolean
         set(value) {
             tracker.isVisible = value
@@ -55,8 +55,6 @@ class AgentView(val width: Double, val minimumTrackerRadius: Double = 10.0) {
     fun setLocation(x: Double, y: Double) {
         agent.x = x
         agent.y = y
-        agent.translateX = agent.x
-        agent.translateY = agent.y
         relocateTracker()
     }
 

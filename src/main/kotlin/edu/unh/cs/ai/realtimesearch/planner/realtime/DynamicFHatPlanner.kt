@@ -7,10 +7,13 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
+import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.lang.Math.max
 import java.util.*
-import kotlin.Double.Companion.POSITIVE_INFINITY
 import kotlin.system.measureTimeMillis
 
 /**
@@ -32,7 +35,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
                                              var open: Boolean = false,
-                                             parent: Node<StateType>? = null) {
+                                             parent: Node<StateType>? = null) : Indexable {
+
+        /** Item index in the open list. */
+        override var index: Int = -1
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>
@@ -113,23 +119,23 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val nodes: MutableMap<StateType, Node<StateType>> = hashMapOf()
-    private val closedList: MutableSet<Node<StateType>> = hashSetOf()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = PriorityQueue<Node<StateType>>(fHatComparator)
-
-    // for fast lookup we maintain a set in parallel
-    private val openSet = hashSetOf<Node<StateType>>()
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fHatComparator)
 
     private var rootState: StateType? = null
 
+    // Performance measurement
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
-    private var aStarTimer = 0L
-    private var dijkstraTimer = 0L
+    var aStarTimer = 0L
+        get
+    var dijkstraTimer = 0L
+        get
 
+    // Global error correction
     private var heuristicError = 0.0
     private var distanceError = 0.0
 
@@ -153,7 +159,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         distanceError = 0.0
 
         clearOpenList()
-        closedList.clear()
     }
 
     /**
@@ -188,7 +193,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Root state: $state" }
 
         // Learning phase
-        if (closedList.isNotEmpty()) {
+        if (openList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
@@ -246,9 +251,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun initializeAStar() {
         iterationCounter++
         clearOpenList()
-        closedList.clear()
 
-        reorderOpenListBy(fHatComparator)
+        openList.reorder(fHatComparator)
     }
 
     /**
@@ -261,7 +265,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-        closedList.add(sourceNode)
 
         // Select the best children to update the distance and heuristic error
         var bestChildNode: Node<StateType>? = null
@@ -282,6 +285,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = Long.MAX_VALUE
+                    open = false
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -312,6 +316,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
                 if (!successorNode.open) {
                     addToOpenList(successorNode)
+                } else {
+                    openList.update(successorNode)
                 }
             } else {
                 logger.trace {
@@ -383,14 +389,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         iterationCounter++
 
         // change openList ordering to heuristic only`
-        reorderOpenListBy(heuristicComparator)
+        openList.reorder(heuristicComparator)
 
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
             val node = popOpenList()
             node.iteration = iterationCounter
-
-            closedList.remove(node)
 
             val currentHeuristicValue = node.heuristic
 
@@ -398,29 +402,38 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             for (predecessor in node.predecessors) {
                 val predecessorNode = predecessor.node
 
-                // Update if the node is outdated
-                if (predecessorNode.iteration != iterationCounter) {
-                    predecessorNode.heuristic = POSITIVE_INFINITY
-                    predecessorNode.iteration = iterationCounter
+                if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
+                    // This node was already learned and closed in the current iteration
+                    continue
                 }
+
+                // Update if the node is outdated
+                //                if (predecessorNode.iteration != iterationCounter) {
+                //                    predecessorNode.heuristic = POSITIVE_INFINITY
+                //                    predecessorNode.iteration = iterationCounter
+                //                }
 
                 val predecessorHeuristicValue = predecessorNode.heuristic
 
                 //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
                 //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
 
-                // only update those that we found in the closed list and whose are lower than new found heuristic
-                if (predecessorNode in closedList && predecessorHeuristicValue > (currentHeuristicValue + predecessor.actionCost)) {
+                if (!predecessorNode.open) {
+                    // This node is not open yet, because it was not visited in the current planning iteration
 
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    assert(predecessorNode.iteration == iterationCounter - 1)
+                    predecessorNode.iteration = iterationCounter
+
                     predecessorNode.distanceError = node.distanceError
                     predecessorNode.distance = node.distance + 1
 
-                    logger.debug { "Updated to ${predecessorNode.heuristic}" }
+                    addToOpenList(predecessorNode)
+                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                    // This node was visited in this learning phase, but the current path is better then the previous
 
-                    if (!predecessorNode.open) {
-                        addToOpenList(predecessorNode)
-                    }
+                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    openList.update(predecessorNode)
                 }
             }
         }
@@ -429,7 +442,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         if (openList.isEmpty()) {
             logger.debug { "Done with Dijkstra" }
         } else {
-            logger.debug { "Incomplete learning step. Lists: Open(${openList.size}) Closed(${closedList.size}) " }
+            logger.warn() { "Incomplete learning step. Lists: Open(${openList.size})) " }
         }
     }
 
@@ -437,7 +450,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Given a state, this function returns the path according to the tree pointers
      */
     private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
-        val actions = arrayListOf<ActionBundle>()
+        val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
 
         logger.debug() { "Extracting plan" }
@@ -459,12 +472,13 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.forEach { it.open = false }
-        openList.clear()
+        openList.applyAndClear {
+            it.open = false
+        }
     }
 
     private fun popOpenList(): Node<StateType> {
-        val node = openList.remove()
+        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
         node.open = false
         return node
     }
@@ -472,16 +486,5 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
         node.open = true
-    }
-
-    private fun reorderOpenListBy(comparator: Comparator<Node<StateType>>) {
-        val tempOpenList = openList.toTypedArray() // O(1)
-        if (tempOpenList.size >= 1) {
-            openList = PriorityQueue<Node<StateType>>(tempOpenList.size, comparator) // O(1)
-        } else {
-            openList = PriorityQueue<Node<StateType>>(comparator) // O(1)
-        }
-
-        openList.addAll(tempOpenList) // O(n * log(n))
     }
 }

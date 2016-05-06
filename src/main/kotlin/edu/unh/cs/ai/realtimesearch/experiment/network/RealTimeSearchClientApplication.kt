@@ -4,25 +4,23 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import org.apache.commons.cli.*
 import org.slf4j.LoggerFactory
-import java.util.*
-import kotlin.concurrent.timerTask
 
 
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val checkInInterval: Long = 60000) {
+class RealTimeSearchClientApplication(private val rtsServerUrl: String, private val domainPathRoot: String? = null) {
 
     val logger = LoggerFactory.getLogger(RealTimeSearchClientApplication::class.java)
-    private val timer: Timer = Timer()
+    //    private val timer: Timer = Timer()
     private val realTimeSearchClient: RealTimeSearchClient
-    private var checkInTask: TimerTask? = null
+    //    private var checkInTask: TimerTask? = null
     private @Volatile var running = false
 
     init {
-        if (checkInInterval !in 0..3600000) {
-            throw RuntimeException("Invalid check-in interval [$checkInInterval]. The check-in interval has to be between 0 and 3600000 ms.")
-        }
+        //        if (checkInInterval !in 0..3600000) {
+        //            throw RuntimeException("Invalid check-in interval [$checkInInterval]. The check-in interval has to be between 0 and 3600000 ms.")
+        //        }
 
         if (rtsServerUrl.isBlank()) {
             throw RuntimeException("Invalid server url. The server url was empty.")
@@ -37,7 +35,7 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
      * It will periodically checkIn to the server.
      */
     fun start() {
-        startPeriodicCheckIn()
+        //        startPeriodicCheckIn()
         running = true
         var lastActiveTimestamp = System.currentTimeMillis()
 
@@ -46,26 +44,26 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
             val experimentConfiguration = realTimeSearchClient.getExperimentConfiguration()
             if (experimentConfiguration != null) {
                 logger.info("Experiment configuration has been received. [̵̵̵̵domain:${experimentConfiguration.domainName} :: algorithm:${experimentConfiguration.algorithmName} :: instance:${experimentConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()]}]")
-                stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
+                //                stopPeriodicCheckIn() // Don't do anything else parallel to the experiment
                 System.gc() // Make sure that we have not garbage in the memory
 
-
                 // Execute configuration
-                val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration)
+                val experimentResult = ConfigurationExecutor.executeConfiguration(experimentConfiguration, domainPathRoot)
                 System.gc()
 
                 // Submit results
                 realTimeSearchClient.submitResult(experimentResult)
                 logger.info("Result submitted")
-                startPeriodicCheckIn()
+                //                startPeriodicCheckIn()
 
                 lastActiveTimestamp = System.currentTimeMillis()
             } else {
                 logger.info("No experiment available.")
                 if (System.currentTimeMillis() - lastActiveTimestamp > 600000) {
                     logger.info("Stop application (timeout)")
-//                    realTimeSearchClient.disconnect() TODO() implement in the server
+                    //                    realTimeSearchClient.disconnect() TODO() implement in the server
                     stop()
+                    return
                 }
 
                 // Failed to get a a configuration wait a second to avoid busy wait
@@ -78,31 +76,35 @@ class RealTimeSearchClientApplication(private val rtsServerUrl: String, private 
      * Stop the application gracefully.
      */
     fun stop() {
-        stopPeriodicCheckIn()
+        //        stopPeriodicCheckIn()
         running = false
+        //        timer.cancel()
     }
 
-    private fun startPeriodicCheckIn() {
-        checkInTask = timerTask { realTimeSearchClient.checkIn() }
-        timer.schedule(checkInTask, 0, checkInInterval)
-    }
-
-    private fun stopPeriodicCheckIn() {
-        if (checkInTask != null) {
-            checkInTask?.cancel()
-            checkInTask = null
-            timer.purge()
-        }
-    }
+    //    private fun startPeriodicCheckIn() {
+    //        checkInTask = timerTask { realTimeSearchClient.checkIn() }
+    //        timer.schedule(checkInTask, 0, checkInInterval)
+    //    }
+    //
+    //    private fun stopPeriodicCheckIn() {
+    //        if (checkInTask != null) {
+    //            checkInTask?.cancel()
+    //            checkInTask = null
+    //            timer.purge()
+    //        }
+    //    }
 }
 
 fun main(args: Array<String>) {
     val mainOptions = Options()
 
     val serverUrlOption = Option("u", "server-url", true, "RTS server address")
+    val domainPathOption = Option("d", "domainPath", true, "Domain path root")
+
     val helpOption = Option("h", "help", false, "Print this help and exit")
 
     mainOptions.addOption(serverUrlOption)
+    mainOptions.addOption(domainPathOption)
 
     val parser: CommandLineParser = DefaultParser();
 
@@ -111,8 +113,19 @@ fun main(args: Array<String>) {
     val formatter = HelpFormatter()
     if (commandLine.hasOption(helpOption.opt) || !commandLine.hasOption(serverUrlOption.opt)) {
         formatter.printHelp("Real-time Search Client", mainOptions)
-        return
     } else {
-        RealTimeSearchClientApplication(commandLine.getOptionValue(serverUrlOption.opt)).start()
+        val rtsServerUrl = commandLine.getOptionValue(serverUrlOption.opt)
+
+        val domainPathRoot = if (commandLine.hasOption(domainPathOption.opt)) {
+            commandLine.getOptionValue(domainPathOption.opt)
+        } else {
+            null
+        }
+
+        println("Start application with the following parameters: url: $rtsServerUrl, domain path root: $domainPathRoot")
+
+        RealTimeSearchClientApplication(rtsServerUrl, domainPathRoot).start()
     }
+
+    println("\nReal-time search client has stopped.")
 }

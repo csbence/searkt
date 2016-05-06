@@ -13,6 +13,8 @@ import javafx.scene.transform.TransformChangedEvent
 
 /**
  * Visual components of an Acrobot for animation.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  */
 data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val linkScale: Double, val linkWidth: Double) {
     val linkScaledLength1 = AcrobotState.linkLength1 * linkScale
@@ -84,7 +86,8 @@ data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val lin
         link2.transforms.add(linkRotate2)
 
         /*
-         * Keep the moving parts attached to link1 updated as it rotates
+         * Keep the moving parts attached to link1 updated as it rotates.  Uses rotation matrix math to find the
+         * anchor point of link2.
          */
         linkRotate1.onTransformChanged = EventHandler<TransformChangedEvent> {
             var angle = Math.atan2(-link1.localToSceneTransform.mxy, link1.localToSceneTransform.mxx) + Math.PI / 2
@@ -102,19 +105,37 @@ data class AcrobotView(val linkStartX1: Double, val linkStartY1: Double, val lin
         }
     }
 
+    /**
+     * Get a list of all nodes which make up the view.
+     */
     fun getNodes(): List<Node> = listOf(link1, link2, joint1, joint2)
 
-    private fun addRotate(original: Rotate, link: Line): Rotate {
-        val newRotate = original.clone()
+    /**
+     * Adds a copy of the given rotation to the given link.
+     *
+     * @return the new rotate
+     */
+    private fun addRotate(rotate: Rotate, link: Line): Rotate {
+        val newRotate = rotate.clone()
         link.transforms.add(newRotate)
         return newRotate
     }
 
+    /**
+     * Add a rotation to link 1.
+     *
+     * @return the new rotate
+     */
     fun addRotate1(): Rotate {
         val newRotate = addRotate(linkRotate1, link1)
         newRotate.onTransformChanged = linkRotate1.onTransformChanged
         return newRotate
     }
 
+    /**
+     * Add a rotation to link 2.
+     *
+     * @return the new rotate
+     */
     fun addRotate2(): Rotate = addRotate(linkRotate2, link2)
 }

@@ -111,7 +111,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         inflationFactor /= 100
 
         if (inflationFactor < 1)
-            return inflationFactor;
+            return inflationFactor
         val tempOpen = openList.toMutableList()
         openList.clear()
         openList.addAll(tempOpen)
@@ -119,7 +119,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         inconsistentStates.clear()
         closedList.clear()
         goal = null
-        return inflationFactor;
+        return inflationFactor
     }
 
     private fun fValue(state: StateType): Double {

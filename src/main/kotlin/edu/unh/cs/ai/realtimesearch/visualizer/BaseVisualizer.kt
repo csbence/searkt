@@ -9,12 +9,19 @@ import groovyjarjarcommonscli.*
 import javafx.application.Application
 import kotlin.system.exitProcess
 
+/**
+ * Base application for visualizers.  Handles command line parsing and provides framework for easily adding custom
+ * options per visualizer implementation.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
+ */
 abstract class BaseVisualizer : Application() {
-    protected var experimentResult: ExperimentResult? = null
+    protected lateinit var experimentResult: ExperimentResult
     protected var rawDomain: String = ""
 
     /**
-     * Process commandline arguments.
+     * Process commandline arguments.  Converts retrieved experiment result into a {@link ExperimentResult} and
+     * retrieves the raw domain from the configuration.  Then calls {@link #processOptions} for custom options.
      */
     protected fun processCommandLine(args: Array<String>) {
         val options = getOptions()
@@ -39,16 +46,16 @@ abstract class BaseVisualizer : Application() {
 
         try {
             experimentResult = experimentResultFromJson(cmd.args.first())
-        } catch (e: JsonParseException ) {
+        } catch (e: JsonParseException) {
             throw InvalidResultException("Failed to parse result", e)
         } catch (e: JsonMappingException) {
             throw InvalidResultException("Failed to parse result", e)
         }
 
-        if (experimentResult!!.experimentConfiguration["rawDomain"] == null)
+        if (experimentResult.experimentConfiguration["rawDomain"] == null)
             throw InvalidResultException("Visualizer must have raw domain in result")
 
-        rawDomain = experimentResult!!.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
+        rawDomain = experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
         processOptions(cmd)
     }

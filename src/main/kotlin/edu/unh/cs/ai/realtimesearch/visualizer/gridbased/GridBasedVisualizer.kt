@@ -17,21 +17,21 @@ import java.util.*
 abstract class GridBasedVisualizer : BaseVisualizer() {
     // Options
     protected val gridOptions = Options()
-    protected val trackerOption = Option("t", "tracker", false, "show tracker around agent")
+    protected val trackerOption = Option("t", "tracker", true, "show tracker around agent")
     protected val displayPathOption = Option("p", "path", false, "display line for agent's path")
 
     // Option fields
     protected var showTracker: Boolean = false
+    protected var trackerSize: Double = 10.0
     protected var displayLine: Boolean = false
 
     // State fields
     protected var actionList: MutableList<String> = arrayListOf()
     protected var mapInfo: MapInfo = MapInfo.ZERO
-    protected var grid: GridCanvasPane = GridCanvasPane.ZERO
-    protected var agentView: AgentView = AgentView.ZERO
-    protected var timeToRun: Double = 0.0
 
     // Graphical fields
+    protected var grid: GridCanvasPane = GridCanvasPane.ZERO
+    protected var agentView: AgentView = AgentView.ZERO
     private val primaryScreenBounds = Screen.getPrimary().visualBounds
     protected val windowWidth = primaryScreenBounds.width - 100
     protected val windowHeight = primaryScreenBounds.height - 100
@@ -40,7 +40,11 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     protected var tileSize = 0.0
     open protected var robotScale = 2.0
 
+    protected var initialAgentXLocation = 0.0
+    protected var initialAgentYLocation = 0.0
+
     init {
+        trackerOption.setOptionalArg(true)
         gridOptions.addOption(trackerOption)
         gridOptions.addOption(displayPathOption)
     }
@@ -51,8 +55,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     override fun processOptions(cmd: CommandLine) {
         showTracker = cmd.hasOption(trackerOption.opt)
-//        displayLine = cmd.hasOption(displayPathOption.opt)
-        displayLine = true
+        trackerSize = cmd.getOptionValue(trackerOption.opt, trackerSize.toString()).toDouble()
+        displayLine = cmd.hasOption(displayPathOption.opt)
     }
 
     data class GridDimensions(val rowCount: Int, val columnCount: Int)
@@ -104,21 +108,24 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     /**
      * Parse the experiment result for actions.  If the domain includes actions which cannot be directly translated
-     * from the results as strings then the implementing visualizer should override this method.  GridBasedVisualizer
-     * will call this method after calling {@link BaseVisualizer#processCommandLine).
+     * from the results as strings then the implementing visualizer should override this method.
+     * {@link GridBasedVisualizer} will call this method after calling {@link BaseVisualizer#processCommandLine).
      */
     open protected fun parseActions(): MutableList<String> {
         /* Get action list from Application */
         val actionList: MutableList<String> = arrayListOf()
-        for (action in experimentResult!!.actions) {
+        for (action in experimentResult.actions) {
             actionList.add(action)
         }
         return actionList
     }
 
+    /**
+     * Performs parsing of results and graphical setup.  After this method is called, all {@link GridBasedVisualizer}
+     * fields will be properly initialized.
+     */
     protected fun visualizerSetup() {
         actionList = parseActions()
-        timeToRun = actionList.size * 200.0
 
         // Parse map
         mapInfo = parseMap(rawDomain)
@@ -135,17 +142,19 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         }
 
         // Calculate robot parameters
-        val robotWidth = tileSize / robotScale
-        val robotStartX = mapInfo.startCells.first().x
-        val robotStartY = mapInfo.startCells.first().y
-        val robotLocationX = robotStartX * tileSize + ((tileSize) / 2.0)
-        val robotLocationY = robotStartY * tileSize + ((tileSize) / 2.0)
+        val agentWidth = tileSize / robotScale
+        val agentStartX = mapInfo.startCells.first().x
+        val agentStartY = mapInfo.startCells.first().y
+        initialAgentXLocation = agentStartX * tileSize + (tileSize / 2.0)
+        initialAgentYLocation = agentStartY * tileSize + (tileSize / 2.0)
+        val actualRobotXLocation = initialAgentXLocation - agentWidth / 2.0
+        val actualRobotYLocation = initialAgentYLocation - agentWidth / 2.0
 
-        // Robot setup
-        agentView = AgentView(robotWidth)
+        // Agent setup
+        agentView = AgentView(agentWidth, trackerSize)
         agentView.trackingEnabled = showTracker
         agentView.toFront()
-        agentView.setLocation(robotLocationX, robotLocationY)
+        agentView.setLocation(actualRobotXLocation, actualRobotYLocation)
 
         // Grid setup
         grid = GridCanvasPane(mapInfo, tileSize)

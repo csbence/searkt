@@ -5,17 +5,26 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 @JsonSerialize(`as` = ExperimentData::class)
 open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(domainName: String,
-                rawDomain: String,
+                rawDomain: String?,
                 algorithmName: String,
-                terminationCheckerType: String) : this() {
+                terminationCheckerType: String,
+                domainPath: String? = null) : this() {
         this.domainName = domainName
-        this.rawDomain = rawDomain
         this.algorithmName = algorithmName
         this.terminationCheckerType = terminationCheckerType
+
+        if (rawDomain != null) {
+            this.rawDomain = rawDomain
+        } else if (domainPath != null) {
+            this.domainPath = domainPath
+        } else {
+            throw RuntimeException("Invalid configuration. Either rawDomain or domainPath has to be specified.")
+        }
     }
 
     var domainName: String by valueStore
-    var rawDomain: String by valueStore
+    var rawDomain: String? by valueStore
+    var domainPath: String by valueStore
     var algorithmName: String by valueStore
     var terminationCheckerType: String by valueStore
     var actionDuration: Long by valueStore

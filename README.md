@@ -6,7 +6,7 @@
 
 ## TODO
 
-* add sliding tile puzzle to domains in readme
+* javadoc for sliding tile puzzle
 * get tests to run 
 * refactor such that domains do not require to implement predecessors
 * implement new lsslrta by Dylan (the in-admissible one that maintains a expected error)
@@ -75,6 +75,14 @@ The Acrobot is a two link planar robot arm.  The system is underactuated and tor
 State space: (\theta_1, \theta_2, \dot\theta_1, \dot\theta_2)
 
 Actions: Torque applied to joint 2
+
+#### SlidingTilePuzzle
+
+A domain in which numbered tiles and a blank space are shifted (swapping the blank with any of the four adjacent numbered tiles), with the goal of placing the numbered tiles in numerical order. Assumed to be square with `size` width and height.
+
+State space: (`zeroIndex`, {tile locations})
+
+Actions: up, down, left, right 
 
 ## Benchmark configuration and results
 

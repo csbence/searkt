@@ -24,15 +24,26 @@ import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 val terminationType = "time"
-val timeLimit = TimeUnit.NANOSECONDS.convert(300, TimeUnit.SECONDS)
+val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
 val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
-val lookaheadLimits = 1..6
+//val actionDurations = listOf(850000000, 960000000, 1070000000, 1280000000)
+val lookaheadLimits = listOf(20)
+private var useDomainPaths = false
 
+/**
+ * Generator for planner/domain configurations.
+ *
+ * @author Mike Bogochow, Bence Cserna
+ */
 fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
+    if (args.size > 0 && args.first().equals("-p")) {
+        useDomainPaths = true
+    }
+
     for (domain in Domains.values()) {
-        if (domain == VACUUM_WORLD || domain == ACROBOT)
+        if (domain == VACUUM_WORLD || domain == POINT_ROBOT_LOST || domain == SLIDING_TILE_PUZZLE_4)
             continue
 
         for (planner in Planners.values()) {
@@ -99,22 +110,58 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
     val gridMaps = listOf(
-            "input/vacuum/dylan/cups.vw",
-            "input/vacuum/dylan/slalom.vw",
-            "input/vacuum/dylan/uniform.vw",
-            "input/vacuum/dylan/wall.vw"
+            //            "input/vacuum/dylan/cups.vw",
+            //            "input/vacuum/dylan/slalom.vw",
+            //            "input/vacuum/dylan/uniform.vw",
+            //            "input/vacuum/dylan/wall.vw",
+            //            //            "input/vacuum/random1k.vw",
+            //            //            "input/vacuum/randomShapes1k.vw",
+            //            //            "input/vacuum/randomNoisy1k.vw"
+            //            //            "input/vacuum/random5k.vw"
+            //            "input/vacuum/squiggle_800.vw",
+            //            "input/vacuum/openBox_800.vw",
+            //            //            "input/vacuum/slalom_03.vw",
+            //            "input/vacuum/openBox_400.vw",
+            //            "input/vacuum/slalom_04.vw"
+            "input/vacuum/h_400.vw",
+            "input/vacuum/hole_400.vw"
     )
 
     val racetrackMaps = listOf(
-            "input/racetrack/barto-big.track",
-            "input/racetrack/barto-small.track"
+            //            "input/racetrack/barto-big.track",
+            //            "input/racetrack/barto-small.track"
+            "input/racetrack/hansen-bigger.track",
+            "input/racetrack/long.track"
     )
 
     val pointRobotMaps = listOf(
-            "input/pointrobot/dylan/cups.pr",
-            "input/pointrobot/dylan/slalom.pr",
-            "input/pointrobot/dylan/uniform.pr",
-            "input/pointrobot/dylan/wall.pr"
+            //            "input/pointrobot/dylan/cups.pr",
+            //            "input/pointrobot/dylan/slalom.pr",
+            //            "input/pointrobot/dylan/uniform.pr",
+            //            "input/pointrobot/dylan/wall.pr",
+            //            "input/pointrobot/squiggle_800.pr",
+            //            "input/pointrobot/openBox_800.pr",
+            //            //            "input/pointrobot/slalom_03.pr",
+            //            "input/pointrobot/openBox_400.pr",
+            //            "input/pointrobot/slalom_04.pr"
+            "input/pointrobot/h_400.pr",
+            "input/pointrobot/hole_400.pr"
+    )
+
+    val pointRobotWithInertiaActionFractions = 1..2
+    val pointRobotWithInertiaNumActions = listOf(3, 5, 7)
+    val pointRobotWithInertiaStateFractions = listOf(0.25, 0.5)
+
+    val pointRobotWithInertiaMaps = listOf(
+            //            "input/pointrobot/dylan/cups.pr",
+            //            "input/pointrobot/dylan/slalom.pr",
+            //            "input/pointrobot/dylan/uniform.pr",
+            //            "input/pointrobot/dylan/wall.pr",
+            //            "input/pointrobot/squiggle.pr",
+            //            "input/pointrobot/openBox_25.pr",
+            //            "input/pointrobot/slalom_04.pr"
+            "input/pointrobot/h_400.pr",
+            "input/pointrobot/hole_400.pr"
     )
 
     val slidingTile4MapRoot = "input/tiles/korf/4/all/"
@@ -141,10 +188,10 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
 
             for (bound in bounds) {
                 val acrobotConfiguration = AcrobotConfiguration(
-                        endLink1LowerBound = AcrobotLink(bound, bound),
-                        endLink2LowerBound = AcrobotLink(bound, bound),
-                        endLink1UpperBound = AcrobotLink(bound, bound),
-                        endLink2UpperBound = AcrobotLink(bound, bound),
+                        goalLink1LowerBound = AcrobotLink(bound, bound),
+                        goalLink2LowerBound = AcrobotLink(bound, bound),
+                        goalLink1UpperBound = AcrobotLink(bound, bound),
+                        goalLink2UpperBound = AcrobotLink(bound, bound),
                         stateConfiguration = stateConfiguration
                 )
                 configurations.add(mutableMapOf(
@@ -155,57 +202,55 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
         }
         GRID_WORLD, VACUUM_WORLD -> {
             for (map in gridMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
         }
-        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
+        POINT_ROBOT, POINT_ROBOT_LOST -> {
             for (map in pointRobotMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
+            }
+        }
+        POINT_ROBOT_WITH_INERTIA -> {
+            for (actionFraction in pointRobotWithInertiaActionFractions) {
+                for (numActions in pointRobotWithInertiaNumActions) {
+                    for (stateFraction in pointRobotWithInertiaStateFractions) {
+                        for (map in pointRobotWithInertiaMaps) {
+                            val valueMap = getDomainConfigurationMap(map)
+                            valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction.toDouble())
+                            valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions.toLong())
+                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction.toDouble())
+                            configurations.add(valueMap)
+                        }
+                    }
+                }
             }
         }
         RACETRACK -> {
             for (map in racetrackMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
         }
         SLIDING_TILE_PUZZLE_4 -> {
             //            for (instanceName in 1..100) {
             for (instanceName in slidingTileSolvableMaps) {
                 val map = "$slidingTile4MapRoot$instanceName"
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
+                configurations.add(getDomainConfigurationMap(map))
             }
-        }
-        POINT_ROBOT, POINT_ROBOT_WITH_INERTIA -> {
-            for (map in pointRobotMaps) {
-                val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
-                configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to Scanner(input).useDelimiter("\\Z").next(),
-                        Configurations.DOMAIN_INSTANCE_NAME.toString() to map
-                ))
-            }
-        }
-        POINT_ROBOT_LOST -> {
-
         }
     }
 
     return configurations
+}
+
+fun getDomainConfigurationMap(map: String): MutableMap<String, Any?> {
+    val valueMap = mutableMapOf<String, Any?>(
+            Configurations.DOMAIN_INSTANCE_NAME.toString() to map,
+            Configurations.DOMAIN_PATH.toString() to map)
+    if (!useDomainPaths) {
+        val input = GRID_WORLD.javaClass.classLoader.getResourceAsStream(map)
+        valueMap.put(Configurations.RAW_DOMAIN.toString(), Scanner(input).useDelimiter("\\Z").next())
+    }
+    return valueMap
 }
 
 fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, Any?>> {
@@ -274,6 +319,11 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
     return configurations
 }
 
+/**
+ * Upload the configurations to the DB.
+ *
+ * @param configurations the configurations to upload
+ */
 fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
     val restTemplate = RestTemplate()
     val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
@@ -283,24 +333,28 @@ fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) 
 
     print("Upload configurations (y/n)? ")
     val input = readLine()
-    val elapsed = measureTimeMillis {
-        when (input?.toLowerCase()) {
-            "y", "yes" -> {
-                try {
-                    val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(configurations), Nothing::class.java)
-                    if (responseEntity.statusCode == HttpStatus.OK) {
-                        println("Upload completed! ${configurations.size}")
-                    } else {
+    when (input?.toLowerCase()) {
+        "y", "yes" -> {
+            var count = 1
+            val elapsed = measureTimeMillis {
+                for (configuration in configurations) {
+                    try {
+                        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
+                        if (responseEntity.statusCode == HttpStatus.OK) {
+                            println("Upload completed! ($count / ${configurations.size})")
+                        } else {
+                            println("Upload failed!")
+                        }
+                    } catch (e: RestClientException) {
                         println("Upload failed!")
                     }
-                } catch (e: RestClientException) {
-                    println("Upload failed!")
+                    count += 1
                 }
             }
-            else -> {
-                println("Not uploading")
-            }
+            println("Upload took $elapsed ms")
+        }
+        else -> {
+            println("Not uploading")
         }
     }
-    println("Upload took $elapsed ms")
 }

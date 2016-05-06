@@ -5,13 +5,16 @@ package edu.unh.cs.ai.realtimesearch.environment
  * domain while a planner can use the discretized state.  This is achieved by determining equality and hashcode in
  * terms of the discretized state while making the original state publicly accessible.
  *
+ * @author Mike Bogochow (mgp36@unh.edu)
+ *
  * @param state the state to be discretized
  */
-open class DiscretizedState<ActualState: DiscretizableState<ActualState>>(val state: ActualState): State<DiscretizedState<ActualState>> {
+open class DiscretizedState<ActualState : DiscretizableState<ActualState>>(val state: ActualState) : State<DiscretizedState<ActualState>> {
     fun copy(state: ActualState): DiscretizedState<ActualState> = DiscretizedState(state.copy())
     override fun copy(): DiscretizedState<ActualState> = copy(state)
 
     val discretizedState: ActualState
+
     init {
         discretizedState = state.discretize()
     }

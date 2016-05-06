@@ -99,7 +99,7 @@ class RealTimeSearchClient(val url: String) {
             }
 
         } catch(e: RestClientException) {
-            logger.error("Get configuration: failed", e)
+            logger.error("Get configuration: failed", e.message)
         }
 
         return null
@@ -131,6 +131,7 @@ class RealTimeSearchClient(val url: String) {
     }
 
     private fun cleanUpResult(experimentResult: ExperimentResult) {
+        @Suppress("UNCHECKED_CAST")
         val experimentConfiguration = experimentResult.valueStore["experimentConfiguration"] as MutableMap<String, Any?>
         experimentConfiguration.remove("rawDomain")
     }

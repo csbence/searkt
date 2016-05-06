@@ -13,15 +13,15 @@ import java.lang.Math.abs
  * @param y: y index of the location
  */
 data class DoubleLocation(val x: Double, val y: Double) {
-    public operator fun plus(rhs: DoubleLocation): DoubleLocation {
+    operator fun plus(rhs: DoubleLocation): DoubleLocation {
         return DoubleLocation(x + rhs.x, y + rhs.y)
     }
 
-    public operator fun minus(rhs: DoubleLocation): DoubleLocation {
+    operator fun minus(rhs: DoubleLocation): DoubleLocation {
         return DoubleLocation(x - rhs.x, y - rhs.y)
     }
 
-    public fun manhattanDistance(other: DoubleLocation): Double {
+    fun manhattanDistance(other: DoubleLocation): Double {
         return abs(x - other.x) + abs(y - other.y)
     }
 
@@ -29,7 +29,7 @@ data class DoubleLocation(val x: Double, val y: Double) {
      * Check if location is inside the boundaries.
      * The lower bound is inclusive the upper bound is exclusive.
      */
-    public fun inBounds(upperBound: Int, lowerBound: Int = 0): Boolean {
+    fun inBounds(upperBound: Int, lowerBound: Int = 0): Boolean {
         return x >= lowerBound && y >= lowerBound && x < upperBound && y < upperBound
     }
 }

@@ -7,6 +7,9 @@ import org.junit.Test
 import org.slf4j.LoggerFactory
 import kotlin.test.assertTrue
 
+/**
+ * @author Mike Bogochow (mgp36@unh.edu)
+ */
 class AcrobotDiscretizedStateTest {
 
     private val logger = LoggerFactory.getLogger(AcrobotDiscretizedStateTest::class.java)

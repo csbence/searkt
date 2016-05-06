@@ -17,7 +17,7 @@ class BreadthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType
     /**
      * Clears open list
      */
-    override protected fun initiatePlan() {
+    override fun initiatePlan() {
         openList.clear();
         super.initiatePlan()
     }
@@ -27,7 +27,7 @@ class BreadthFirstPlanner<StateType : State<StateType>>(domain: Domain<StateType
      *
      * @param node is the node that is generated
      */
-    protected override fun generateNode(node: Node<StateType>) {
+    override fun generateNode(node: Node<StateType>) {
         openList.add(node)
         super.generateNode(node)
     }

@@ -3,6 +3,10 @@ package edu.unh.cs.ai.realtimesearch.util
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.util.concurrent.TimeUnit
 
+/*
+ * Author: Mike Bogochow (mgp36@unh.edu)
+ */
+
 /**
  * The accuracy to use when comparing double numbers.
  */
@@ -38,6 +42,7 @@ fun roundOperation(number: Double, decimal: Double, op: (Double, Double) -> Doub
 // Rounding wrapper methods
 // Add accuracy to number due to floating point calculations causing issues with rounding operators (1 != 1.000000...)
 fun roundToNearestDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.round(num + accuracy) + 0.0 })
+
 fun roundDownToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.floor(num + accuracy) })
 fun roundUpToDecimal(number: Double, decimal: Double): Double = roundOperation(number, decimal, { num, accuracy -> Math.ceil(num + accuracy) })
 

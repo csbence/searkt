@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory
 
 /**
  * Wrapper around a discretized domain.
+ *
+ * @author Mike Bogochow (mgp36@unh.edu)
  */
 class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainType : Domain<DiscretizedState<StateType>>>(
         private val domain: DomainType, private val initialState: DiscretizedState<StateType>? = null) :
@@ -27,6 +29,7 @@ class DiscretizedEnvironment<StateType : DiscretizableState<StateType>, DomainTy
      * Returns current state of the world
      */
     override fun getState(): DiscretizedState<StateType> = currentState
+
     override fun getGoal(): List<DiscretizedState<StateType>> = domain.getGoal()
 
     /**
