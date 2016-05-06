@@ -9,7 +9,9 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobot
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaState
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
+import edu.unh.cs.ai.realtimesearch.visualizer.delayPlay
 import javafx.animation.Interpolator
 import javafx.animation.PathTransition
 import javafx.animation.SequentialTransition
@@ -30,7 +32,7 @@ import java.util.concurrent.TimeUnit
 class PointInertiaVisualizer : PointVisualizer() {
     private lateinit var domain: DiscretizedDomain<PointRobotWithInertiaState, PointRobotWithInertia>
     private lateinit var environment: DiscretizedEnvironment<PointRobotWithInertiaState,
-                                                             Domain<DiscretizedState<PointRobotWithInertiaState>>>
+            Domain<DiscretizedState<PointRobotWithInertiaState>>>
 
     override fun setupDomain() {
         domain = DiscretizedDomain(PointRobotWithInertia(
@@ -54,17 +56,7 @@ class PointInertiaVisualizer : PointVisualizer() {
         sequentialTransition.cycleCount = Timeline.INDEFINITE
 
         // Delay startup of animation to simulate idle planning time
-        Thread({
-            val delayTime =
-                    convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) *
-                            animationTime /
-                            convertNanoUpDouble(
-                                    experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()]
-                                            as Long, TimeUnit.MILLISECONDS)
-            println("Delay:  $delayTime")
-            Thread.sleep(delayTime.toLong())
-            sequentialTransition.play()
-        }).start()
+        delayPlay(sequentialTransition, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
     }
 
     override fun buildAnimation(): List<PathTransition> {
@@ -93,18 +85,18 @@ class PointInertiaVisualizer : PointVisualizer() {
         val previousState = environment.getState()
         environment.step(action)
         val newState = environment.getState()
-//println("Animating from $previousState to $newState ($action)")
+        //println("Animating from $previousState to $newState ($action)")
         val xChange = (newState.state.x - previousState.state.x) * tileSize
         val yChange = (newState.state.y - previousState.state.y) * tileSize
-//println("x: ${animationX} | y: ${animationY}")
-//println("xChange: $xChange | yChange: $yChange")
+        //println("x: ${animationX} | y: ${animationY}")
+        //println("xChange: $xChange | yChange: $yChange")
         val path = Path()
         path.elements.add(MoveTo(animationX, animationY))
         animationX += xChange
         animationY += yChange
         path.elements.add(LineTo(animationX, animationY))
 
-        if(displayLine){
+        if (displayLine) {
             path.stroke = ThemeColors.PATH.stroke
             grid.children.add(path)
             val actionCircle = Circle(animationX, animationY, width / 10.0)

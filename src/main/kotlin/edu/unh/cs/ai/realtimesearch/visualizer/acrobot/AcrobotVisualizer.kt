@@ -46,6 +46,11 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
     private val ghostOption = Option("g", "ghost", false, "Display ghost animation")
 
+    override fun getAnimationStepDuration(configuration: Map<String, Any?>): Double {
+        val actionDuration = configuration[Configurations.ACTION_DURATION.toString()] as Long
+        return convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
+    }
+
     override fun getOptions(): Options {
         val options = Options()
         options.addOption(ghostOption)

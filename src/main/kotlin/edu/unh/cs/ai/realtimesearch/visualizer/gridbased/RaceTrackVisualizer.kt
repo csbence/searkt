@@ -2,7 +2,9 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
+import edu.unh.cs.ai.realtimesearch.visualizer.delayPlay
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -50,6 +52,8 @@ class RacetrackVisualizer : GridBasedVisualizer() {
      */
     private var animationStepDuration = 1000.0
 
+    override fun getAnimationStepDuration(configuration: Map<String, Any?>): Double = animationStepDuration
+
     override var robotScale: Double = 4.0
 
     override fun getOptions(): Options = super.getOptions()
@@ -61,20 +65,17 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        primaryStage.title = "RTS RaceTrack Visualizer: ${experimentResult.experimentConfiguration["algorithmName"]}"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
+        val algorithmName = experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()]
+        primaryStage.title = "RTS RaceTrack Visualizer: $algorithmName"
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount,
+                ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
         val sequentialTransition = buildAnimation()
         sequentialTransition.cycleCount = Timeline.INDEFINITE
 
         // Delay startup of animation to simulate idle planning time
-        Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
-            println("Relative IPT: $delayTime ms")
-            Thread.sleep(delayTime.toLong())
-            sequentialTransition.play()
-        }).start()
+        delayPlay(sequentialTransition, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
     }
 
     /**

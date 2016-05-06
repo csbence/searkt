@@ -111,7 +111,6 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
     /**
      * Parse the experiment result for actions.  If the domain includes actions which cannot be directly translated
      * from the results as strings then the implementing visualizer should override this method.
-     * {@link GridBasedVisualizer} will call this method after calling {@link BaseVisualizer#processCommandLine).
      */
     open protected fun parseActions(): MutableList<String> {
         /* Get action list from Application */
@@ -141,7 +140,8 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     /**
      * Performs parsing of results and graphical setup.  After this method is called, all {@link GridBasedVisualizer}
-     * fields will be properly initialized.
+     * fields will be properly initialized.  This method should be called after calling
+     * {@link BaseVisualizer#processCommandLine).
      */
     protected fun visualizerSetup() {
         actionList = parseActions()

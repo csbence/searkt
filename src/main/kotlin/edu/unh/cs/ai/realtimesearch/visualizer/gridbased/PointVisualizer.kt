@@ -4,7 +4,9 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
+import edu.unh.cs.ai.realtimesearch.visualizer.delayPlay
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -41,7 +43,7 @@ open class PointVisualizer : GridBasedVisualizer() {
     /**
      * The total time the animation will run for.
      */
-    protected var animationTime: Double = 0.0
+    protected var animationStepDuration: Double = 0.0
 
     /**
      * The minimum animation time to ensure that the animation does not end too quickly.
@@ -59,6 +61,11 @@ open class PointVisualizer : GridBasedVisualizer() {
     protected var animationY = 0.0
 
     override var robotScale: Double = 4.0
+
+    override fun getAnimationStepDuration(configuration: Map<String, Any?>): Double {
+        val actionDuration = configuration[Configurations.ACTION_DURATION.toString()] as Long
+        return convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
+    }
 
     override fun getOptions(): Options = super.getOptions()
 
@@ -92,9 +99,9 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
         actionDuration = experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
-        animationTime = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
-        //        if (animationTime < minimumAnimationTime)
-        animationTime = minimumAnimationTime
+        animationStepDuration = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
+        if (animationStepDuration < minimumAnimationTime)
+            animationStepDuration = minimumAnimationTime
 
         setupDomain()
         val goalX = mapInfo.goalCells.first().x + header.goalLocationOffset.x
@@ -108,7 +115,8 @@ open class PointVisualizer : GridBasedVisualizer() {
         grid.children.add(goalCircle)
 
         primaryStage.title = "RTS Visualizer"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount,
+                ThemeColors.BACKGROUND.color)
         //primaryStage.scene = Scene(root, WIDTH, HEIGHT)
         primaryStage.show()
 
@@ -126,12 +134,7 @@ open class PointVisualizer : GridBasedVisualizer() {
         sequentialTransition.cycleCount = Timeline.INDEFINITE
 
         // Delay startup of animation to simulate idle planning time
-        Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
-            println("Delay:  $delayTime")
-            Thread.sleep(delayTime.toLong())
-            sequentialTransition.play()
-        }).start()
+        delayPlay(sequentialTransition, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
     }
 
     /**
@@ -184,7 +187,7 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         /* Animate the robot */
         val pathTransition = PathTransition()
-        pathTransition.duration = Duration.millis(animationTime)
+        pathTransition.duration = Duration.millis(animationStepDuration)
         pathTransition.path = path
         pathTransition.node = robot
         pathTransition.interpolator = Interpolator.LINEAR

@@ -3,7 +3,10 @@ package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import edu.unh.cs.ai.realtimesearch.util.roundToNearestDecimal
+import edu.unh.cs.ai.realtimesearch.util.roundUpToDecimal
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
+import edu.unh.cs.ai.realtimesearch.visualizer.delayPlay
 import groovyjarjarcommonscli.CommandLine
 import groovyjarjarcommonscli.Options
 import javafx.animation.Interpolator
@@ -48,6 +51,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
      */
     private val animationStepDuration = 200.0
 
+    override fun getAnimationStepDuration(configuration: Map<String, Any?>): Double = animationStepDuration
+
     override fun getOptions(): Options = super.getOptions()
 
     override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
@@ -59,10 +64,13 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         val timeToRun = actionList.size * animationStepDuration
 
-        isARAStar = experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
+        isARAStar =
+                experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] ==
+                        Planners.ARA_STAR.toString()
         if (isARAStar) {
             moveRobot = false
-            anytimeMaxCount = experimentResult.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
+            anytimeMaxCount = experimentResult.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()]
+                    as Long
             araStarXOriginal = agentView.agent.x
             araStarYOriginal = agentView.agent.y
             araStarX = agentView.agent.x
@@ -70,7 +78,8 @@ class VacuumVisualizer : GridBasedVisualizer() {
         }
 
         primaryStage.title = "RTS Visualizer"
-        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
+        primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount,
+                ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
         val path = buildAnimation()
@@ -84,13 +93,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
         pathTransition.cycleCount = Timeline.INDEFINITE
 
         // Delay startup of animation to simulate idle planning time
-        Thread({
-//            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
-            val delayTime = 5000.0
-            println("Delay:  $delayTime")
-            Thread.sleep(delayTime.toLong())
-            pathTransition.play()
-        }).start()
+        delayPlay(pathTransition, roundToNearestDecimal(animationIdlePlanningTime, 1.0).toLong())
     }
 
     /**

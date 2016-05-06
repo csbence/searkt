@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import groovyjarjarcommonscli.*
 import javafx.application.Application
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 /**
@@ -18,6 +20,7 @@ import kotlin.system.exitProcess
 abstract class BaseVisualizer : Application() {
     protected lateinit var experimentResult: ExperimentResult
     protected var rawDomain: String = ""
+    protected var animationIdlePlanningTime = 0.0
 
     /**
      * Process commandline arguments.  Converts retrieved experiment result into a {@link ExperimentResult} and
@@ -57,8 +60,19 @@ abstract class BaseVisualizer : Application() {
 
         rawDomain = experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
 
+        val idlePlanningMillis = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS)
+        val actionDuration = experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
+        val actionDurationMillis = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
+        val animationStepMillis = getAnimationStepDuration(experimentResult.experimentConfiguration)
+        animationIdlePlanningTime = idlePlanningMillis * animationStepMillis / actionDurationMillis
+
         processOptions(cmd)
     }
+
+    /**
+     * Return the duration of each animation step in milliseconds.
+     */
+    protected abstract fun getAnimationStepDuration(configuration: Map<String, Any?>): Double
 
     /**
      * Return the application's options.  Should not include help option which is provided by the base.
