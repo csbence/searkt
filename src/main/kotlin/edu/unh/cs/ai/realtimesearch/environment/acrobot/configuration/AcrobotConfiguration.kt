@@ -52,11 +52,11 @@ data class AcrobotConfiguration(
          */
         fun fromMap(map: Map<*, *>): AcrobotConfiguration = AcrobotConfiguration(
                 AcrobotState.fromMap(map["initialState"] as Map<*, *>),
-                AcrobotState.fromMap(map["endState"] as Map<*, *>),
-                AcrobotLink.fromMap(map["endLink1LowerBound"] as Map<*, *>),
-                AcrobotLink.fromMap(map["endLink2LowerBound"] as Map<*, *>),
-                AcrobotLink.fromMap(map["endLink1UpperBound"] as Map<*, *>),
-                AcrobotLink.fromMap(map["endLink2UpperBound"] as Map<*, *>),
+                AcrobotState.fromMap(map["goalState"] as Map<*, *>),
+                AcrobotLink.fromMap(map["goalLink1LowerBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["goalLink2LowerBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["goalLink1UpperBound"] as Map<*, *>),
+                AcrobotLink.fromMap(map["goalLink2UpperBound"] as Map<*, *>),
                 AcrobotStateConfiguration.fromMap(map["stateConfiguration"] as Map<*, *>)
         )
     }
