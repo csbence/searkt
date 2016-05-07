@@ -123,9 +123,9 @@ class PointRobotWithInertiaTest {
     /**
      * Tests all possible successors for predecessors
      */
-    private fun testAllSuccessors(state: DiscretizedState<PointRobotWithInertiaState>,
-                                  pointRobotWithInertia: DiscretizedDomain<PointRobotWithInertiaState, PointRobotWithInertia>,
-                                  visited: HashSet<DiscretizedState<PointRobotWithInertiaState>>) {
+    private fun testAllSuccessorsPredecessors(state: DiscretizedState<PointRobotWithInertiaState>,
+                                              pointRobotWithInertia: DiscretizedDomain<PointRobotWithInertiaState, PointRobotWithInertia>,
+                                              visited: HashSet<DiscretizedState<PointRobotWithInertiaState>>) {
         val successors = pointRobotWithInertia.successors(state)
         for (successor in successors) {
             if (successor.state in visited)
@@ -144,7 +144,7 @@ class PointRobotWithInertiaTest {
 
             assertTrue("Did not find state '$state' in predecessors list of '$successor'", { foundState })
 
-            testAllSuccessors(successor.state, pointRobotWithInertia, visited)
+            testAllSuccessorsPredecessors(successor.state, pointRobotWithInertia, visited)
         }
     }
 
@@ -154,7 +154,7 @@ class PointRobotWithInertiaTest {
         val state = PointRobotWithInertiaState(pointRobotWithInertia.domain.width / 2.0, pointRobotWithInertia.domain.height / 2.0, 0.0, 0.0)
         val discretizedState = DiscretizedState(state)
 
-        testAllSuccessors(discretizedState, pointRobotWithInertia, setOf(discretizedState).toHashSet())
+        testAllSuccessorsPredecessors(discretizedState, pointRobotWithInertia, setOf(discretizedState).toHashSet())
     }
 
     @Test

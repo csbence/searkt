@@ -72,13 +72,13 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     override fun successors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         val successors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = ArrayList(totalActionCount)
-//        println("SUCCESSORS FOR: $state")
+        //        println("SUCCESSORS FOR: $state")
         for (action in actions) {
             val nextState = calculateNextState(state, action)
 
-//                println("($state) ($action) ~ $actionDuration -> ($nextState), h: ${heuristic(nextState)}")
+            //                println("($state) ($action) ~ $actionDuration -> ($nextState), h: ${heuristic(nextState)}")
             if (!isLegalAction(state.x, state.y, nextState.x, nextState.y)) {
-//                    println("ILLEGAL")
+                //                    println("ILLEGAL")
                 continue
             }
 
@@ -90,14 +90,14 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = ArrayList(totalActionCount)
-//        println("PREDECESSORS FOR: $state")
+        //        println("PREDECESSORS FOR: $state")
         for (action in actions) {
             val previousState = calculatePreviousState(state, action)
 
-//            println("($previousState) ($action) ~ $actionDuration -> ($state)")
+            //            println("($previousState) ($action) ~ $actionDuration -> ($state)")
             if (!pointInBounds(previousState.x, previousState.y) ||
                     !isLegalAction(previousState.x, previousState.y, state.x, state.y)) {
-//                println("ILLEGAL")
+                //                println("ILLEGAL")
                 continue
             }
 
@@ -126,8 +126,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     }
 
     fun isLegalAction(initialX: Double, initialY: Double, newX: Double, newY: Double): Boolean {
-        val inBounds = pointInBounds(newX, newY)
-        if (!inBounds)
+        if (!pointInBounds(newX, newY))
             return false
         if (blockedCells.isNotEmpty()) {
             val visitedCells = raytrace(initialX, initialY, newX, newY)

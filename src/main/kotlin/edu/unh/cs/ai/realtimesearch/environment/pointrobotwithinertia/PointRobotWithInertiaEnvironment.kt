@@ -20,7 +20,7 @@ class PointRobotWithInertiaEnvironment(private val domain: PointRobotWithInertia
         val first = successorBundles.first { it.action == action }
         currentState = first.state
         logger.trace { "Action $action leads to state $currentState" }
-        println("step: " + currentState + " " + action)
+        println("step: $currentState $action")
     }
 
     /**
