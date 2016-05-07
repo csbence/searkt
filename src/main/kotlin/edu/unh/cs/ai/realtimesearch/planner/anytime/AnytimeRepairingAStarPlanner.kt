@@ -18,7 +18,7 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
     private val closedList: MutableMap<StateType, Node<StateType>> = hashMapOf()
     private val inconsistentStates: MutableList<Node<StateType>> = arrayListOf()
     private var goal: StateType? = null
-    private var targetgoal: StateType? = null
+    private var targetGoal: StateType? = null
     private var goalNode: Node<StateType>? = null
     private val allNodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1F).resize()
     private var iterationCount = 0
@@ -43,7 +43,7 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
                     generatedNodeCount++
                     var updatedSuccessorNode = allNodes[it.state]
                     if (updatedSuccessorNode == null) {
-                        updatedSuccessorNode = Node(currentNode, it.state, it.action, currentNode.cost + it.actionCost, iterationCount)
+                        updatedSuccessorNode = Node(currentNode, it.state, it.action, Double.POSITIVE_INFINITY, iterationCount)
                         allNodes[it.state] = updatedSuccessorNode
                     } else if (updatedSuccessorNode.iteration == iterationCount
                             || (updatedSuccessorNode.iteration < iterationCount && updatedSuccessorNode.cost > currentNode.cost + it.actionCost)) {
@@ -56,7 +56,7 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
 
                     closedList[it.state] = updatedSuccessorNode
 
-                    if (targetgoal!!.equals(it.state)) {
+                    if (targetGoal!!.equals(it.state)) {
                         goal = it.state
                         goalNode = updatedSuccessorNode
                     }
@@ -73,7 +73,8 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
 
     fun solve(startState: StateType, goalStates: List<StateType>): List<Action?> {
         //Solving backwards, so flip start and goal states
-        targetgoal = startState
+        targetGoal = startState
+
         for (goalState in goalStates) {
             var tempNode = allNodes[goalState]
 
@@ -110,8 +111,10 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
         inflationFactor -= 2
         inflationFactor /= 100
 
-        if (inflationFactor < 1)
+        if (inflationFactor <= 1)
             return inflationFactor
+        // Re-sort open list with new inflation factor by removing and re-adding all
+        // TODO implement heap instead of using priority queue for more efficient re-sorting
         val tempOpen = openList.toMutableList()
         openList.clear()
         openList.addAll(tempOpen)
@@ -124,13 +127,13 @@ class AnytimeRepairingAStarPlanner<StateType : State<StateType>>(domain: Domain<
 
     private fun fValue(state: StateType): Double {
         val node = closedList[state]!!
-        return node.cost + domain.heuristic(node.state, targetgoal!!)
+        return node.cost + domain.heuristic(node.state, targetGoal!!)
     }
 
     private fun inflatedFValue(node: Node<StateType>?): Double {
         if (node == null)
             return -1.0
-        return node.cost + inflationFactor * domain.heuristic(node.state, targetgoal!!)
+        return node.cost + inflationFactor * domain.heuristic(node.state, targetGoal!!)
     }
 
     private fun goalCost(): Double {

@@ -78,8 +78,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
             logger.debug { "Agent return actions: |${workingActionList.size}| to state ${world.getState()}" }
 
             val updatedInflationFactor = planner.update()
-            if (updatedInflationFactor < 1.0) {
-                // TODO paper says while inflation > 1, so should be <= 1.0 here?
+            if (updatedInflationFactor <= 1.0) {
                 // Done planning; execute remaining actions
                 while (actionIterator.hasNext()) {
                     val action = actionIterator.next()
