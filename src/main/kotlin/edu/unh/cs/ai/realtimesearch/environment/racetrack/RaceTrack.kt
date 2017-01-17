@@ -71,18 +71,17 @@ class RaceTrack(val width: Int,
             var valid = true
 
             for (i in 0..nSteps - 1) {
-                x += new_x_speed * dt;
-                y += new_y_speed * dt;
+                x += new_x_speed * dt
+                y += new_y_speed * dt
 
                 if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
+                    valid = false
+                    break
                 }
             }
 
             //filter on legal moves (not too fast and on the track)
             if (valid) {
-
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
                         action,
@@ -137,7 +136,7 @@ class RaceTrack(val width: Int,
                 dy = ydist.toDouble()
         }
         val retval = Math.max(dx.toDouble(), dy.toDouble())
-        return retval;
+        return retval
     }
 
     // Distance is the max(min(dx), min(dy))
@@ -146,7 +145,7 @@ class RaceTrack(val width: Int,
         val ydist = Math.abs(startState.y - endState.y)
 
         val retval = Math.max(xdist.toDouble(), ydist.toDouble())
-        return retval;
+        return retval
     }
 
     override fun isGoal(state: RaceTrackState): Boolean {
@@ -225,12 +224,12 @@ class RaceTrack(val width: Int,
             var valid = true
 
             for (i in 1..nSteps) {
-                x = state.x - (new_x_speed * (dt * i));
-                y = state.y - (new_y_speed * (dt * i));
+                x = state.x - (new_x_speed * (dt * i))
+                y = state.y - (new_y_speed * (dt * i))
 
                 if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
+                    valid = false
+                    break
                 }
             }
 

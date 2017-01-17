@@ -2,8 +2,6 @@
 
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
@@ -229,43 +227,38 @@ object ConfigurationExecutor {
         return ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Incompatible output format.")
     }
 
-    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = AStarPlanner(domain, 1.0)
-        val classicalAgent = ClassicalAgent(aStarPlanner)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val weight = experimentConfiguration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = ClassicalAStarPlanner(domain, weight)
-        val classicalAgent = ClassicalAgent(aStarPlanner)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
-        val classicalAgent = ClassicalAgent(aStarPlanner)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, classicalAgent, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
-        val rtsAgent = RTSAgent(lssLrtaPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, lssLrtaPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val dynamicFHatPlanner = DynamicFHatPlanner(domain)
-        val rtsAgent = RTSAgent(dynamicFHatPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, dynamicFHatPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
@@ -283,8 +276,7 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val depthLimit = experimentConfiguration.getTypedValue<Long>(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
-        val rtsAgent = RTSAgent(realTimeAStarPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, realTimeAStarPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }

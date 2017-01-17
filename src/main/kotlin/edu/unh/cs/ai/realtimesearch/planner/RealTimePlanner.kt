@@ -23,6 +23,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
     override var generatedNodeCount = 0
     override var expandedNodeCount = 0
 
+
     /**
      * Returns an action while abiding the termination checker's criteria.
      *
