@@ -4,23 +4,18 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
 import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
-import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
-import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
@@ -170,16 +165,12 @@ object ConfigurationExecutor {
 
     private fun executePointRobot(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val pointRobotInstance = PointRobotIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val pointRobotEnvironment = PointRobotEnvironment(pointRobotInstance.domain, pointRobotInstance.initialState)
-
-        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState, pointRobotEnvironment)
+        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState)
     }
 
     private fun executePointRobotLOST(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val pointRobotLOSTEnvironment = PointRobotLOSTEnvironment(pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
-
-        return executeDomain(experimentConfiguration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState, pointRobotLOSTEnvironment)
+        return executeDomain(experimentConfiguration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
     }
 
     private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
@@ -188,56 +179,45 @@ object ConfigurationExecutor {
         val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
 
         val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, numActions, actionFraction, stateFraction, experimentConfiguration.actionDuration)
-        val pointRobotWithInertiaEnvironment = PointRobotWithInertiaEnvironment(pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
 
-        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState, pointRobotWithInertiaEnvironment)
+        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
     }
 
     private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(domainStream)
-        val vacuumWorldEnvironment = VacuumWorldEnvironment(vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
-
-        return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState, vacuumWorldEnvironment)
+        return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     }
 
     private fun executeRaceTrack(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val raceTrackEnvironment = RaceTrackEnvironment(raceTrackInstance.domain, raceTrackInstance.initialState)
-
-        return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState, raceTrackEnvironment)
+        return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState)
     }
 
     private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val gridWorldEnvironment = GridWorldEnvironment(gridWorldInstance.domain, gridWorldInstance.initialState)
-
-        return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState, gridWorldEnvironment)
+        return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState)
     }
 
     private fun executeSlidingTilePuzzle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val slidingTilePuzzleEnvironment = SlidingTilePuzzleEnvironment(slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
-
-        return executeDomain(experimentConfiguration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState, slidingTilePuzzleEnvironment)
+        return executeDomain(experimentConfiguration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
     private fun executeAcrobot(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val acrobotInstance = AcrobotIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        val acrobotEnvironment = DiscretizedEnvironment(acrobotInstance.domain, acrobotInstance.initialState)
-
-        return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState, acrobotEnvironment)
+        return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState)
     }
 
-    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val algorithmName = experimentConfiguration.algorithmName
 
         return when (Planners.valueOf(algorithmName)) {
             WEIGHTED_A_STAR -> executeWeightedAStar(experimentConfiguration, domain, initialState)
             A_STAR -> executeAStar(experimentConfiguration, domain, initialState)
-            LSS_LRTA_STAR -> executeLssLrtaStar(experimentConfiguration, domain, environment)
-            DYNAMIC_F_HAT -> executeDynamicFHat(experimentConfiguration, domain, environment)
-            RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, environment)
-            ARA_STAR -> executeAnytimeRepairingAStar(experimentConfiguration, domain, environment)
+            LSS_LRTA_STAR -> executeLssLrtaStar(experimentConfiguration, domain, initialState)
+            DYNAMIC_F_HAT -> executeDynamicFHat(experimentConfiguration, domain, initialState)
+            RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, initialState)
+            ARA_STAR -> executeAnytimeRepairingAStar(experimentConfiguration, domain, initialState)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
@@ -274,18 +254,18 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
         val lssLrtaPlanner = LssLrtaStarPlanner(domain)
         val rtsAgent = RTSAgent(lssLrtaPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: State<StateType>): ExperimentResult {
         val dynamicFHatPlanner = DynamicFHatPlanner(domain)
         val rtsAgent = RTSAgent(dynamicFHatPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
@@ -300,19 +280,18 @@ object ConfigurationExecutor {
         }
     }
 
-    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val depthLimit = experimentConfiguration.getTypedValue<Long>(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
         val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
         val rtsAgent = RTSAgent(realTimeAStarPlanner)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, environment, getTerminationChecker(experimentConfiguration))
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, rtsAgent, domain, initialState, getTerminationChecker(experimentConfiguration))
 
         return rtsExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, environment: Environment<StateType>): ExperimentResult {
+    private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val anytimeRepairingAStarPlanner = AnytimeRepairingAStar(domain)
-        /*val atsAgent = ATSAgent(anytimeRepairingAStarPlanner)*/
-        val atsExperiment = AnytimeExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, environment)
+        val atsExperiment = AnytimeExperiment(anytimeRepairingAStarPlanner, experimentConfiguration, domain, initialState)
 
         return atsExperiment.run()
     }

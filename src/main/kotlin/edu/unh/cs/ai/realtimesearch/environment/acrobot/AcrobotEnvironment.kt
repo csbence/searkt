@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import org.slf4j.LoggerFactory
 
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  * @param domain is the Acrobot domain
  * @param initialState is the initial state.  Will use default initial state if not provided
  */
-class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState? = null) : Environment<AcrobotState> {
+class AcrobotEnvironment(private val domain: Acrobot, private val initialState: AcrobotState? = null) : Domain<AcrobotState> {
 
     private val logger = LoggerFactory.getLogger(AcrobotEnvironment::class.java)
     private var currentState: AcrobotState = initialState ?: AcrobotState.Companion.defaultInitialState
@@ -30,7 +30,7 @@ class AcrobotEnvironment(private val domain: Acrobot, private val initialState: 
     }
 
     /**
-     * Returns current state of the world
+     * Returns current state of the domain
      */
     override fun getState(): AcrobotState = currentState
 

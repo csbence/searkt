@@ -53,7 +53,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val experimentConfigurat
                 goalAchievementTime = cpuNanoTime + pathLength * experimentConfiguration.actionDuration,
                 idlePlanningTime = cpuNanoTime,
                 pathLength = pathLength,
-                actions = actions.map { it.toString() })
+                actions = actions.map(Action::toString))
 
     }
 }

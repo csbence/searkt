@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
@@ -24,18 +24,19 @@ import java.util.concurrent.TimeUnit
  * After each selected action, the experiment then applies this action
  * to its environment.
  *
- * The states are given by the environment, the world. When creating the world
+ * The states are given by the environment, the domain. When creating the domain
  * it might be possible to determine what the initial state is.
  *
- * NOTE: assumes the same domain is used to create both the agent as the world
+ * NOTE: assumes the same domain is used to create both the agent as the domain
  *
  * @param agent is a RTS agent that will supply the actions
- * @param world is the environment
+ * @param domain is the environment
  * @param terminationChecker controls the constraint put upon the agent
  */
 class RealTimeExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                        val agent: RTSAgent<StateType>,
-                                                       val world: Environment<StateType>,
+                                                       val domain: Domain<StateType>,
+                                                       val initialState: State<StateType>,
                                                        val terminationChecker: TimeTerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
@@ -47,7 +48,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-        logger.info { "Starting experiment from state ${world.getState()}" }
+        logger.info { "Starting experiment from state ${domain.getStaState()}" }
 
         var totalPlanningNanoTime = 0L
         val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
@@ -55,11 +56,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
-        while (!world.isGoal()) {
+        while (!domain.isGoal()) {
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.init(timeBound)
 
-                actionList = agent.selectAction(world.getState(), terminationChecker);
+                actionList = agent.selectAction(domain.getState(), terminationChecker);
 
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
@@ -67,13 +68,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
                 timeBound = 0
                 actionList.forEach {
-                    world.step(it.action) // Move the agent
+                    domain.step(it.action) // Move the agent
                     actions.add(it.action) // Save the action
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
                 }
             }
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+            logger.debug { "Agent return actions: |${actionList.size}| to state ${domain.getState()}" }
 
             validateInteration(actionList, iterationNanoTime)
 

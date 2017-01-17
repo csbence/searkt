@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
@@ -20,16 +20,17 @@ import java.util.concurrent.TimeUnit
  * After each selected action, the experiment then applies this action
  * to its environment.
  *
- * The states are given by the environment, the world. When creating the world
+ * The states are given by the environment, the domain. When creating the domain
  * it might be possible to determine what the initial state is.
  *
- * NOTE: assumes the same domain is used to create both the agent as the world
+ * NOTE: assumes the same domain is used to create both the agent as the domain
  *
  * @param world is the environment
  */
 class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
                                                       val experimentConfiguration: GeneralExperimentConfiguration,
-                                                      val world: Environment<StateType>) : Experiment() {
+                                                      val domain: Domain<StateType>,
+                                                      val initialState: State<StateType>) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
