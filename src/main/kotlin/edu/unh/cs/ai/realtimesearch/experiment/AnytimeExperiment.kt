@@ -1,35 +1,39 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
+import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
- * An RTS experiment repeatedly queries the agent
+ * An RTS experiment repeatedly queries the planner
  * for an action by some constraint (allowed time for example).
  * After each selected action, the experiment then applies this action
  * to its environment.
  *
- * The states are given by the environment, the world. When creating the world
+ * The states are given by the environment, the domain. When creating the domain
  * it might be possible to determine what the initial state is.
  *
- * NOTE: assumes the same domain is used to create both the agent as the world
+ * NOTE: assumes the same domain is used to create both the planner as the domain
  *
- * @param world is the environment
+ * @param planner the planner to be executed
+ *
  */
-class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepairingAStar<StateType>,
+class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanner<StateType>,
                                                       val experimentConfiguration: GeneralExperimentConfiguration,
-                                                      val world: Environment<StateType>) : Experiment() {
+                                                      val domain: Domain<StateType>,
+                                                      val initialState: StateType) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
 
@@ -40,18 +44,19 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
         val actions: MutableList<String> = arrayListOf()
         val actionsLists: MutableList<String> = arrayListOf()
         var actionList: MutableList<Action?> = arrayListOf()
+        var currentState = initialState
         //        val maxCount = 6
         val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
 
-        logger.info { "Starting experiment from state ${world.getState()}" }
+        logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
         var totalPlanningTime = 0L
 
-        while (!world.isGoal()) {
+        while (!domain.isGoal(currentState)) {
             logger.debug { "Start anytime search" }
             val startTime = getThreadCpuNanotTime()
 
-            val tempActions = planner.solve(world.getState(), world.getGoal());
+            val tempActions = ArrayList(planner.selectAction(currentState, FakeTerminationChecker()))
 
             val endTime = getThreadCpuNanotTime()
             totalPlanningTime += endTime - startTime
@@ -68,13 +73,13 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
                 actionList = tempActions
             }
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+            logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
 
             val update = planner.update()
             if (update < 1.0) {
                 actionList.forEach {
                     if (it != null) {
-                        world.step(it) // Move the agent
+                        currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                         actions.add(it.toString()) // Save the action
                     }
                 }
@@ -83,25 +88,23 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
                 var count = 0
                 for (it in actionList) {
                     if (it != null) {
-
                         if (count < maxCount) {
-                            world.step(it) // Move the agent
+                            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                             actions.add(it.toString())
                         }// Save the action
                         actionsLists.add(it.toString())
-                        count++;
+                        count++
                     }
                 }
             }
-            if (!world.isGoal()) {
+
+            if (!domain.isGoal(currentState)) {
                 actionsLists.add("" + update + " ")
             }
+        }
 
-        }
         actionsLists.add("" + maxCount)
-        for (it in actions) {
-            actionsLists.add(it.toString())
-        }
+        actionsLists += actions
 
         logger.info { actionsLists.toString() }
 
@@ -124,7 +127,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimeRepair
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = idlePlanningTime,
                 pathLength = pathLength,
-                actions = actions.map { it.toString() }
+                actions = actions.map(String::toString)
         )
     }
 }

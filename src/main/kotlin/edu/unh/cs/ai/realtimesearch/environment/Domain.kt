@@ -14,6 +14,12 @@ interface Domain<State> {
     fun print(state: State): String
     fun randomState(): State = TODO()
     fun getGoal(): List<State> = TODO()
+
+    fun transition(sourceState: State, action: Action): State? {
+        val successorBundles = successors(sourceState)
+        // get the state from the successors by filtering on action
+        return successorBundles.firstOrNull { it.action == action }?.state
+    }
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)

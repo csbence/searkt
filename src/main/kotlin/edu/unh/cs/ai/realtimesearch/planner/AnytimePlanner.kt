@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -29,7 +30,7 @@ abstract class AnytimePlanner<StateType : State<StateType>>(protected val domain
      * @param terminationChecker provides the termination criteria
      * @return an action for current state
      */
-    //abstract fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle>
+    abstract fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<Action?>
 
     /**
      * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare
@@ -51,5 +52,7 @@ abstract class AnytimePlanner<StateType : State<StateType>>(protected val domain
     open fun init() {
 
     }
+
+    open fun update(): Double = TODO()
 }
 
