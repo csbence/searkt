@@ -15,6 +15,7 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobot
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.vehicle.VehicleWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
@@ -156,6 +157,7 @@ object ConfigurationExecutor {
             POINT_ROBOT_LOST -> executePointRobotLOST(experimentConfiguration, domainStream)
             POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(experimentConfiguration, domainStream)
             RACETRACK -> executeRaceTrack(experimentConfiguration, domainStream)
+            VEHICLE -> executeVehicle(experimentConfiguration, domainStream)
 
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
@@ -194,6 +196,12 @@ object ConfigurationExecutor {
     private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
         return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState)
+    }
+
+    private fun executeVehicle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream):
+    ExperimentResult {
+        val vehicleWorldInstance = VehicleWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
+        return executeDomain(experimentConfiguration, vehicleWorldInstance.domain, vehicleWorldInstance.initialState)
     }
 
     private fun executeSlidingTilePuzzle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {

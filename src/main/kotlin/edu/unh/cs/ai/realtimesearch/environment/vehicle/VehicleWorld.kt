@@ -11,7 +11,7 @@ import java.util.*
  * while reaching the specified goal
  * Created by doylew on 1/17/17.
  */
-class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Location>, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<VehicleWorldState> {
+class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<VehicleWorldState> {
     private val logger = LoggerFactory.getLogger(VehicleWorld::class.java)
 
     private data class Pair(var x: Int, var y: Int)
@@ -38,15 +38,15 @@ class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Locati
      */
     override fun successors(state: VehicleWorldState): List<SuccessorBundle<VehicleWorldState>> {
         val successors: MutableList<SuccessorBundle<VehicleWorldState>> = arrayListOf()
-        blockedCells = moveObstacles(blockedCells)
+        val newObstacles = moveObstacles(state.obstacles)
 
         for (action in VehicleWorldAction.values()) {
             val newLocation = state.agentLocation + action.getRelativeLocation()
 
-            if (isLegalLocation(newLocation)) {
+            if (isLegalLocation(state, newLocation)) {
                 successors.add(
                         SuccessorBundle(
-                                VehicleWorldState(newLocation),
+                                VehicleWorldState(newLocation, newObstacles),
                                 action,
                                 actionCost = actionDuration
                         )
@@ -57,15 +57,15 @@ class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Locati
     }
 
     /**
-     * returns if a given location is legal or not
+     * returns if a given newLocation is legal or not
      *
-     * @param location the test location
-     * @return true if location is legal
+     * @param newLocation the test newLocation
+     * @return true if newLocation is legal
      */
-    fun isLegalLocation(location: Location): Boolean {
-        if (location.x >= 0 && location.x < width) {
-            if (location.y >= 0 && location.y < height) {
-                if (!blockedCells.contains(Location(location.x, location.y))) {
+    fun isLegalLocation(state: VehicleWorldState, newLocation: Location): Boolean {
+        if (newLocation.x >= 0 && newLocation.x < width) {
+            if (newLocation.y >= 0 && newLocation.y < height) {
+                if (!state.obstacles.contains(Location(newLocation.x, newLocation.y))) {
                     return true
                 }
             }
@@ -107,7 +107,7 @@ class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Locati
      * @ == agent
      * # == obstacle
      * $ == bunkers
-     * * == GOOOOOOOLLLLLLLLLLLLL
+     * * == GOOOOOOOLLLLLLLLLLL
      */
     override fun print(state: VehicleWorldState): String {
         val output = StringBuilder()
@@ -116,7 +116,7 @@ class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Locati
                 val character = when (Location(x,y)) {
                    state.agentLocation -> '@'
                     targetLocation -> '*'
-                    in blockedCells -> '#'
+                    in state.obstacles -> '#'
                     in bunkers -> '$'
                     else -> '_'
                 }
