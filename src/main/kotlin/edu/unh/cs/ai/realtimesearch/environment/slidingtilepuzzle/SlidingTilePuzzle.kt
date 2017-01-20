@@ -98,15 +98,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     override fun isGoal(state: SlidingTilePuzzle4State) = state.heuristic == 0.0
 
-    override fun print(state: SlidingTilePuzzle4State): String {
-        throw UnsupportedOperationException()
-    }
-
-    override fun randomState(): SlidingTilePuzzle4State {
-        throw UnsupportedOperationException()
-    }
-
-    override fun getGoal(): List<SlidingTilePuzzle4State> = listOf(goalState)
+    override fun getGoals(): List<SlidingTilePuzzle4State> = listOf(goalState)
 
     override fun predecessors(state: SlidingTilePuzzle4State) = successors(state)
 }

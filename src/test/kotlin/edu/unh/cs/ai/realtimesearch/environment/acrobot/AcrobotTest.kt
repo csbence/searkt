@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.agent.ClassicalAgent
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.Domains
@@ -72,7 +71,7 @@ class AcrobotTest {
         val state2 = endStateBounds.upperBound - AcrobotState(AcrobotLink(acrobot.configuration.goalLink1UpperBound.position / 2, acrobot.configuration.goalLink1UpperBound.velocity), acrobot.configuration.goalState.link2)
 
         assertTrue { acrobot.isGoal(acrobot.configuration.goalState) }
-        assertTrue { acrobot.isGoal(acrobot.getGoal().first()) }
+        assertTrue { acrobot.isGoal(acrobot.getGoals().first()) }
         assertTrue { acrobot.isGoal(endStateBounds.upperBound) }
         assertTrue { acrobot.isGoal(endStateBounds.lowerBound) }
         assertFalse { acrobot.isGoal(acrobot.configuration.initialState) }
@@ -88,7 +87,7 @@ class AcrobotTest {
         experimentConfiguration[Configurations.ACTION_DURATION.toString()] = AcrobotStateConfiguration.defaultActionDuration
         experimentConfiguration[Configurations.TIME_LIMIT.toString()] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 
-        val aStarAgent = ClassicalAgent(AStarPlanner(domain))
+        val aStarAgent = AStarPlanner(domain)
         val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState)
 
         aStarExperiment.run()

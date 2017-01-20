@@ -12,17 +12,13 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
  *
  * @param domain: The domain to plan in
  */
-abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
+abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner<StateType>() {
     /**
      * Data class to store [Action]s along with their execution time.
      *
      * The [duration] is measured in nanoseconds.
      */
     data class ActionBundle(val action: Action, val duration: Long)
-
-    override var generatedNodeCount = 0
-    override var expandedNodeCount = 0
-
 
     /**
      * Returns an action while abiding the termination checker's criteria.
@@ -32,18 +28,6 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      * @return an action for current state
      */
     abstract fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle>
-
-    /**
-     * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare
-     * the learner for a completely new unrelated selectAction call experiment. Some learners maintain plans,
-     * for example, rather than plan for every single selectAction call, and this should clear out such data.
-     *
-     * NOTE: do not forget to call super.reset() when implementing this. Will reset the node count
-     */
-    open fun reset() {
-        generatedNodeCount = 0
-        expandedNodeCount = 0
-    }
 
     /**
      * Called before the first [selectAction] call.

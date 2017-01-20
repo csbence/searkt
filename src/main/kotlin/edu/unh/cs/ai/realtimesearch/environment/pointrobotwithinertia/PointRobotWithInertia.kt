@@ -222,11 +222,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         return description.toString()
     }
 
-    override fun randomState(): PointRobotWithInertiaState {
+    fun randomState(): PointRobotWithInertiaState {
         throw UnsupportedOperationException()
     }
 
-    override fun getGoal(): List<PointRobotWithInertiaState> {
+    override fun getGoals(): List<PointRobotWithInertiaState> {
         return listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0, stateFraction))
     }
 

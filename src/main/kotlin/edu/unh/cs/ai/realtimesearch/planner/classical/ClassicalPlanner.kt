@@ -4,12 +4,11 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.planner.Planner
 
-interface ClassicalPlanner<StateType : State<StateType>> : Planner {
-
+abstract class ClassicalPlanner<StateType : State<StateType>> : Planner<StateType>() {
     /**
      * Plan execution time not including the garbage collection time.
      */
-    val executionNanoTime: Long
+    var executionNanoTime: Long = 0L
 
     /**
      * Returns a plan for a given initial state. A plan consists of a list of actions
@@ -17,5 +16,5 @@ interface ClassicalPlanner<StateType : State<StateType>> : Planner {
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    fun plan(state: StateType): List<Action>
+    abstract fun plan(state: StateType): List<Action>
 }

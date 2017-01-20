@@ -104,24 +104,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     var dijkstraTimer = 0L
         get
 
-
-    /**
-     * Prepares LSS for a completely unrelated new search. Sets mode to init
-     * When a new action is selected, all members that persist during selection action phase are cleared
-     */
-    override fun reset() {
-        super.reset()
-
-        rootState = null
-
-        aStarPopCounter = 0
-        dijkstraPopCounter = 0
-        aStarTimer = 0L
-        dijkstraTimer = 0L
-
-        clearOpenList()
-    }
-
     /**
      * Selects a action given current state.
      *

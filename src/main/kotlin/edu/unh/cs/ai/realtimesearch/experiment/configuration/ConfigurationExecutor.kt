@@ -2,6 +2,7 @@
 
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
@@ -55,7 +56,12 @@ object ConfigurationExecutor {
         thread.setUncaughtExceptionHandler { thread, throwable ->
             executionException = throwable
 
-            logger.info("Experiment stopped", throwable)
+            if (executionException is MetronomeException) {
+                logger.info("Experiment stopped", throwable.message)
+            } else {
+                logger.info("Experiment stopped", throwable)
+            }
+
         }
 
         collectAndWait()

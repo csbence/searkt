@@ -20,20 +20,19 @@ import org.slf4j.LoggerFactory
  *
  * @param planner is the planner that is involved in the experiment
  * @param domain is the domain of the planner. Used for random state generation
- * @param initState is the optional initial state
- *
+ * @param initialState is the start state of the planner.
  */
 class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
                                                         val planner: ClassicalPlanner<StateType>,
                                                         val domain: Domain<StateType>,
-                                                        val initState: State<StateType>? = null) : Experiment() {
+                                                        val initialState: StateType) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
-        val state: StateType = initState?.copy() ?: domain.randomState()
+        val state: StateType = initialState
         //        logger.warn { "Starting experiment with state $state on planner $planner" }
 
         val cpuNanoTime = measureThreadCpuNanoTime {

@@ -10,7 +10,6 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     var resizable = false
     var size = 0
-        private set
 
     val backingArray: Array<T?>
         get() = queue

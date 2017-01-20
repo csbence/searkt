@@ -74,7 +74,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
     override fun selectAction(startState: StateType, terminationChecker: TimeTerminationChecker): List<Action?> {
         //Solving backwards, so flip start and goal states
-        val goals = domain.getGoal()
+        val goals = domain.getGoals()
 
         targetgoal = startState
         for (goalState in goals) {

@@ -12,16 +12,13 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
  *
  * @param domain: The domain to plan in
  */
-abstract class AnytimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
+abstract class AnytimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner<StateType>() {
     /**
      * Data class to store [Action]s along with their execution time.
      *
      * The [duration] is measured in nanoseconds.
      */
     data class ActionBundle(val action: Action, val duration: Double)
-
-    override var generatedNodeCount = 0
-    override var expandedNodeCount = 0
 
     /**
      * Returns an action while abiding the termination checker's criteria.

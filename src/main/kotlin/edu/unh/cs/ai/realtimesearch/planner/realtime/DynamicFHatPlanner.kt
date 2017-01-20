@@ -143,25 +143,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var nextDistanceError = 0.0
 
     /**
-     * Prepares LSS for a completely unrelated new search. Sets mode to init
-     * When a new action is selected, all members that persist during selection action phase are cleared
-     */
-    override fun reset() {
-        super.reset()
-
-        rootState = null
-
-        aStarPopCounter = 0
-        dijkstraPopCounter = 0
-        aStarTimer = 0L
-        dijkstraTimer = 0L
-        heuristicError = 0.0
-        distanceError = 0.0
-
-        clearOpenList()
-    }
-
-    /**
      * Selects a action given current state.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will

@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import java.lang.Math.abs
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -30,8 +31,8 @@ class RaceTrack(val width: Int,
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
-    val maxXSpeed = getXSpeed()
-    val maxYSpeed = getYSpeed()
+    val maxXSpeed = 2//getXSpeed()
+    val maxYSpeed = 2//getYSpeed()
 
     fun getXSpeed(): Int {
         var w = 1
@@ -107,45 +108,33 @@ class RaceTrack(val width: Int,
     * Heuristic is the distance divided by the max speed
     * */
     override fun heuristic(state: RaceTrackState): Double {
-        var h = distance(state)
-        //        return 0.0
+        val h = distance(state)
         if (maxXSpeed > maxYSpeed)
             return h / maxYSpeed
         return h / maxYSpeed
     }
 
     override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double {
-        var h = distance(startState, endState)
-        //        return 0.0
+        val h = distance(startState, endState)
         if (maxXSpeed > maxYSpeed)
-            return h / maxYSpeed * actionDuration
+            return h / maxXSpeed * actionDuration
         return h / maxYSpeed * actionDuration
     }
 
-    // Distance is the max(min(dx), min(dy))
+    /**
+     * Calculates the minimum number of steps to reach the closest goal position.
+     */
     override fun distance(state: RaceTrackState): Double {
-        var dx = Double.MAX_VALUE
-        var dy = Double.MAX_VALUE
-
-        for (it in finish_line) {
-            val xdist = Math.abs(state.x - it.x)
-            if (xdist < dx)
-                dx = xdist.toDouble()
-            val ydist = Math.abs(state.y - it.y)
-            if (ydist < dy)
-                dy = ydist.toDouble()
-        }
-        val retval = Math.max(dx.toDouble(), dy.toDouble())
-        return retval
+        val distanceFunction: (Location) -> Int = { (x, y) -> abs(state.x - x) / maxXSpeed + abs(state.y - y) / maxYSpeed }
+        return distanceFunction(finish_line.minBy(distanceFunction)!!).toDouble()
     }
 
     // Distance is the max(min(dx), min(dy))
     fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
-        val xdist = Math.abs(startState.x - endState.x)
-        val ydist = Math.abs(startState.y - endState.y)
+        val xdist = abs(startState.x - endState.x)
+        val ydist = abs(startState.y - endState.y)
 
-        val retval = Math.max(xdist.toDouble(), ydist.toDouble())
-        return retval
+        return Math.max(xdist.toDouble(), ydist.toDouble())
     }
 
     override fun isGoal(state: RaceTrackState): Boolean {
@@ -177,14 +166,7 @@ class RaceTrack(val width: Int,
         return description.toString()
     }
 
-    /**
-     * TODO: implement racetrack.randomState()
-     */
-    override fun randomState(): RaceTrackState {
-        throw UnsupportedOperationException("Random state not implemented for racetrack domain")
-    }
-
-    override fun getGoal(): List<RaceTrackState> {
+    override fun getGoals(): List<RaceTrackState> {
         val list: MutableList<RaceTrackState> = arrayListOf()
         for (it in finish_line) {
             for (xS in 0..maxXSpeed) {

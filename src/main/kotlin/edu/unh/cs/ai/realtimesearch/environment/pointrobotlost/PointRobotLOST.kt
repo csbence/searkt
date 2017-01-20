@@ -146,11 +146,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         return description.toString()
     }
 
-    override fun randomState(): PointRobotLOSTState {
-        throw UnsupportedOperationException()
-    }
-
-    override fun getGoal(): List<PointRobotLOSTState> {
+    override fun getGoals(): List<PointRobotLOSTState> {
         return listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
     }
 

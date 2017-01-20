@@ -105,11 +105,11 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      * Creates a state with a random initial location for the agent and
      * initialAmountDirty number of random dirty cells
      */
-    override fun randomState(): GridWorldState {
+    fun randomState(): GridWorldState {
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getGoal(): List<GridWorldState> {
+    override fun getGoals(): List<GridWorldState> {
         return listOf(GridWorldState(targetLocation))
     }
 
