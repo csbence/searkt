@@ -17,7 +17,7 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.0.1-1'
+    ext.kotlin_version = '1.1.0-beta-17'
     repositories {
         mavenCentral()
     }
@@ -50,10 +50,6 @@ dependencies {
 sourceSets {
     main.java.srcDirs += file('src/main/kotlin')
     test.java.srcDirs += file('src/test/kotlin')
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.12'
 }
 
 run {
