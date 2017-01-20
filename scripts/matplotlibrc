@@ -61,7 +61,7 @@
 #timezone     : UTC        # a pytz timezone string, eg US/Central or Europe/Paris
 
 # Where your matplotlib data lives if you installed to a non-default
-# location.  This is where the matplotlib fonts, bitmaps, etc reside
+# newLocation.  This is where the matplotlib fonts, bitmaps, etc reside
 #datapath : /home/jdhunter/mpldata
 
 
@@ -447,7 +447,7 @@ axes.ymargin        : 0.001
 #keymap.xscale : L, k                # toggle scaling of x-axes ('log'/'linear')
 #keymap.all_axes : a                 # enable all axes
 
-# Control location of examples data files
+# Control newLocation of examples data files
 #examples.directory : ''   # directory to look in for custom installation
 
 ###ANIMATION settings

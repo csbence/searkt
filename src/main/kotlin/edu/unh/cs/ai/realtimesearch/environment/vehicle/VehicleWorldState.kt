@@ -9,7 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * Created by doylew on 1/17/17.
  */
-data class VehicleWorldState(val agentLocation: Location) : State<VehicleWorldState> {
+data class VehicleWorldState(val agentLocation: Location, var obstacles: Set<Location>) : State<VehicleWorldState> {
     override fun hashCode(): Int {
         return calculateHashCode()
     }
@@ -19,12 +19,21 @@ data class VehicleWorldState(val agentLocation: Location) : State<VehicleWorldSt
     }
 
     override fun equals(other: Any?): Boolean {
-        return when {
-            other == null -> false
-            other == this -> true
-            other !is VehicleWorldState -> false
-            else -> agentLocation == other.agentLocation
+        return when (other) {
+            null -> false
+            this -> true
+            !is VehicleWorldState -> false
+            else -> agentLocation == other.agentLocation && sameObstacles(other)
         }
+    }
+
+    private fun sameObstacles(other: Any?) : Boolean {
+        if (other is VehicleWorldState) {
+           other.obstacles.forEach { if (!obstacles.contains(it)) { return false } }
+        } else {
+            return false
+        }
+        return true
     }
 
     override fun copy() = copy(agentLocation)
