@@ -71,7 +71,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
 
     /*
     * eight way - octile distance
-    * max(min(dx), min(dy))/3
+    * max(min(dX), min(dy))/3
     * euclidiean distance
     * */
     override fun heuristic(state: PointRobotState): Double {

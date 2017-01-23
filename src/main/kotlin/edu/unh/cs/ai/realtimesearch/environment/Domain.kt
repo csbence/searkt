@@ -21,7 +21,8 @@ interface Domain<State> {
     fun heuristic(state: State): Double
 
     /**
-     * Heuristic value of a given state. It must be a lower bound on the number of steps to the goal.
+     *  Distance to the goal from the given state
+     *  @return A lower bound on the number of steps to the goal.
      */
     fun distance(state: State): Double
 

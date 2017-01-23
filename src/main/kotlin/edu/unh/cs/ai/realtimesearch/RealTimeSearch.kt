@@ -10,7 +10,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundT
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.visualizer.runVisualizer
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -33,14 +32,14 @@ fun main(args: Array<String>) {
         //                val map = "input/racetrack/hansen-bigger.track"
         //        val map = "input/pointrobot/squiggle.pr"
         //                val map = "input/vacuum/openBox_25.vw"
-        val map = "input/acrobot/default_0.3-0.3.ab"
+        val map = "input/racetrack/hansen-bigger-d-wide3.track"
         //        val map = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.ACROBOT.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
-                Planners.A_STAR.toString(),
+                Planners.LSS_LRTA_STAR.toString(),
                 "time")
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
@@ -81,7 +80,7 @@ fun main(args: Array<String>) {
         logger.info("Generated Nodes: ${result.generatedNodes}, Expanded Nodes ${result.expandedNodes}")
         //        logger.info(result.toIndentedJson())
 
-        runVisualizer(result, visualizerParameters)
+//        runVisualizer(result, visualizerParameters)
     }
 }
 

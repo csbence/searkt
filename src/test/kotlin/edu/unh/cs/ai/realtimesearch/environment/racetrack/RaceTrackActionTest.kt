@@ -1,9 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
-
-import org.junit.Assert.*
 
 /**
  * Tests the RaceTrackAction class
@@ -25,7 +25,7 @@ class RaceTrackActionTest {
         action = RaceTrackAction.UP
         assertEquals(action.getAcceleration(), Location(0, 1))
 
-        action = RaceTrackAction.NOOP
+        action = RaceTrackAction.NO_OP
         assertEquals(action.getAcceleration(), Location(0, 0))
 
         action = RaceTrackAction.LEFT
@@ -34,16 +34,16 @@ class RaceTrackActionTest {
         action = RaceTrackAction.RIGHT
         assertEquals(action.getAcceleration(), Location(1, 0))
 
-        action = RaceTrackAction.LEFTUP
+        action = RaceTrackAction.LEFT_UP
         assertEquals(action.getAcceleration(), Location(-1, 1))
 
-        action = RaceTrackAction.LEFTDOWN
+        action = RaceTrackAction.LEFT_DOWN
         assertEquals(action.getAcceleration(), Location(-1, -1))
 
-        action = RaceTrackAction.RIGHTDOWN
+        action = RaceTrackAction.RIGHT_DOWN
         assertEquals(action.getAcceleration(), Location(1, -1))
 
-        action = RaceTrackAction.RIGHTUP
+        action = RaceTrackAction.RIGHT_UP
         assertEquals(action.getAcceleration(), Location(1, 1))
     }
 

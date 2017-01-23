@@ -113,23 +113,23 @@ class RacetrackVisualizer : GridBasedVisualizer() {
             "LEFT" -> {
                 xDot--
             }
-            "RIGHTUP" -> {
+            "RIGHT_UP" -> {
                 xDot++
                 yDot++
             }
-            "RIGHTDOWN" -> {
+            "RIGHT_DOWN" -> {
                 xDot++
                 yDot--
             }
-            "LEFTDOWN" -> {
+            "LEFT_DOWN" -> {
                 xDot--
                 yDot--
             }
-            "LEFTUP" -> {
+            "LEFT_UP" -> {
                 xDot--
                 yDot++
             }
-            "NOOP" -> {
+            "NO_OP" -> {
 
             }
         }

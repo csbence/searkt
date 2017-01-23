@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import java.lang.Math.abs
+import java.lang.Math.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -31,49 +31,29 @@ class RaceTrack(val width: Int,
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
-    val maxXSpeed = 2//getXSpeed()
-    val maxYSpeed = 2//getYSpeed()
-
-    fun getXSpeed(): Int {
-        var w = 1
-        var xSpeed = 0
-
-        while (w <= width) {
-            w += xSpeed
-            xSpeed++
-        }
-
-        return xSpeed - 1
-    }
-
-    fun getYSpeed(): Int {
-        var h = 1
-        var ySpeed = 0
-
-        while (h <= height) {
-            h += ySpeed
-            ySpeed++
-        }
-
-        return ySpeed - 1
-    }
+    val maxXSpeed = width / 2
+    val maxYSpeed = height / 2
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
         val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
 
         for (action in RaceTrackAction.values()) {
-            val new_x_speed = state.x_speed + action.getAcceleration().x
-            val new_y_speed = state.y_speed + action.getAcceleration().y
+            val newDX = state.dX + action.aX
+            val newDY = state.dY + action.aY
+            val distance = sqrt(pow(newDX.toDouble(), 2.0) + pow(newDY.toDouble(), 2.0))
 
             var x = state.x.toDouble()
             var y = state.y.toDouble()
-            val dt = 0.1
-            val nSteps = 10
+
+            val dt = 1 / distance
             var valid = true
 
-            for (i in 0..nSteps - 1) {
-                x += new_x_speed * dt
-                y += new_y_speed * dt
+            val stepX = newDX * dt
+            val stepY = newDY * dt
+
+            for (i in 0..distance.toInt() - 1) {
+                x += stepX
+                y += stepY
 
                 if (!isLegalLocation(x, y)) {
                     valid = false
@@ -84,9 +64,14 @@ class RaceTrack(val width: Int,
             //filter on legal moves (not too fast and on the track)
             if (valid) {
                 successors.add(SuccessorBundle(
-                        RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
+                        RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
                         action,
                         actionCost = actionDuration))
+            }
+
+            if (!valid && (x != state.x.toDouble() || y != state.y.toDouble())) {
+
+
             }
         }
 
@@ -129,7 +114,7 @@ class RaceTrack(val width: Int,
         return distanceFunction(finish_line.minBy(distanceFunction)!!).toDouble()
     }
 
-    // Distance is the max(min(dx), min(dy))
+    // Distance is the max(min(dX), min(dy))
     fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
         val xdist = abs(startState.x - endState.x)
         val ydist = abs(startState.y - endState.y)
@@ -196,8 +181,8 @@ class RaceTrack(val width: Int,
         val predecessors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
 
         for (action in RaceTrackAction.values()) {
-            val new_x_speed = state.x_speed
-            val new_y_speed = state.y_speed
+            val new_x_speed = state.dX
+            val new_y_speed = state.dY
 
             var x: Double
             var y: Double
@@ -218,7 +203,7 @@ class RaceTrack(val width: Int,
             //filter on legal moves (not too fast and on the track)
             if (valid) {
                 predecessors.add(SuccessorBundle(
-                        RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.getAcceleration().x, new_y_speed - action.getAcceleration().y),
+                        RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.aX, new_y_speed - action.aY),
                         action,
                         actionCost = actionDuration))
             }
