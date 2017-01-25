@@ -163,7 +163,7 @@ object ConfigurationExecutor {
             POINT_ROBOT_LOST -> executePointRobotLOST(experimentConfiguration, domainStream)
             POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(experimentConfiguration, domainStream)
             RACETRACK -> executeRaceTrack(experimentConfiguration, domainStream)
-            VEHICLE -> executeVehicle(experimentConfiguration, domainStream)
+            TRAFFIC -> executeVehicle(experimentConfiguration, domainStream)
 
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }

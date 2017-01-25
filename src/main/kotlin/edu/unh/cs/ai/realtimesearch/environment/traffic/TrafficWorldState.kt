@@ -22,7 +22,7 @@ data class TrafficWorldState(val agentLocation: Location, var obstacles: Set<Mov
     override fun equals(other: Any?): Boolean {
         return when (other) {
             null -> false
-            this -> true
+//            other === this -> true
             !is TrafficWorldState -> false
             else -> agentLocation == other.agentLocation && Companion.sameObstacles(this, other)
         }

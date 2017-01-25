@@ -13,7 +13,7 @@ import java.util.*
 object VehicleWorldIO {
 
     fun parseFromStream(input: InputStream, actionDuration: Long) : VehicleWorldInstance {
-        return parseFromStream(input, actionDuration)
+        return readVehicle(input, actionDuration)
     }
 
     private fun readVehicle(input: InputStream, actionDuration: Long) : VehicleWorldInstance {

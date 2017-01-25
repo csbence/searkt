@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
+import edu.unh.cs.ai.realtimesearch.environment.traffic.TrafficWorldAction
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
@@ -27,17 +28,17 @@ private val visualizerParameters = mutableListOf<String>()
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
-    if (args.size == 0) {
+    if (args.isEmpty()) {
         // Default configuration
-        //                val map = "input/racetrack/hansen-bigger.track"
-        //        val map = "input/pointrobot/squiggle.pr"
-        //                val map = "input/vacuum/openBox_25.vw"
-        val map = "input/racetrack/hansen-bigger-d-wide3.track"
-        //        val map = "input/tiles/korf/4/all/3"
-        val input = Input::class.java.classLoader.getResourceAsStream(map) ?: throw RuntimeException("Resource not found")
+        //                val instanceFileName = "input/racetrack/hansen-bigger.track"
+        //        val instanceFileName = "input/pointrobot/squiggle.pr"
+        //                val instanceFileName = "input/vacuum/openBox_25.vw"
+        val instanceFileName = "input/traffic/vehicle0.v"
+        //        val instanceFileName = "input/tiles/korf/4/all/3"
+        val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.RACETRACK.toString(),
+                Domains.TRAFFIC.toString(),
                 rawDomain,
                 Planners.LSS_LRTA_STAR.toString(),
                 "time")
@@ -45,11 +46,11 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
         manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = TimeBoundType.DYNAMIC.toString()
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
-        manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
-        manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
+        manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
+        manualConfiguration[Configurations.NUM_ACTIONS.toString()] = TrafficWorldAction.values().size
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
 
