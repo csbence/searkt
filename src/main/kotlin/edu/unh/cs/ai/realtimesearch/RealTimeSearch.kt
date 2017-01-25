@@ -45,7 +45,7 @@ fun main(args: Array<String>) {
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
-        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = TimeBoundType.DYNAMIC.toString()
+        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = TimeBoundType.STATIC.toString()
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
