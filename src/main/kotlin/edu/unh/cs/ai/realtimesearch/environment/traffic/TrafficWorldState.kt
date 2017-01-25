@@ -31,14 +31,8 @@ data class TrafficWorldState(val agentLocation: Location, var obstacles: Set<Mov
     override fun copy() = copy(agentLocation)
 
     companion object {
-        private fun sameObstacles(trafficWorldState: TrafficWorldState, other: Any?) : Boolean {
-            if (other is TrafficWorldState) {
-                other.obstacles.forEach { if (!trafficWorldState.obstacles.contains(it)) { return false } }
-            } else {
-                return false
-            }
-            return true
-        }
-    }
+        private fun sameObstacles(trafficWorldState: TrafficWorldState, other: Any?) =
+                other is TrafficWorldState &&
+                        other.obstacles.all { trafficWorldState.obstacles.contains(it) } }
 
 }
