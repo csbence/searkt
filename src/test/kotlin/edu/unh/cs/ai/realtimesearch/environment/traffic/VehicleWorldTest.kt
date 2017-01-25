@@ -43,29 +43,29 @@ class VehicleWorldTest {
         }
     }
 
-    @Test
-    fun testVisualizeObstacles() {
-        val obstacles = mutableSetOf<Location>()
-        val bunkers = mutableSetOf<Location>()
-        (1..8).forEach { obstacles.add(Location(it,it)) }
-        bunkers.add(Location(3,4))
-        bunkers.add(Location(5,7))
-        bunkers.add(Location(7,9))
-        val obstacleWorld = TrafficWorld(10, 10,  bunkers = bunkers, targetLocation = Location(9, 9), actionDuration = 1)
-
-        val pos1 = TrafficWorldState(Location(0, 0), obstacles)
-
-        println("showing starting world...")
-        println(obstacleWorld.print(pos1))
-        println("now successors...")
-//        obstacleWorld.successors(pos1).forEach { println(obstacleWorld.print(it.state)) }
-        println("now successors of successors...")
-        obstacleWorld.successors(pos1).forEach {
-            println("new source...")
-            println(obstacleWorld.print(it.state))
-            obstacleWorld.successors(it.state).forEach {
-                println(obstacleWorld.print(it.state))
-            }
-        }
-    }
+//    @Test
+//    fun testVisualizeObstacles() {
+//        val obstacles = mutableSetOf<Location>()
+//        val bunkers = mutableSetOf<Location>()
+//        (1..8).forEach { obstacles.add(Location(it,it)) }
+//        bunkers.add(Location(3,4))
+//        bunkers.add(Location(5,7))
+//        bunkers.add(Location(7,9))
+//        val obstacleWorld = TrafficWorld(10, 10,  bunkers = bunkers, targetLocation = Location(9, 9), actionDuration = 1)
+//
+//        val pos1 = TrafficWorldState(Location(0, 0), obstacles)
+//
+//        println("showing starting world...")
+//        println(obstacleWorld.print(pos1))
+//        println("now successors...")
+////        obstacleWorld.successors(pos1).forEach { println(obstacleWorld.print(it.state)) }
+//        println("now successors of successors...")
+//        obstacleWorld.successors(pos1).forEach {
+//            println("new source...")
+//            println(obstacleWorld.print(it.state))
+//            obstacleWorld.successors(it.state).forEach {
+//                println(obstacleWorld.print(it.state))
+//            }
+//        }
+//    }
 }

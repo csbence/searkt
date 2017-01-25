@@ -15,8 +15,9 @@ import java.util.*
 class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<TrafficWorldState> {
     private val logger = LoggerFactory.getLogger(TrafficWorld::class.java)
 
-    private data class Pair(var x: Int, var y: Int)
-
+    init {
+        logger.info("TrafficWorld starting...")
+    }
     /**
      * part of the Domain interface - successor function
      * @param state the state for successor calculation
@@ -42,10 +43,11 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     }
 
     /**
-     * returns if a given newLocation is legal or not
+     * checks a given state is out-of-bounds of the world
+     * or is in collision with an obstacle
      *
      * @param newLocation the test newLocation
-     * @return true if newLocation is legal
+     * @return true if newLocation is legal false otherwise
      */
     fun isLegalLocation(state: TrafficWorldState, newLocation: Location): Boolean {
         if (newLocation.x in 0..(width - 1)) {
