@@ -1,18 +1,19 @@
-package edu.unh.cs.ai.realtimesearch.environment.vehicle
+package edu.unh.cs.ai.realtimesearch.environment.traffic
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
- * VehicleWorld agent avoids being hit by moving obstacles
+ * TrafficWorld agent avoids being hit by moving obstacles
  * while reaching the specified goal
  * Created by doylew on 1/17/17.
  */
-class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<VehicleWorldState> {
-    private val logger = LoggerFactory.getLogger(VehicleWorld::class.java)
+class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<TrafficWorldState> {
+    private val logger = LoggerFactory.getLogger(TrafficWorld::class.java)
 
     private data class Pair(var x: Int, var y: Int)
 
@@ -36,17 +37,17 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     /**
      * part of the Domain interface
      */
-    override fun successors(state: VehicleWorldState): List<SuccessorBundle<VehicleWorldState>> {
-        val successors: MutableList<SuccessorBundle<VehicleWorldState>> = arrayListOf()
+    override fun successors(state: TrafficWorldState): List<SuccessorBundle<TrafficWorldState>> {
+        val successors: MutableList<SuccessorBundle<TrafficWorldState>> = arrayListOf()
         val newObstacles = moveObstacles(state.obstacles)
 
-        for (action in VehicleWorldAction.values()) {
-            val newLocation = state.agentLocation + action.getRelativeLocation()
+        for (action in TrafficWorldAction.values()) {
+            val newLocation = state.agentLocation + TrafficWorldAction.getRelativeLocation(action)
 
             if (isLegalLocation(state, newLocation)) {
                 successors.add(
                         SuccessorBundle(
-                                VehicleWorldState(newLocation, newObstacles),
+                                TrafficWorldState(newLocation, newObstacles),
                                 action,
                                 actionCost = actionDuration
                         )
@@ -62,7 +63,7 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param newLocation the test newLocation
      * @return true if newLocation is legal
      */
-    fun isLegalLocation(state: VehicleWorldState, newLocation: Location): Boolean {
+    fun isLegalLocation(state: TrafficWorldState, newLocation: Location): Boolean {
         if (newLocation.x >= 0 && newLocation.x < width) {
             if (newLocation.y >= 0 && newLocation.y < height) {
                 if (!state.obstacles.contains(Location(newLocation.x, newLocation.y))) {
@@ -79,11 +80,11 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the test state
      * @return value representing Manhattan to goal
      */
-    override fun heuristic(state: VehicleWorldState): Double {
+    override fun heuristic(state: TrafficWorldState): Double {
         return distance(state) + actionDuration
     }
 
-    override fun heuristic(startState: VehicleWorldState, endState: VehicleWorldState): Double {
+    override fun heuristic(startState: TrafficWorldState, endState: TrafficWorldState): Double {
         return Math.abs(startState.agentLocation.x - endState.agentLocation.x) +
                 Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
     }
@@ -91,15 +92,21 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     /**
      * estimated distance to goal
      */
-    override fun distance(state: VehicleWorldState): Double {
+    override fun distance(state: TrafficWorldState): Double {
        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
     }
 
     /**
      * basic goal test function
      */
-    override fun isGoal(state: VehicleWorldState): Boolean {
+    override fun isGoal(state: TrafficWorldState): Boolean {
         return state.agentLocation == targetLocation
+    }
+
+
+    private fun containsLocation(candidateLocation: Location, state: TrafficWorldState) : Boolean {
+//       return candidateLocation in
+        TODO()
     }
 
     /**
@@ -107,9 +114,9 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @ == agent
      * # == obstacle
      * $ == bunkers
-     * * == GOOOOOOOLLLLLLLLLLL
+     * * == goal
      */
-    override fun print(state: VehicleWorldState): String {
+    override fun print(state: TrafficWorldState): String {
         val output = StringBuilder()
         (0..height-1).forEach { y ->
             (0..width-1).forEach { x ->
@@ -134,17 +141,16 @@ class VehicleWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param obstacles the obstacles to be moved
      * @return the moved obstacles
      */
-    private fun moveObstacles(obstacles: Set<Location>): Set<Location> {
-        val newObstacles = mutableSetOf<Location>()
-        obstacles.forEachIndexed { i, location ->
-            val oldObstacleLocation = Location(location.x, location.y)
-            val newObstacleLocation = Location(location.x + obstacleVelocities[i].x,
-                    location.y + obstacleVelocities[i].y)
-            if (bunkers.contains(newObstacleLocation) || !validObstacleLocation(newObstacleLocation) ||
+    private fun moveObstacles(obstacles: Set<MovingObstacle>): Set<MovingObstacle> {
+        val newObstacles = mutableSetOf<MovingObstacle>()
+        obstacles.forEachIndexed { i, (x, y, dx, dy) ->
+            val oldObstacleLocation = MovingObstacle(x, y, dx, dy)
+            val newObstacleLocation = MovingObstacle(x + dx, y + dy, dx, dy)
+            if (bunkers.contains(Location(x + dx, y + dy)) || !validObstacleLocation(Location(x + dx, y + dy)) ||
                     (targetLocation.x == newObstacleLocation.x && targetLocation.y == newObstacleLocation.y)) {
-                // if the new obstacle location would be a bunker
-                // or the goal (target) location and is valid
-                // add the old location and bounce the velocities
+                // if the new obstacle obstacle would be a bunker
+                // or the goal (target) obstacle and is valid
+                // add the old obstacle and bounce the velocities
                 newObstacles.add(oldObstacleLocation)
                 obstacleVelocities[i].x *= -1
                 obstacleVelocities[i].y *= -1

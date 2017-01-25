@@ -1,11 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.environment.vehicle
+package edu.unh.cs.ai.realtimesearch.environment.traffic
 
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import java.io.InputStream
 import java.util.*
 
 /**
- * reading in the vehicle world file
+ * reading in the traffic world file
  * Created by doylew on 1/17/17.
  */
 
@@ -17,6 +18,8 @@ object VehicleWorldIO {
 
     private fun readVehicle(input: InputStream, actionDuration: Long) : VehicleWorldInstance {
         val inputScanner = Scanner(input)
+
+        val random = Random()
 
         val rowCount: Int
         val columnCount : Int
@@ -30,7 +33,7 @@ object VehicleWorldIO {
             throw InvalidVehicleWorldException("Vehicle world first or second line must be a integer.", e)
         }
 
-        val obstacles = arrayListOf<Location>()
+        val obstacles = arrayListOf<MovingObstacle>()
         val bunkers = arrayListOf<Location>()
         val startLocation = arrayListOf<Location>()
         val targetLocation = arrayListOf<Location>()
@@ -40,7 +43,7 @@ object VehicleWorldIO {
                 val line = inputScanner.nextLine()
                 (0..columnCount-1).forEach { x ->
                     when (line[x]) {
-                        '#' -> obstacles.add(Location(x,y))
+                        '#' -> obstacles.add(MovingObstacle(x,y,random.nextInt(1)+1, random.nextInt(1)+1))
                         '*' -> targetLocation.add(Location(x,y))
                         '@' -> startLocation.add(Location(x,y))
                         '$' -> bunkers.add(Location(x,y))
@@ -57,14 +60,14 @@ object VehicleWorldIO {
             throw InvalidVehicleWorldException("Vehicle world target goal location with * marker not specified.")
         }
 
-        val vehicleWorld = edu.unh.cs.ai.realtimesearch.environment.vehicle.VehicleWorld(columnCount, rowCount,
+        val vehicleWorld = edu.unh.cs.ai.realtimesearch.environment.traffic.TrafficWorld(columnCount, rowCount,
                 bunkers.toHashSet(), targetLocation.first(), actionDuration)
 
-        val startState = VehicleWorldState(startLocation.first(), bunkers.toHashSet())
+        val startState = TrafficWorldState(startLocation.first(), obstacles.toHashSet())
         return VehicleWorldInstance(vehicleWorld, startState)
 
     }
 }
 
-data class VehicleWorldInstance(val domain: VehicleWorld, val initialState: VehicleWorldState)
+data class VehicleWorldInstance(val domain: TrafficWorld, val initialState: TrafficWorldState)
 class InvalidVehicleWorldException(message: String, e: Exception? = null) : RuntimeException(message, e)

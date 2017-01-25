@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.vehicle
+package edu.unh.cs.ai.realtimesearch.environment.traffic
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -8,7 +8,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * Created by doylew on 1/17/17.
  */
-enum class VehicleWorldAction(val index: Int) : Action {
+enum class TrafficWorldAction(val index: Int) : Action {
     LEFT(0), DOWN(1), UP(2), RIGHT(3);
 
     private val relativeLocations = arrayOf(
@@ -18,5 +18,7 @@ enum class VehicleWorldAction(val index: Int) : Action {
             Location(1,0)
     )
 
-    fun getRelativeLocation() = relativeLocations[index]
+    companion object {
+        fun getRelativeLocation(trafficWorldAction: TrafficWorldAction) = trafficWorldAction.relativeLocations[trafficWorldAction.index]
+    }
 }
