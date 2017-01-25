@@ -106,8 +106,8 @@ Actions: up, down, left, right
 * time limit (`"timeLimit" : Long`)
 * action duration (`"actionDuration" : Long`)
     - Must be greater than zero
-* termination type (`"terminationType" : { "TIME" | "EXPANSION"`)
-    - Time is the only supported termination type
+* termination type (`"terminationType" : { "TIME" | "EXPANSION" | "UNLIMITED"`)
+    - The unlimited type is for debugging purposes only. The unlimited termination checker will never interrupt an iteration.
 
 ### Real-time search
 
