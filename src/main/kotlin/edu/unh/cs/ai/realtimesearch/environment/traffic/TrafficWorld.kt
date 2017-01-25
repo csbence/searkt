@@ -64,9 +64,9 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @return true if newLocation is legal
      */
     fun isLegalLocation(state: TrafficWorldState, newLocation: Location): Boolean {
-        if (newLocation.x >= 0 && newLocation.x < width) {
-            if (newLocation.y >= 0 && newLocation.y < height) {
-                if (!state.obstacles.contains(Location(newLocation.x, newLocation.y))) {
+        if (newLocation.x in 0..(width - 1)) {
+            if (newLocation.y in 0..(height - 1)) {
+                if (!containsLocation(Location(x = newLocation.x, y = newLocation.y), state)) {
                     return true
                 }
             }
@@ -105,8 +105,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
 
 
     private fun containsLocation(candidateLocation: Location, state: TrafficWorldState) : Boolean {
-//       return candidateLocation in
-        TODO()
+        return state.obstacles.filter { candidateLocation.x == it.x && candidateLocation.y == it.y }.isNotEmpty()
     }
 
     /**
@@ -120,12 +119,14 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         val output = StringBuilder()
         (0..height-1).forEach { y ->
             (0..width-1).forEach { x ->
-                val character = when (Location(x,y)) {
+                var character = when (Location(x,y)) {
                    state.agentLocation -> '@'
                     targetLocation -> '*'
-                    in state.obstacles -> '#'
                     in bunkers -> '$'
                     else -> '_'
+                }
+                if (containsLocation(Location(x,y), state)) {
+                  character = '#'
                 }
                 output.append(character)
             }
