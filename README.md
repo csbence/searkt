@@ -6,10 +6,13 @@
 
 ## TODO
 
+* expansion termination (Bence)
+* implement foggy racetrack domain
+* implement / validate traffic domain (Jordan)
+* migrate s0 s1 (Bence / Will)
 * javadoc for sliding tile puzzle
 * get tests to run 
 * refactor such that domains do not require to implement predecessors
-* implement new lsslrta by Dylan (the in-admissible one that maintains a expected error)
 * how to store/write results
 
 ## Conventions

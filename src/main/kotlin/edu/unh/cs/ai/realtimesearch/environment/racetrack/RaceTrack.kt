@@ -68,11 +68,6 @@ class RaceTrack(val width: Int,
                         action,
                         actionCost = actionDuration))
             }
-
-            if (!valid && (x != state.x.toDouble() || y != state.y.toDouble())) {
-
-
-            }
         }
 
         return successors
@@ -92,12 +87,7 @@ class RaceTrack(val width: Int,
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState): Double {
-        val h = distance(state)
-        if (maxXSpeed > maxYSpeed)
-            return h / maxYSpeed
-        return h / maxYSpeed
-    }
+    override fun heuristic(state: RaceTrackState) = distance(state) * actionDuration
 
     override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double {
         val h = distance(startState, endState)
@@ -112,12 +102,15 @@ class RaceTrack(val width: Int,
     override fun distance(state: RaceTrackState): Double {
         val distanceFunction: (Location) -> Int = { (x, y) -> abs(state.x - x) / maxXSpeed + abs(state.y - y) / maxYSpeed }
         return distanceFunction(finish_line.minBy(distanceFunction)!!).toDouble()
+        // TODO: would it make sense to have an ArrayList version of finish_line on hand for optimal iteration?
     }
 
     // Distance is the max(min(dX), min(dy))
     fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
         val xdist = abs(startState.x - endState.x)
         val ydist = abs(startState.y - endState.y)
+        TODO()
+
 
         return Math.max(xdist.toDouble(), ydist.toDouble())
     }
