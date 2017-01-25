@@ -17,25 +17,9 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
 
     private data class Pair(var x: Int, var y: Int)
 
-    private val obstacleVelocities: ArrayList<Pair>
-    private fun initializeObstacleVelocities(): ArrayList<Pair> {
-        val velocities = ArrayList<Pair>()
-        val random = Random()
-        (0..99999).forEach {
-            velocities.add(
-                    if (random.nextBoolean()) Pair(random.nextInt(1) + 1, 0)
-                    else Pair(0, random.nextInt(1) + 1)
-            )
-        }
-        return velocities
-    }
-
-    init {
-        obstacleVelocities = initializeObstacleVelocities()
-    }
-
     /**
-     * part of the Domain interface
+     * part of the Domain interface - successor function
+     * @param state the state for successor calculation
      */
     override fun successors(state: TrafficWorldState): List<SuccessorBundle<TrafficWorldState>> {
         val successors: MutableList<SuccessorBundle<TrafficWorldState>> = arrayListOf()
@@ -91,6 +75,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
 
     /**
      * estimated distance to goal
+     * @param state the state under distance measurement
      */
     override fun distance(state: TrafficWorldState): Double {
        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
@@ -98,12 +83,19 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
 
     /**
      * basic goal test function
+     * @param state the state under goal test
      */
     override fun isGoal(state: TrafficWorldState): Boolean {
         return state.agentLocation == targetLocation
     }
 
-
+    /**
+     * helper function to detect if a location is
+     * contained within the obstacles for printing
+     * and legal location checking
+     * @param candidateLocation possible location of the obstacle
+     * @param state the state under question of containing the obstacle location
+     */
     private fun containsLocation(candidateLocation: Location, state: TrafficWorldState) : Boolean {
         return state.obstacles.filter { candidateLocation.x == it.x && candidateLocation.y == it.y }.isNotEmpty()
     }
@@ -144,7 +136,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      */
     private fun moveObstacles(obstacles: Set<MovingObstacle>): Set<MovingObstacle> {
         val newObstacles = mutableSetOf<MovingObstacle>()
-        obstacles.forEachIndexed { i, (x, y, dx, dy) ->
+        obstacles.forEach{ (x, y, dx, dy) ->
             val oldObstacleLocation = MovingObstacle(x, y, dx, dy)
             val newObstacleLocation = MovingObstacle(x + dx, y + dy, dx, dy)
             if (bunkers.contains(Location(x + dx, y + dy)) || !validObstacleLocation(Location(x + dx, y + dy)) ||
@@ -153,8 +145,8 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
                 // or the goal (target) obstacle and is valid
                 // add the old obstacle and bounce the velocities
                 newObstacles.add(oldObstacleLocation)
-                obstacleVelocities[i].x *= -1
-                obstacleVelocities[i].y *= -1
+                oldObstacleLocation.dx *= -1
+                oldObstacleLocation.dy *= -1
             } else {
                 newObstacles.add(newObstacleLocation)
             }
@@ -170,8 +162,8 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @return true if the new position is ok
      */
     private fun validObstacleLocation(obstacle: Location): Boolean {
-        if (obstacle.x >= 0 && obstacle.x < width) {
-            if (obstacle.y >= 0 && obstacle.y < height) {
+        if (obstacle.x in 0..(width - 1)) {
+            if (obstacle.y in 0..(height - 1)) {
                 return true
             }
         }
