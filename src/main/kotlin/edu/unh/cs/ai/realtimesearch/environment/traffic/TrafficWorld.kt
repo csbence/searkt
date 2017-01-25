@@ -99,7 +99,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the state under question of containing the obstacle location
      */
     private fun containsLocation(candidateLocation: Location, state: TrafficWorldState) : Boolean {
-        return state.obstacles.filter { candidateLocation.x == it.x && candidateLocation.y == it.y }.isNotEmpty()
+        return state.obstacles.any{ candidateLocation.x == it.x && candidateLocation.y == it.y }
     }
 
     /**

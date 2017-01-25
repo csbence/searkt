@@ -72,13 +72,12 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                     currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
                     actions.add(it.action) // Save the action
                     timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
-//                    logger.info("\n" + domain.print(currentState))
 
                 }
             }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
-
+            println(domain.print(currentState))
             validateInteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
