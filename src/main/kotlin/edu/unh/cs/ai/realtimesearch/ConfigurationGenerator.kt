@@ -6,9 +6,9 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.DYNAMIC
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.STATIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
@@ -267,22 +267,22 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
 
     when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
-            for (timeBoundType in TimeBoundType.values()) {
+            for (timeBoundType in LookaheadType.values()) {
 
                 when (timeBoundType) {
                     STATIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
                         ))
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
                     DYNAMIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
@@ -294,7 +294,7 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
             for (lookaheadDepthLimit in lookaheadLimits) {
                 configurations.add(mutableMapOf<String, Any?>(
                         Configurations.LOOKAHEAD_DEPTH_LIMIT.toString() to lookaheadDepthLimit,
-                        Configurations.TIME_BOUND_TYPE.toString() to STATIC,
+                        Configurations.LOOKAHEAD_TYPE.toString() to STATIC,
                         Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
                 ))
             }

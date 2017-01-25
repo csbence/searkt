@@ -4,6 +4,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
  * Valid experiment configuration keys.
  *
  * @author Mike Bogochow
+ * @author Bence Cserna (bence@cserna.net)
  * @since 4/3/16
  */
 enum class Configurations {
@@ -17,7 +18,7 @@ enum class Configurations {
     ACTION_DURATION         ("actionDuration"),
     TERMINATION_TYPE        ("terminationType"),
     // Real-time search configurations
-    TIME_BOUND_TYPE         ("timeBoundType"),
+    LOOKAHEAD_TYPE          ("lookaheadType"),
     COMMITMENT_STRATEGY     ("commitmentStrategy"),
     LOOKAHEAD_DEPTH_LIMIT   ("lookaheadDepthLimit"),
     // Anytime search configurations
