@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
@@ -155,7 +155,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
@@ -200,7 +200,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TimeTerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
@@ -364,7 +364,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * a better table of heuristics.
      *
      */
-    private fun dijkstra(terminationChecker: TimeTerminationChecker) {
+    private fun dijkstra(terminationChecker: TerminationChecker) {
         logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++

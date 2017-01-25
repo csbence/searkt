@@ -20,11 +20,14 @@ import edu.unh.cs.ai.realtimesearch.environment.traffic.VehicleWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.MutableTimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.*
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
@@ -205,7 +208,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeVehicle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream):
-    ExperimentResult {
+            ExperimentResult {
         val vehicleWorldInstance = VehicleWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
         return executeDomain(experimentConfiguration, vehicleWorldInstance.domain, vehicleWorldInstance.initialState)
     }
@@ -277,13 +280,18 @@ object ConfigurationExecutor {
         return rtsExperiment.run()
     }
 
-    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TimeTerminationChecker {
-        val timeBoundTypeString = experimentConfiguration.getTypedValue<String>(Configurations.TIME_BOUND_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.TIME_BOUND_TYPE}\" is not found. Please add it to the configuration.")
-        val timeBoundType: TimeBoundType = TimeBoundType.valueOf(timeBoundTypeString)
+    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {
+        val lookaheadTypeString = experimentConfiguration.getTypedValue<String>(Configurations.LOOKAHEAD_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.LOOKAHEAD_TYPE}\" is not found. Please add it to the configuration.")
+        val lookaheadType = LookaheadType.valueOf(lookaheadTypeString)
+        val terminationTypeString = experimentConfiguration.getTypedValue<String>(Configurations.TERMINATION_TYPE.toString()) ?: throw InvalidFieldException("\"${Configurations.TERMINATION_TYPE}\" is not found. Please add it to the configuration.")
+        val terminationType = TerminationType.valueOf(terminationTypeString)
 
-        return when (timeBoundType) {
-            TimeBoundType.DYNAMIC -> MutableTimeTerminationChecker()
-            TimeBoundType.STATIC -> StaticTimeTerminationChecker(experimentConfiguration.getTypedValue<Long>(Configurations.ACTION_DURATION.toString()) ?: throw  InvalidFieldException("\"${Configurations.ACTION_DURATION}\" is not found. Please add it the the experiment configuration."))
+        return when {
+            lookaheadType == DYNAMIC && terminationType == TIME -> MutableTimeTerminationChecker()
+            lookaheadType == DYNAMIC && terminationType == EXPANSION -> DynamicExpansionTerminationChecker()
+            lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(experimentConfiguration.actionDuration)
+            lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(experimentConfiguration.actionDuration)
+            else -> throw MetronomeException("Invalid termination checker configuration")
         }
     }
 

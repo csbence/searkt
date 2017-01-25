@@ -106,12 +106,14 @@ Actions: up, down, left, right
 * time limit (`"timeLimit" : Long`)
 * action duration (`"actionDuration" : Long`)
     - Must be greater than zero
-* termination type (`"terminationType" : "time"`)
+* termination type (`"terminationType" : { "TIME" | "EXPANSION"`)
     - Time is the only supported termination type
 
 ### Real-time search
 
-* time bound type (`"timeBoundType" : { "STATIC" | "DYNAMIC" }`)
+* time bound type (`"lookaheadType" : { "STATIC" | "DYNAMIC" }`)
+    - The original lookahead bound will be used for every iteration if static lookahead is selected.
+    - The available duration for planning depends on the duration of the committed actions when dynamic lookahead is used. 
 * commitment strategy (`"commitmentStrategy" : { "SINGLE" | "MULTIPLE" }`)
 
 ### Anytime search

@@ -4,7 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -28,7 +28,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         depthLimit = 20
     }
 
-    override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         val successors = domain.successors(state)
         val unsortedSuccessors = evaluateSuccessors(successors, terminationChecker)
 
@@ -63,7 +63,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         return Collections.singletonList(action)
     }
 
-    private fun evaluateSuccessors(successors: List<SuccessorBundle<StateType>>, terminationChecker: TimeTerminationChecker): List<SuccessorHeuristicPair<StateType>> {
+    private fun evaluateSuccessors(successors: List<SuccessorBundle<StateType>>, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>> {
         var successorHeuristicPairs = heuristicLookahead(successors, 0, terminationChecker) ?: throw InsufficientTerminationCriterionException("Not enough time to calculate the successor f values.")
 
         for (depth in 1..depthLimit) {
@@ -78,7 +78,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
      *
      * Uses IDA* to augment the heuristic value of the given node.
      */
-    private fun heuristicLookahead(successors: List<SuccessorBundle<StateType>>, depth: Int, terminationChecker: TimeTerminationChecker): List<SuccessorHeuristicPair<StateType>>? {
+    private fun heuristicLookahead(successors: List<SuccessorBundle<StateType>>, depth: Int, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>>? {
         val successorHeuristicPairs = arrayListOf<SuccessorHeuristicPair<StateType>>()
 
         for (successor in successors) {
@@ -92,7 +92,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
     /**
      * Depth limited heuristic lookahead.
      */
-    private fun heuristicLookahead(successor: SuccessorBundle<StateType>, depthLimit: Int, terminationChecker: TimeTerminationChecker): Double? {
+    private fun heuristicLookahead(successor: SuccessorBundle<StateType>, depthLimit: Int, terminationChecker: TerminationChecker): Double? {
         if (terminationChecker.reachedTermination()) {
             return null
         }
@@ -106,7 +106,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
      *
      * @return Best backed up heuristic value on the horizon, or the goal's backed up value if found.
      */
-    private fun alphaPruningLookahead(sourceState: StateType, depthLimit: Int, terminationChecker: TimeTerminationChecker): Double? {
+    private fun alphaPruningLookahead(sourceState: StateType, depthLimit: Int, terminationChecker: TerminationChecker): Double? {
         if (domain.isGoal(sourceState)) {
             return 0.0
         }

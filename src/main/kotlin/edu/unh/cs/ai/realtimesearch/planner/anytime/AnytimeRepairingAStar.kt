@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.anytime
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
@@ -72,7 +72,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    override fun selectAction(startState: StateType, terminationChecker: TimeTerminationChecker): List<Action?> {
+    override fun selectAction(startState: StateType, terminationChecker: TerminationChecker): List<Action?> {
         //Solving backwards, so flip start and goal states
         val goals = domain.getGoals()
 

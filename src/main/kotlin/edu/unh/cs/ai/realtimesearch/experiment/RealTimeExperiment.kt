@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
@@ -37,7 +38,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                                                        val planner: RealTimePlanner<StateType>,
                                                        val domain: Domain<StateType>,
                                                        val initialState: StateType,
-                                                       val terminationChecker: TimeTerminationChecker) : Experiment() {
+                                                       val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
     private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
@@ -59,7 +60,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
-                terminationChecker.init(timeBound)
+                terminationChecker.resetTo(timeBound)
 
                 actionList = planner.selectAction(currentState, terminationChecker);
 
@@ -113,10 +114,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 ""
             }
 
-            throw RuntimeException("Select action did not return actions in the given time bound: ${terminationChecker.timeLimit}. The planner is confused. $extras")
+            throw RuntimeException("Select action did not return actions in the given bound. The planner is confused. $extras")
         }
 
         // Check if the algorithm satisfies the real-time bound
+        if (terminationChecker !is TimeTerminationChecker) return
         if (terminationChecker.timeLimit < iterationNanoTime) {
             val extras = if (planner is LssLrtaStarPlanner) {
                 "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
