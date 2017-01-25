@@ -82,7 +82,7 @@ object StartIteration : Event() {
 }
 
 private fun <StateType : State<StateType>> stateToJson(state: StateType): String = when (state) {
-    is RaceTrackState -> "{\"x\": ${state.x}, \"y\": ${state.y}, \"xs\": ${state.x_speed}, \"ys\": ${state.y_speed}}"
+    is RaceTrackState -> "{\"x\": ${state.x}, \"y\": ${state.y}, \"xs\": ${state.dX}, \"ys\": ${state.dY}}"
     is GridWorldState -> "{\"x\": ${state.agentLocation.x}, \"y\": ${state.agentLocation.y}}"
     is VacuumWorldState -> "{\"x\": ${state.agentLocation.x}, \"y\": ${state.agentLocation.y}}"
     else -> TODO("")
