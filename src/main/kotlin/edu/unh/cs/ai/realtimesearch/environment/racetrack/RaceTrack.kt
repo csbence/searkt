@@ -26,7 +26,7 @@ import java.lang.Math.*
 class RaceTrack(val width: Int,
                 val height: Int,
                 val track: Set<Location>,
-                val finish_line: Set<Location>,
+                val finishLine: Set<Location>,
                 val actionDuration: Long) : Domain<RaceTrackState> {
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
@@ -89,35 +89,23 @@ class RaceTrack(val width: Int,
     * */
     override fun heuristic(state: RaceTrackState) = distance(state) * actionDuration
 
-    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double {
-        val h = distance(startState, endState)
-        if (maxXSpeed > maxYSpeed)
-            return h / maxXSpeed * actionDuration
-        return h / maxYSpeed * actionDuration
-    }
+    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = distance(startState, endState) * actionDuration
 
     /**
      * Calculates the minimum number of steps to reach the closest goal position.
      */
     override fun distance(state: RaceTrackState): Double {
-        val distanceFunction: (Location) -> Int = { (x, y) -> abs(state.x - x) / maxXSpeed + abs(state.y - y) / maxYSpeed }
-        return distanceFunction(finish_line.minBy(distanceFunction)!!).toDouble()
-        // TODO: would it make sense to have an ArrayList version of finish_line on hand for optimal iteration?
+        val distanceFunction: (Location) -> Double = { (x, y) -> abs(state.x - x) / maxXSpeed.toDouble() + abs(state.y - y) / maxYSpeed.toDouble() }
+        return distanceFunction(finishLine.minBy(distanceFunction)!!)
+        // TODO: would it make sense to have an ArrayList version of finishLine on hand for optimal iteration?
     }
 
-    // Distance is the max(min(dX), min(dy))
-    fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
-        val xdist = abs(startState.x - endState.x)
-        val ydist = abs(startState.y - endState.y)
-        TODO()
-
-
-        return Math.max(xdist.toDouble(), ydist.toDouble())
-    }
+    fun distance(startState: RaceTrackState, endState: RaceTrackState) =
+            abs(startState.x - endState.x) / maxXSpeed.toDouble() + abs(startState.y - endState.y) / maxYSpeed.toDouble()
 
     override fun isGoal(state: RaceTrackState): Boolean {
         val newLocation = Location(state.x, state.y)
-        return newLocation in finish_line
+        return newLocation in finishLine
     }
 
     /**
@@ -132,7 +120,7 @@ class RaceTrack(val width: Int,
         for (h in 1..height) {
             for (w in 1..width) {
                 val charCell = when (Location(w, h)) {
-                    in finish_line -> '$'
+                    in finishLine -> '$'
                     in track -> '*'
                     else -> ' '
                 }
@@ -146,7 +134,7 @@ class RaceTrack(val width: Int,
 
     override fun getGoals(): List<RaceTrackState> {
         val list: MutableList<RaceTrackState> = arrayListOf()
-        for (it in finish_line) {
+        for (it in finishLine) {
             for (xS in 0..maxXSpeed) {
                 for (yS in 0..maxYSpeed) {
                     if (xS == 0 && yS == 0) {

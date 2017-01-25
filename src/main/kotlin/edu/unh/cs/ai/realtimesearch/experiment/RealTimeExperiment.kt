@@ -62,7 +62,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.resetTo(timeBound)
 
-                actionList = planner.selectAction(currentState, terminationChecker);
+                actionList = planner.selectAction(currentState, terminationChecker)
 
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
@@ -72,7 +72,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 actionList.forEach {
                     currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
                     actions.add(it.action) // Save the action
-                    timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
+                    timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
 
                 }
             }
@@ -103,7 +103,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
-                actions = actions.map { it.toString() })
+                actions = actions.map(Action::toString))
     }
 
     private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {

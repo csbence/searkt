@@ -15,8 +15,8 @@ import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobot
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertiaIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.traffic.VehicleWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
@@ -24,8 +24,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadT
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.*
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.*
 import edu.unh.cs.ai.realtimesearch.planner.Planners
@@ -291,6 +290,7 @@ object ConfigurationExecutor {
             lookaheadType == DYNAMIC && terminationType == EXPANSION -> DynamicExpansionTerminationChecker()
             lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(experimentConfiguration.actionDuration)
             lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(experimentConfiguration.actionDuration)
+            terminationType == UNLIMITED -> FakeTerminationChecker()
             else -> throw MetronomeException("Invalid termination checker configuration")
         }
     }
