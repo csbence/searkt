@@ -6,7 +6,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
@@ -27,7 +28,7 @@ private val visualizerParameters = mutableListOf<String>()
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
-    if (args.size == 0) {
+    if (args.isEmpty()) {
         // Default configuration
         //                val map = "input/racetrack/hansen-bigger.track"
         //        val map = "input/pointrobot/squiggle.pr"
@@ -40,15 +41,17 @@ fun main(args: Array<String>) {
                 Domains.RACETRACK.toString(),
                 rawDomain,
                 Planners.LSS_LRTA_STAR.toString(),
-                "time")
+                TerminationType.EXPANSION.toString())
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
-        manualConfiguration[Configurations.TIME_BOUND_TYPE.toString()] = TimeBoundType.DYNAMIC.toString()
+        manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.DYNAMIC.toString()
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = map
+
+        // Domain specific configurations
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
@@ -222,7 +225,7 @@ private fun createCommandLineMenu(args: Array<String>) {
                 if (values.size != 2) {
                     visualizerParameters.add("--$arg")
                 } else {
-                    var key: String = values[0]
+                    val key: String = values[0]
                     val value = values[1]
 
                     visualizerParameters.add("--$key")
