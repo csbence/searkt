@@ -52,7 +52,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     fun isLegalLocation(state: TrafficWorldState, newLocation: Location): Boolean {
         if (newLocation.x in 0..(width - 1)) {
             if (newLocation.y in 0..(height - 1)) {
-                if (!containsLocation(Location(x = newLocation.x, y = newLocation.y), state)) {
+                if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), state)) {
                     return true
                 }
             }
@@ -98,7 +98,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param candidateLocation possible location of the obstacle
      * @param state the state under question of containing the obstacle location
      */
-    private fun containsLocation(candidateLocation: Location, state: TrafficWorldState) : Boolean {
+    private fun containsObstacle(candidateLocation: Location, state: TrafficWorldState) : Boolean {
         return state.obstacles.any{ candidateLocation.x == it.x && candidateLocation.y == it.y }
     }
 
@@ -119,7 +119,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
                     in bunkers -> '$'
                     else -> '_'
                 }
-                if (containsLocation(Location(x,y), state)) {
+                if (containsObstacle(Location(x,y), state)) {
                   character = '#'
                 }
                 output.append(character)
