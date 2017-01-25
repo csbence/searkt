@@ -175,6 +175,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 aStarPopCounter++
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
             }
         }
 
@@ -203,6 +204,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
+
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {

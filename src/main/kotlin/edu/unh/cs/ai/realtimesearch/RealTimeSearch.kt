@@ -44,14 +44,15 @@ fun main(args: Array<String>) {
                 TerminationType.EXPANSION.toString())
 
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = NANOSECONDS.convert(200, MILLISECONDS)
-        manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.DYNAMIC.toString()
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 100L
+        manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.STATIC.toString()
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
-        manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
 
+
         // Domain specific configurations
+        manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
@@ -118,8 +119,8 @@ private fun createCommandLineMenu(args: Array<String>) {
     val algorithmOption = Option("a", "alg-name", true, "The algorithm name")
     val terminationTypeOption = Option("t", "term-type", true, "The termination type")
     val outFileOption = Option("o", "outfile", true, "Outfile of experiments")
-    val extraOption = Option ("e", "extra", true, "Extra configuration option key/value pairs")
-    val visualizerOption = Option ("v", "visualizer", true, "Visualizer configuration key/value pairs")
+    val extraOption = Option("e", "extra", true, "Extra configuration option key/value pairs")
+    val visualizerOption = Option("v", "visualizer", true, "Visualizer configuration key/value pairs")
 
     // Configuration file options
     val fileOptionGroup = OptionGroup()

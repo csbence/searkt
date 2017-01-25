@@ -10,9 +10,9 @@ import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
  *
  * Created by doylew on 1/17/17.
  */
-data class TrafficWorldState(val agentLocation: Location, var obstacles: Set<MovingObstacle>) : State<TrafficWorldState> {
+data class TrafficWorldState(val agentLocation: Location, val obstacles: Set<MovingObstacle>) : State<TrafficWorldState> {
     override fun hashCode(): Int {
-        return calculateHashCode()
+        return calculateHashCode() xor obstacles.hashCode()
     }
 
     private fun calculateHashCode(): Int {

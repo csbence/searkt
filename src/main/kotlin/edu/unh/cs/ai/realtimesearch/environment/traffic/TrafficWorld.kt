@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.traffic
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -41,6 +42,17 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         }
         return successors
     }
+//
+//    override fun transition(sourceState: TrafficWorldState, action: Action): TrafficWorldState? {
+//        val movedObstacles = moveObstacles(sourceState.obstacles)
+//
+//        if (action == TrafficWorldAction.UP) {
+//           val candidateState = TrafficWorldState(Location(sourceState.agentLocation.x, sourceState.agentLocation.y -1), movedObstacles)
+//            if (isLegalLocation(candidateState)) {
+//                return candidateState
+//            }
+//        }
+//    }
 
     /**
      * checks a given state is out-of-bounds of the world
@@ -53,7 +65,9 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         if (newLocation.x in 0..(width - 1)) {
             if (newLocation.y in 0..(height - 1)) {
                 if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), state)) {
-                    return true
+                    if (state.agentLocation != newLocation) {
+                        return true
+                    }
                 }
             }
         }
