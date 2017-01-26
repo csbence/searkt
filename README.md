@@ -6,7 +6,6 @@
 
 ## TODO
 
-* expansion termination (Bence)
 * implement foggy racetrack domain
 * implement / validate traffic domain (Jordan)
 * migrate s0 s1 (Bence / Will)

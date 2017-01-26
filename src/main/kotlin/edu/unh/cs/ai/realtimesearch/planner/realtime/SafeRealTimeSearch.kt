@@ -13,20 +13,12 @@ import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 
 /**
- * Local Search Space Learning Real Time Search A*, a type of RTS planner.
- *
- * Runs A* until out of resources, then selects action up till the most promising state.
- * While executing that plan, it will:
- * - update all the heuristic values along the path (dijkstra)
- * - Run A* from the expected destination state
- *
- * This loop continue until the goal has been found
+ * @author Bence Cserna (bence@cserna.net)
  */
-class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
@@ -70,7 +62,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
-    private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
+    private val fValueComparator = java.util.Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -80,7 +72,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val heuristicComparator = Comparator<Node<StateType>> { lhs, rhs ->
+    private val heuristicComparator = java.util.Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.heuristic < rhs.heuristic -> -1
             lhs.heuristic > rhs.heuristic -> 1
@@ -117,7 +109,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
@@ -142,7 +134,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         // Exploration phase
-        var plan: List<ActionBundle>? = null
+        var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
 
@@ -221,7 +213,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 successorNode.apply {
                     iteration = iterationCounter
                     predecessors.clear()
-                    cost = MAX_VALUE
+                    cost = Long.MAX_VALUE
                     open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
@@ -277,7 +269,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
-                    cost = MAX_VALUE,
+                    cost = Long.MAX_VALUE,
                     iteration = iterationCounter,
                     open = false)
 
@@ -372,8 +364,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
-        val actions = ArrayList<ActionBundle>(1000)
+    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+        val actions = java.util.ArrayList<RealTimePlanner.ActionBundle>(1000)
         var currentNode = targetNode
 
         logger.debug { "Extracting plan" }
@@ -384,7 +376,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         // keep on pushing actions to our queue until source state (our root) is reached
         do {
-            actions.add(ActionBundle(currentNode.action, currentNode.actionCost))
+            actions.add(RealTimePlanner.ActionBundle(currentNode.action, currentNode.actionCost))
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
@@ -410,5 +402,4 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         openList.add(node)
         node.open = true
     }
-
 }
