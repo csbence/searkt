@@ -402,4 +402,35 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         openList.add(node)
         node.open = true
     }
+
+    private fun isComfortable(state: StateType): Boolean {
+        data class Node(val state: StateType, val safeDistance: Pair<Int, Int> )
+        val nodeComparator = java.util.Comparator<Node> { (lhsState, lhsDistance), (rhsState, rhsDistance) ->
+            when {
+                lhsDistance.first < rhsDistance.first -> -1
+                lhsDistance.first > rhsDistance.first -> 1
+                lhsDistance.second < rhsDistance.second -> 1
+                lhsDistance.second > rhsDistance.second -> 1
+//                lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
+//                lhs.cost < rhs.cost -> 1
+                else -> 0
+            }
+        }
+
+        val priorityQueue = PriorityQueue<Node>(nodeComparator)
+        priorityQueue.add(Node(state, domain.safeDistance(state)))
+
+        while (priorityQueue.isNotEmpty()) {
+            val nextChild = priorityQueue.poll()
+            if (domain.isSafe(nextChild.state)) {
+                return true
+            }
+            // TODO: check for termination
+
+            domain.successors(nextChild.state).mapTo(priorityQueue, {Node(it.state, domain.safeDistance(it.state))})
+
+        }
+
+        return false
+    }
 }
