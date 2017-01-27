@@ -403,34 +403,38 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         node.open = true
     }
 
-    private fun isComfortable(state: StateType): Boolean {
-        data class Node(val state: StateType, val safeDistance: Pair<Int, Int> )
-        val nodeComparator = java.util.Comparator<Node> { (lhsState, lhsDistance), (rhsState, rhsDistance) ->
-            when {
-                lhsDistance.first < rhsDistance.first -> -1
-                lhsDistance.first > rhsDistance.first -> 1
-                lhsDistance.second < rhsDistance.second -> 1
-                lhsDistance.second > rhsDistance.second -> 1
-//                lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
-//                lhs.cost < rhs.cost -> 1
-                else -> 0
-            }
+}
+
+fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>): Boolean {
+    data class Node(val state: StateType, val safeDistance: Pair<Int, Int>)
+
+    val nodeComparator = java.util.Comparator<Node> { (lhsState, lhsDistance), (rhsState, rhsDistance) ->
+        when {
+            lhsDistance.first < rhsDistance.first -> -1
+            lhsDistance.first > rhsDistance.first -> 1
+            lhsDistance.second < rhsDistance.second -> -1
+            lhsDistance.second > rhsDistance.second -> 1
+            else -> 0
         }
-
-        val priorityQueue = PriorityQueue<Node>(nodeComparator)
-        priorityQueue.add(Node(state, domain.safeDistance(state)))
-
-        while (priorityQueue.isNotEmpty()) {
-            val nextChild = priorityQueue.poll()
-            if (domain.isSafe(nextChild.state)) {
-                return true
-            }
-            // TODO: check for termination
-
-            domain.successors(nextChild.state).mapTo(priorityQueue, {Node(it.state, domain.safeDistance(it.state))})
-
-        }
-
-        return false
     }
+
+    val priorityQueue = PriorityQueue<Node>(nodeComparator)
+    val discoveredStates = hashSetOf<StateType>()
+    priorityQueue.add(Node(state, domain.safeDistance(state)))
+
+    while (priorityQueue.isNotEmpty() && !terminationChecker.reachedTermination()) {
+        val nextChild = priorityQueue.poll() ?: return false
+
+        if (domain.isSafe(nextChild.state)) {
+            return true
+        }
+
+        terminationChecker.notifyExpansion()
+        domain.successors(nextChild.state)
+                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
+                .onEach { discoveredStates += it.state }
+                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
+    }
+
+    return false
 }
