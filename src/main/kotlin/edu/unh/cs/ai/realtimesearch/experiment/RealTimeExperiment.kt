@@ -76,10 +76,10 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
                 }
             }
-            println("${actionList} action taken.")
+//            println("${actionList} action taken.")
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
-//            println(domain.print(currentState))
-//            Thread.sleep(1000)
+            println(domain.print(currentState))
+            Thread.sleep(250)
             validateInteraction(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime

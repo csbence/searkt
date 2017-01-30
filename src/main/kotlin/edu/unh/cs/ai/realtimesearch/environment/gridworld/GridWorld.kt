@@ -16,6 +16,10 @@ import org.slf4j.LoggerFactory
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
+    override fun isSafe(state: GridWorldState): Boolean {
+        return false
+    }
+
     /**
      * Part of the Domain interface.
      */
