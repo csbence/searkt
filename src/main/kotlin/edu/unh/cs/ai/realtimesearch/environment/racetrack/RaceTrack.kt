@@ -200,7 +200,7 @@ class RaceTrack(val width: Int,
     /**
      * The agent is safe when its velocity is zero.
      */
-    override fun isSafe(state: RaceTrackState): Boolean = state.dX == 0 && state.dY == 0
+    override fun isSafe(state: RaceTrackState): Boolean = (state.dX == 0 && state.dY == 0) || isGoal(state)
 
     /**
      * Assuming that the acceleration of the agent is 1. To reach a safe state takes at least as many steps as the
