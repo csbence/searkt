@@ -117,7 +117,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     }
 
     /**
-     * visualization ASCII sssstyle
+     * visualization ASCII style
      * @ == agent
      * # == obstacle
      * $ == bunkers

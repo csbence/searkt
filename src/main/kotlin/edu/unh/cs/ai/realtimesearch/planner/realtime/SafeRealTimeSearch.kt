@@ -431,9 +431,9 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 
         terminationChecker.notifyExpansion()
         domain.successors(nextChild.state)
-                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
-                .onEach { discoveredStates += it.state }
-                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
+//                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
+//                .onEach { discoveredStates += it.state }
+//                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
     }
 
     return false

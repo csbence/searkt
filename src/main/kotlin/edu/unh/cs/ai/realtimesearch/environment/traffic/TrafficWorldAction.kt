@@ -9,13 +9,14 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  * Created by doylew on 1/17/17.
  */
 enum class TrafficWorldAction(val index: Int) : Action {
-    LEFT(0), DOWN(1), UP(2), RIGHT(3);
+    LEFT(0), DOWN(1), UP(2), RIGHT(3), WAIT(4);
 
     private val relativeLocations = arrayOf(
             Location(-1, 0),
             Location(0, -1),
             Location(0, 1),
-            Location(1,0)
+            Location(1,0),
+            Location(0,0)
     )
 
     companion object {
