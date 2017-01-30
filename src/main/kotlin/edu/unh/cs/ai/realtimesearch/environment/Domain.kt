@@ -77,6 +77,7 @@ interface Domain<State> {
      * @return true if the state or any of the descendant states is safe, else false.
      */
     fun isSafe(state: State): Boolean = TODO()
+    fun safeDistance(state: State): Pair<Int, Int> = TODO()
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)

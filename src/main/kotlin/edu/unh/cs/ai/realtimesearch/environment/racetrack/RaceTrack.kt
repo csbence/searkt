@@ -95,13 +95,15 @@ class RaceTrack(val width: Int,
      * Calculates the minimum number of steps to reach the closest goal position.
      */
     override fun distance(state: RaceTrackState): Double {
-        val distanceFunction: (Location) -> Double = { (x, y) -> abs(state.x - x) / maxXSpeed.toDouble() + abs(state.y - y) / maxYSpeed.toDouble() }
+        val distanceFunction: (Location) -> Double = { (x, y) -> max(abs(state.x - x) / maxXSpeed.toDouble(), abs(state.y - y) / maxYSpeed.toDouble()) }
         return distanceFunction(finishLine.minBy(distanceFunction)!!)
         // TODO: would it make sense to have an ArrayList version of finishLine on hand for optimal iteration?
     }
 
-    fun distance(startState: RaceTrackState, endState: RaceTrackState) =
-            abs(startState.x - endState.x) / maxXSpeed.toDouble() + abs(startState.y - endState.y) / maxYSpeed.toDouble()
+    fun distance(startState: RaceTrackState, endState: RaceTrackState) = max(
+            abs(startState.x - endState.x) / maxXSpeed.toDouble(),
+            abs(startState.y - endState.y) / maxYSpeed.toDouble()
+    )
 
     override fun isGoal(state: RaceTrackState): Boolean {
         val newLocation = Location(state.x, state.y)
@@ -191,4 +193,19 @@ class RaceTrack(val width: Int,
         }
         return predecessors
     }
+
+
+    /**
+     * The agent is safe when its velocity is zero.
+     */
+    override fun isSafe(state: RaceTrackState): Boolean = state.dX == 0 && state.dY == 0
+
+    /**
+     * Assuming that the acceleration of the agent is 1. To reach a safe state takes at least as many steps as the
+     * maximum velocity of the agent over all dimensions.
+     *
+     * Int = max(abs(state.dX), abs(state.dY)
+     * @return returns a lower bound on the number of steps to reach a safe state.
+     */
+    override fun safeDistance(state: RaceTrackState): Pair<Int, Int> = max(abs(state.dX), abs(state.dY)) to min(abs(state.dX), abs(state.dY))
 }

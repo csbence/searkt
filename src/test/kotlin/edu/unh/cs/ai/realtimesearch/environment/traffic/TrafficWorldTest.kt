@@ -1,16 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.environment.traffic
 
-import org.junit.Test
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
+import org.junit.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * basic traffic world tests
  * Created by doylew on 1/18/17.
  */
-class VehicleWorldTest {
+class TrafficWorldTest {
 
-    val world = TrafficWorld(10, 10, emptySet(),Location(9, 9), 1)
+    val world = TrafficWorld(10, 10, emptySet(), Location(9, 9), 1)
 
     @Test
     fun testGoalState() {
@@ -42,6 +44,30 @@ class VehicleWorldTest {
             }
         }
     }
+
+    @Test
+    fun testDirectSuccessorConsistency() {
+        val state = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3, 3, 1, 1), MovingObstacle(3, 5, 2, 0)))
+        val successors1 = world.successors(state)
+        val successors2 = world.successors(state)
+
+        // Make sure that the successor generation is consistent
+        assertTrue { successors1.all { it in successors2 } }
+        assertTrue { successors2.all { it in successors1 } }
+    }
+
+    @Test
+    fun testIndirectSuccessorConsistency() {
+        val state = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3, 3, 1, 1), MovingObstacle(3, 5, 2, 0)))
+        var stateA: TrafficWorldState = state
+        var stateB: TrafficWorldState = state
+
+        (0..1000).forEach { stateA = world.successors(stateA).first().state }
+        (0..1000).forEach { stateB = world.successors(stateB).first().state }
+
+        assertTrue { stateA == stateB }
+    }
+
 
 //    @Test
 //    fun testVisualizeObstacles() {
