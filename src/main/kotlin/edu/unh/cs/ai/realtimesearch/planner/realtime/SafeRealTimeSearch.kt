@@ -49,7 +49,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
-                return state.equals(other.state)
+                return state == other.state
             }
             return false
         }
@@ -121,7 +121,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         if (domain.isGoal(state)) {
             // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
+            logger.warn { "selectAction: The goal state is already found." }
             return emptyList()
         }
 
