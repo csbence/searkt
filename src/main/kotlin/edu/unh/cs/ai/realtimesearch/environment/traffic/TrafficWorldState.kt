@@ -32,7 +32,7 @@ data class TrafficWorldState(val agentLocation: Location, val obstacles: Set<Mov
 
     companion object {
         private fun sameObstacles(trafficWorldState: TrafficWorldState, other: Any?) =
-                other is TrafficWorldState &&
-                        other.obstacles.all { trafficWorldState.obstacles.contains(it) } }
+                other is TrafficWorldState && other.obstacles.hashCode() == trafficWorldState.obstacles.hashCode() }
+//                        other.obstacles.all { trafficWorldState.obstacles.contains(it) } }
 
 }

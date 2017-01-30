@@ -92,7 +92,7 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
         }
     }
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
@@ -309,7 +309,7 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent != null) {
+            while (currentParent !== currentParent?.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }
@@ -317,9 +317,9 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
             val predecessors = safeNode.predecessors
             (0..predecessors.size -1).forEach {
                 var currentPredecessor: Node<StateType>? = predecessors[it].node
-                while (currentPredecessor != null) {
-                    currentPredecessor.safe = safeNode.safe
-                    currentPredecessor = currentPredecessor.parent
+                while (currentPredecessor !== currentPredecessor?.parent) {
+                    currentPredecessor?.safe = safeNode.safe
+                    currentPredecessor = currentPredecessor?.parent
                 }
             }
             safeNodes.remove(safeNode)
@@ -421,9 +421,9 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
             topOfOpen = openList.pop()
             // check if the top level action is safe
             var currentParent = topOfOpen?.parent
-            if (currentParent != null) {
-                while (currentParent?.parent?.parent != null) {
-                    currentParent = currentParent.parent
+            if (currentParent !== currentParent?.parent) {
+                while (currentParent?.parent?.parent !== currentParent?.parent?.parent) {
+                    currentParent = currentParent?.parent
                     // find the top level action node
                 }
             }

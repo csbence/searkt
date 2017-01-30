@@ -21,6 +21,18 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     }
 
     /**
+     * part of the Domain interface - isSafe function
+     *
+     * predicate that tells whether a state is safe or not
+     * in Traffic this means the agent is in a bunker
+     * @param state the state under consideration
+     */
+
+    override fun isSafe(state: TrafficWorldState) : Boolean {
+       return bunkers.any{it.x == state.agentLocation.x && it.y == state.agentLocation.y}
+    }
+
+    /**
      * part of the Domain interface - successor function
      * @param state the state for successor calculation
      */
@@ -31,7 +43,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         for (action in TrafficWorldAction.values()) {
             val newLocation = state.agentLocation + TrafficWorldAction.getRelativeLocation(action)
 
-            if (isLegalLocation(state, newLocation, newObstacles)) {
+            if (isLegalLocation(newLocation, newObstacles)) {
                 successors.add(
                         SuccessorBundle(
                                 TrafficWorldState(newLocation, newObstacles),
@@ -62,7 +74,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param newLocation the test newLocation
      * @return true if newLocation is legal false otherwise
      */
-    fun isLegalLocation(state: TrafficWorldState, newLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
+    fun isLegalLocation(newLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
         if (newLocation.x in 0..(width - 1)) {
             if (newLocation.y in 0..(height - 1)) {
                 if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), newObstacles)) {
@@ -109,7 +121,6 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * contained within the obstacles for printing
      * and legal location checking
      * @param candidateLocation possible location of the obstacle
-     * @param state the state under question of containing the obstacle location
      */
     private fun containsObstacle(candidateLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
         return newObstacles.any { candidateLocation.x == it.x && candidateLocation.y == it.y }
@@ -184,4 +195,5 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         }
         return false
     }
+
 }

@@ -92,11 +92,11 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
         }
     }
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000,1.toFloat()).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fValueComparator)
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator)
 
     private var rootState: StateType? = null
 
@@ -309,7 +309,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent != null) {
+            while (currentParent !== currentParent?.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }
@@ -412,9 +412,9 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
             topOfOpen = openList.pop()
             // check if the top level action is safe
             var currentParent = topOfOpen?.parent
-            if (currentParent != null) {
-                while (currentParent?.parent?.parent != null) {
-                    currentParent = currentParent.parent
+            if (currentParent !== currentParent?.parent) {
+                while (currentParent?.parent?.parent !== currentParent?.parent?.parent) {
+                    currentParent = currentParent?.parent
                     // find the top level action node
                 }
             }

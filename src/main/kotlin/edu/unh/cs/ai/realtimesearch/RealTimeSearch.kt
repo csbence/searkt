@@ -40,18 +40,18 @@ fun main(args: Array<String>) {
         manualConfiguration = GeneralExperimentConfiguration(
                 Domains.TRAFFIC.toString(),
                 rawDomain,
-                Planners.LSS_LRTA_STAR.toString(),
+                Planners.S_ONE.toString(),
                 TerminationType.EXPANSION.toString())
 
-        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 100L
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 1000L
         manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.STATIC.toString()
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
-        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
+        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(15, MINUTES)
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
 
 
         // Domain specific configurations
+        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0

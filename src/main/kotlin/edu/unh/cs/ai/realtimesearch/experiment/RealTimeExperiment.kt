@@ -76,11 +76,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
                 }
             }
-
+            println("${actionList} action taken.")
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
-            println(domain.print(currentState))
-            Thread.sleep(1000)
-            validateInteration(actionList, iterationNanoTime)
+//            println(domain.print(currentState))
+//            Thread.sleep(1000)
+            validateInteraction(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
 
@@ -107,7 +107,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 actions = actions.map(Action::toString))
     }
 
-    private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
+    private fun validateInteraction(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
         if (actionList.isEmpty()) {
             val extras = if (planner is LssLrtaStarPlanner) {
                 "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"

@@ -408,7 +408,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>): Boolean {
     data class Node(val state: StateType, val safeDistance: Pair<Int, Int>)
 
-    val nodeComparator = java.util.Comparator<Node> { (lhsState, lhsDistance), (rhsState, rhsDistance) ->
+    val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
         when {
             lhsDistance.first < rhsDistance.first -> -1
             lhsDistance.first > rhsDistance.first -> 1
@@ -431,9 +431,9 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 
         terminationChecker.notifyExpansion()
         domain.successors(nextChild.state)
-//                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
-//                .onEach { discoveredStates += it.state }
-//                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
+                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
+                .onEach { discoveredStates += it.state }
+                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
     }
 
     return false
