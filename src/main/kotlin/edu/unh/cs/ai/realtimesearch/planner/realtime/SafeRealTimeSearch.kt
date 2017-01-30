@@ -29,6 +29,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         /** Item index in the open list. */
         override var index: Int = -1
+        var safe = false
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
@@ -49,7 +50,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
-                return state.equals(other.state)
+                return state == other.state
             }
             return false
         }
@@ -121,7 +122,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         if (domain.isGoal(state)) {
             // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
+            logger.warn { "selectAction: The goal state is already found." }
             return emptyList()
         }
 
@@ -139,7 +140,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             val targetNode = aStar(state, terminationChecker)
 
             plan = extractPlan(targetNode, state)
-            rootState = targetNode.state
+            rootState = targetNode?.state
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
@@ -152,9 +153,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType>? {
         // actual core steps of A*, building the tree
         initializeAStar()
+        var lastSafeNode: Node<StateType>? = null
 
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
         nodes[state] = node
@@ -162,11 +164,24 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
+
+        val random = Random()
+
         val expandedNodes = measureInt({ expandedNodeCount }) {
             while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
                 aStarPopCounter++
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+
+                // Update best safe node
+                if (lastSafeNode == null || random.nextDouble() < 0.01) {
+                    val topNode = openList.peek()
+                    if (topNode != null && (topNode.safe || isComfortable(topNode.state, terminationChecker, domain))) {
+                        lastSafeNode = topNode
+                    }
+                    lastSafeNode?.safe = true
+                }
+
                 terminationChecker.notifyExpansion()
             }
         }
@@ -178,8 +193,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         logger.debug { "Done with AStar at $currentNode" }
+        logger.debug { "Last safe node: $lastSafeNode" }
 
-        return currentNode
+        return lastSafeNode
     }
 
     private fun initializeAStar() {
@@ -364,9 +380,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     /**
      * Given a state, this function returns the path according to the tree pointers
      */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+    private fun extractPlan(targetNode: Node<StateType>?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+        targetNode ?: return emptyList()
+
         val actions = java.util.ArrayList<RealTimePlanner.ActionBundle>(1000)
-        var currentNode = targetNode
+        var currentNode: Node<StateType> = targetNode
 
         logger.debug { "Extracting plan" }
 
@@ -408,7 +426,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>): Boolean {
     data class Node(val state: StateType, val safeDistance: Pair<Int, Int>)
 
-    val nodeComparator = java.util.Comparator<Node> { (lhsState, lhsDistance), (rhsState, rhsDistance) ->
+    val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
         when {
             lhsDistance.first < rhsDistance.first -> -1
             lhsDistance.first > rhsDistance.first -> 1

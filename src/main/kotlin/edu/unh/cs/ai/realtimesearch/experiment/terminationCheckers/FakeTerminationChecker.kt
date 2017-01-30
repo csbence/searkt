@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
 /**
  * Will never fail the test, for debugging purposes
  */
-class FakeTerminationChecker : TerminationChecker {
+object FakeTerminationChecker : TerminationChecker {
     override fun resetTo(bound: Long) {}
     override fun notifyExpansion() {}
 

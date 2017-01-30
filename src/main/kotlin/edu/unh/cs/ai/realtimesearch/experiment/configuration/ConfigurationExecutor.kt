@@ -29,6 +29,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.*
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
@@ -36,6 +37,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.Simpl
 import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearch
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -228,12 +230,17 @@ object ConfigurationExecutor {
         return when (Planners.valueOf(algorithmName)) {
             WEIGHTED_A_STAR -> executeWeightedAStar(experimentConfiguration, domain, initialState)
             A_STAR -> executeAStar(experimentConfiguration, domain, initialState)
-            LSS_LRTA_STAR -> executeLssLrtaStar(experimentConfiguration, domain, initialState)
-            DYNAMIC_F_HAT -> executeDynamicFHat(experimentConfiguration, domain, initialState)
+            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), experimentConfiguration, domain, initialState)
+            DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), experimentConfiguration, domain, initialState)
             RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, initialState)
             ARA_STAR -> executeAnytimeRepairingAStar(experimentConfiguration, domain, initialState)
+            SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain), experimentConfiguration, domain, initialState)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
+    }
+
+    private fun <StateType : State<StateType>> executeRealTimeSearch(planner: RealTimePlanner<StateType>, configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        return RealTimeExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
     }
 
     private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
@@ -265,20 +272,6 @@ object ConfigurationExecutor {
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val lssLrtaPlanner = LssLrtaStarPlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, lssLrtaPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val dynamicFHatPlanner = DynamicFHatPlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, dynamicFHatPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
-    }
-
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {
         val lookaheadTypeString = experimentConfiguration.getTypedValue<String>(Configurations.LOOKAHEAD_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.LOOKAHEAD_TYPE}\" is not found. Please add it to the configuration.")
         val lookaheadType = LookaheadType.valueOf(lookaheadTypeString)
@@ -290,7 +283,7 @@ object ConfigurationExecutor {
             lookaheadType == DYNAMIC && terminationType == EXPANSION -> DynamicExpansionTerminationChecker()
             lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(experimentConfiguration.actionDuration)
             lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(experimentConfiguration.actionDuration)
-            terminationType == UNLIMITED -> FakeTerminationChecker()
+            terminationType == UNLIMITED -> FakeTerminationChecker
             else -> throw MetronomeException("Invalid termination checker configuration")
         }
     }
@@ -309,5 +302,4 @@ object ConfigurationExecutor {
 
         return atsExperiment.run()
     }
-
 }

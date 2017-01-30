@@ -16,7 +16,7 @@ class RealTimeAStarPlannerTest {
         val gridWorldInstance = GridWorldIO.parseFromStream(stream, 10)
         val realTimeAStarPlanner = RealTimeAStarPlanner(gridWorldInstance.domain, 4)
 
-        val rtsExperiment = RealTimeExperiment(GeneralExperimentConfiguration(), realTimeAStarPlanner, gridWorldInstance.domain, gridWorldInstance.initialState, FakeTerminationChecker())
+        val rtsExperiment = RealTimeExperiment(GeneralExperimentConfiguration(), realTimeAStarPlanner, gridWorldInstance.domain, gridWorldInstance.initialState, FakeTerminationChecker)
         /*val experimentResults = */rtsExperiment.run()
     }
 }
