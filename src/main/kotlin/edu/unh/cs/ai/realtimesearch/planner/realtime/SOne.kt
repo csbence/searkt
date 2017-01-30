@@ -17,17 +17,17 @@ import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 
 /**
- * SZero using Local Search Space Learning Real Time Search A* as a base, a type of RTS planner.
+ * SZero, using Local Search Space Learning Real Time A* as a base, a type of RTS planner.
  *
  * Runs A* until out of resources, then selects action up till the most promising state.
  * While executing that plan, it will:
  * - update all the heuristic values along the path (dijkstra)
  * - Run A* from the expected destination state
- * - Choose actions which have a safe parent
+ * - Choose actions which have a safe predecessor
  *
  * This loop continue until the goal has been found
  */
-class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
@@ -312,6 +312,15 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
             while (currentParent != null) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
+            }
+            // update the safe nodes of predecessors also
+            val predecessors = safeNode.predecessors
+            (0..predecessors.size -1).forEach {
+                var currentPredecessor: Node<StateType>? = predecessors[it].node
+                while (currentPredecessor != null) {
+                    currentPredecessor.safe = safeNode.safe
+                    currentPredecessor = currentPredecessor.parent
+                }
             }
             safeNodes.remove(safeNode)
         }

@@ -33,10 +33,7 @@ import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
-import edu.unh.cs.ai.realtimesearch.planner.realtime.DynamicFHatPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeAStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SZeroPlanner
+import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -233,8 +230,8 @@ object ConfigurationExecutor {
             DYNAMIC_F_HAT -> executeDynamicFHat(experimentConfiguration, domain, initialState)
             RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, initialState)
             ARA_STAR -> executeAnytimeRepairingAStar(experimentConfiguration, domain, initialState)
-            S_ZERO -> TODO()
-            S_ONE -> TODO()
+            S_ZERO -> executeSZero(experimentConfiguration, domain, initialState)
+            S_ONE -> executeSOne(experimentConfiguration, domain, initialState)
             else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
@@ -283,6 +280,12 @@ object ConfigurationExecutor {
     }
 
 
+    private fun <StateType : State<StateType>> executeSOne(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        val sOnePlanner = SOnePlanner(domain)
+        val rtsExperiment = RealTimeExperiment(experimentConfiguration, sOnePlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
+
+        return rtsExperiment.run()
+    }
 
     private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val dynamicFHatPlanner = DynamicFHatPlanner(domain)
