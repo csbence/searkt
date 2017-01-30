@@ -31,8 +31,9 @@ class TrafficWorldTest {
     }
 
     @Test
-    fun testVisualizeNoObstacles() {
-        val pos1 = TrafficWorldState(Location(0, 0), emptySet())
+    fun testVisualizeSomeObstacles() {
+        val pos1 = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3,3,1,1), MovingObstacle(5,5,-1,0),
+                MovingObstacle(2,2,0,-1), MovingObstacle(4,4,1,-1), MovingObstacle(6,6,-1,2)))
         println("showing starting world...")
         println(world.print(pos1))
         println("now successors...")
@@ -42,6 +43,7 @@ class TrafficWorldTest {
             world.successors(it.state).forEach {
                 println(world.print(it.state))
             }
+            println("new parent...")
         }
     }
 

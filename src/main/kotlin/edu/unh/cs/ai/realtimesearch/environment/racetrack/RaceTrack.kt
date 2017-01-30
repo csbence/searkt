@@ -120,14 +120,16 @@ class RaceTrack(val width: Int,
     override fun print(state: RaceTrackState): String {
         val description = StringBuilder()
         for (h in 1..height) {
-            for (w in 1..width) {
-                val charCell = when (Location(w, h)) {
-                    in finishLine -> '$'
-                    in track -> '*'
-                    else -> ' '
-                }
-                description.append(charCell)
-            }
+            (1..width)
+                    .map {
+                        when (Location(it, h)) {
+                            Location(state.x, state.y) -> '@'
+                            in finishLine -> '$'
+                            in track -> '*'
+                            else -> ' '
+                        }
+                    }
+                    .forEach { description.append(it) }
             description.append("\n")
         }
 

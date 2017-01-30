@@ -17,23 +17,25 @@ import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 
 /**
- * Local Search Space Learning Real Time Search A*, a type of RTS planner.
+ * SZero using Local Search Space Learning Real Time Search A* as a base, a type of RTS planner.
  *
  * Runs A* until out of resources, then selects action up till the most promising state.
  * While executing that plan, it will:
  * - update all the heuristic values along the path (dijkstra)
  * - Run A* from the expected destination state
+ * - Choose actions which have a safe parent
  *
  * This loop continue until the goal has been found
  */
-class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var open: Boolean = false,
-                                             parent: Node<StateType>? = null) : Indexable {
+                                             parent: Node<StateType>? = null,
+                                             var safe: Boolean = false) : Indexable {
 
         /** Item index in the open list. */
         override var index: Int = -1
@@ -70,6 +72,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
+    val safeNodes = ArrayList<Node<StateType>>()
+
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
@@ -88,11 +92,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000,1.toFloat()).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fValueComparator)
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator)
 
     private var rootState: StateType? = null
 
@@ -146,6 +150,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
 
+            updateSafeNodes()
+
             plan = extractPlan(targetNode, state)
             rootState = targetNode.state
         }
@@ -193,7 +199,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun initializeAStar() {
         iterationCounter++
         clearOpenList()
-
+        safeNodes.forEach { it.safe = false }; safeNodes.clear() // reset and clear safe nodes
         openList.reorder(fValueComparator)
     }
 
@@ -205,13 +211,17 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
 
-
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
+
+            // check for safety if safe add to the safe nodes
+            if (domain.isSafe(successorNode.state)) {
+                safeNodes.add(successorNode)
+            }
 
             // Add the current state as the predecessor of the child state
             successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
@@ -289,6 +299,25 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     /**
+     * Backs up safety through the parent pointers
+     *
+     *
+     */
+    private fun updateSafeNodes(): Unit {
+        while (safeNodes.isNotEmpty()) {
+            val safeNode = safeNodes.first()
+            var currentParent = safeNode.parent
+            // always update the safe nodes
+            // through the parent pointers
+            while (currentParent !== currentParent?.parent) {
+                currentParent.safe = safeNode.safe
+                currentParent = currentParent.parent
+            }
+            safeNodes.remove(safeNode)
+        }
+    }
+
+    /**
      * Performs Dijkstra updates until runs out of resources or done
      *
      * Updates the mode to SEARCH if done with DIJKSTRA
@@ -322,6 +351,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             // update heuristic value for each predecessor
             for (predecessor in node.predecessors) {
+
                 val predecessorNode = predecessor.node
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
@@ -353,7 +383,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
                     openList.update(predecessorNode) // Update priority
 
-                    // Frontier nodes could be also visited TODO
+                    // Frontier nodes could be also visited
                     //                    assert(predecessorNode.iteration == iterationCounter) {
                     //                        "Expected iteration stamp $iterationCounter got ${predecessorNode.iteration}"
                     //                    }
@@ -370,6 +400,49 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     }
 
     /**
+     *
+     */
+    private fun safeNodeOnOpen(): Pair<Node<StateType>, Double> {
+        val placeBackOnOpen = ArrayList<Node<StateType>?>()
+        var topOfOpen = openList.pop()
+        var hasSafeTopLevelActions = false
+        placeBackOnOpen.add(topOfOpen)
+        // pop off open until we find a safe node
+        while (!hasSafeTopLevelActions && !topOfOpen!!.safe && openList.isNotEmpty()) {
+            topOfOpen = openList.pop()
+            // check if the top level action is safe
+            var currentParent = topOfOpen?.parent
+            if (currentParent !== currentParent?.parent) {
+                while (currentParent?.parent?.parent !== currentParent?.parent?.parent) {
+                    currentParent = currentParent?.parent
+                    // find the top level action node
+                }
+            }
+            if (currentParent!!.safe) {
+                hasSafeTopLevelActions = true
+            }
+            placeBackOnOpen.add(topOfOpen)
+        }
+
+        // place all of our nodes back onto open
+        while(placeBackOnOpen.isNotEmpty()) {
+            val openTop: Node<StateType> = placeBackOnOpen.first()!!
+            placeBackOnOpen.remove(openTop)
+            openList.add(openTop)
+        }
+        // make sure open list is ordered appropriately
+        openList.reorder(fValueComparator)
+        // if the open list is empty there is no
+        // safe node on open to travel up
+        // return -1 and do what LSS does
+        if (openList.isEmpty()) {
+            return Pair(topOfOpen!!, -1.0)
+        }
+        // open list had something safe on it
+        return Pair(topOfOpen!!, topOfOpen.f)
+    }
+
+    /**
      * Given a state, this function returns the path according to the tree pointers
      */
     private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
@@ -380,6 +453,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         if (targetNode.state == sourceState) {
             return emptyList()
+        }
+
+        val safestNodeOnOpen: Pair<Node<StateType>, Double> = safeNodeOnOpen()
+
+        if (safestNodeOnOpen.second != -1.0) {
+            currentNode = safestNodeOnOpen.first
         }
 
         // keep on pushing actions to our queue until source state (our root) is reached

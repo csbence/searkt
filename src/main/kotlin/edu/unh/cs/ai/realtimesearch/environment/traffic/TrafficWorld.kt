@@ -19,6 +19,19 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     init {
         logger.info("TrafficWorld starting...")
     }
+
+    /**
+     * part of the Domain interface - isSafe function
+     *
+     * predicate that tells whether a state is safe or not
+     * in Traffic this means the agent is in a bunker
+     * @param state the state under consideration
+     */
+
+    override fun isSafe(state: TrafficWorldState) : Boolean {
+       return bunkers.any{it.x == state.agentLocation.x && it.y == state.agentLocation.y}
+    }
+
     /**
      * part of the Domain interface - successor function
      * @param state the state for successor calculation
@@ -30,7 +43,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         for (action in TrafficWorldAction.values()) {
             val newLocation = state.agentLocation + TrafficWorldAction.getRelativeLocation(action)
 
-            if (isLegalLocation(state, newLocation)) {
+            if (isLegalLocation(newLocation, newObstacles)) {
                 successors.add(
                         SuccessorBundle(
                                 TrafficWorldState(newLocation, newObstacles),
@@ -61,13 +74,11 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param newLocation the test newLocation
      * @return true if newLocation is legal false otherwise
      */
-    fun isLegalLocation(state: TrafficWorldState, newLocation: Location): Boolean {
+    fun isLegalLocation(newLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
         if (newLocation.x in 0..(width - 1)) {
             if (newLocation.y in 0..(height - 1)) {
-                if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), state)) {
-                    if (state.agentLocation != newLocation) {
-                        return true
-                    }
+                if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), newObstacles)) {
+                    return true
                 }
             }
         }
@@ -94,7 +105,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the state under distance measurement
      */
     override fun distance(state: TrafficWorldState): Double {
-       return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
     }
 
     /**
@@ -110,14 +121,13 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * contained within the obstacles for printing
      * and legal location checking
      * @param candidateLocation possible location of the obstacle
-     * @param state the state under question of containing the obstacle location
      */
-    private fun containsObstacle(candidateLocation: Location, state: TrafficWorldState) : Boolean {
-        return state.obstacles.any{ candidateLocation.x == it.x && candidateLocation.y == it.y }
+    private fun containsObstacle(candidateLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
+        return newObstacles.any { candidateLocation.x == it.x && candidateLocation.y == it.y }
     }
 
     /**
-     * visualization ASCII sssstyle
+     * visualization ASCII style
      * @ == agent
      * # == obstacle
      * $ == bunkers
@@ -125,16 +135,16 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      */
     override fun print(state: TrafficWorldState): String {
         val output = StringBuilder()
-        (0..height-1).forEach { y ->
-            (0..width-1).forEach { x ->
-                var character = when (Location(x,y)) {
-                   state.agentLocation -> '@'
+        (0..height - 1).forEach { y ->
+            (0..width - 1).forEach { x ->
+                var character = when (Location(x, y)) {
+                    state.agentLocation -> '@'
                     targetLocation -> '*'
                     in bunkers -> '$'
                     else -> '_'
                 }
-                if (containsObstacle(Location(x,y), state)) {
-                  character = '#'
+                if (containsObstacle(Location(x, y), state.obstacles)) {
+                    character = '#'
                 }
                 output.append(character)
             }
@@ -152,7 +162,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      */
     private fun moveObstacles(obstacles: Set<MovingObstacle>): Set<MovingObstacle> {
         val newObstacles = mutableSetOf<MovingObstacle>()
-        obstacles.forEach{ (x, y, dx, dy) ->
+        obstacles.forEach { (x, y, dx, dy) ->
             val oldObstacleLocation = MovingObstacle(x, y, dx, dy)
             val newObstacleLocation = MovingObstacle(x + dx, y + dy, dx, dy)
             if (bunkers.contains(Location(x + dx, y + dy)) || !validObstacleLocation(Location(x + dx, y + dy)) ||
@@ -185,4 +195,5 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         }
         return false
     }
+
 }

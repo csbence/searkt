@@ -33,25 +33,25 @@ fun main(args: Array<String>) {
         //                val instanceFileName = "input/racetrack/hansen-bigger.track"
         //        val instanceFileName = "input/pointrobot/squiggle.pr"
         //                val instanceFileName = "input/vacuum/openBox_25.vw"
-        val instanceFileName = "input/traffic/vehicle0.v"
+        val instanceFileName = "input/racetrack/barto-big.track"
         //        val instanceFileName = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.TRAFFIC.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
-                Planners.LSS_LRTA_STAR.toString(),
+                Planners.S_ZERO.toString(),
                 TerminationType.EXPANSION.toString())
 
-        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
-        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 100L
+        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 1000L
         manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.STATIC.toString()
         manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
-        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(5, MINUTES)
+        manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(15, MINUTES)
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
 
 
         // Domain specific configurations
+        manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
         manualConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] = 3L
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
