@@ -30,15 +30,15 @@ fun main(args: Array<String>) {
 
     if (args.isEmpty()) {
         // Default configuration
-//                        val instanceFileName = "input/racetrack/hansen-bigger-d-wide3.track"
+//        val instanceFileName = "input/racetrack/hansen-bigger-doubled.obstacles"
         //        val instanceFileName = "input/pointrobot/squiggle.pr"
-        //                val instanceFileName = "input/vacuum/openBox_25.vw"
-        val instanceFileName = "input/racetrack/barto-big.track"
+        val instanceFileName = "input/traffic/vehicle0.v"
+//        val instanceFileName = "input/racetrack/barto-big.obstacles"
 //                val instanceFileName = "input/tiles/korf/4/all/3"
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.RACETRACK.toString(),
+                Domains.TRAFFIC.toString(),
                 rawDomain,
                 Planners.SAFE_RTS.toString(),
                 TerminationType.EXPANSION.toString())

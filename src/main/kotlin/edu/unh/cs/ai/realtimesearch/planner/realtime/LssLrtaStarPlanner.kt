@@ -129,7 +129,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         if (domain.isGoal(state)) {
             // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
+            logger.warn { "selectAction: The goal state is already found." }
             return emptyList()
         }
 

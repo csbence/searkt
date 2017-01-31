@@ -67,14 +67,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
+            }
 
-                timeBound = 0
-                actionList.forEach {
-                    currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
-                    actions.add(it.action) // Save the action
-                    timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
-
-                }
+            timeBound = 0
+            actionList.forEach {
+                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                actions.add(it.action) // Save the action
+                timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
@@ -83,7 +82,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
-
         }
 
         val pathLength: Long = actions.size.toLong()

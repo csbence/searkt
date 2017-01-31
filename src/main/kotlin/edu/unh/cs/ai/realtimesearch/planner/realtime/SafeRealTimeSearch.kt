@@ -332,6 +332,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             for (predecessor in node.predecessors) {
                 val predecessorNode = predecessor.node
 
+                // Propagate safety
+                if (node.safe) predecessorNode.safe = true
+
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
                     continue
@@ -395,6 +398,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         // keep on pushing actions to our queue until source state (our root) is reached
         do {
             actions.add(RealTimePlanner.ActionBundle(currentNode.action, currentNode.actionCost))
+            // Propagate safety
+            if (currentNode.safe) currentNode.parent.safe = true
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 

@@ -128,8 +128,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     )
 
     val racetrackMaps = listOf(
-            //            "input/racetrack/barto-big.track",
-            //            "input/racetrack/barto-small.track"
+            //            "input/racetrack/barto-big.obstacles",
+            //            "input/racetrack/barto-small.obstacles"
             "input/racetrack/hansen-bigger.track",
             "input/racetrack/long.track"
     )
