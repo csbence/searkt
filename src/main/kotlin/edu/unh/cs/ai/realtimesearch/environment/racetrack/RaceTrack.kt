@@ -4,11 +4,12 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.lang.Math.*
+import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
  * agent starts at one of the cells on the starting line, and the goal is to reach one of the
- * cells at the finish line. The shape of the track is variable, and driving of the grid returns
+ * cells at the finish line. The shape of the obstacles is variable, and driving of the grid returns
  * the agent to a cell on the starting line.
  *
  * The car can choose to accelerate up to 1 in either x or y direction, reaching a speed of up to
@@ -25,14 +26,52 @@ import java.lang.Math.*
  */
 class RaceTrack(val width: Int,
                 val height: Int,
-                val track: Set<Location>,
+                val obstacles: Set<Location>,
                 val finishLine: Set<Location>,
                 val actionDuration: Long) : Domain<RaceTrackState> {
+
+    /** Pre-calculated heuristic value store */
+    val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     val maxXSpeed = width / 2
     val maxYSpeed = height / 2
+
+    private fun calculateDijkstraHeuristic(): Map<Location, Double> {
+        data class Node(val location: Location, val goalDistance: Double)
+
+        val heuristicMap = hashMapOf<Location, Double>()
+
+        val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
+            when {
+                lhsDistance < rhsDistance -> -1
+                lhsDistance > rhsDistance -> 1
+                else -> 0
+            }
+        }
+
+        val queue = PriorityQueue<Node>(nodeComparator)
+
+        finishLine.forEach {
+            queue.add(Node(it, 0.0))
+            heuristicMap[it] = 0.0
+        }
+
+        while (queue.isNotEmpty()) {
+            val (location, goalDistance) = queue.poll()
+
+            predecessors(RaceTrackState(location.x, location.y, 0, 0))
+                    .filter { it.action != RaceTrackAction.NO_OP }
+                    .map { Location(it.state.x, it.state.y) }
+                    .filter { heuristicMap[it] == null }
+                    .forEach {
+
+                    }
+        }
+
+        return heuristicMap
+    }
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
         val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
@@ -61,7 +100,7 @@ class RaceTrack(val width: Int,
                 }
             }
 
-            //filter on legal moves (not too fast and on the track)
+            //filter on legal moves (not too fast and on the obstacles)
             if (valid) {
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
@@ -81,7 +120,7 @@ class RaceTrack(val width: Int,
      */
     fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
-                y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in track
+                y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in obstacles
     }
 
     /*
@@ -112,8 +151,7 @@ class RaceTrack(val width: Int,
 
     /**
      * agent = @
-     * blocked cell = ' '
-     * track = #
+     * obstacles = #
      * finish line = $
      * start line = %
      */
@@ -125,7 +163,7 @@ class RaceTrack(val width: Int,
                         when (Location(it, h)) {
                             Location(state.x, state.y) -> '@'
                             in finishLine -> '$'
-                            in track -> '*'
+                            in obstacles -> '#'
                             else -> ' '
                         }
                     }
@@ -162,40 +200,7 @@ class RaceTrack(val width: Int,
         return list
     }
 
-    override fun predecessors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
-        val predecessors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
-
-        for (action in RaceTrackAction.values()) {
-            val new_x_speed = state.dX
-            val new_y_speed = state.dY
-
-            var x: Double
-            var y: Double
-            val dt = 0.1
-            val nSteps = 10
-            var valid = true
-
-            for (i in 1..nSteps) {
-                x = state.x - (new_x_speed * (dt * i))
-                y = state.y - (new_y_speed * (dt * i))
-
-                if (!isLegalLocation(x, y)) {
-                    valid = false
-                    break
-                }
-            }
-
-            //filter on legal moves (not too fast and on the track)
-            if (valid) {
-                predecessors.add(SuccessorBundle(
-                        RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.aX, new_y_speed - action.aY),
-                        action,
-                        actionCost = actionDuration))
-            }
-        }
-        return predecessors
-    }
-
+    override fun predecessors(state: RaceTrackState) = successors(state)
 
     /**
      * The agent is safe when its velocity is zero.
