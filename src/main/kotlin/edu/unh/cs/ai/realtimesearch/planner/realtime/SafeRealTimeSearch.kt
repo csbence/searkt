@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -158,40 +158,44 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         initializeAStar()
         var lastSafeNode: Node<StateType>? = null
 
+        // Create and add initial node to open
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
         nodes[state] = node
         var currentNode = node
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
-
         val random = Random()
 
-        val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
-                aStarPopCounter++
-                currentNode = popOpenList()
-                expandFromNode(currentNode)
+        while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            aStarPopCounter++
+            currentNode = popOpenList()
+            expandFromNode(currentNode)
 
-                // Update best safe node
-//                if (lastSafeNode == null || random.nextDouble() < 0.002) {
-                val topNode = openList.peek()!!
-                if (lastSafeNode == null || TODO()) {
-                    if (topNode.safe || isComfortable(topNode.state, terminationChecker, domain)) {
+            terminationChecker.notifyExpansion()
+
+            // Update best safe node
+            if (lastSafeNode == null || random.nextDouble() < 0.01) {
+                val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+                if (topNode.safe) {
+                    lastSafeNode = topNode
+                } else {
+                    val comfortable = isComfortable(topNode.state, terminationChecker, domain)
+                    if (comfortable != null) {
                         lastSafeNode = topNode
-                    }
-                    lastSafeNode?.safe = true
-                }
+                        lastSafeNode.safe = true
 
-                terminationChecker.notifyExpansion()
+                        comfortable.forEach { nodes[it]?.safe = true }
+                    }
+                }
             }
         }
 
-        if (node == currentNode && !domain.isGoal(currentNode.state)) {
-            //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-        } else {
-            logger.debug { "A* : expanded $expandedNodes nodes" }
-        }
+//        if (node == currentNode && !domain.isGoal(currentNode.state)) {
+        //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
+//        } else {
+//            logger.debug { "A* : expanded $expandedNodes nodes" }
+//        }
 
         logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
@@ -429,8 +433,27 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
 }
 
-fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>): Boolean {
-    data class Node(val state: StateType, val safeDistance: Pair<Int, Int>)
+/**
+ * Prove the safety of a given state. A state is safe (more precisely comfortable) if the state itself is safe or a
+ * safe state is reachable from it. The explicit safety of a state is defined by the domain.
+ *
+ * To prove the implicit safety of a state a best first search(BFS) algorithm is used prioritized on the safe distance of
+ * the states. The safe distance of states is defined by the domain.
+ *
+ * @param state State to validate.
+ * @param terminationChecker The termination checker is used to ensure the termination of the BFS algorithm. The
+ *                           expansion of the during the search are also logged against the termination checker.
+ * @param domain The domain is used to determine the safety distance and the explicit safety of states.
+ * @param isSafe An optional secondary safety check can be provided to prove implicit safety.
+ *
+ * @return null if the given state is not safe, else a list of states that are proven to be safe.
+ * Empty list if the state itself is safe.
+ */
+fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)? = null): List<StateType>? {
+    data class Node(val state: StateType, val safeDistance: Pair<Int, Int>, val parent: Node? = null)
+
+    // Return empty list if the original state is safe
+    if (domain.isSafe(state) || (isSafe != null && isSafe(state))) return emptyList()
 
     val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
         when {
@@ -444,21 +467,31 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 
     val priorityQueue = PriorityQueue<Node>(nodeComparator)
     val discoveredStates = hashSetOf<StateType>()
+    val comfortableStates = mutableListOf<StateType>()
+
     priorityQueue.add(Node(state, domain.safeDistance(state)))
 
     while (priorityQueue.isNotEmpty() && !terminationChecker.reachedTermination()) {
-        val nextChild = priorityQueue.poll() ?: return false
+        val currentNode = priorityQueue.poll() ?: return null
 
-        if (domain.isSafe(nextChild.state)) {
-            return true
+        if (domain.isSafe(currentNode.state) || (isSafe != null && isSafe(currentNode.state))) {
+            // Backtrack to the root and return all safe states
+            // The parent of the safe state is comfortable
+            var backTrackNode: Node? = currentNode
+            while (backTrackNode != null) {
+                comfortableStates.add(currentNode.state)
+                backTrackNode = backTrackNode.parent
+            }
+
+            return comfortableStates
         }
 
         terminationChecker.notifyExpansion()
-        domain.successors(nextChild.state)
+        domain.successors(currentNode.state)
                 .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
                 .onEach { discoveredStates += it.state }
-                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state)) }) // Add successors to the queue
+                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state), currentNode) }) // Add successors to the queue
     }
 
-    return false
+    return null
 }

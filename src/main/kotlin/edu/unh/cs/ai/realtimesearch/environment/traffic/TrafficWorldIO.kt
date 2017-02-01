@@ -61,7 +61,7 @@ object VehicleWorldIO {
             throw InvalidVehicleWorldException("Vehicle world target goal location with * marker not specified.")
         }
 
-        val vehicleWorld = edu.unh.cs.ai.realtimesearch.environment.traffic.TrafficWorld(columnCount, rowCount,
+        val vehicleWorld = TrafficWorld(columnCount, rowCount,
                 bunkers.toHashSet(), targetLocation.first(), actionDuration)
 
         val startState = TrafficWorldState(startLocation.first(), obstacles.toHashSet())
