@@ -1,7 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Before
 import org.junit.Test
+import java.util.*
 
 internal class RaceTrackTest {
     val rawRaceTrack: String = "30\n" +
@@ -55,23 +57,47 @@ internal class RaceTrackTest {
 
     }
 
-//    @Test
-//    fun testCalculateDijkstraHeuristic() {
-//        val goals = setOf(Location(0,0))
-//        val obstacles = setOf(Location(1, 0), Location(1, 1))
-//
-//        val track = RaceTrack(10, 10, obstacles, goals, 1)
-//        track.heuristicMap.forEach { k, v ->
-//            println("$k\t$v\n")
-//            val distanceFunction: (Location) -> Double = {
-//                (x, y) -> max(abs(k.x - x) / track.maxXSpeed.toDouble(), abs(k.y - y) / track.maxYSpeed.toDouble())
-//            }
-//
-//            val minDist =  goals.map(distanceFunction).min()
-//            println(minDist)
-//
-//        }
-//    }
+    @Test
+    fun testCalculateDijkstraHeuristic() {
+        data class Node(val state: RaceTrackState, val distance: Double)
+
+        val visited = HashSet<RaceTrackState>()
+        val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
+            when {
+                lhsDistance < rhsDistance -> -1
+                lhsDistance > rhsDistance -> 1
+                else -> 0
+            }
+        }
+
+
+        // Lower bound estimate of distance from initial state to goal
+        val initialLocation = Location(initialState.x, initialState.y)
+        val heuristicEstimate = this.raceTrack.heuristicMap[initialLocation]!!
+
+        val stateQueue = PriorityQueue<Node>(nodeComparator)
+        stateQueue.add(Node(this.initialState, 0.0))
+        while (!stateQueue.isEmpty()) {
+            val curNode = stateQueue.poll()
+            if (curNode.state in visited) {
+                continue
+            }
+
+            visited += curNode.state
+
+            if (this.raceTrack.isGoal(curNode.state)) {
+                val goalLocation = Location(curNode.state.x, curNode.state.y)
+                assert(heuristicEstimate < curNode.distance)
+                assert(heuristicEstimate >= initialLocation.manhattanDistance(goalLocation))
+                break
+            }
+
+            this.raceTrack.successors(curNode.state)
+                    .mapTo(stateQueue, { Node(it.state, curNode.distance + it.actionCost)})
+        }
+
+
+    }
 
 //    @Test
 //    fun testHeuristic() {

@@ -31,12 +31,12 @@ class RaceTrack(val width: Int,
                 val actionDuration: Long) : Domain<RaceTrackState> {
 
     /** Pre-calculated heuristic value store */
+    val maxXSpeed = width / 2
+    val maxYSpeed = height / 2
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
-    val maxXSpeed = width / 2
-    val maxYSpeed = height / 2
 
     private fun calculateDijkstraHeuristic(): Map<Location, Double> {
         data class Node(val location: Location, val goalDistance: Double)
