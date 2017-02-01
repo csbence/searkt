@@ -19,7 +19,7 @@ object VehicleWorldIO {
     private fun readVehicle(input: InputStream, actionDuration: Long) : VehicleWorldInstance {
         val inputScanner = Scanner(input)
 
-        val random = Random()
+        val random = Random(0L)
 
         val rowCount: Int
         val columnCount : Int

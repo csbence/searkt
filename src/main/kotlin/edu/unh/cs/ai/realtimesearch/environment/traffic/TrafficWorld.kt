@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import org.slf4j.LoggerFactory
+import java.lang.Math.abs
 import java.util.*
 
 /**
@@ -20,6 +21,11 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         logger.info("TrafficWorld starting...")
     }
 
+    override fun safeDistance(state: TrafficWorldState): Pair<Int, Int> {
+        val distanceFunction: (Location) -> Int = { (x, y) -> Math.max(abs(state.agentLocation.x - x), abs(state.agentLocation.y - y)) }
+        return distanceFunction(bunkers.minBy(distanceFunction)!!) to 0
+    }
+
     /**
      * part of the Domain interface - isSafe function
      *
@@ -28,8 +34,8 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the state under consideration
      */
 
-    override fun isSafe(state: TrafficWorldState) : Boolean {
-       return bunkers.any{it.x == state.agentLocation.x && it.y == state.agentLocation.y}
+    override fun isSafe(state: TrafficWorldState): Boolean {
+        return bunkers.any { it.x == state.agentLocation.x && it.y == state.agentLocation.y } || isGoal(state)
     }
 
     /**

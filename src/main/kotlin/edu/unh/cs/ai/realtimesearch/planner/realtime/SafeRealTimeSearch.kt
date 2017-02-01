@@ -174,9 +174,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 expandFromNode(currentNode)
 
                 // Update best safe node
-                if (lastSafeNode == null || random.nextDouble() < 0.01) {
-                    val topNode = openList.peek()
-                    if (topNode != null && (topNode.safe || isComfortable(topNode.state, terminationChecker, domain))) {
+//                if (lastSafeNode == null || random.nextDouble() < 0.002) {
+                val topNode = openList.peek()!!
+                if (lastSafeNode == null || TODO()) {
+                    if (topNode.safe || isComfortable(topNode.state, terminationChecker, domain)) {
                         lastSafeNode = topNode
                     }
                     lastSafeNode?.safe = true
