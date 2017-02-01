@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import java.lang.Math.*
 import java.util.*
-import kotlin.collections.HashSet
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
@@ -54,11 +53,12 @@ class RaceTrack(val width: Int,
 
         val queue = PriorityQueue<Node>(nodeComparator)
 
+        val discovered = HashSet<Location>()
         finishLine.forEach {
             queue.add(Node(it, 0.0))
             heuristicMap[it] = 0.0
+            discovered += it
         }
-        val discovered = HashSet<Location>()
 
         while (queue.isNotEmpty()) {
             val (location, goalDistance) = queue.poll()
@@ -67,8 +67,11 @@ class RaceTrack(val width: Int,
                     .filter { it.action != RaceTrackAction.NO_OP }
                     .map { Location(it.state.x, it.state.y) }
                     .filter { it !in discovered }
-                    .onEach { discovered += it }
-//                    .mapTo ((heuristicMap), {goalDistance + actionDuration })
+                    .onEach {
+                        discovered += it
+                        heuristicMap[it] = goalDistance + actionDuration
+                        queue.add(Node(it, goalDistance + actionDuration))
+                    }
         }
 
         return heuristicMap

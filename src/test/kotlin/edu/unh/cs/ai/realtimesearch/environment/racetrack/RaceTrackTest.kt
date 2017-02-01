@@ -1,6 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import org.junit.Test
+import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import java.lang.Math.*
 
 class RaceTrackTest {
 
@@ -8,6 +11,23 @@ class RaceTrackTest {
     fun testSuccessors() {
 
     }
+
+//    @Test
+//    fun testCalculateDijkstraHeuristic() {
+//        val goals = setOf(Location(0,0))
+//
+//        val track = RaceTrack(10, 10, HashSet(), goals, 1)
+//        track.heuristicMap.forEach { k, v ->
+//            println("$k\t$v\n")
+//            val distanceFunction: (Location) -> Double = {
+//                (x, y) -> max(abs(k.x - x) / track.maxXSpeed.toDouble(), abs(k.y - y) / track.maxYSpeed.toDouble())
+//            }
+//
+//            val minDist =  goals.map(distanceFunction).min()
+//            println(minDist)
+//
+//        }
+//    }
 
 //    @Test
 //    fun testHeuristic() {
