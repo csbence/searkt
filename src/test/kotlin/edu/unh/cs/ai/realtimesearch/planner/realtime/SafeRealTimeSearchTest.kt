@@ -67,15 +67,15 @@ internal class SafeRealTimeSearchTest {
 
     @Test
     fun testIsComfortable() {
-        assertTrue { isComfortable(initialState, FakeTerminationChecker, raceTrack) }
-        assertTrue { isComfortable(RaceTrackState(2, 2, 0, 0), FakeTerminationChecker, raceTrack) }
-        assertTrue { isComfortable(RaceTrackState(2, 2, 1, 1), FakeTerminationChecker, raceTrack) }
+        assertTrue { isComfortable(initialState, FakeTerminationChecker, raceTrack) != null }
+        assertTrue { isComfortable(RaceTrackState(2, 2, 0, 0), FakeTerminationChecker, raceTrack) != null }
+        assertTrue { isComfortable(RaceTrackState(2, 2, 1, 1), FakeTerminationChecker, raceTrack) != null }
         // Go up & right
-        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 5), FakeTerminationChecker, raceTrack) }
+        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 5), FakeTerminationChecker, raceTrack) != null }
         // Go right
-        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 0), FakeTerminationChecker, raceTrack) }
+        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 0), FakeTerminationChecker, raceTrack) != null }
         // Go up
-        assertTrue { isComfortable(RaceTrackState(2, 32, 0, 5), FakeTerminationChecker, raceTrack) }
+        assertTrue { isComfortable(RaceTrackState(2, 32, 0, -5), FakeTerminationChecker, raceTrack) != null }
     }
 
 
