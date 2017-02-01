@@ -1,13 +1,11 @@
 package edu.unh.cs.ai.realtimesearch.environment.traffic
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
-import java.util.*
 
 /**
  * TrafficWorld agent avoids being hit by moving obstacles
@@ -33,10 +31,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * in Traffic this means the agent is in a bunker
      * @param state the state under consideration
      */
-
-    override fun isSafe(state: TrafficWorldState): Boolean {
-        return bunkers.any { it.x == state.agentLocation.x && it.y == state.agentLocation.y } || isGoal(state)
-    }
+    override fun isSafe(state: TrafficWorldState): Boolean = state.agentLocation in bunkers || isGoal(state)
 
     /**
      * part of the Domain interface - successor function
