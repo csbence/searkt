@@ -13,6 +13,10 @@ abstract class ExpansionTerminationChecker : TerminationChecker {
     }
 
     override fun reachedTermination() = expansionCount >= expansionLimit
+
+    override fun remaining(): Long = expansionLimit - expansionCount
+
+    override fun elapsed(): Long = expansionCount
 }
 
 class StaticExpansionTerminationChecker(override var expansionLimit: Long) : ExpansionTerminationChecker() {
