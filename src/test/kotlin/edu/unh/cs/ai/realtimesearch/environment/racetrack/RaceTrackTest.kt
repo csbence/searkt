@@ -15,8 +15,9 @@ class RaceTrackTest {
 //    @Test
 //    fun testCalculateDijkstraHeuristic() {
 //        val goals = setOf(Location(0,0))
+//        val obstacles = setOf(Location(1, 0), Location(1, 1))
 //
-//        val track = RaceTrack(10, 10, HashSet(), goals, 1)
+//        val track = RaceTrack(10, 10, obstacles, goals, 1)
 //        track.heuristicMap.forEach { k, v ->
 //            println("$k\t$v\n")
 //            val distanceFunction: (Location) -> Double = {

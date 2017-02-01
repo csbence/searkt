@@ -66,7 +66,7 @@ class RaceTrack(val width: Int,
             predecessors(RaceTrackState(location.x, location.y, 0, 0))
                     .filter { it.action != RaceTrackAction.NO_OP }
                     .map { Location(it.state.x, it.state.y) }
-                    .filter { it !in discovered }
+                    .filter { it !in discovered && it !in obstacles }
                     .onEach {
                         discovered += it
                         heuristicMap[it] = goalDistance + actionDuration
