@@ -14,12 +14,14 @@ abstract class TimeTerminationChecker(val epsilon: Long = TimeUnit.NANOSECONDS.c
      */
     abstract override fun resetTo(timeBound: Long)
 
-    fun elapsedTime() = System.nanoTime() - startTime
-
     override fun notifyExpansion() {}
 
     /**
      * Checks whether the allowed time has passed since resetTo
      */
     override fun reachedTermination(): Boolean = (System.nanoTime() - startTime + epsilon + timeLimit * 0.01) > timeLimit
+
+    override fun remaining(): Long = timeLimit - elapsed()
+
+    override fun elapsed() = System.nanoTime() - startTime
 }
