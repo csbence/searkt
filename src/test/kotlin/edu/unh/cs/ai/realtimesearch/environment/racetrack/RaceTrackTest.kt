@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Before
 import org.junit.Test
 import java.util.*
+import java.lang.Math.*
 
 internal class RaceTrackTest {
     val rawRaceTrack: String = "30\n" +
@@ -86,14 +87,13 @@ internal class RaceTrackTest {
             visited += curNode.state
 
             if (this.raceTrack.isGoal(curNode.state)) {
-                val goalLocation = Location(curNode.state.x, curNode.state.y)
-                assert(heuristicEstimate < curNode.distance)
-                assert(heuristicEstimate >= initialLocation.manhattanDistance(goalLocation))
+                assert(heuristicEstimate <= curNode.distance / max(this.raceTrack.maxXSpeed, this.raceTrack.maxYSpeed))
                 break
             }
 
             this.raceTrack.successors(curNode.state)
-                    .mapTo(stateQueue, { Node(it.state, curNode.distance + it.actionCost)})
+                    .filter { Location(it.state.x, it.state.y) !in this.raceTrack.obstacles }
+                    .mapTo(stateQueue, { Node(it.state, curNode.distance + this.raceTrack.actionDuration)})
         }
 
 
