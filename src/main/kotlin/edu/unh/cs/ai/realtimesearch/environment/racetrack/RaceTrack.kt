@@ -69,7 +69,7 @@ class RaceTrack(val width: Int,
                     .filter { it !in discovered && it !in obstacles }
                     .onEach {
                         discovered += it
-                        heuristicMap[it] = goalDistance + actionDuration
+                        heuristicMap[it] = (goalDistance + actionDuration) / max(maxXSpeed, maxYSpeed)
                         queue.add(Node(it, goalDistance + actionDuration))
                     }
         }
