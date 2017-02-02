@@ -1,11 +1,15 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
@@ -34,15 +38,15 @@ import java.util.concurrent.TimeUnit
  * @param domain is the environment
  * @param terminationChecker controls the constraint put upon the planner
  */
-class RealTimeExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
+class RealTimeExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
                                                        val planner: RealTimePlanner<StateType>,
                                                        val domain: Domain<StateType>,
                                                        val initialState: StateType,
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
-    private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
+    private val commitmentStrategy by lazyData<String>(configuration, Configurations.COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(configuration, Configurations.ACTION_DURATION.toString())
 
     /**
      * Runs the experiment
@@ -71,7 +75,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
 
             timeBound = 0
             actionList.forEach {
-                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
@@ -85,8 +89,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         }
 
         val pathLength: Long = actions.size.toLong()
-        val totalExecutionNanoTime = pathLength * actionDuration
-        val goalAchievementTime = actionDuration + totalExecutionNanoTime // We only plan during execution plus the first iteration
+        val totalExecutionNanoDuration = pathLength * actionDuration
+        val goalAchievementTime = when (TerminationType.valueOf(configuration.terminationType)) {
+            TIME -> actionDuration + totalExecutionNanoDuration // We only plan during execution plus the first iteration
+            EXPANSION -> actionDuration + pathLength * actionDuration
+            else -> throw MetronomeException("Unsupported termination checker")
+        }
+
         logger.info {
             "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
                     "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
@@ -94,11 +103,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         }
 
         return ExperimentResult(
-                experimentConfiguration = experimentConfiguration.valueStore,
+                experimentConfiguration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,
-                actionExecutionTime = totalExecutionNanoTime,
+                actionExecutionTime = totalExecutionNanoDuration,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,

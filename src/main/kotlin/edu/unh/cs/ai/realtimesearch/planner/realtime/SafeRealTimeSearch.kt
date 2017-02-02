@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -18,7 +19,7 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
@@ -138,6 +139,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(state, terminationChecker)
+
+            // Commitment strategy
 
             plan = extractPlan(targetNode, state)
             rootState = targetNode?.state
