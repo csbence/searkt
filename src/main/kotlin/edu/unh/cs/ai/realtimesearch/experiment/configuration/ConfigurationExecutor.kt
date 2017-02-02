@@ -100,7 +100,7 @@ object ConfigurationExecutor {
         //                System.gc()
 
         //        val future = executor.submit<ExperimentResult>({
-        //            unsafeConfigurationExecution(experimentConfiguration)
+        //            unsafeConfigurationExecution(configuration)
         //        })
         //
         //        try {
@@ -120,12 +120,12 @@ object ConfigurationExecutor {
         //                return future.get()
         //            }
         //
-        //            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
+        //            return ExperimentResult(configuration.valueStore, "Timeout")
         //        } catch (e: ExecutionException) {
         //            System.gc() // Clean up after the experiment
         //
         //            logger.info("Experiment failed. ${e.message}")
-        //            val experimentResult = ExperimentResult(experimentConfiguration.valueStore, "${e.message}")
+        //            val experimentResult = ExperimentResult(configuration.valueStore, "${e.message}")
         //            experimentResult["errorDetails"] = e.stackTrace
         //            return experimentResult
         //        } finally {
@@ -190,51 +190,51 @@ object ConfigurationExecutor {
         return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
     }
 
-    private fun executeVacuumWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+    private fun executeVacuumWorld(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(domainStream)
-        return executeDomain(experimentConfiguration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+        return executeDomain(configuration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     }
 
-    private fun executeRaceTrack(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, raceTrackInstance.domain, raceTrackInstance.initialState)
+    private fun executeRaceTrack(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, raceTrackInstance.domain, raceTrackInstance.initialState)
     }
 
-    private fun executeGridWorld(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, gridWorldInstance.domain, gridWorldInstance.initialState)
+    private fun executeGridWorld(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, gridWorldInstance.domain, gridWorldInstance.initialState)
     }
 
-    private fun executeVehicle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream):
+    private fun executeVehicle(configuration: GeneralExperimentConfiguration, domainStream: InputStream):
             ExperimentResult {
-        val vehicleWorldInstance = VehicleWorldIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, vehicleWorldInstance.domain, vehicleWorldInstance.initialState)
+        val vehicleWorldInstance = VehicleWorldIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, vehicleWorldInstance.domain, vehicleWorldInstance.initialState)
     }
 
-    private fun executeSlidingTilePuzzle(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    private fun executeSlidingTilePuzzle(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
-    private fun executeAcrobot(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val acrobotInstance = AcrobotIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, acrobotInstance.domain, acrobotInstance.initialState)
+    private fun executeAcrobot(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val acrobotInstance = AcrobotIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, acrobotInstance.domain, acrobotInstance.initialState)
     }
 
-    private fun <StateType : State<StateType>> executeDomain(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val algorithmName = experimentConfiguration.algorithmName
+    private fun <StateType : State<StateType>> executeDomain(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        val algorithmName = configuration.algorithmName
 
         return when (Planners.valueOf(algorithmName)) {
-            WEIGHTED_A_STAR -> executeWeightedAStar(experimentConfiguration, domain, initialState)
-            A_STAR -> executeAStar(experimentConfiguration, domain, initialState)
-            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), experimentConfiguration, domain, initialState)
-            DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), experimentConfiguration, domain, initialState)
-            RTA_STAR -> executeRealTimeAStar(experimentConfiguration, domain, initialState)
-            ARA_STAR -> executeAnytimeRepairingAStar(experimentConfiguration, domain, initialState)
-            SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain), experimentConfiguration, domain, initialState)
-            S_ZERO -> executeSZero(experimentConfiguration, domain, initialState)
-            S_ONE -> executeSOne(experimentConfiguration, domain, initialState)
-            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
+            WEIGHTED_A_STAR -> executeWeightedAStar(configuration, domain, initialState)
+            A_STAR -> executeAStar(configuration, domain, initialState)
+            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, initialState)
+            DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, initialState)
+            RTA_STAR -> executeRealTimeAStar(configuration, domain, initialState)
+            ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, initialState)
+            SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, initialState)
+            S_ZERO -> executeSZero(configuration, domain, initialState)
+            S_ONE -> executeSOne(configuration, domain, initialState)
+            else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
 
