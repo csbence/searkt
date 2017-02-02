@@ -91,7 +91,7 @@ internal class RaceTrackTest {
                 break
             }
 
-            this.raceTrack.successors(curNode.state)
+            this.raceTrack.successors(RaceTrackState(curNode.state.x, curNode.state.y, 0, 0))
                     .filter { Location(it.state.x, it.state.y) !in this.raceTrack.obstacles }
                     .mapTo(stateQueue, { Node(it.state, curNode.distance + this.raceTrack.actionDuration)})
         }
