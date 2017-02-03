@@ -12,6 +12,12 @@ inline fun measureInt(property: () -> Int, block: () -> Unit): Int {
     return property() - initialPropertyValue
 }
 
+inline fun measureLong(property: () -> Long, block: () -> Unit): Long {
+    val initialPropertyValue = property()
+    block()
+    return property() - initialPropertyValue
+}
+
 //public inline fun measure(property: () -> Double, block: () -> Unit): Double {
 //    val initialPropertyValue = property()
 //    block()
