@@ -94,7 +94,7 @@ class RaceTrack(val width: Int,
             val stepX = newDX * dt
             val stepY = newDY * dt
 
-            for (i in 0..distance.toInt() - 1) {
+            for (i in 0..distance.toInt()) {
                 x += stepX
                 y += stepY
 
