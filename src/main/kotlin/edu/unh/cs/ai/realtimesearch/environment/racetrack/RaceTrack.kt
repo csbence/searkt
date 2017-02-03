@@ -138,7 +138,7 @@ class RaceTrack(val width: Int,
      * Calculates the minimum number of steps to reach the closest goal position.
      */
     override fun distance(state: RaceTrackState): Double {
-        val distanceFunction: (Location) -> Double = { (x, y) -> max(abs(state.x - x) / maxXSpeed.toDouble(), abs(state.y - y) / maxYSpeed.toDouble()) }
+        val distanceFunction: (Location) -> Double = { (x, y) -> max(abs(state.x - x) / max(maxXSpeed, maxYSpeed).toDouble(), abs(state.y - y) / max(maxYSpeed, maxXSpeed).toDouble()) }
         return distanceFunction(finishLine.minBy(distanceFunction)!!)
         // TODO: would it make sense to have an ArrayList version of finishLine on hand for optimal iteration?
     }
