@@ -32,23 +32,22 @@ fun main(args: Array<String>) {
         // Default configuration
 //        val instanceFileName = "input/racetrack/hansen-bigger-doubled.obstacles"
         //        val instanceFileName = "input/pointrobot/squiggle.pr"
-        val instanceFileName = "input/traffic/vehicle0.v"
+//        val instanceFileName = "input/traffic/vehicle0.v"
 //        val instanceFileName = "input/racetrack/barto-big.obstacles"
-//                val instanceFileName = "input/tiles/korf/4/all/3"
+        val instanceFileName = "input/racetrack/hansen-bigger-doubled.track"
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.TRAFFIC.toString(),
+                Domains.RACETRACK.toString(),
                 rawDomain,
                 Planners.SAFE_RTS.toString(),
                 TerminationType.EXPANSION.toString())
 
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = 1000L
-        manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.STATIC.toString()
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
+        manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.DYNAMIC.toString()
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(15, MINUTES)
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
-
 
         // Domain specific configurations
         manualConfiguration[Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()] = 4L
@@ -56,7 +55,6 @@ fun main(args: Array<String>) {
         manualConfiguration[Configurations.NUM_ACTIONS.toString()] = 3
         manualConfiguration[Configurations.ACTION_FRACTION.toString()] = 1.0
         manualConfiguration[Configurations.STATE_FRACTION.toString()] = 0.5
-
 
         //        visualizerParameters.add("--path")
         //        visualizerParameters.add("--tracker")
@@ -75,13 +73,22 @@ fun main(args: Array<String>) {
     } else if (result.errorMessage != null) {
         logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        logger.info("Action duration: ${convertNanoUpDouble(result.experimentConfiguration["actionDuration"] as Long, MILLISECONDS)} ms")
+        val terminationType = TerminationType.valueOf(manualConfiguration.terminationType)
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
-        logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
-        logger.info("Idle planning time: ${convertNanoUpDouble(result.idlePlanningTime, MILLISECONDS)} ms")
-        logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
+        if (terminationType == TerminationType.TIME) {
+            logger.info("Action duration: ${convertNanoUpDouble(result.experimentConfiguration["actionDuration"] as Long, MILLISECONDS)} ms")
+            logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
+            logger.info("Idle planning time: ${convertNanoUpDouble(result.idlePlanningTime, MILLISECONDS)} ms")
+            logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
+        } else {
+            logger.info("Action duration: ${result.experimentConfiguration["actionDuration"] as Long} expansions")
+            logger.info("Execution time: ${result.actionExecutionTime} expansions")
+            logger.info("Idle planning time: ${result.idlePlanningTime} expansions")
+            logger.info("GAT: ${result.goalAchievementTime} expansions")
+        }
         logger.info("Path Length: ${result.pathLength}")
         logger.info("Generated Nodes: ${result.generatedNodes}, Expanded Nodes ${result.expandedNodes}")
+
         //        logger.info(result.toIndentedJson())
 
 //        runVisualizer(result, visualizerParameters)
