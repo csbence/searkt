@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -22,21 +23,27 @@ import kotlin.system.measureTimeMillis
 class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action,
-                                             var iteration: Long,
-                                             var open: Boolean = false,
-                                             parent: Node<StateType>? = null) : Indexable {
+    class Node<StateType : State<StateType>>(
+            override val state: StateType,
+            override var heuristic: Double,
+            override var cost: Long,
+            override var actionCost: Long,
+            override var action: Action,
+            var iteration: Long,
+            override var open: Boolean = false,
+            parent: Node<StateType>? = null) : SearchNode<StateType>, Indexable, Safe {
 
         /** Item index in the open list. */
         override var index: Int = -1
-        var safe = false
+        override var safe = false
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
         var parent: Node<StateType>
+
+        override fun getParent(): SearchNode<StateType> = parent
 
         val f: Double
             get() = cost + heuristic
@@ -168,28 +175,23 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         addToOpenList(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val random = Random()
+        var totalExpansionDuration = 0L
+        var totalSafetyDuration = 0L
 
         while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
             aStarPopCounter++
             currentNode = popOpenList()
-            expandFromNode(currentNode)
 
-            terminationChecker.notifyExpansion()
+            totalExpansionDuration += measureLong(terminationChecker::elapsed) {
+                expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
+            }
 
             // Update best safe node
-            if (lastSafeNode == null || random.nextDouble() < 0.01) {
-                val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
-                if (topNode.safe) {
-                    lastSafeNode = topNode
-                } else {
-                    val comfortable = isComfortable(topNode.state, terminationChecker, domain)
-                    if (comfortable != null) {
-                        lastSafeNode = topNode
-                        lastSafeNode.safe = true
-
-                        comfortable.forEach { nodes[it]?.safe = true }
-                    }
+            if (totalExpansionDuration * 0.3 > totalSafetyDuration) {
+                totalSafetyDuration += measureLong(terminationChecker::elapsed) {
+                    val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+                    lastSafeNode = if (proveSafety(topNode, terminationChecker, domain, nodes)) topNode else lastSafeNode
                 }
             }
         }
@@ -203,8 +205,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
 
-        return lastSafeNode
+        return selectSafeToBest(openList)
+//
+//        return lastSafeNode
     }
+
 
     private fun initializeAStar() {
         iterationCounter++
@@ -494,6 +499,57 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
                 .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
                 .onEach { discoveredStates += it.state }
                 .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state), currentNode) }) // Add successors to the queue
+    }
+
+    return null
+}
+
+interface SearchNode<StateType : State<StateType>> {
+    val state: StateType
+    var heuristic: Double
+    var cost: Long
+    var actionCost: Long
+    var action: Action
+    var open: Boolean
+
+    fun getParent(): SearchNode<StateType>
+}
+
+interface Safe {
+    var safe: Boolean
+}
+
+private fun <Node, StateType : State<StateType>> proveSafety(
+        targetNode: Node, terminationChecker: TerminationChecker,
+        domain: Domain<StateType>,
+        nodes: Map<StateType, Node>): Boolean
+        where Node : Safe, Node : Indexable, Node : SearchNode<StateType> {
+
+    if (targetNode.safe) return true
+
+    val comfortable = isComfortable(targetNode.state, terminationChecker, domain)
+    return if (comfortable != null) {
+        targetNode.safe = true
+        comfortable.forEach { nodes[it]?.safe = true }
+        true
+    } else {
+        false
+    }
+}
+
+private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
+        where Node : SearchNode<StateType>, Node : Indexable, Node : Safe {
+    val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
+    nodes.sortBy { it.cost + it.heuristic }
+
+    nodes.forEach {
+        var currentNode = it
+        while (currentNode.getParent() !== currentNode) {
+            if (currentNode.safe) {
+                return currentNode
+            }
+            currentNode = currentNode.getParent() as Node
+        }
     }
 
     return null
