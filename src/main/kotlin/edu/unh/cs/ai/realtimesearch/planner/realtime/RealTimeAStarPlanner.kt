@@ -28,8 +28,8 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         depthLimit = 20
     }
 
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
-        val successors = domain.successors(state)
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
+        val successors = domain.successors(sourceState)
         val unsortedSuccessors = evaluateSuccessors(successors, terminationChecker)
 
         var bestSuccessor: SuccessorHeuristicPair<StateType>? = null
@@ -45,15 +45,15 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
         }
 
         val action = when {
-            bestSuccessor == null -> throw RuntimeException("Cannot expand a state with no successors.")
+            bestSuccessor == null -> throw RuntimeException("Cannot expand a sourceState with no successors.")
             secondBestSuccessor == null -> {
                 // Only one action is available
-                heuristicTable[state] = bestSuccessor.heuristicLookahead + bestSuccessor.successorBundle.actionCost
+                heuristicTable[sourceState] = bestSuccessor.heuristicLookahead + bestSuccessor.successorBundle.actionCost
                 ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }
             else -> {
                 // Save the second best action's f value
-                heuristicTable[state] = secondBestSuccessor.heuristicLookahead + secondBestSuccessor.successorBundle.actionCost
+                heuristicTable[sourceState] = secondBestSuccessor.heuristicLookahead + secondBestSuccessor.successorBundle.actionCost
                 // Use the best action
                 ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }

@@ -109,7 +109,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
         get
 
     /**
-     * Selects a action given current state.
+     * Selects a action given current sourceState.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will
      * always be the first on in the current plan.
@@ -117,27 +117,27 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
      * LSS-LRTAStar will plan to a specific frontier, and continue
      * to plan from there. This planning abides a termination criteria, meaning that it plans under constraints
      *
-     * @param state is the current state
+     * @param sourceState is the current sourceState
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
-            rootState = state
-        } else if (state != rootState) {
-            // The given state should be the last target
-            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
+            rootState = sourceState
+        } else if (sourceState != rootState) {
+            // The given sourceState should be the last target
+            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
-        if (domain.isGoal(state)) {
-            // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
+        if (domain.isGoal(sourceState)) {
+            // The start sourceState is the goal sourceState
+            logger.warn() { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root state: $state" }
+        logger.debug { "Root sourceState: $sourceState" }
         // Every turn learn then A* until time expires
 
         // Learning phase
@@ -148,11 +148,11 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Re
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(state, terminationChecker)
+            val targetNode = aStar(sourceState, terminationChecker)
 
             updateSafeNodes()
 
-            plan = extractPlan(targetNode, state)
+            plan = extractPlan(targetNode, sourceState)
             rootState = targetNode.state
         }
 

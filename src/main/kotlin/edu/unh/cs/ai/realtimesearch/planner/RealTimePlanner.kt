@@ -23,11 +23,11 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
     /**
      * Returns an action while abiding the termination checker's criteria.
      *
-     * @param state is the state to pick an action for
+     * @param sourceState is the sourceState to pick an action for
      * @param terminationChecker provides the termination criteria
-     * @return an action for current state
+     * @return an action for current sourceState
      */
-    abstract fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<ActionBundle>
+    abstract fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle>
 
     /**
      * Called before the first [selectAction] call.
