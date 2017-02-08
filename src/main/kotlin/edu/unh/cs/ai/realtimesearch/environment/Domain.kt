@@ -77,7 +77,15 @@ interface Domain<State> {
      * @return true if the state or any of the descendant states is safe, else false.
      */
     fun isSafe(state: State): Boolean = TODO()
+
     fun safeDistance(state: State): Pair<Int, Int> = TODO()
+
+    /**
+     * Get an identity action if available. The identity action applied on a state leads to the same state if available.
+     *
+     * @return identity action for a given state if available, else null.
+     */
+    fun getIdentityAction(state: State): SuccessorBundle<State>? = null
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)

@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.environment.racetrack
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
 import java.lang.Math.*
 import java.util.*
 
@@ -64,7 +65,7 @@ class RaceTrack(val width: Int,
             val (location, goalDistance) = queue.poll()
 
             predecessors(RaceTrackState(location.x, location.y, 0, 0))
-                    .filter { it.action != RaceTrackAction.NO_OP }
+                    .filter { it.action != NO_OP }
                     .map { Location(it.state.x, it.state.y) }
                     .filter { it !in discovered && it !in obstacles }
                     .onEach {
@@ -84,6 +85,16 @@ class RaceTrack(val width: Int,
             val newDX = state.dX + action.aX
             val newDY = state.dY + action.aY
             val distance = sqrt(pow(newDX.toDouble(), 2.0) + pow(newDY.toDouble(), 2.0))
+
+            if (distance <= 0.000001) {
+                // Identity and stop action
+                successors.add(SuccessorBundle(
+                        state = RaceTrackState(state.x, state.y, newDX, newDY),
+                        action = action,
+                        actionCost = actionDuration)
+                )
+                continue
+            }
 
             var x = state.x.toDouble()
             var y = state.y.toDouble()
@@ -219,4 +230,6 @@ class RaceTrack(val width: Int,
      * @return returns a lower bound on the number of steps to reach a safe state.
      */
     override fun safeDistance(state: RaceTrackState): Pair<Int, Int> = max(abs(state.dX), abs(state.dY)) to min(abs(state.dX), abs(state.dY))
+
+    override fun getIdentityAction(state: RaceTrackState): SuccessorBundle<RaceTrackState>? = if (state.dX == 0 && state.dY == 0) SuccessorBundle(state, NO_OP, actionDuration) else null
 }

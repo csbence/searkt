@@ -34,7 +34,8 @@ fun main(args: Array<String>) {
         //        val instanceFileName = "input/pointrobot/squiggle.pr"
 //        val instanceFileName = "input/traffic/vehicle0.v"
 //        val instanceFileName = "input/racetrack/barto-big.obstacles"
-        val instanceFileName = "input/racetrack/hansen-bigger-doubled.track"
+//        val instanceFileName = "input/racetrack/hansen-bigger-doubled.track"
+        val instanceFileName = "input/vacuum/uniform.vw"
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
@@ -45,7 +46,7 @@ fun main(args: Array<String>) {
 
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = 1000L
         manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.DYNAMIC.toString()
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.MULTIPLE.toString()
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(15, MINUTES)
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
 
