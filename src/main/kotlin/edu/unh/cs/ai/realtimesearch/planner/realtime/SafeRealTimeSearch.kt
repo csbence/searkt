@@ -97,6 +97,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
     private var rootState: StateType? = null
 
+    private var continueSearch = false
+    private var safeActions: List<ActionBundle>? = null
+
     // Performance measurement
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
@@ -105,8 +108,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     var dijkstraTimer = 0L
         get
 
+
     /**
-     * Selects a action given current state.
+     * Selects a action given current sourceState.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will
      * always be the first on in the current plan.
@@ -114,47 +118,69 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      * LSS-LRTAStar will plan to a specific frontier, and continue
      * to plan from there. This planning abides a termination criteria, meaning that it plans under constraints
      *
-     * @param state is the current state
+     * @param sourceState is the current sourceState
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
-            rootState = state
-        } else if (state != rootState) {
-            // The given state should be the last target
-            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
+            rootState = sourceState
+        } else if (sourceState != rootState) {
+            // The given sourceState should be the last target
+            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
-        if (domain.isGoal(state)) {
-            // The start state is the goal state
-            logger.warn { "selectAction: The goal state is already found." }
+        if (domain.isGoal(sourceState)) {
+            // The start sourceState is the goal sourceState
+            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root state: $state" }
+        logger.debug { "Root sourceState: $sourceState" }
         // Every turn learn then A* until time expires
 
         // Learning phase
-        if (openList.isNotEmpty()) {
+        if (openList.isNotEmpty() && !continueSearch) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(state, terminationChecker)
+            val targetNode = aStar(sourceState, terminationChecker)
 
-            // Commitment strategy
+            plan = extractPlan(targetNode, sourceState)
 
-            plan = extractPlan(targetNode, state)
             rootState = targetNode?.state
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+
+        // Safety action, to make sure that no empty plan is returned
+        if (plan!!.isEmpty()) {
+            if (domain.isSafe(sourceState)) {
+                // The current state is safe, attempt an identity action
+                val actionBundle = domain.getIdentityAction(sourceState)
+
+                if (actionBundle != null) {
+                    continueSearch = true // The planner can continue the search in the next iteration since the state is not changed
+                    safeActions = null // No further safe actions are available
+                    return listOf(ActionBundle(actionBundle.action, actionBundle.actionCost))
+                }
+            }
+
+            logger.info("Safe plan was used")
+            // Return the next safe action from a previously generated plan if available
+            safeActions = safeActions?.drop(1)
+            val nextSafeAction = safeActions?.firstOrNull() ?: throw MetronomeException("Safe actions are not available.")
+            return listOf(ActionBundle(nextSafeAction.action, nextSafeAction.duration))
+        } else {
+            // A safe plan is available
+            safeActions = plan
+        }
 
         return plan!!
     }
@@ -165,14 +191,18 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType>? {
         // actual core steps of A*, building the tree
-        initializeAStar()
+        if (continueSearch) {
+            continueSearch = false
+        } else {
+            initializeAStar()
+            // Create and add initial node to open
+            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
+            nodes[state] = node
+            addToOpenList(node)
+        }
         var lastSafeNode: Node<StateType>? = null
 
-        // Create and add initial node to open
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
-        nodes[state] = node
-        var currentNode = node
-        addToOpenList(node)
+        var currentNode = openList.peek()!!
         logger.debug { "Starting A* from state: $state" }
 
         var totalExpansionDuration = 0L
@@ -206,7 +236,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Last safe node: $lastSafeNode" }
 
         return selectSafeToBest(openList)
-//
 //        return lastSafeNode
     }
 
@@ -548,6 +577,7 @@ private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: Advance
             if (currentNode.safe) {
                 return currentNode
             }
+            @Suppress("UNCHECKED_CAST")
             currentNode = currentNode.getParent() as Node
         }
     }
