@@ -1,16 +1,21 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.environment.Domains
+import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
+import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConfigurationFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
+import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -29,6 +34,27 @@ private val visualizerParameters = mutableListOf<String>()
 fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
+    val configurations = generateConfigurations(
+            domains = listOf(
+                    TRAFFIC to "input/traffic/vehicle0.v",
+                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+            ),
+            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+            commitmentStrategy = listOf(SINGLE, MULTIPLE),
+            actionDurations = listOf(1000L, 10000L),
+            terminationType = EXPANSION,
+            lookaheadType = DYNAMIC,
+            timeLimit = NANOSECONDS.convert(15, MINUTES)
+    )
+
+    configurations.forEach { println(it.toIndentedJson()) }
+
+    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallel = true)
+
+    results.forEach { println(it.toIndentedJson()) }
+
+    return
+
     if (args.isEmpty()) {
         // Default configuration
 //        val instanceFileName = "input/racetrack/hansen-bigger-doubled.obstacles"
@@ -40,14 +66,14 @@ fun main(args: Array<String>) {
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
         manualConfiguration = GeneralExperimentConfiguration(
-                Domains.RACETRACK.toString(),
+                RACETRACK.toString(),
                 rawDomain,
                 Planners.SAFE_RTS.toString(),
-                TerminationType.EXPANSION.toString())
+                EXPANSION.toString())
 
         manualConfiguration[Configurations.ACTION_DURATION.toString()] = 1000L
         manualConfiguration[Configurations.LOOKAHEAD_TYPE.toString()] = LookaheadType.DYNAMIC.toString()
-        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = CommitmentStrategy.SINGLE.toString()
+        manualConfiguration[Configurations.COMMITMENT_STRATEGY.toString()] = SINGLE.toString()
         manualConfiguration[Configurations.TIME_LIMIT.toString()] = NANOSECONDS.convert(15, MINUTES)
         manualConfiguration[Configurations.DOMAIN_INSTANCE_NAME.toString()] = instanceFileName
 

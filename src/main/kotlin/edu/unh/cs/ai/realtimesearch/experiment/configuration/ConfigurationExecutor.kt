@@ -47,7 +47,7 @@ import java.util.stream.Collectors
  */
 object ConfigurationExecutor {
 
-    fun executeConfigurations(configurations: List<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
+    fun executeConfigurations(configurations: Collection<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
         val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
         return configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
     }
@@ -112,9 +112,10 @@ object ConfigurationExecutor {
 
         val domainStream: InputStream = if (configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
             configuration.rawDomain!!.byteInputStream()
-        } else {
-            dataRootPath ?: throw RuntimeException("Data root path is not specified.")
+        } else if (dataRootPath != null) {
             FileInputStream(dataRootPath + configuration.domainPath)
+        } else {
+            Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }
 
         val domain = Domains.valueOf(domainName)
