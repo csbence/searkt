@@ -20,7 +20,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
 
     init {
         logger.info("TrafficWorld starting...")
-        obstacleTimeSequence[0] = movingObstacles.toLocationSet()
+        obstacleTimeSequence.add(movingObstacles.toLocationSet())
     }
 
     override fun safeDistance(state: TrafficWorldState): Pair<Int, Int> {

@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  */
 class TrafficWorldTest {
 
-    val world = TrafficWorld(10, 10, emptySet(), Location(9, 9), 1, obstacles)
+    val world = TrafficWorld(10, 10, emptySet(), Location(9, 9), 1, emptyList())
 
     @Test
     fun testGoalState() {
@@ -30,28 +30,32 @@ class TrafficWorldTest {
         assert(world.heuristic(pos2) == 9.0)
     }
 
+    val obstacleWorld = TrafficWorld(10, 10, emptySet(), Location(9,9), 1, listOf(MovingObstacle(3,3,1,1), MovingObstacle(5,5,-1,0),
+            MovingObstacle(2,2,0,-1), MovingObstacle(4,4,1,-1), MovingObstacle(6,6,-1,2)))
+
     @Test
     fun testVisualizeSomeObstacles() {
-        val pos1 = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3,3,1,1), MovingObstacle(5,5,-1,0),
-                MovingObstacle(2,2,0,-1), MovingObstacle(4,4,1,-1), MovingObstacle(6,6,-1,2)))
+        val pos1 = TrafficWorldState(Location(0, 0), 0)
         println("showing starting world...")
-        println(world.print(pos1))
+        println(obstacleWorld.print(pos1))
         println("now successors...")
-        world.successors(pos1).forEach { println(world.print(it.state)) }
+        obstacleWorld.successors(pos1).forEach { println(obstacleWorld.print(it.state)) }
         println("now successors of successors...")
-        world.successors(pos1).forEach {
-            world.successors(it.state).forEach {
-                println(world.print(it.state))
+        obstacleWorld.successors(pos1).forEach {
+            obstacleWorld.successors(it.state).forEach {
+                println(obstacleWorld.print(it.state))
             }
             println("new parent...")
         }
     }
 
+    val littleObstacleWorld = TrafficWorld(10, 10, emptySet(), Location(9,9), 1, listOf(MovingObstacle(3, 3, 1, 1), MovingObstacle(3, 5, 2, 0)))
+
     @Test
     fun testDirectSuccessorConsistency() {
-        val state = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3, 3, 1, 1), MovingObstacle(3, 5, 2, 0)))
-        val successors1 = world.successors(state)
-        val successors2 = world.successors(state)
+        val state = TrafficWorldState(Location(0, 0), 0)
+        val successors1 = littleObstacleWorld.successors(state)
+        val successors2 = littleObstacleWorld.successors(state)
 
         // Make sure that the successor generation is consistent
         assertTrue { successors1.all { it in successors2 } }
@@ -60,12 +64,12 @@ class TrafficWorldTest {
 
     @Test
     fun testIndirectSuccessorConsistency() {
-        val state = TrafficWorldState(Location(0, 0), setOf(MovingObstacle(3, 3, 1, 1), MovingObstacle(3, 5, 2, 0)))
+        val state = TrafficWorldState(Location(0, 0), 0)
         var stateA: TrafficWorldState = state
         var stateB: TrafficWorldState = state
 
-        (0..1000).forEach { stateA = world.successors(stateA).first().state }
-        (0..1000).forEach { stateB = world.successors(stateB).first().state }
+        (0..1000).forEach { stateA = littleObstacleWorld.successors(stateA).first().state }
+        (0..1000).forEach { stateB = littleObstacleWorld.successors(stateB).first().state }
 
         assertTrue { stateA == stateB }
     }
