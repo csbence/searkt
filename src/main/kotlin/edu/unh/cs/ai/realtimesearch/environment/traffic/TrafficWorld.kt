@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
+import edu.unh.cs.ai.realtimesearch.environment.obstacle.toLocationSet
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
@@ -12,15 +13,18 @@ import java.lang.Math.abs
  * while reaching the specified goal
  * Created by doylew on 1/17/17.
  */
-class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<TrafficWorldState> {
+class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val goal: Location, val actionDuration: Long, obstacles: List<MovingObstacle>) : Domain<TrafficWorldState> {
     private val logger = LoggerFactory.getLogger(TrafficWorld::class.java)
+    private val obstacleTimeSequence: MutableList<Set<Location>> = arrayListOf()
+    private val movingObstacles: List<MovingObstacle> = obstacles.map { it }
 
     init {
         logger.info("TrafficWorld starting...")
+        obstacleTimeSequence[0] = movingObstacles.toLocationSet()
     }
 
     override fun safeDistance(state: TrafficWorldState): Pair<Int, Int> {
-        val distanceFunction: (Location) -> Int = { (x, y) -> Math.max(abs(state.agentLocation.x - x), abs(state.agentLocation.y - y)) }
+        val distanceFunction: (Location) -> Int = { (x, y) -> Math.max(abs(state.location.x - x), abs(state.location.y - y)) }
         return distanceFunction(bunkers.minBy(distanceFunction)!!) to 0
     }
 
@@ -31,7 +35,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * in Traffic this means the agent is in a bunker
      * @param state the state under consideration
      */
-    override fun isSafe(state: TrafficWorldState): Boolean = state.agentLocation in bunkers || isGoal(state)
+    override fun isSafe(state: TrafficWorldState): Boolean = state.location in bunkers || isGoal(state)
 
     /**
      * part of the Domain interface - successor function
@@ -39,15 +43,17 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      */
     override fun successors(state: TrafficWorldState): List<SuccessorBundle<TrafficWorldState>> {
         val successors: MutableList<SuccessorBundle<TrafficWorldState>> = arrayListOf()
-        val newObstacles = moveObstacles(state.obstacles)
+
+        val timestamp = state.timeStamp + 1
+        val movedObstacles = getObstacles(timestamp)
 
         for (action in TrafficWorldAction.values()) {
-            val newLocation = state.agentLocation + TrafficWorldAction.getRelativeLocation(action)
+            val newLocation = state.location + TrafficWorldAction.getRelativeLocation(action)
 
-            if (isLegalLocation(newLocation, newObstacles)) {
+            if (isLegalLocation(newLocation, movedObstacles)) {
                 successors.add(
                         SuccessorBundle(
-                                TrafficWorldState(newLocation, newObstacles),
+                                TrafficWorldState(newLocation, timestamp),
                                 action,
                                 actionCost = actionDuration
                         )
@@ -56,34 +62,28 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         }
         return successors
     }
-//
-//    override fun transition(sourceState: TrafficWorldState, action: Action): TrafficWorldState? {
-//        val movedObstacles = moveObstacles(sourceState.obstacles)
-//
-//        if (action == TrafficWorldAction.UP) {
-//           val candidateState = TrafficWorldState(Location(sourceState.agentLocation.x, sourceState.agentLocation.y -1), movedObstacles)
-//            if (isLegalLocation(candidateState)) {
-//                return candidateState
-//            }
-//        }
-//    }
+
+    private fun getObstacles(timestamp: Int): Set<Location> {
+        if (obstacleTimeSequence.size <= timestamp) {
+            // Add one more time step
+            moveObstacles(movingObstacles)
+            obstacleTimeSequence.add(movingObstacles.toLocationSet())
+        }
+
+        return obstacleTimeSequence[timestamp]
+    }
 
     /**
      * checks a given state is out-of-bounds of the world
      * or is in collision with an obstacle
      *
-     * @param newLocation the test newLocation
-     * @return true if newLocation is legal false otherwise
+     * @param location the test location
+     * @return true if location is legal false otherwise
      */
-    fun isLegalLocation(newLocation: Location, newObstacles: Set<MovingObstacle>): Boolean {
-        if (newLocation.x in 0..(width - 1)) {
-            if (newLocation.y in 0..(height - 1)) {
-                if (!containsObstacle(Location(x = newLocation.x, y = newLocation.y), newObstacles)) {
-                    return true
-                }
-            }
-        }
-        return false
+    fun isLegalLocation(location: Location, obstacles: Set<Location>): Boolean {
+        return location.x in 0..(width - 1) &&
+                location.y in 0..(height - 1) &&
+                location !in obstacles
     }
 
     /**
@@ -97,8 +97,8 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
     }
 
     override fun heuristic(startState: TrafficWorldState, endState: TrafficWorldState): Double {
-        return Math.abs(startState.agentLocation.x - endState.agentLocation.x) +
-                Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
+        return Math.abs(startState.location.x - endState.location.x) +
+                Math.abs(startState.location.y - endState.location.y).toDouble()
     }
 
     /**
@@ -106,7 +106,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the state under distance measurement
      */
     override fun distance(state: TrafficWorldState): Double {
-        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+        return state.run { location.manhattanDistance(goal).toDouble() }
     }
 
     /**
@@ -114,7 +114,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param state the state under goal test
      */
     override fun isGoal(state: TrafficWorldState): Boolean {
-        return state.agentLocation == targetLocation
+        return state.location == goal
     }
 
     /**
@@ -138,14 +138,12 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
         val output = StringBuilder()
         (0..height - 1).forEach { y ->
             (0..width - 1).forEach { x ->
-                var character = when (Location(x, y)) {
-                    state.agentLocation -> '@'
-                    targetLocation -> '*'
+                val character = when (Location(x, y)) {
+                    state.location -> '@'
+                    goal -> '*'
                     in bunkers -> '$'
+                    in obstacleTimeSequence[state.timeStamp] -> '#'
                     else -> '_'
-                }
-                if (containsObstacle(Location(x, y), state.obstacles)) {
-                    character = '#'
                 }
                 output.append(character)
             }
@@ -161,40 +159,25 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
      * @param obstacles the obstacles to be moved
      * @return the moved obstacles
      */
-    private fun moveObstacles(obstacles: Set<MovingObstacle>): Set<MovingObstacle> {
-        val newObstacles = mutableSetOf<MovingObstacle>()
-        obstacles.forEach { (x, y, dx, dy) ->
-            val oldObstacleLocation = MovingObstacle(x, y, dx, dy)
-            val newObstacleLocation = MovingObstacle(x + dx, y + dy, dx, dy)
-            if (bunkers.contains(Location(x + dx, y + dy)) || !validObstacleLocation(Location(x + dx, y + dy)) ||
-                    (targetLocation.x == newObstacleLocation.x && targetLocation.y == newObstacleLocation.y)) {
-                // if the new obstacle obstacle would be a bunker
-                // or the goal (target) obstacle and is valid
-                // add the old obstacle and bounce the velocities
-                newObstacles.add(oldObstacleLocation)
-                oldObstacleLocation.dx *= -1
-                oldObstacleLocation.dy *= -1
+    private fun moveObstacles(obstacles: List<MovingObstacle>) {
+        obstacles.forEach { obstacle ->
+            val newLocation = Location(obstacle.x + obstacle.dx, obstacle.y + obstacle.dy)
+            if (newLocation in bunkers || !isInBounds(newLocation) || goal == newLocation) {
+                // Invert velocity if target location is not available
+                obstacle.invertVelocity()
             } else {
-                newObstacles.add(newObstacleLocation)
+                obstacle.x += obstacle.dx
+                obstacle.y += obstacle.dy
             }
         }
-        return newObstacles
     }
 
     /**
-     * validates a movement of an obstacle
+     * validates a movement of an location
      * essentially bounds checking
      *
-     * @param obstacle the obstacle to test
+     * @param location the location to test
      * @return true if the new position is ok
      */
-    private fun validObstacleLocation(obstacle: Location): Boolean {
-        if (obstacle.x in 0..(width - 1)) {
-            if (obstacle.y in 0..(height - 1)) {
-                return true
-            }
-        }
-        return false
-    }
-
+    private fun isInBounds(location: Location): Boolean = location.x in 0..(width - 1) && location.y in 0..(height - 1)
 }

@@ -53,7 +53,7 @@ Actions: up, down, left, right, vacuum
 
 #### RaceTrack ([from [1]](#ref-1))
 
-A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a starting and finish line. The goal is for the car to reach the finish line from the start newLocation.
+A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a starting and finish line. The goal is for the car to reach the finish line from the start location.
 
 Whenever the car hits a track boundary, it will be put back on a random position on the starting line with 0 velocity.
 

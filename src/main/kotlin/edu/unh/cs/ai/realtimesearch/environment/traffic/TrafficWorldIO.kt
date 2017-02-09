@@ -12,24 +12,24 @@ import java.util.*
 
 object VehicleWorldIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long) : VehicleWorldInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long): VehicleWorldInstance {
         return readVehicle(input, actionDuration)
     }
 
-    private fun readVehicle(input: InputStream, actionDuration: Long) : VehicleWorldInstance {
+    private fun readVehicle(input: InputStream, actionDuration: Long): VehicleWorldInstance {
         val inputScanner = Scanner(input)
 
         val random = Random(0L)
 
         val rowCount: Int
-        val columnCount : Int
+        val columnCount: Int
 
         try {
             columnCount = inputScanner.nextLine().toInt()
             rowCount = inputScanner.nextLine().toInt()
         } catch (e: NoSuchElementException) {
             throw InvalidVehicleWorldException("Vehicle world first or second line is missing.", e)
-        } catch (e : NumberFormatException) {
+        } catch (e: NumberFormatException) {
             throw InvalidVehicleWorldException("Vehicle world first or second line must be a integer.", e)
         }
 
@@ -39,15 +39,15 @@ object VehicleWorldIO {
         val targetLocation = arrayListOf<Location>()
 
         try {
-            (0..rowCount-1).forEach { y ->
+            (0..rowCount - 1).forEach { y ->
                 val line = inputScanner.nextLine()
-                (0..columnCount-1).forEach { x ->
+                (0..columnCount - 1).forEach { x ->
                     val coin = random.nextBoolean()
                     when (line[x]) {
-                        '#' -> obstacles.add(MovingObstacle(x,y,if(coin) random.nextInt(1)+1 else 0, if(!coin) random.nextInt(1)+1 else 0))
-                        '*' -> targetLocation.add(Location(x,y))
-                        '@' -> startLocation.add(Location(x,y))
-                        '$' -> bunkers.add(Location(x,y))
+                        '#' -> obstacles.add(MovingObstacle(x, y, if (coin) random.nextInt(1) + 1 else 0, if (!coin) random.nextInt(1) + 1 else 0))
+                        '*' -> targetLocation.add(Location(x, y))
+                        '@' -> startLocation.add(Location(x, y))
+                        '$' -> bunkers.add(Location(x, y))
                     }
                 }
             }
@@ -55,16 +55,16 @@ object VehicleWorldIO {
             throw InvalidVehicleWorldException("Vehicle world isn't complete.", e)
         }
 
-        if(startLocation.size != 1) {
+        if (startLocation.size != 1) {
             throw InvalidVehicleWorldException("Vehicle world start location with @ marker not specified.")
         } else if (targetLocation.size != 1) {
             throw InvalidVehicleWorldException("Vehicle world target goal location with * marker not specified.")
         }
 
         val vehicleWorld = TrafficWorld(columnCount, rowCount,
-                bunkers.toHashSet(), targetLocation.first(), actionDuration)
+                bunkers.toHashSet(), targetLocation.first(), actionDuration, obstacles)
 
-        val startState = TrafficWorldState(startLocation.first(), obstacles.toHashSet())
+        val startState = TrafficWorldState(startLocation.first(), 0)
         return VehicleWorldInstance(vehicleWorld, startState)
 
     }

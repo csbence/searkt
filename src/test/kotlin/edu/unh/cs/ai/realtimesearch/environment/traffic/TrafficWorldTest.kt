@@ -12,19 +12,19 @@ import kotlin.test.assertTrue
  */
 class TrafficWorldTest {
 
-    val world = TrafficWorld(10, 10, emptySet(), Location(9, 9), 1)
+    val world = TrafficWorld(10, 10, emptySet(), Location(9, 9), 1, obstacles)
 
     @Test
     fun testGoalState() {
-        assert(world.isGoal(TrafficWorldState(world.targetLocation, emptySet())))
-        assertFalse(world.isGoal(TrafficWorldState(Location(4, 5), emptySet())))
-        assertFalse(world.isGoal(TrafficWorldState(Location(0, 0), emptySet())))
+        assert(world.isGoal(TrafficWorldState(world.goal, 0)))
+        assertFalse(world.isGoal(TrafficWorldState(Location(4, 5), 0)))
+        assertFalse(world.isGoal(TrafficWorldState(Location(0, 0), 0)))
     }
 
     @Test
     fun testHeuristicBasic() {
-        val pos1 = TrafficWorldState(Location(0, 0), emptySet())
-        val pos2 = TrafficWorldState(Location(5, 5), emptySet())
+        val pos1 = TrafficWorldState(Location(0, 0), 0)
+        val pos2 = TrafficWorldState(Location(5, 5), 0)
 
         assert(world.heuristic(pos1) == 19.0)
         assert(world.heuristic(pos2) == 9.0)
@@ -79,7 +79,7 @@ class TrafficWorldTest {
 //        bunkers.add(Location(3,4))
 //        bunkers.add(Location(5,7))
 //        bunkers.add(Location(7,9))
-//        val obstacleWorld = TrafficWorld(10, 10,  bunkers = bunkers, targetLocation = Location(9, 9), actionDuration = 1)
+//        val obstacleWorld = TrafficWorld(10, 10,  bunkers = bunkers, goal = Location(9, 9), actionDuration = 1)
 //
 //        val pos1 = TrafficWorldState(Location(0, 0), obstacles)
 //

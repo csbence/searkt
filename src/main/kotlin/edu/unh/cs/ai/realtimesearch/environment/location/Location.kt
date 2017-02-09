@@ -22,12 +22,13 @@ data class Location(val x: Int, val y: Int) {
     }
 
     override fun equals(other: Any?): Boolean {
-        return other is Location &&  other.x == x && other.y == y
+        return other is Location && other.x == x && other.y == y
     }
 
     override fun hashCode(): Int {
-        return x xor y
+        return x xor Integer.rotateLeft(y, 16)
     }
+
     /**
      * Check if location is inside the boundaries.
      * The lower bound is inclusive the upper bound is exclusive.

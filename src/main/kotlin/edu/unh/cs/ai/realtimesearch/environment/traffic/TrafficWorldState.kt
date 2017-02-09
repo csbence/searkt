@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.environment.traffic
 
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 
 /**
  * A state in the traffic domain just a location of the agent
@@ -10,13 +9,9 @@ import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
  *
  * Created by doylew on 1/17/17.
  */
-data class TrafficWorldState(val agentLocation: Location, val obstacles: Set<MovingObstacle>) : State<TrafficWorldState> {
+data class TrafficWorldState(val location: Location, val timeStamp: Int) : State<TrafficWorldState> {
     override fun hashCode(): Int {
-        return calculateHashCode() xor obstacles.hashCode()
-    }
-
-    private fun calculateHashCode(): Int {
-        return agentLocation.hashCode()
+        return location.hashCode() xor timeStamp
     }
 
     override fun equals(other: Any?): Boolean {
@@ -24,15 +19,9 @@ data class TrafficWorldState(val agentLocation: Location, val obstacles: Set<Mov
             other == null -> false
             other === this -> true
             other !is TrafficWorldState -> false
-            else -> agentLocation == other.agentLocation && Companion.sameObstacles(this, other)
+            else -> location == other.location && timeStamp == other.timeStamp
         }
     }
 
-    override fun copy() = copy(agentLocation)
-
-    companion object {
-        private fun sameObstacles(trafficWorldState: TrafficWorldState, other: Any?) =
-                other is TrafficWorldState && other.obstacles.hashCode() == trafficWorldState.obstacles.hashCode() }
-//                        other.obstacles.all { trafficWorldState.obstacles.contains(it) } }
-
+    override fun copy() = copy(location)
 }

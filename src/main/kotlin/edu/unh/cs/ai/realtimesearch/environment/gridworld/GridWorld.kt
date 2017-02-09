@@ -61,7 +61,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
 
     override fun heuristic(startState: GridWorldState, endState: GridWorldState): Double {
         return Math.abs(startState.agentLocation.x - endState.agentLocation.x) + Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
-        //        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+        //        return state.run { location.manhattanDistance(goal).toDouble() }
     }
 
     /**
