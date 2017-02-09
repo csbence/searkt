@@ -40,11 +40,18 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.stream.Collectors
 
 /**
  * Configuration executor to execute experiment configurations.
  */
 object ConfigurationExecutor {
+
+    fun executeConfigurations(experimentConfigurations: List<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
+        val configurationStream = if (parallel) experimentConfigurations.parallelStream() else experimentConfigurations.stream()
+        return configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
+    }
+
     fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
         val logger = LoggerFactory.getLogger("ConfigurationExecutor")
 
@@ -63,7 +70,6 @@ object ConfigurationExecutor {
             } else {
                 logger.info("Experiment stopped", throwable)
             }
-
         }
 
         collectAndWait()
@@ -94,49 +100,6 @@ object ConfigurationExecutor {
         logger.info("Experiment successful.")
 
         return experimentResult!!
-
-        //        val executor = Executors.newSingleThreadExecutor()
-        //                // Execute the gc before every experiment.
-        //                System.gc()
-
-        //        val future = executor.submit<ExperimentResult>({
-        //            unsafeConfigurationExecution(configuration)
-        //        })
-        //
-        //        try {
-        //            val experimentResult = future.get(1, MINUTES)
-        //            System.gc() // Clean up after the experiment
-        //
-        //            return experimentResult // Wait on the future to complete or timeout
-        //        } catch (e: TimeoutException) {
-        //            System.gc() // Clean up after the experiment
-        //
-        //            logger.info("Experiment timed out.")
-        //            future.cancel(true)
-        //
-        //            if (!future.isCancelled && future.isDone) {
-        //                logger.info("Experiment completed after the timeout before it was cancelled.")
-        //
-        //                return future.get()
-        //            }
-        //
-        //            return ExperimentResult(configuration.valueStore, "Timeout")
-        //        } catch (e: ExecutionException) {
-        //            System.gc() // Clean up after the experiment
-        //
-        //            logger.info("Experiment failed. ${e.message}")
-        //            val experimentResult = ExperimentResult(configuration.valueStore, "${e.message}")
-        //            experimentResult["errorDetails"] = e.stackTrace
-        //            return experimentResult
-        //        } finally {
-        //            executor.shutdownNow()
-        //
-        //            logger.info("Waiting for termination.")
-        //            executor.awaitTermination(1, MINUTES)
-        //            logger.info("Terminated.")
-        //            System.gc()
-        //
-        //        }
     }
 
     private fun collectAndWait() {
@@ -232,8 +195,8 @@ object ConfigurationExecutor {
             RTA_STAR -> executeRealTimeAStar(configuration, domain, initialState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, initialState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, initialState)
-            S_ZERO -> executeSZero(configuration, domain, initialState)
-            S_ONE -> executeSOne(configuration, domain, initialState)
+            S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain), configuration, domain, initialState)
+            S_ONE -> executeRealTimeSearch(SOnePlanner(domain), configuration, domain, initialState)
             else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
@@ -269,35 +232,6 @@ object ConfigurationExecutor {
         val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeLssLrtaStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val lssLrtaPlanner = LssLrtaStarPlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, lssLrtaPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeSZero(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val sZeroPlanner = SZeroPlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, sZeroPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
-    }
-
-
-    private fun <StateType : State<StateType>> executeSOne(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val sOnePlanner = SOnePlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, sOnePlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeDynamicFHat(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val dynamicFHatPlanner = DynamicFHatPlanner(domain)
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, dynamicFHatPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
     }
 
     private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {

@@ -7,7 +7,7 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
  * @author Bence Cserna (bence@cserna.net)
  * @since 4/3/16
  */
-enum class Configurations {
+enum class Configurations(val configurationName: String) {
     // General configurations
     ALGORITHM_NAME          ("algorithmName"),
     DOMAIN_NAME             ("domainName"),
@@ -29,12 +29,6 @@ enum class Configurations {
     NUM_ACTIONS             ("numActions"),
     ACTION_FRACTION         ("actionFraction"),
     STATE_FRACTION          ("stateFraction");
-
-
-    val configurationName: String
-    constructor(configurationName: String) {
-        this.configurationName = configurationName
-    }
 
     companion object {
         val valueMap by lazy {
