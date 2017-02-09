@@ -8,15 +8,16 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentConf
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
-import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.*
-import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.TimeUnit.MINUTES
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.system.exitProcess
 
 class Input
@@ -71,28 +72,11 @@ fun main(args: Array<String>) {
         PrintWriter(outFile, "UTF-8").use {
             it.write(result.toIndentedJson())
         }
-    } else if (result.errorMessage != null) {
-        logger.error("Something went wrong: ${result.errorMessage}")
     } else {
-        val terminationType = TerminationType.valueOf(manualConfiguration.terminationType)
-        logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
-        if (terminationType == TerminationType.TIME) {
-            logger.info("Action duration: ${convertNanoUpDouble(result.configuration["actionDuration"] as Long, MILLISECONDS)} ms")
-            logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
-            logger.info("Idle planning time: ${convertNanoUpDouble(result.idlePlanningTime, MILLISECONDS)} ms")
-            logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
-        } else {
-            logger.info("Action duration: ${result.configuration["actionDuration"] as Long} expansions")
-            logger.info("Execution time: ${result.actionExecutionTime} expansions")
-            logger.info("Idle planning time: ${result.idlePlanningTime} expansions")
-            logger.info("GAT: ${result.goalAchievementTime} expansions")
-        }
-        logger.info("Path Length: ${result.pathLength}")
-        logger.info("Generated Nodes: ${result.generatedNodes}, Expanded Nodes ${result.expandedNodes}")
+        logger.info { result.toString() }
 
         //        logger.info(result.toIndentedJson())
-
-//        runVisualizer(result, visualizerParameters)
+        //        runVisualizer(result, visualizerParameters)
     }
 }
 

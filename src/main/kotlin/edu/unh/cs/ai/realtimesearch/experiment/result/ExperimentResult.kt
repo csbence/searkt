@@ -2,8 +2,12 @@ package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.terminationType
+import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import java.lang.management.ManagementFactory
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -76,5 +80,34 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
         systemProperties.put("java_version", System.getProperties()["java.version"].toString())
         systemProperties.put("java_vm_input_args", arguments)
+    }
+
+    override fun toString(): String {
+        val builder = StringBuilder("Result:")
+
+        if (errorMessage != null) {
+            builder.appendln("Something went wrong: ${errorMessage}")
+        } else {
+            val terminationType = TerminationType.valueOf(terminationType)
+            builder.appendln("Planning time: ${convertNanoUpDouble(planningTime, TimeUnit.MILLISECONDS)} ms")
+            builder.appendln("Generated Nodes: $generatedNodes, Expanded Nodes $expandedNodes")
+            builder.appendln("Path Length: $pathLength")
+
+            when (terminationType) {
+                TerminationType.TIME -> {
+                    builder.appendln("Action duration: ${convertNanoUpDouble(configuration["actionDuration"] as Long, TimeUnit.MILLISECONDS)} ms")
+                    builder.appendln("Execution time: ${convertNanoUpDouble(actionExecutionTime, TimeUnit.MILLISECONDS)} ms")
+                    builder.appendln("Idle planning time: ${convertNanoUpDouble(idlePlanningTime, TimeUnit.MILLISECONDS)} ms")
+                    builder.appendln("GAT: ${convertNanoUpDouble(goalAchievementTime, TimeUnit.MILLISECONDS)} ms")
+                }
+                TerminationType.EXPANSION, TerminationType.UNLIMITED -> {
+                    builder.appendln("Action duration: ${configuration["actionDuration"] as Long} expansions")
+                    builder.appendln("Execution time: ${actionExecutionTime} expansions")
+                    builder.appendln("Idle planning time: ${idlePlanningTime} expansions")
+                    builder.appendln("GAT: $goalAchievementTime expansions")
+                }
+            }
+        }
+        return builder.toString()
     }
 }
