@@ -77,12 +77,12 @@ fun main(args: Array<String>) {
         val terminationType = TerminationType.valueOf(manualConfiguration.terminationType)
         logger.info("Planning time: ${convertNanoUpDouble(result.planningTime, MILLISECONDS)} ms")
         if (terminationType == TerminationType.TIME) {
-            logger.info("Action duration: ${convertNanoUpDouble(result.experimentConfiguration["actionDuration"] as Long, MILLISECONDS)} ms")
+            logger.info("Action duration: ${convertNanoUpDouble(result.configuration["actionDuration"] as Long, MILLISECONDS)} ms")
             logger.info("Execution time: ${convertNanoUpDouble(result.actionExecutionTime, MILLISECONDS)} ms")
             logger.info("Idle planning time: ${convertNanoUpDouble(result.idlePlanningTime, MILLISECONDS)} ms")
             logger.info("GAT: ${convertNanoUpDouble(result.goalAchievementTime, MILLISECONDS)} ms")
         } else {
-            logger.info("Action duration: ${result.experimentConfiguration["actionDuration"] as Long} expansions")
+            logger.info("Action duration: ${result.configuration["actionDuration"] as Long} expansions")
             logger.info("Execution time: ${result.actionExecutionTime} expansions")
             logger.info("Idle planning time: ${result.idlePlanningTime} expansions")
             logger.info("GAT: ${result.goalAchievementTime} expansions")

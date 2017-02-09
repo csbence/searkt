@@ -47,19 +47,19 @@ import java.util.stream.Collectors
  */
 object ConfigurationExecutor {
 
-    fun executeConfigurations(experimentConfigurations: List<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
-        val configurationStream = if (parallel) experimentConfigurations.parallelStream() else experimentConfigurations.stream()
+    fun executeConfigurations(configurations: List<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
+        val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
         return configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
     }
 
-    fun executeConfiguration(experimentConfiguration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
+    fun executeConfiguration(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
         val logger = LoggerFactory.getLogger("ConfigurationExecutor")
 
         var experimentResult: ExperimentResult? = null
         var executionException: Throwable? = null
 
         val thread = Thread({
-            experimentResult = unsafeConfigurationExecution(experimentConfiguration, dataRootPath)
+            experimentResult = unsafeConfigurationExecution(configuration, dataRootPath)
         })
 
         thread.setUncaughtExceptionHandler { _, throwable ->
@@ -76,13 +76,13 @@ object ConfigurationExecutor {
 
         thread.start()
         thread.priority = Thread.MAX_PRIORITY
-        thread.join(MILLISECONDS.convert(experimentConfiguration.timeLimit, NANOSECONDS))
+        thread.join(MILLISECONDS.convert(configuration.timeLimit, NANOSECONDS))
 
         if (executionException != null) {
             collectAndWait()
 
             logger.info("Experiment failed. ${executionException!!.message}")
-            val failedExperimentResult = ExperimentResult(experimentConfiguration.valueStore, "${executionException!!.message}")
+            val failedExperimentResult = ExperimentResult(configuration.valueStore, "${executionException!!.message}")
             failedExperimentResult["errorDetails"] = executionException!!.stackTrace
             return failedExperimentResult
         }
@@ -94,7 +94,7 @@ object ConfigurationExecutor {
 
             collectAndWait()
 
-            return ExperimentResult(experimentConfiguration.valueStore, "Timeout")
+            return ExperimentResult(configuration.valueStore, "Timeout")
         }
 
         logger.info("Experiment successful.")
@@ -107,50 +107,50 @@ object ConfigurationExecutor {
         Thread.sleep(500)
     }
 
-    private fun unsafeConfigurationExecution(experimentConfiguration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult? {
-        val domainName: String = experimentConfiguration.domainName
+    private fun unsafeConfigurationExecution(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult? {
+        val domainName: String = configuration.domainName
 
-        val domainStream: InputStream = if (experimentConfiguration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
-            experimentConfiguration.rawDomain!!.byteInputStream()
+        val domainStream: InputStream = if (configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
+            configuration.rawDomain!!.byteInputStream()
         } else {
             dataRootPath ?: throw RuntimeException("Data root path is not specified.")
-            FileInputStream(dataRootPath + experimentConfiguration.domainPath)
+            FileInputStream(dataRootPath + configuration.domainPath)
         }
 
         val domain = Domains.valueOf(domainName)
         return when (domain) {
-            SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(experimentConfiguration, domainStream)
-            VACUUM_WORLD -> executeVacuumWorld(experimentConfiguration, domainStream)
-            GRID_WORLD -> executeGridWorld(experimentConfiguration, domainStream)
-            ACROBOT -> executeAcrobot(experimentConfiguration, domainStream)
-            POINT_ROBOT -> executePointRobot(experimentConfiguration, domainStream)
-            POINT_ROBOT_LOST -> executePointRobotLOST(experimentConfiguration, domainStream)
-            POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(experimentConfiguration, domainStream)
-            RACETRACK -> executeRaceTrack(experimentConfiguration, domainStream)
-            TRAFFIC -> executeVehicle(experimentConfiguration, domainStream)
+            SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
+            VACUUM_WORLD -> executeVacuumWorld(configuration, domainStream)
+            GRID_WORLD -> executeGridWorld(configuration, domainStream)
+            ACROBOT -> executeAcrobot(configuration, domainStream)
+            POINT_ROBOT -> executePointRobot(configuration, domainStream)
+            POINT_ROBOT_LOST -> executePointRobotLOST(configuration, domainStream)
+            POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(configuration, domainStream)
+            RACETRACK -> executeRaceTrack(configuration, domainStream)
+            TRAFFIC -> executeVehicle(configuration, domainStream)
 
-            else -> ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Unknown domain type: $domainName")
+            else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
     }
 
-    private fun executePointRobot(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val pointRobotInstance = PointRobotIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, pointRobotInstance.domain, pointRobotInstance.initialState)
+    private fun executePointRobot(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val pointRobotInstance = PointRobotIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, pointRobotInstance.domain, pointRobotInstance.initialState)
     }
 
-    private fun executePointRobotLOST(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(domainStream, experimentConfiguration.actionDuration)
-        return executeDomain(experimentConfiguration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
+    private fun executePointRobotLOST(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val pointRobotLOSTInstance = PointRobotLOSTIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, pointRobotLOSTInstance.domain, pointRobotLOSTInstance.initialState)
     }
 
-    private fun executePointRobotWithInertia(experimentConfiguration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val numActions = experimentConfiguration.getTypedValue<Long>(Configurations.NUM_ACTIONS.toString())?.toInt() ?: PointRobotWithInertia.defaultNumActions
-        val actionFraction = experimentConfiguration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: PointRobotWithInertia.defaultActionFraction
-        val stateFraction = experimentConfiguration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
+    private fun executePointRobotWithInertia(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val numActions = configuration.getTypedValue<Long>(Configurations.NUM_ACTIONS.toString())?.toInt() ?: PointRobotWithInertia.defaultNumActions
+        val actionFraction = configuration.getTypedValue<Double>(Configurations.ACTION_FRACTION.toString()) ?: PointRobotWithInertia.defaultActionFraction
+        val stateFraction = configuration.getTypedValue<Double>(Configurations.STATE_FRACTION.toString()) ?: PointRobotWithInertia.defaultStateFraction
 
-        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, numActions, actionFraction, stateFraction, experimentConfiguration.actionDuration)
+        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, numActions, actionFraction, stateFraction, configuration.actionDuration)
 
-        return executeDomain(experimentConfiguration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+        return executeDomain(configuration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
     }
 
     private fun executeVacuumWorld(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
@@ -205,46 +205,46 @@ object ConfigurationExecutor {
         return RealTimeExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
     }
 
-    private fun <StateType : State<StateType>> executePureAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+    private fun <StateType : State<StateType>> executePureAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = SimpleAStar(domain)
         aStarPlanner.search(initialState)
 
-        return ExperimentResult(experimentConfiguration.valueStore, errorMessage = "Incompatible output format.")
+        return ExperimentResult(configuration.valueStore, errorMessage = "Incompatible output format.")
     }
 
-    private fun <StateType : State<StateType>> executeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+    private fun <StateType : State<StateType>> executeAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = AStarPlanner(domain, 1.0)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeWeightedAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val weight = experimentConfiguration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
+    private fun <StateType : State<StateType>> executeWeightedAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        val weight = configuration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = ClassicalAStarPlanner(domain, weight)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun <StateType : State<StateType>> executeClassicalAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+    private fun <StateType : State<StateType>> executeClassicalAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
-        val classicalExperiment = ClassicalExperiment(experimentConfiguration, aStarPlanner, domain, initialState)
+        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
     }
 
-    private fun getTerminationChecker(experimentConfiguration: GeneralExperimentConfiguration): TerminationChecker {
-        val lookaheadTypeString = experimentConfiguration.getTypedValue<String>(Configurations.LOOKAHEAD_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.LOOKAHEAD_TYPE}\" is not found. Please add it to the configuration.")
+    private fun getTerminationChecker(configuration: GeneralExperimentConfiguration): TerminationChecker {
+        val lookaheadTypeString = configuration.getTypedValue<String>(Configurations.LOOKAHEAD_TYPE.toString()) ?: throw  InvalidFieldException("\"${Configurations.LOOKAHEAD_TYPE}\" is not found. Please add it to the configuration.")
         val lookaheadType = LookaheadType.valueOf(lookaheadTypeString)
-        val terminationTypeString = experimentConfiguration.getTypedValue<String>(Configurations.TERMINATION_TYPE.toString()) ?: throw InvalidFieldException("\"${Configurations.TERMINATION_TYPE}\" is not found. Please add it to the configuration.")
+        val terminationTypeString = configuration.getTypedValue<String>(Configurations.TERMINATION_TYPE.toString()) ?: throw InvalidFieldException("\"${Configurations.TERMINATION_TYPE}\" is not found. Please add it to the configuration.")
         val terminationType = TerminationType.valueOf(terminationTypeString)
 
         return when {
             lookaheadType == DYNAMIC && terminationType == TIME -> MutableTimeTerminationChecker()
             lookaheadType == DYNAMIC && terminationType == EXPANSION -> DynamicExpansionTerminationChecker()
-            lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(experimentConfiguration.actionDuration)
-            lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(experimentConfiguration.actionDuration)
+            lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(configuration.actionDuration)
+            lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(configuration.actionDuration)
             terminationType == UNLIMITED -> FakeTerminationChecker
             else -> throw MetronomeException("Invalid termination checker configuration")
         }

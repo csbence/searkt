@@ -103,7 +103,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
         }
 
         return ExperimentResult(
-                experimentConfiguration = configuration.valueStore,
+                configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,

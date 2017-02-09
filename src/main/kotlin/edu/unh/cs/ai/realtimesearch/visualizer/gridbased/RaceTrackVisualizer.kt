@@ -61,7 +61,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         visualizerSetup()
 
-        primaryStage.title = "RTS RaceTrack Visualizer: ${experimentResult.experimentConfiguration["algorithmName"]}"
+        primaryStage.title = "RTS RaceTrack Visualizer: ${experimentResult.configuration["algorithmName"]}"
         primaryStage.scene = Scene(grid, tileSize * mapInfo.columnCount, tileSize * mapInfo.rowCount, ThemeColors.BACKGROUND.color)
         primaryStage.show()
 
@@ -70,7 +70,7 @@ class RacetrackVisualizer : GridBasedVisualizer() {
 
         // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Relative IPT: $delayTime ms")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()

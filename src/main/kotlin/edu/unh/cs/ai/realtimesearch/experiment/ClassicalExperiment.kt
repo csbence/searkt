@@ -54,7 +54,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
         logger.info { "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes" }
 
         return ExperimentResult(
-                experimentConfiguration = configuration.valueStore,
+                configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,

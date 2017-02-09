@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
  *
  */
 class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanner<StateType>,
-                                                      val experimentConfiguration: GeneralExperimentConfiguration,
+                                                      val configuration: GeneralExperimentConfiguration,
                                                       val domain: Domain<StateType>,
                                                       val initialState: StateType) : Experiment() {
 
@@ -46,7 +46,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         var actionList: MutableList<Action?> = arrayListOf()
         var currentState = initialState
         //        val maxCount = 6
-        val maxCount: Long = experimentConfiguration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
+        val maxCount: Long = configuration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
 
         logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
@@ -65,7 +65,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
             if (actions.size == 0) {
                 idlePlanningTime = endTime - startTime
                 actionList = tempActions
-            } else if (experimentConfiguration.actionDuration * maxCount < endTime - startTime) {
+            } else if (configuration.actionDuration * maxCount < endTime - startTime) {
                 for (i in 1..maxCount) {
                     actionList.removeAt(0)
                 }
@@ -79,7 +79,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
             if (update < 1.0) {
                 actionList.forEach {
                     if (it != null) {
-                        currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
+                        currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                         actions.add(it.toString()) // Save the action
                     }
                 }
@@ -89,7 +89,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 for (it in actionList) {
                     if (it != null) {
                         if (count < maxCount) {
-                            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = experimentConfiguration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
+                            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                             actions.add(it.toString())
                         }// Save the action
                         actionsLists.add(it.toString())
@@ -109,7 +109,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         logger.info { actionsLists.toString() }
 
         val pathLength = actions.size.toLong()
-        val totalExecutionNanoTime = pathLength * experimentConfiguration.actionDuration
+        val totalExecutionNanoTime = pathLength * configuration.actionDuration
         val goalAchievementTime = idlePlanningTime + totalExecutionNanoTime
 
         logger.info {
@@ -119,7 +119,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         }
 
         return ExperimentResult(
-                experimentConfiguration = experimentConfiguration.valueStore,
+                configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningTime,

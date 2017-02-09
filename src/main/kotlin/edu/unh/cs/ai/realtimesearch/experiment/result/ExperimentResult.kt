@@ -15,12 +15,12 @@ import java.util.*
 class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(experimentConfiguration: Map<String, Any?>,
                 errorMessage: String?) : this() {
-        this.experimentConfiguration = experimentConfiguration
+        this.configuration = experimentConfiguration
         this.errorMessage = errorMessage
         this.success = false
     }
 
-    constructor(experimentConfiguration: Map<String, Any?>,
+    constructor(configuration: Map<String, Any?>,
                 expandedNodes: Int,
                 generatedNodes: Int,
                 planningTime: Long,
@@ -32,7 +32,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
                 timestamp: Long = System.currentTimeMillis(),
                 systemProperties: HashMap<String, Any> = HashMap()) : this() {
 
-        this.experimentConfiguration = experimentConfiguration
+        this.configuration = configuration
         this.expandedNodes = expandedNodes
         this.generatedNodes = generatedNodes
         this.planningTime = planningTime
@@ -50,7 +50,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         }
     }
 
-    var experimentConfiguration: Map<String, Any?> by valueStore
+    var configuration: Map<String, Any?> by valueStore
     var pathLength: Long by valueStore
     var errorMessage: String? by valueStore
     var expandedNodes: Int by valueStore
