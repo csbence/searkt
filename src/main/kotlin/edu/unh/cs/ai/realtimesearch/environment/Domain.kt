@@ -86,6 +86,11 @@ interface Domain<State> {
      * @return identity action for a given state if available, else null.
      */
     fun getIdentityAction(state: State): SuccessorBundle<State>? = null
+
+    /**
+     * Returns a randomized start state for the domain where the seed is used for the randomization.
+     */
+    fun randomizedStartState(state: State, seed: Int): State = TODO("This function is not implemented for the domain")
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)
