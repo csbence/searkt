@@ -1,8 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Before
 import org.junit.Test
+import java.io.FileInputStream
 import java.lang.Math.max
 import java.util.*
 import kotlin.test.assertTrue
@@ -129,6 +131,32 @@ internal class RaceTrackTest {
                 assertTrue {raceTrack.heuristicMap[Location(it.x, it.y)]!! in (goalDistance * 0.9)..(goalDistance) }
             }
         }
+    }
+
+    @Test
+    fun testUniformHeuristic() {
+        val (uniformTrack, uniformInitial) = RaceTrackIO.parseFromStream(
+                Unit::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw") ?: throw MetronomeException("Instance file not found.")
+                , 100)
+
+        data class Node(val state: RaceTrackState, val distance: Double)
+        uniformTrack.heuristicMap.filter { it.key.y == 0 }.forEach { t, u -> println("Exists")  }
+        uniformTrack.heuristicMap.filter { it.key.x == 0 }.forEach { t, u -> println("Exists")  }
+        println("Obstacle Size: ${uniformTrack.obstacles.size}, ${uniformTrack.height * uniformTrack.width - uniformTrack.obstacles.size}")
+        println(uniformTrack.heuristicMap.size)
+
+        var axisCount = 0
+        axisCount += (0..uniformTrack.height).filter { Location(0, it) !in uniformTrack.obstacles }.count()
+        axisCount += (0..uniformTrack.width).filter { Location(it, 0) !in uniformTrack.obstacles }.count()
+        println(axisCount)
+        uniformTrack.successors(RaceTrackState(1, 1, 0, 0)).forEach {
+            println(it.state.toString())
+        }
+
+
+//        uniformTrack.randomizedStartState(uniformInitial, 2)
+
+
     }
 
 //    @Test

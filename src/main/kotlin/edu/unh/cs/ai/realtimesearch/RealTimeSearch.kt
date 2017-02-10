@@ -19,6 +19,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfigura
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import edu.unh.cs.ai.realtimesearch.visualizer.runVisualizer
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -41,10 +42,11 @@ fun main(args: Array<String>) {
             domains = listOf(
                     //                    TRAFFIC to "input/traffic/vehicle0.v",
 //                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track",
-                    RACETRACK to "input/racetrack/uniform.track"
+//                    RACETRACK to "input/racetrack/uniform.track"
+                      RACETRACK to "input/vacuum/empty.vw"
             ),
             //            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
-            planners = listOf(SAFE_RTS),
+            planners = listOf(Planners.A_STAR),
             //            planners = listOf(SAFE_RTS),
             commitmentStrategy = listOf(SINGLE),
             //            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L),
@@ -55,19 +57,26 @@ fun main(args: Array<String>) {
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(BEST_SAFE.toString(), SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.3))
-            ),
-            domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), listOf(1L))
             )
+//            domainExtras = listOf(
+//                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), listOf(1L))
+//            )
 
 
     )
 
-    configurations.forEach { println(it.toIndentedJson()) }
+    configurations.forEach { println(it.toIndentedJson())
+        val instanceFileName = it.domainPath
+        val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
+        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
+        it["rawDomain"] = rawDomain
+    }
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallel = true)
+
 
     val objectMapper = ObjectMapper()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+    runVisualizer(result = results.first())
 
     return
 

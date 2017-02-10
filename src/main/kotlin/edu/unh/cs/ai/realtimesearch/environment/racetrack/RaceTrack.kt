@@ -83,9 +83,8 @@ class RaceTrack(val width: Int,
         for (action in RaceTrackAction.values()) {
             val newDX = state.dX + action.aX
             val newDY = state.dY + action.aY
-            val distance = sqrt(pow(newDX.toDouble(), 2.0) + pow(newDY.toDouble(), 2.0))
 
-            if (distance <= 0.000001) {
+            if (newDX == 0 && newDY == 0) {
                 // Identity and stop action
                 successors.add(SuccessorBundle(
                         state = RaceTrackState(state.x, state.y, newDX, newDY),
@@ -94,6 +93,8 @@ class RaceTrack(val width: Int,
                 )
                 continue
             }
+
+            val distance = Math.round(sqrt(pow(newDX.toDouble(), 2.0) + pow(newDY.toDouble(), 2.0)))
 
             var x = state.x.toDouble()
             var y = state.y.toDouble()
@@ -104,7 +105,7 @@ class RaceTrack(val width: Int,
             val stepX = newDX * dt
             val stepY = newDY * dt
 
-            for (i in 0..distance.toInt()) {
+            for (i in 1..distance.toInt()) {
                 x += stepX
                 y += stepY
 
@@ -134,7 +135,7 @@ class RaceTrack(val width: Int,
      */
     fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
-                y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in obstacles
+                y < height && Location(Math.round(x).toInt(), Math.round(y).toInt()) !in obstacles
     }
 
     /*
@@ -223,6 +224,7 @@ class RaceTrack(val width: Int,
 
     override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
         val startLocation = Location(state.x, state.y)
+        heuristicMap.filter { it.key.x == 0 && it.key.y == 0 }.forEach { t, u -> println("Found")  }
         val goalDistance = heuristicMap[startLocation]!!
         val locations = ArrayList<Location>()
         heuristicMap.filter { (location, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
