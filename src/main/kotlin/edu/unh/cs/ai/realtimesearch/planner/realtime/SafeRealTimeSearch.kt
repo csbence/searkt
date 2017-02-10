@@ -183,7 +183,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             logger.info("Safe plan was used")
             // Return the next safe action from a previously generated plan if available
             safeActions = safeActions?.drop(1)
-            val nextSafeAction = safeActions?.firstOrNull() ?: throw MetronomeException("Safe actions are not available.")
+            val nextSafeAction = safeActions?.firstOrNull() ?:
+                    bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false }) ?:
+                    throw MetronomeException("No safe successors are available.")
             return listOf(ActionBundle(nextSafeAction.action, nextSafeAction.duration))
         } else {
             // A safe plan is available
@@ -229,7 +231,17 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             if (totalExpansionDuration * safetyExplorationRatio > totalSafetyDuration) {
                 totalSafetyDuration += measureLong(terminationChecker::elapsed) {
                     val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
-                    lastSafeNode = if (proveSafety(topNode, terminationChecker, domain, nodes)) topNode else lastSafeNode
+
+                    lastSafeNode = if (topNode.safe) {
+                        topNode
+                    } else {
+                        isComfortable(topNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
+                            // Save safe states from proof
+                            forEach { getUninitializedNode(it).safe = true }
+                            topNode.safe = true
+                            topNode
+                        } ?: lastSafeNode
+                    }
                 }
             }
         }
@@ -316,6 +328,27 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
                 }
             }
+        }
+    }
+
+    private fun getUninitializedNode(state: StateType): Node<StateType> {
+        val tempNode = nodes[state]
+
+        return if (tempNode != null) {
+            tempNode
+        } else {
+            generatedNodeCount++
+            val node = Node(
+                    state = state,
+                    heuristic = domain.heuristic(state),
+                    actionCost = 0,
+                    action = NoOperationAction,
+                    cost = Long.MAX_VALUE,
+                    iteration = 0,
+                    open = false)
+
+            nodes[state] = node
+            node
         }
     }
 
@@ -543,6 +576,18 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
     return null
 }
 
+/**
+ * Find the best safe successor of a state if any.
+ *
+ * @return the best safe successor if available, else null.
+ */
+fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)): RealTimePlanner.ActionBundle? {
+    return domain.successors(state)
+            .filter { domain.isSafe(it.state) || isSafe(it.state) }
+            .minBy { it.actionCost + domain.heuristic(it.state) }
+            ?.run { RealTimePlanner.ActionBundle(this.action, this.actionCost) }
+}
+
 interface SearchNode<StateType : State<StateType>> {
     val state: StateType
     var heuristic: Double
@@ -558,23 +603,6 @@ interface Safe {
     var safe: Boolean
 }
 
-private fun <Node, StateType : State<StateType>> proveSafety(
-        targetNode: Node, terminationChecker: TerminationChecker,
-        domain: Domain<StateType>,
-        nodes: Map<StateType, Node>): Boolean
-        where Node : Safe, Node : Indexable, Node : SearchNode<StateType> {
-
-    if (targetNode.safe) return true
-
-    val comfortable = isComfortable(targetNode.state, terminationChecker, domain)
-    return if (comfortable != null) {
-        targetNode.safe = true
-        comfortable.forEach { nodes[it]?.safe = true }
-        true
-    } else {
-        false
-    }
-}
 
 private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
         where Node : SearchNode<StateType>, Node : Indexable, Node : Safe {
