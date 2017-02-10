@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
-import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
@@ -12,7 +11,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadT
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.logging.info
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
@@ -44,7 +42,7 @@ fun main(args: Array<String>) {
             actionDurations = listOf(1000L, 10000L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(15, MINUTES)
+            timeLimit = NANOSECONDS.convert(1, MINUTES)
     )
 
     configurations.forEach { println(it.toIndentedJson()) }
@@ -52,6 +50,12 @@ fun main(args: Array<String>) {
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallel = true)
 
     results.forEach { println(it.toIndentedJson()) }
+
+    PrintWriter("output/results.json", "UTF-8").use { writer ->
+        results.forEach {
+            writer.write(it.toIndentedJson())
+        }
+    }
 
     return
 

@@ -61,6 +61,11 @@ sourceSets {
     test.java.srcDirs += file('src/test/kotlin')
 }
 
+task plot(type: Exec) {
+    workingDir 'scripts'
+    commandLine 'python3', 'metronome_plot.py'
+}
+
 run {
     if (project.hasProperty("appArgs")) {
         args = Eval.me(appArgs)
