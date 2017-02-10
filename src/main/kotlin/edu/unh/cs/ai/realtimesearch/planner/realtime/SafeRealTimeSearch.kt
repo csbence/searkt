@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
@@ -26,6 +27,7 @@ import kotlin.system.measureTimeMillis
 class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     // Configuration
     val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION.toString()] as? String ?: throw MetronomeException("Target selection strategy not found"))
+    val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO.toString()] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
 
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
@@ -224,7 +226,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Update best safe node
-            if (totalExpansionDuration * 0.3 > totalSafetyDuration) {
+            if (totalExpansionDuration * safetyExplorationRatio > totalSafetyDuration) {
                 totalSafetyDuration += measureLong(terminationChecker::elapsed) {
                     val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
                     lastSafeNode = if (proveSafety(topNode, terminationChecker, domain, nodes)) topNode else lastSafeNode
@@ -594,7 +596,8 @@ private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: Advance
 }
 
 enum class SafeRealTimeSearchConfiguration {
-    TARGET_SELECTION
+    TARGET_SELECTION,
+    SAFETY_EXPLORATION_RATIO
 }
 
 /**

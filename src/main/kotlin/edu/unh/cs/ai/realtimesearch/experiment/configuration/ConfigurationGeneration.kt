@@ -29,7 +29,7 @@ fun generateConfigurations(
         terminationType: TerminationType,
         lookaheadType: LookaheadType,
         timeLimit: Long,
-        domainExtras: Iterable<Triple<Planners, String, Iterable<Any>>>? = null,
+        domainExtras: List<Triple<Domains, String, Iterable<Long>>>? = null,
         plannerExtras: Iterable<Triple<Planners, String, Iterable<Any>>>? = null): Collection<GeneralExperimentConfiguration> {
 
     var configurations: Collection<Map<String, Any>> = domains.map {
@@ -44,10 +44,10 @@ fun generateConfigurations(
     configurations = configurations.cartesianProduct(Configurations.TIME_LIMIT.toString(), listOf(timeLimit)).toMutableList()
 
     // Apply planner and domain specific extras
-    fun applyExtras(extras: Iterable<Triple<Planners, String, Iterable<Any>>>?, matchKey: String) {
-        extras?.forEach { (planner, key, values) ->
-            val irrelevantConfigurations = configurations.filter { it[matchKey] != planner.toString() }
-            val relevantConfigurations = configurations.filter { it[matchKey] == planner.toString() }
+    fun <T> applyExtras(extras: Iterable<Triple<T, String, Iterable<Any>>>?, matchKey: String) {
+        extras?.forEach { (matchValue, key, values) ->
+            val irrelevantConfigurations = configurations.filter { it[matchKey] != matchValue.toString() }
+            val relevantConfigurations = configurations.filter { it[matchKey] == matchValue.toString() }
 
             configurations = irrelevantConfigurations + relevantConfigurations.cartesianProduct(key, values).toMutableList()
         }

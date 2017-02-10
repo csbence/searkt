@@ -1,11 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
-import edu.unh.cs.ai.realtimesearch.actionDurations
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Before
 import org.junit.Test
+import java.lang.Math.max
 import java.util.*
-import java.lang.Math.*
 import kotlin.test.assertTrue
 
 internal class RaceTrackTest {
