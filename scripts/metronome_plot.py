@@ -63,59 +63,48 @@ def read_data(file_name):
 def main():
     data = construct_data_frame(read_data("../output/results.json"))
 
-    data.drop(['errorMessage', 'commitmentType', "actionExecutionTime", "actionDuration", "success", "timeLimit",
+    data.drop(['errorMessage', 'commitmentType', "actionExecutionTime", "success", "timeLimit",
                "terminationType", 'timestamp', 'octileMovement', 'lookaheadType', 'idlePlanningTime',
                'firstIterationDuration', 'generatedNodes', 'expandedNodes', 'domainInstanceName', 'domainName',
                'planningTime'],
               axis=1,
-              inplace=True)
-    return
+              inplace=True,
+              errors='ignore')
 
-    data['domainPath'] = data['domainPath'].map(lambda x: int(re.findall(r'\d+', x)[0]))
     data.sort_values('domainPath', ascending=True, inplace=True)
 
-    print(data)
+    # print(data)
 
-    data = data.groupby('algorithmName').apply(lambda group, key: list(group[key]), 'goalAchievementTime')
-
-    print(data)
-    # data.plot()
-
-    values = []
-    for row in data.values:
-        values.append([value for value in row])
-
-    max_len = 0
-    for row in values:
-        max_len = max(len(row), max_len)
-
-    for row in values:
-        if len(row) < max_len:
-            row += [float('NaN')] * (max_len - len(row))
-
-    frame = DataFrame(np.asarray(values).T, columns=list(data.index))
-    print(frame)
-    # plt.figure()
-
-    sns.set(font_scale=3, style='white')
-    # sns.set_style("white")
+    sns.set_style("white")
     # x Instance size
     # y GAT
     # plt.figure(figsize=(6, 2))
 
     # mpl.rcParams.update({'font.size': 40})
-    plot = frame.plot(linestyle='', marker='o', figsize=(15, 8))
-    plot.set_xlabel('Instance size')
-    plot.set_ylabel('Goal achievement time')
-    plt.locator_params(axis='y', nbins=4)
-    # plt.tight_layout()
-    # plt.gcf().subplots_adjust(top=1.1)
+    # plot = frame.plot(linestyle='', marker='o', figsize=(15, 8))
+    # plot = data['actionDuration'].plot(linestyle='', marker='o', figsize=(15, 8))
+    # plot = data['actionDuration'].plot(linestyle='', marker='o', figsize=(15, 8))
+
+    algs = []
+    df = DataFrame()
+    df['actionDuration'] = [i for i in data['actionDuration'].unique()]
+    for i, group in data.groupby('algorithmName'):
+        print(group['goalAchievementTime'].notnull())
+        df[str(i)] = [i for i in group['goalAchievementTime']]
+        algs.append(str(i))
+
+    print(df)
+
+    plot = df.plot(x='actionDuration', y=algs, linestyle='', marker='o')
+
+    plot.set_xlabel('Action Duration')
+    plot.set_ylabel('Goal Achievement Time')
 
     # plt.gcf().subplots_adjust(bottom=1)
     plt.tight_layout(pad=1, w_pad=0.5, h_pad=1.0)
 
     # plt.show()
-    plt.savefig('highway_results.eps', format='eps')
+    plt.savefig('highway_results.pdf', format='pdf')
 
 
     # db = MetronomeMongoClient()
