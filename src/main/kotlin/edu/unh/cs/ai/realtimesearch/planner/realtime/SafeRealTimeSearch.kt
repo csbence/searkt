@@ -10,6 +10,9 @@ import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -20,7 +23,10 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+    // Configuration
+    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION.toString()] as? String ?: throw MetronomeException("Target selection strategy not found"))
+
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(
@@ -235,8 +241,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
 
-        return selectSafeToBest(openList)
-//        return lastSafeNode
+        return when (targetSelection) {
+            SAFE_TO_BEST -> selectSafeToBest(openList)
+            BEST_SAFE -> lastSafeNode
+        }
     }
 
 
@@ -583,4 +591,19 @@ private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: Advance
     }
 
     return null
+}
+
+enum class SafeRealTimeSearchConfiguration {
+    TARGET_SELECTION
+}
+
+/**
+ * Selector to define how to pick the target node at the end of the planning iteration.
+ * The planner returns a sequence of actions from the agent's current location to the selected target node.
+ */
+enum class SafeRealTimeSearchTargetSelection {
+    /** Select the best safe predecessor of a the best node on open that has such predecessor. */
+    SAFE_TO_BEST,
+    /** Select the best safe node on open. */
+    BEST_SAFE
 }
