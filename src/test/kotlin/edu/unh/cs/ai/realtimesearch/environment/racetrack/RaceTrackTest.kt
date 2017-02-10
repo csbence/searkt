@@ -122,6 +122,16 @@ internal class RaceTrackTest {
         assertTrue { raceTrack.heuristic(RaceTrackState(14, 30, 0, 0)) * mFactor == 3.0 } // three down
     }
 
+    @Test
+    fun testRandomizedStartState() {
+        val goalDistance = raceTrack.heuristicMap[Location(initialState.x, initialState.y)]!!
+        for (seed in 0L..1000L) {
+            raceTrack.randomizedStartState(initialState, seed).let {
+                assertTrue {raceTrack.heuristicMap[Location(it.x, it.y)]!! in (goalDistance * 0.9)..(goalDistance) }
+            }
+        }
+    }
+
 //    @Test
 //    fun testHeuristic() {
 //        val track = RaceTrack(HashSet(), HashSet(), HashSet(), 1, 1);

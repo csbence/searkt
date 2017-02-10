@@ -187,17 +187,19 @@ object ConfigurationExecutor {
 
     private fun <StateType : State<StateType>> executeDomain(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val algorithmName = configuration.algorithmName
+        val seed = configuration[Configurations.DOMAIN_SEED.toString()] as? Long
+        val sourceState = seed?.run { domain.randomizedStartState(initialState, this) } ?: initialState
 
         return when (Planners.valueOf(algorithmName)) {
-            WEIGHTED_A_STAR -> executeWeightedAStar(configuration, domain, initialState)
-            A_STAR -> executeAStar(configuration, domain, initialState)
-            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, initialState)
-            DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, initialState)
-            RTA_STAR -> executeRealTimeAStar(configuration, domain, initialState)
-            ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, initialState)
-            SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, initialState)
-            S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain), configuration, domain, initialState)
-            S_ONE -> executeRealTimeSearch(SOnePlanner(domain), configuration, domain, initialState)
+            WEIGHTED_A_STAR -> executeWeightedAStar(configuration, domain, sourceState)
+            A_STAR -> executeAStar(configuration, domain, sourceState)
+            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, sourceState)
+            DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
+            RTA_STAR -> executeRealTimeAStar(configuration, domain, sourceState)
+            ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
+            SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
+            S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain), configuration, domain, sourceState)
+            S_ONE -> executeRealTimeSearch(SOnePlanner(domain), configuration, domain, sourceState)
             else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }

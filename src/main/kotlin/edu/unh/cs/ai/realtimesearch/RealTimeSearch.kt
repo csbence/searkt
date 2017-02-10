@@ -39,13 +39,15 @@ fun main(args: Array<String>) {
 //                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track",
                     RACETRACK to "input/racetrack/uniform.track"
             ),
-            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+//            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+            planners = listOf(SAFE_RTS),
             //            planners = listOf(SAFE_RTS),
             commitmentStrategy = listOf(SINGLE),
-            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L),
+//            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L),
+            actionDurations = listOf(6000),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, MINUTES)
+            timeLimit = NANOSECONDS.convert(5, MINUTES)
     )
 
     configurations.forEach { println(it.toIndentedJson()) }

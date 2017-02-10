@@ -63,17 +63,16 @@ def read_data(file_name):
 def main():
     data = construct_data_frame(read_data("../output/results.json"))
 
-    data.drop(['errorMessage', 'commitmentType', "actionExecutionTime", "success", "timeLimit",
-               "terminationType", 'timestamp', 'octileMovement', 'lookaheadType', 'idlePlanningTime',
+    data.drop(['errorMessage', 'commitmentType', "success", "timeLimit",
+               "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
                'firstIterationDuration', 'generatedNodes', 'expandedNodes', 'domainInstanceName', 'domainName',
                'planningTime'],
               axis=1,
               inplace=True,
               errors='ignore')
 
-    data.sort_values('domainPath', ascending=True, inplace=True)
+    data.sort_values(['domainPath', 'actionDuration'], ascending=True, inplace=True)
 
-    # print(data)
 
     sns.set_style("white")
     # x Instance size
@@ -90,7 +89,10 @@ def main():
     df['actionDuration'] = [i for i in data['actionDuration'].unique()]
     for i, group in data.groupby('algorithmName'):
         print(group['goalAchievementTime'].notnull())
+        df[str(i) + "_execution"] = [i for i in group['actionExecutionTime']]
+        df[str(i) + "_idle"] = [i for i in group['idlePlanningTime']]
         df[str(i)] = [i for i in group['goalAchievementTime']]
+        # df[str(i)] = [i for i in group['pathLength']]
         algs.append(str(i))
 
     print(df)

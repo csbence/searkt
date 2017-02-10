@@ -90,7 +90,7 @@ interface Domain<State> {
     /**
      * Returns a randomized start state for the domain where the seed is used for the randomization.
      */
-    fun randomizedStartState(state: State, seed: Int): State = TODO("This function is not implemented for the domain")
+    fun randomizedStartState(state: State, seed: Long): State = TODO("This function is not implemented for the domain")
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)

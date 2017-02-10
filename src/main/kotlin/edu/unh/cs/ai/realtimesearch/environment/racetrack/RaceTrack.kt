@@ -221,6 +221,18 @@ class RaceTrack(val width: Int,
      */
     override fun isSafe(state: RaceTrackState): Boolean = (state.dX == 0 && state.dY == 0) || isGoal(state)
 
+    override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
+        val startLocation = Location(state.x, state.y)
+        val goalDistance = heuristicMap[startLocation]!!
+        val locations = ArrayList<Location>()
+        heuristicMap.filter { (location, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
+                .mapTo(locations, {it.key})
+
+        locations[Random(seed).nextInt(locations.size)].let {
+            return RaceTrackState(it.x, it.y, 0, 0)
+        }
+    }
+
     /**
      * Assuming that the acceleration of the agent is 1. To reach a safe state takes at least as many steps as the
      * maximum velocity of the agent over all dimensions.
