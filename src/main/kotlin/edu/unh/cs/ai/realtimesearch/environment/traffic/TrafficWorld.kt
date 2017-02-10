@@ -15,13 +15,8 @@ import java.lang.Math.abs
  */
 class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val goal: Location, val actionDuration: Long, obstacles: List<MovingObstacle>) : Domain<TrafficWorldState> {
     private val logger = LoggerFactory.getLogger(TrafficWorld::class.java)
-    private val obstacleTimeSequence: MutableList<Set<Location>> = arrayListOf()
     private val movingObstacles: List<MovingObstacle> = obstacles.map { it }
-
-    init {
-        logger.info("TrafficWorld starting...")
-        obstacleTimeSequence.add(movingObstacles.toLocationSet())
-    }
+    private val obstacleTimeSequence: MutableList<Set<Location>> = arrayListOf(movingObstacles.toLocationSet())
 
     override fun safeDistance(state: TrafficWorldState): Pair<Int, Int> {
         val distanceFunction: (Location) -> Int = { (x, y) -> Math.max(abs(state.location.x - x), abs(state.location.y - y)) }
