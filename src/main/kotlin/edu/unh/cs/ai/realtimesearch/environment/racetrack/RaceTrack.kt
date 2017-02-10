@@ -38,7 +38,6 @@ class RaceTrack(val width: Int,
 
     //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
-
     private fun calculateDijkstraHeuristic(): Map<Location, Double> {
         data class Node(val location: Location, val goalDistance: Double)
 

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
@@ -34,28 +35,24 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    TRAFFIC to "input/traffic/vehicle0.v",
-                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+                    //                    TRAFFIC to "input/traffic/vehicle0.v",
+//                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track",
+                    RACETRACK to "input/racetrack/uniform.track"
             ),
             planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
-            commitmentStrategy = listOf(SINGLE, MULTIPLE),
-            actionDurations = listOf(1000L, 10000L),
+            //            planners = listOf(SAFE_RTS),
+            commitmentStrategy = listOf(SINGLE),
+            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1, MINUTES)
     )
 
     configurations.forEach { println(it.toIndentedJson()) }
-
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallel = true)
 
-    results.forEach { println(it.toIndentedJson()) }
-
-    PrintWriter("output/results.json", "UTF-8").use { writer ->
-        results.forEach {
-            writer.write(it.toIndentedJson())
-        }
-    }
+    val objectMapper = ObjectMapper()
+    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
 
     return
 

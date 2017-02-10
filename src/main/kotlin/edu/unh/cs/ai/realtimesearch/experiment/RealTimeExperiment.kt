@@ -53,7 +53,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-        logger.info { "Starting experiment from state $initialState" }
+        logger.debug { "Starting experiment from state $initialState" }
         var currentState: StateType = initialState
 
         var totalPlanningNanoTime = 0L
