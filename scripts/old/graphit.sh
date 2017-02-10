@@ -36,7 +36,7 @@ make_graphs() {
     fi
 
     FILE="${FILE_HEADER}_error.pdf"
-    ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -t "gatPerDuration" -s "$PLOTS_DIR/$FILE" -q $@
+    rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -t "gatPerDuration" -s "$PLOTS_DIR/$FILE" -q $@
     MD="${MD}![$FILE_HEADER]($FILE)\n\n\\\\clearpage\n\n"
 
     for duration in ${DURATIONS[@]}; do
@@ -53,15 +53,15 @@ make_graphs() {
       fi
 
       FILE="${FILE_HEADER}_${duration}.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBoxPlot" -s "$PLOTS_DIR/$FILE" -q $@
+      rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBoxPlot" -s "$PLOTS_DIR/$FILE" -q $@
       MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
 
       FILE="${FILE_HEADER}_${duration}_bars.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBars"    -s "$PLOTS_DIR/$FILE" -q $@
+      rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatBars"    -s "$PLOTS_DIR/$FILE" -q $@
       MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
 
       FILE="${FILE_HEADER}_${duration}_violin.pdf"
-      ./rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatViolin"  -s "$PLOTS_DIR/$FILE" -q $@
+      rtsMongoClient.py $ALGORITHMS -d "$DOMAIN" -i "$INSTANCE" -c "$duration" -t "gatViolin"  -s "$PLOTS_DIR/$FILE" -q $@
       MD="${MD}![$FILE_HEADER - $duration]($FILE)\n\n\\\\clearpage\n\n"
     done
 
