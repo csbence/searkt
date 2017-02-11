@@ -19,7 +19,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfigura
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import edu.unh.cs.ai.realtimesearch.visualizer.runVisualizer
 import groovyjarjarcommonscli.*
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -76,7 +75,7 @@ fun main(args: Array<String>) {
 
     val objectMapper = ObjectMapper()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    runVisualizer(result = results.first())
+//    runVisualizer(result = results.first())
 
     return
 

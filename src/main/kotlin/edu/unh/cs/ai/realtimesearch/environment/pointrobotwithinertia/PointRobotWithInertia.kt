@@ -132,7 +132,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
         if (minx == Double.MAX_VALUE && miny != Double.MAX_VALUE)
             retval = miny
-        else if (minx != Double.MAX_VALUE && miny === Double.MAX_VALUE)
+        else if (minx != Double.MAX_VALUE && miny == Double.MAX_VALUE)
             retval = minx
         else if (minx == Double.MAX_VALUE && miny == Double.MAX_VALUE)
             retval = 0.0
@@ -161,7 +161,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
 
         return actionDuration * when {
             minx == Double.MAX_VALUE && miny != Double.MAX_VALUE -> miny
-            minx != Double.MAX_VALUE && miny === Double.MAX_VALUE -> minx
+            minx != Double.MAX_VALUE && miny == Double.MAX_VALUE -> minx
             minx == Double.MAX_VALUE && miny == Double.MAX_VALUE -> 0.0
             else -> max(minx, miny)
         }

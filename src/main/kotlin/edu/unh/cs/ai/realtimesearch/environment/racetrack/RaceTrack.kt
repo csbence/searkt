@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
+import org.slf4j.LoggerFactory
 import java.lang.Math.*
 import java.util.*
 
@@ -36,7 +37,7 @@ class RaceTrack(val width: Int,
     val maxYSpeed = height / 2
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
-    //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
+    private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     private fun calculateDijkstraHeuristic(): Map<Location, Double> {
         data class Node(val location: Location, val goalDistance: Double)
@@ -94,29 +95,8 @@ class RaceTrack(val width: Int,
                 continue
             }
 
-            val distance = Math.round(sqrt(pow(newDX.toDouble(), 2.0) + pow(newDY.toDouble(), 2.0)))
-
-            var x = state.x.toDouble()
-            var y = state.y.toDouble()
-
-            val dt = 1 / distance
-            var valid = true
-
-            val stepX = newDX * dt
-            val stepY = newDY * dt
-
-            for (i in 1..distance.toInt()) {
-                x += stepX
-                y += stepY
-
-                if (!isLegalLocation(x, y)) {
-                    valid = false
-                    break
-                }
-            }
-
             //filter on legal moves (not too fast and on the obstacles)
-            if (valid) {
+            if (isCollisionFree(newDX, newDY, state.x, state.y)) {
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
                         action,
@@ -125,6 +105,33 @@ class RaceTrack(val width: Int,
         }
 
         return successors
+    }
+
+    fun isCollisionFree(x: Int, y: Int, dX: Int, dY: Int): Boolean {
+        val distance = round(sqrt(pow(dX.toDouble(), 2.0) + pow(dY.toDouble(), 2.0)))
+
+        var x = x.toDouble()
+        var y = y.toDouble()
+
+        val dt = 1 / distance
+        var valid = true
+
+        val stepX = dX * dt
+        val stepY = dY * dt
+
+        //            logger.info("Checking collision from $x : $y to ${state.x + newDX} : ${state.y + newDY}")
+
+        for (i in 1..distance.toInt()) {
+            x += stepX
+            y += stepY
+
+            //                logger.info("Step ${Math.round(x)} : ${Math.round(y)}")
+            if (!isLegalLocation(x, y)) {
+                valid = false
+                break
+            }
+        }
+        return valid
     }
 
     /**
@@ -224,11 +231,11 @@ class RaceTrack(val width: Int,
 
     override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
         val startLocation = Location(state.x, state.y)
-        heuristicMap.filter { it.key.x == 0 && it.key.y == 0 }.forEach { t, u -> println("Found")  }
+        heuristicMap.filter { it.key.x == 0 && it.key.y == 0 }.forEach { t, u -> println("Found") }
         val goalDistance = heuristicMap[startLocation]!!
         val locations = ArrayList<Location>()
         heuristicMap.filter { (location, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
-                .mapTo(locations, {it.key})
+                .mapTo(locations, { it.key })
 
         locations[Random(seed).nextInt(locations.size)].let {
             return RaceTrackState(it.x, it.y, 0, 0)

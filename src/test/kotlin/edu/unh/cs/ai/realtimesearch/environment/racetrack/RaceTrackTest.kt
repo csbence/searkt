@@ -4,9 +4,9 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import org.junit.Before
 import org.junit.Test
-import java.io.FileInputStream
 import java.lang.Math.max
 import java.util.*
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 internal class RaceTrackTest {
@@ -135,7 +135,7 @@ internal class RaceTrackTest {
 
     @Test
     fun testUniformHeuristic() {
-        val (uniformTrack, uniformInitial) = RaceTrackIO.parseFromStream(
+        val (uniformTrack, _) = RaceTrackIO.parseFromStream(
                 Unit::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw") ?: throw MetronomeException("Instance file not found.")
                 , 100)
 
@@ -155,8 +155,25 @@ internal class RaceTrackTest {
 
 
 //        uniformTrack.randomizedStartState(uniformInitial, 2)
+    }
 
+    @Test
+    fun testCollisionDetection() {
+        testStraightLineCollisionDetection("5\n1\n@###*")
+        testStraightLineCollisionDetection("5\n1\n@#__*")
+        testStraightLineCollisionDetection("5\n1\n@_#_*")
+        testStraightLineCollisionDetection("5\n1\n@_##*")
+        testStraightLineCollisionDetection("5\n1\n@##_*")
+        testStraightLineCollisionDetection("5\n1\n@#_#*")
+    }
 
+    private fun testStraightLineCollisionDetection(rawRaceTrack: String) {
+        val (raceTrack, initialState) = RaceTrackIO.parseFromStream(rawRaceTrack.byteInputStream(), 100)
+
+        assertFalse { raceTrack.isCollisionFree(0, 0, 1, 0) }
+        assertFalse { raceTrack.isCollisionFree(0, 0, 2, 0) }
+        assertFalse { raceTrack.isCollisionFree(0, 0, 3, 0) }
+        assertFalse { raceTrack.isCollisionFree(0, 0, 4, 0) }
     }
 
 //    @Test
@@ -192,8 +209,4 @@ internal class RaceTrackTest {
 //        assertTrue(!track.isGoal(state))
 //    }
 
-    @Test
-    fun testPrint() {
-
-    }
 }
