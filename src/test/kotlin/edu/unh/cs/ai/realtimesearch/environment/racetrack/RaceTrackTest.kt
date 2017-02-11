@@ -159,11 +159,9 @@ internal class RaceTrackTest {
 
     @Test
     fun testCollisionDetection() {
-        testStraightLineCollisionDetection("5\n1\n@###*")
         testStraightLineCollisionDetection("5\n1\n@#__*")
-        testStraightLineCollisionDetection("5\n1\n@_#_*")
-        testStraightLineCollisionDetection("5\n1\n@_##*")
         testStraightLineCollisionDetection("5\n1\n@##_*")
+        testStraightLineCollisionDetection("5\n1\n@###*")
         testStraightLineCollisionDetection("5\n1\n@#_#*")
     }
 

@@ -113,7 +113,7 @@ class RaceTrack(val width: Int,
         var x = x.toDouble()
         var y = y.toDouble()
 
-        val dt = 1 / distance
+        val dt = 1.0 / distance
         var valid = true
 
         val stepX = dX * dt
