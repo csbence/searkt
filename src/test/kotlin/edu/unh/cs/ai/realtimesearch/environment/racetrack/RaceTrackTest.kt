@@ -139,22 +139,10 @@ internal class RaceTrackTest {
                 Unit::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw") ?: throw MetronomeException("Instance file not found.")
                 , 100)
 
-        data class Node(val state: RaceTrackState, val distance: Double)
-        uniformTrack.heuristicMap.filter { it.key.y == 0 }.forEach { t, u -> println("Exists")  }
-        uniformTrack.heuristicMap.filter { it.key.x == 0 }.forEach { t, u -> println("Exists")  }
-        println("Obstacle Size: ${uniformTrack.obstacles.size}, ${uniformTrack.height * uniformTrack.width - uniformTrack.obstacles.size}")
-        println(uniformTrack.heuristicMap.size)
-
-        var axisCount = 0
-        axisCount += (0..uniformTrack.height).filter { Location(0, it) !in uniformTrack.obstacles }.count()
-        axisCount += (0..uniformTrack.width).filter { Location(it, 0) !in uniformTrack.obstacles }.count()
-        println(axisCount)
-        uniformTrack.successors(RaceTrackState(1, 1, 0, 0)).forEach {
-            println(it.state.toString())
-        }
+        // Picking a point in vacuum world: it should have successors
+        uniformTrack.successors(RaceTrackState(7, 10, 0, 0)).forEach { println(it.state) }
 
 
-//        uniformTrack.randomizedStartState(uniformInitial, 2)
     }
 
     @Test
