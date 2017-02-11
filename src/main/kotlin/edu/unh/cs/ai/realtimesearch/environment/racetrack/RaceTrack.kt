@@ -97,7 +97,7 @@ class RaceTrack(val width: Int,
             }
 
             //filter on legal moves (not too fast and on the obstacles)
-            if (isCollisionFree(newDX, newDY, state.x, state.y)) {
+            if (isCollisionFree(state.x, state.y, newDX, newDY)) {
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
                         action,
