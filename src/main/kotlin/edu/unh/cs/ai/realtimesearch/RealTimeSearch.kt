@@ -56,10 +56,10 @@ fun main(args: Array<String>) {
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(BEST_SAFE.toString(), SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.3))
+            ),
+            domainExtras = listOf(
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), listOf(1L))
             )
-//            domainExtras = listOf(
-//                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), listOf(1L))
-//            )
 
 
     )

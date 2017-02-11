@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
@@ -231,10 +232,9 @@ class RaceTrack(val width: Int,
 
     override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
         val startLocation = Location(state.x, state.y)
-        heuristicMap.filter { it.key.x == 0 && it.key.y == 0 }.forEach { t, u -> println("Found") }
-        val goalDistance = heuristicMap[startLocation]!!
+        val goalDistance = heuristicMap[startLocation] ?: throw MetronomeException("Goal is not reachable from initial state.")
         val locations = ArrayList<Location>()
-        heuristicMap.filter { (location, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
+        heuristicMap.filter { (_, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
                 .mapTo(locations, { it.key })
 
         locations[Random(seed).nextInt(locations.size)].let {
