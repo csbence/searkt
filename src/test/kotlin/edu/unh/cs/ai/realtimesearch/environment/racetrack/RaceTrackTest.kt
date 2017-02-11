@@ -6,7 +6,6 @@ import org.junit.Before
 import org.junit.Test
 import java.lang.Math.max
 import java.util.*
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 internal class RaceTrackTest {
@@ -147,20 +146,23 @@ internal class RaceTrackTest {
 
     @Test
     fun testCollisionDetection() {
-        testStraightLineCollisionDetection("5\n1\n@#__*")
-        testStraightLineCollisionDetection("5\n1\n@##_*")
-        testStraightLineCollisionDetection("5\n1\n@###*")
-        testStraightLineCollisionDetection("5\n1\n@#_#*")
+        fun testStraightLineCollisionDetection(rawRaceTrack: String, collisionFree: Boolean) {
+            val (raceTrack, _) = RaceTrackIO.parseFromStream(rawRaceTrack.byteInputStream(), 100)
+
+            assertTrue { raceTrack.isCollisionFree(0, 0, 1, 0) == collisionFree }
+            assertTrue { raceTrack.isCollisionFree(0, 0, 2, 0) == collisionFree }
+            assertTrue { raceTrack.isCollisionFree(0, 0, 3, 0) == collisionFree }
+            assertTrue { raceTrack.isCollisionFree(0, 0, 4, 0) == collisionFree }
+        }
+
+        testStraightLineCollisionDetection("5\n1\n@#__*", false)
+        testStraightLineCollisionDetection("5\n1\n@##_*", false)
+        testStraightLineCollisionDetection("5\n1\n@###*", false)
+        testStraightLineCollisionDetection("5\n1\n@#_#*", false)
+
+        testStraightLineCollisionDetection("5\n1\n@___*", true)
     }
 
-    private fun testStraightLineCollisionDetection(rawRaceTrack: String) {
-        val (raceTrack, initialState) = RaceTrackIO.parseFromStream(rawRaceTrack.byteInputStream(), 100)
-
-        assertFalse { raceTrack.isCollisionFree(0, 0, 1, 0) }
-        assertFalse { raceTrack.isCollisionFree(0, 0, 2, 0) }
-        assertFalse { raceTrack.isCollisionFree(0, 0, 3, 0) }
-        assertFalse { raceTrack.isCollisionFree(0, 0, 4, 0) }
-    }
 
 //    @Test
 //    fun testHeuristic() {

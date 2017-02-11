@@ -111,8 +111,8 @@ class RaceTrack(val width: Int,
     fun isCollisionFree(x: Int, y: Int, dX: Int, dY: Int): Boolean {
         val distance = round(sqrt(pow(dX.toDouble(), 2.0) + pow(dY.toDouble(), 2.0)))
 
-        var x = x.toDouble()
-        var y = y.toDouble()
+        var xRunnung = x.toDouble()
+        var yRunning = y.toDouble()
 
         val dt = 1.0 / distance
         var valid = true
@@ -120,14 +120,11 @@ class RaceTrack(val width: Int,
         val stepX = dX * dt
         val stepY = dY * dt
 
-        //            logger.info("Checking collision from $x : $y to ${state.x + newDX} : ${state.y + newDY}")
-
         for (i in 1..distance.toInt()) {
-            x += stepX
-            y += stepY
+            xRunnung += stepX
+            yRunning += stepY
 
-            //                logger.info("Step ${Math.round(x)} : ${Math.round(y)}")
-            if (!isLegalLocation(x, y)) {
+            if (!isLegalLocation(xRunnung, yRunning)) {
                 valid = false
                 break
             }
@@ -138,8 +135,7 @@ class RaceTrack(val width: Int,
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *
-     * @param location the location to test
-     * @return true if location is legal
+     * @return true if location is legal, else false.
      */
     fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
@@ -199,22 +195,25 @@ class RaceTrack(val width: Int,
 
     override fun getGoals(): List<RaceTrackState> {
         val list: MutableList<RaceTrackState> = arrayListOf()
-        for (it in finishLine) {
+        for ((x, y) in finishLine) {
             for (xS in 0..maxXSpeed) {
                 for (yS in 0..maxYSpeed) {
-                    if (xS == 0 && yS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                    } else if (xS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
-                    } else if (yS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
-                    } else {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, -yS))
+                    when {
+                        xS == 0 && yS == 0 -> list.add(RaceTrackState(x, y, xS, yS))
+                        xS == 0 -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, xS, -yS))
+                        }
+                        yS == 0 -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, -xS, yS))
+                        }
+                        else -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, -xS, yS))
+                            list.add(RaceTrackState(x, y, xS, -yS))
+                            list.add(RaceTrackState(x, y, -xS, -yS))
+                        }
                     }
                 }
             }
