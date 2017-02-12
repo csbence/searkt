@@ -14,7 +14,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
-import edu.unh.cs.ai.realtimesearch.planner.Planners.SAFE_RTS
+import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
@@ -42,10 +42,10 @@ fun main(args: Array<String>) {
                     //                    TRAFFIC to "input/traffic/vehicle0.v",
 //                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track",
 //                    RACETRACK to "input/racetrack/uniform.track"
-                      RACETRACK to "input/vacuum/empty.vw"
+                    RACETRACK to "input/vacuum/empty.vw"
             ),
-            //            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
-            planners = listOf(Planners.A_STAR),
+            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+            //            planners = listOf(Planners.A_STAR),
             //            planners = listOf(SAFE_RTS),
             commitmentStrategy = listOf(SINGLE),
             //            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L),
@@ -64,7 +64,8 @@ fun main(args: Array<String>) {
 
     )
 
-    configurations.forEach { println(it.toIndentedJson())
+    configurations.forEach {
+        println(it.toIndentedJson())
         val instanceFileName = it.domainPath
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
