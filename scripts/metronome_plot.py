@@ -63,7 +63,7 @@ def read_data(file_name):
 def main():
     data = construct_data_frame(read_data("../output/results.json"))
 
-    data.drop(['errorMessage', 'commitmentType', "success", "timeLimit",
+    data.drop(['commitmentType', "success", "timeLimit",
                "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
                'firstIterationDuration', 'generatedNodes', 'expandedNodes', 'domainInstanceName', 'domainName',
                'planningTime'],
@@ -87,15 +87,16 @@ def main():
     algs = []
     df = DataFrame()
     df['actionDuration'] = [i for i in data['actionDuration'].unique()]
-    for i, group in data.groupby('algorithmName'):
-        print(group['goalAchievementTime'].notnull())
-        df[str(i) + "_execution"] = [i for i in group['actionExecutionTime']]
-        df[str(i) + "_idle"] = [i for i in group['idlePlanningTime']]
-        df[str(i)] = [i for i in group['goalAchievementTime']]
+    for i, group in data.groupby(['domainPath', 'algorithmName']):
+        print(str(i))
+        print([i for i in group['errorMessage']])
+        # df[str(i) + "_execution"] = [i for i in group['actionExecutionTime']]
+        # df[str(i) + "_idle"] = [i for i in group['idlePlanningTime']]
+        # df[str(i)] = [i for i in group['goalAchievementTime']]
         # df[str(i)] = [i for i in group['pathLength']]
         algs.append(str(i))
 
-    print(df)
+    return
 
     plot = df.plot(x='actionDuration', y=algs, linestyle='', marker='o')
 

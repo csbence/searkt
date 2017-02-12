@@ -39,33 +39,32 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    //                    TRAFFIC to "input/traffic/vehicle0.v",
-//                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track",
-//                    RACETRACK to "input/racetrack/uniform.track"
-                    RACETRACK to "input/vacuum/empty.vw"
+                      RACETRACK to "input/racetrack/uniform.track",
+                      RACETRACK to "input/racetrack/barto-big.track",
+                      RACETRACK to "input/racetrack/barto-small.track",
+                      RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
             ),
-            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
-            //            planners = listOf(Planners.A_STAR),
+                        planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+//            planners = listOf(SAFE_RTS),
             //            planners = listOf(SAFE_RTS),
             commitmentStrategy = listOf(SINGLE),
             //            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L),
             actionDurations = listOf(6000),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, MINUTES),
+            timeLimit = NANOSECONDS.convert(10, MINUTES),
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(BEST_SAFE.toString(), SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.3))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), listOf(1L))
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..3L)
             )
 
 
     )
 
-    configurations.forEach {
-        println(it.toIndentedJson())
+    configurations.forEach { println(it.toIndentedJson())
         val instanceFileName = it.domainPath
         val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
         val rawDomain = Scanner(input).useDelimiter("\\Z").next()
