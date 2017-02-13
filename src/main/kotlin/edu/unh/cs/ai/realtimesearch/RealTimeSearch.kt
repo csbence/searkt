@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
 
     println("${configurations.size} configuration has been generated.")
 
-    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
+    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 15)
 
     val objectMapper = ObjectMapper()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
