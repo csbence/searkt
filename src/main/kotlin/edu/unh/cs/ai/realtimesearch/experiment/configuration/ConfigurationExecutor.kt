@@ -38,6 +38,8 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
+import java.util.concurrent.Callable
+import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import java.util.stream.Collectors
@@ -48,8 +50,15 @@ import java.util.stream.Collectors
 object ConfigurationExecutor {
 
     fun executeConfigurations(configurations: Collection<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
-        val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
-        return configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
+        val forkJoinPool = ForkJoinPool(4)
+
+        val task = forkJoinPool.submit(Callable {
+            val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
+            val results = configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
+            results
+        })
+
+        return task.get()
     }
 
     fun executeConfiguration(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
