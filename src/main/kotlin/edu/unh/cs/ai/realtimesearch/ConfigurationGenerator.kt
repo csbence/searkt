@@ -23,11 +23,11 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
-val terminationType = "time"
-val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
-val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
+private val terminationType = "time"
+private val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
+private val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 //val actionDurations = listOf(850000000, 960000000, 1070000000, 1280000000)
-val lookaheadLimits = listOf(20)
+private val lookaheadLimits = listOf(20)
 private var useDomainPaths = false
 
 /**
