@@ -1,9 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.terminationType
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import java.lang.management.ManagementFactory
 import java.util.*
@@ -72,8 +72,8 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         // Initialize the system properties
         systemProperties = hashMapOf<String, Any>()
 
-        val runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        val arguments = runtimeMxBean.inputArguments;
+        val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
+        val arguments = runtimeMxBean.inputArguments
 
         systemProperties.put("java_vm_info", System.getProperties()["java.vm.info"].toString())
         systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
@@ -86,9 +86,9 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         val builder = StringBuilder("Result:")
 
         if (errorMessage != null) {
-            builder.appendln("Something went wrong: ${errorMessage}")
+            builder.appendln("Something went wrong: $errorMessage")
         } else {
-            val terminationType = TerminationType.valueOf(terminationType)
+            val terminationType = TerminationType.valueOf(configuration[Configurations.TERMINATION_TYPE.toString()] as String)
             builder.appendln("Planning time: ${convertNanoUpDouble(planningTime, TimeUnit.MILLISECONDS)} ms")
             builder.appendln("Generated Nodes: $generatedNodes, Expanded Nodes $expandedNodes")
             builder.appendln("Path Length: $pathLength")
@@ -110,4 +110,21 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         }
         return builder.toString()
     }
+}
+
+fun Collection<ExperimentResult>.summary(): String {
+    val builder = StringBuilder("Results: [${this.size}]")
+    val successfulExperiments = this.filter { it.errorMessage == null }
+    val failedExperiments = this.filter { it.errorMessage != null }
+    builder.appendln("Successful: ${successfulExperiments.size} Failed: ${failedExperiments.size}")
+
+    this.forEach {
+        val algorithm = it.configuration[Configurations.ALGORITHM_NAME.toString()] as String
+        val domain = it.configuration[Configurations.DOMAIN_PATH.toString()] as String
+        val GAT = it.valueStore["goalAchievementTime"]
+
+        builder.appendln("Algorithm: $algorithm domain: $domain GAT: $GAT error: ${it.errorMessage ?: "None"}")
+    }
+
+    return builder.toString()
 }
