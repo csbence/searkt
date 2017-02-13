@@ -559,7 +559,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
             // The parent of the safe state is comfortable
             var backTrackNode: Node? = currentNode
             while (backTrackNode != null) {
-                comfortableStates.add(currentNode.state)
+                comfortableStates.add(backTrackNode.state)
                 backTrackNode = backTrackNode.parent
             }
 
