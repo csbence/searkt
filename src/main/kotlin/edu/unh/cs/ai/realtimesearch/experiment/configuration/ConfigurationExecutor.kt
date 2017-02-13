@@ -50,11 +50,32 @@ import java.util.stream.Collectors
 object ConfigurationExecutor {
 
     fun executeConfigurations(configurations: Collection<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
+        class ProgressBar(val maxProgress: Int) {
+            var currentProgress = 0
+            var lock = Object()
+
+            fun updateProgress() = synchronized(lock) {
+                currentProgress++
+                val ratio = currentProgress.toDouble() / maxProgress
+
+                val builder = StringBuilder("\r|                                                                    | ${currentProgress}/$maxProgress - ${Math.round(ratio * 100)}%")
+                builder.append("\r|")
+                (1..68).forEach {
+                    builder.append(if (it / 68.0 > ratio) "" else "\u2588")
+                }
+                print(builder.toString())
+            }
+        }
+
+        val progressBar = ProgressBar(configurations.size)
         val forkJoinPool = ForkJoinPool(4)
 
         val task = forkJoinPool.submit(Callable {
             val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
-            val results = configurationStream.map { executeConfiguration(it, dataRootPath) }.collect(Collectors.toList())
+            val results = configurationStream.map {
+                progressBar.updateProgress()
+                executeConfiguration(it, dataRootPath)
+            }.collect(Collectors.toList())
             results
         })
 
