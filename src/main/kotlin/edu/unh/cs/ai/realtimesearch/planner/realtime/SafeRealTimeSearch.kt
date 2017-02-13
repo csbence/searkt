@@ -2,12 +2,14 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
@@ -28,6 +30,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     // Configuration
     val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION.toString()] as? String ?: throw MetronomeException("Target selection strategy not found"))
     val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO.toString()] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
+    val commitmentStrategy: CommitmentStrategy = CommitmentStrategy.valueOf(configuration[Configurations.COMMITMENT_STRATEGY.toString()] as? String ?: throw MetronomeException("Commitment strategy not found"))
 
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
@@ -181,8 +184,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             logger.info("Safe plan was used")
+
+            safeActions = when (commitmentStrategy) {
+                CommitmentStrategy.SINGLE -> safeActions?.drop(1) // We assume the agent only used one action
+                CommitmentStrategy.MULTIPLE -> emptyList() // The agent is committed to the head of the list so we have no more
+            }
+
             // Return the next safe action from a previously generated plan if available
-            safeActions = safeActions?.drop(1)
             val nextSafeAction = safeActions?.firstOrNull() ?:
                     bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false }) ?:
                     throw MetronomeException("No safe successors are available.")

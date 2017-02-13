@@ -58,7 +58,7 @@ object ConfigurationExecutor {
                 currentProgress++
                 val ratio = currentProgress.toDouble() / maxProgress
 
-                val builder = StringBuilder("\r|                                                                    | ${currentProgress}/$maxProgress - ${Math.round(ratio * 100)}%")
+                val builder = StringBuilder("\r|                                                                    | $currentProgress/$maxProgress - ${Math.round(ratio * 100)}%")
                 builder.append("\r|")
                 (1..68).forEach {
                     builder.append(if (it / 68.0 > ratio) "" else "\u2588")
