@@ -49,7 +49,7 @@ import java.util.stream.Collectors
  */
 object ConfigurationExecutor {
 
-    fun executeConfigurations(configurations: Collection<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallel: Boolean): List<ExperimentResult> {
+    fun executeConfigurations(configurations: Collection<GeneralExperimentConfiguration>, dataRootPath: String? = null, parallelCores: Int): List<ExperimentResult> {
         class ProgressBar(val maxProgress: Int) {
             var currentProgress = 0
             var lock = Object()
@@ -68,10 +68,10 @@ object ConfigurationExecutor {
         }
 
         val progressBar = ProgressBar(configurations.size)
-        val forkJoinPool = ForkJoinPool(4)
+        val forkJoinPool = ForkJoinPool(parallelCores)
 
         val task = forkJoinPool.submit(Callable {
-            val configurationStream = if (parallel) configurations.parallelStream() else configurations.stream()
+            val configurationStream = if (parallelCores > 1) configurations.parallelStream() else configurations.stream()
             val results = configurationStream.map {
                 progressBar.updateProgress()
                 executeConfiguration(it, dataRootPath)

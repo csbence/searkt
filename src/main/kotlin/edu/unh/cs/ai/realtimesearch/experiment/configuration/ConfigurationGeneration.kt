@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 
 /**
@@ -24,7 +23,6 @@ typealias DomainPath = String
 fun generateConfigurations(
         domains: Iterable<Pair<Domains, DomainPath>>,
         planners: Iterable<Planners>,
-        commitmentStrategy: Iterable<CommitmentStrategy>,
         actionDurations: Iterable<Long>,
         terminationType: TerminationType,
         lookaheadType: LookaheadType,
@@ -37,7 +35,6 @@ fun generateConfigurations(
     }
 
     configurations = configurations.cartesianProduct(Configurations.ALGORITHM_NAME.toString(), planners.map(Any::toString)).toMutableList()
-    configurations = configurations.cartesianProduct(Configurations.COMMITMENT_STRATEGY.toString(), commitmentStrategy.map(Any::toString)).toMutableList()
     configurations = configurations.cartesianProduct(Configurations.ACTION_DURATION.toString(), actionDurations).toMutableList()
     configurations = configurations.cartesianProduct(Configurations.TERMINATION_TYPE.toString(), listOf(terminationType.toString())).toMutableList()
     configurations = configurations.cartesianProduct(Configurations.LOOKAHEAD_TYPE.toString(), listOf(lookaheadType.toString())).toMutableList()
