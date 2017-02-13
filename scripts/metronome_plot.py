@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pandas import DataFrame
+import pandas as pd
 import json
 import re
 
@@ -59,6 +60,15 @@ def read_data(file_name):
         content = json.load(file)
     return content
 
+def addData(frame, group, key, algs):
+    new_frame = DataFrame()
+    means = []
+    for k, actionGroup in (DataFrame(group).groupby('actionDuration')):
+        means.append(actionGroup.mean()['goalAchievementTime'])
+    new_frame[key] = means
+    algs.append(key)
+    return pd.concat([frame, new_frame], axis=1)
+
 
 def main():
     data = construct_data_frame(read_data("../output/results.json"))
@@ -75,33 +85,27 @@ def main():
 
 
     sns.set_style("white")
-    # x Instance size
-    # y GAT
-    # plt.figure(figsize=(6, 2))
-
-    # mpl.rcParams.update({'font.size': 40})
-    # plot = frame.plot(linestyle='', marker='o', figsize=(15, 8))
-    # plot = data['actionDuration'].plot(linestyle='', marker='o', figsize=(15, 8))
-    # plot = data['actionDuration'].plot(linestyle='', marker='o', figsize=(15, 8))
 
     algs = []
     df = DataFrame()
     df['actionDuration'] = [i for i in data['actionDuration'].unique()]
-    for i, group in data.groupby(['domainPath', 'algorithmName']):
-        print(str(i))
-        print([i for i in group['errorMessage']])
-        # df[str(i) + "_execution"] = [i for i in group['actionExecutionTime']]
-        # df[str(i) + "_idle"] = [i for i in group['idlePlanningTime']]
-        # df[str(i)] = [i for i in group['goalAchievementTime']]
-        # df[str(i)] = [i for i in group['pathLength']]
-        algs.append(str(i))
 
-    return
+    data = data[~data['errorMessage'].notnull()]
+
+    for i, group in data.groupby(['domainPath', 'algorithmName']):
+        key = i[0] + "_" + i[1]
+        if i[1] == 'SAFE_RTS':
+            for selection, selectionGroup in DataFrame(group).groupby('TARGET_SELECTION'):
+                key = i[0] + "_" + i[1] + "_" + str(selection)
+                df = addData(df, group, key, algs)
+        else:
+            df = addData(df, group, key, algs)
 
     plot = df.plot(x='actionDuration', y=algs, linestyle='', marker='o')
 
     plot.set_xlabel('Action Duration')
     plot.set_ylabel('Goal Achievement Time')
+    # plot.set(xlim=(0, None))
 
     # plt.gcf().subplots_adjust(bottom=1)
     plt.tight_layout(pad=1, w_pad=0.5, h_pad=1.0)
