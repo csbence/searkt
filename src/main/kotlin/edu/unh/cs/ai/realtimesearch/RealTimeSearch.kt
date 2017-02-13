@@ -42,8 +42,8 @@ fun main(args: Array<String>) {
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(BEST_SAFE.toString(), SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.3, 1.0, 2.0)),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE, CommitmentStrategy.MULTIPLE)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE, CommitmentStrategy.MULTIPLE))
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString()))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..14L)
@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
 
     println("${configurations.size} configuration has been generated.")
 
-    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 15)
+    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
 
     val objectMapper = ObjectMapper()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }

@@ -66,9 +66,9 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
                 currentNode = expandNode(currentNode)
             }
 
-            if (expandedNodeCount % 100000 == 0) {
-                System.gc()
-            }
+//            if (expandedNodeCount % 100000 == 0) {
+//                System.gc()
+//            }
         }
 
         return extractPlan(currentNode)

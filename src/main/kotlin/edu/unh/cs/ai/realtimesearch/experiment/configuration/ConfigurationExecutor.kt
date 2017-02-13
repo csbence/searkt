@@ -102,7 +102,7 @@ object ConfigurationExecutor {
             }
         }
 
-        collectAndWait()
+//        collectAndWait() // Only enable it when optimizing for time
 
         thread.start()
         thread.priority = Thread.MAX_PRIORITY
