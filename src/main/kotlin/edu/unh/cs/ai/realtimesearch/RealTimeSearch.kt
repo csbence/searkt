@@ -26,17 +26,17 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-//            domains = listOf(
-//                    //                      RACETRACK to "input/racetrack/uniform.track",
-////                      RACETRACK to "input/racetrack/barto-big.track",
-////                      RACETRACK to "input/racetrack/barto-small.track",
-////                      RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+            domains = listOf(
+                      RACETRACK to "input/racetrack/uniform.track",
+                      RACETRACK to "input/racetrack/barto-big.track",
+                      RACETRACK to "input/racetrack/barto-small.track",
+                      RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-//            ),
-            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
-            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+            ),
+//            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+            planners = listOf(A_STAR, SAFE_RTS, LSS_LRTA_STAR),
             commitmentStrategy = listOf(SINGLE),
-            actionDurations = listOf(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L),
+            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
