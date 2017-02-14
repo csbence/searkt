@@ -53,15 +53,24 @@ object ConfigurationExecutor {
         class ProgressBar(val maxProgress: Int) {
             var currentProgress = 0
             var lock = Object()
+            val startTime = System.currentTimeMillis()
 
             fun updateProgress() = synchronized(lock) {
                 currentProgress++
                 val ratio = currentProgress.toDouble() / maxProgress
+                val millisecondPerExperiment = (System.currentTimeMillis() - startTime) / currentProgress
+                val remainingProgress = maxProgress - currentProgress
+                val expectedCompletionMillis = remainingProgress * millisecondPerExperiment
 
-                val builder = StringBuilder("\r|                                                                    | $currentProgress/$maxProgress - ${Math.round(ratio * 100)}%")
+                val seconds = MILLISECONDS.toSeconds(expectedCompletionMillis) % 60
+                val minutes = MILLISECONDS.toMinutes(expectedCompletionMillis) % 60
+                val hours = MILLISECONDS.toHours(expectedCompletionMillis) % 60
+                val secondsPerExperiment = MILLISECONDS.toSeconds(millisecondPerExperiment)
+
+                val builder = StringBuilder("\r|                            | $currentProgress/$maxProgress | ${Math.round(ratio * 100)}% | avg: $millisecondPerExperiment ms/exp | rem: ${hours}h ${minutes}m ${seconds}s |")
                 builder.append("\r|")
-                (1..68).forEach {
-                    builder.append(if (it / 68.0 > ratio) "" else "\u2588")
+                (1..28).forEach {
+                    builder.append(if (it / 28.0 > ratio) "" else "\u2588")
                 }
                 print(builder.toString())
             }
