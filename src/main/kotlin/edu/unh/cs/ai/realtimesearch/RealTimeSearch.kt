@@ -1,12 +1,10 @@
 package edu.unh.cs.ai.realtimesearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
+import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
@@ -27,16 +25,16 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-            domains = listOf(
-                    RACETRACK to "input/racetrack/uniform.track",
-                    RACETRACK to "input/racetrack/barto-big.track",
-                    RACETRACK to "input/racetrack/barto-small.track",
-                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
-//                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
-            //            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
-            planners = listOf(SAFE_RTS),
-            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+//            domains = listOf(
+//                    RACETRACK to "input/racetrack/uniform.track",
+//                    RACETRACK to "input/racetrack/barto-big.track",
+//                    RACETRACK to "input/racetrack/barto-small.track",
+//                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+////                    TRAFFIC to "input/traffic/vehicle0.v"
+//            ),
+            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
+            actionDurations = listOf(50L, 3200L, 6400L, 12800L, 25600L, 51200L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
@@ -47,7 +45,7 @@ fun main(args: Array<String>) {
                     Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString()))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
+//                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
             )
     )
 
