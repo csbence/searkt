@@ -226,9 +226,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         var totalExpansionDuration = 0L
         var totalSafetyDuration = 0L
 
-        while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+        while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
             currentNode = popOpenList()
+
+            if (domain.isGoal(currentNode.state)) {
+                currentNode.state.takeIf { domain.isSafe(it) } ?: throw MetronomeException("Goal state must be safe!")
+                return currentNode
+            }
 
             totalExpansionDuration += measureLong(terminationChecker::elapsed) {
                 expandFromNode(currentNode)
@@ -238,7 +243,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             // Update best safe node
             if (totalExpansionDuration * safetyExplorationRatio > totalSafetyDuration) {
                 totalSafetyDuration += measureLong(terminationChecker::elapsed) {
-                    val topNode = openList.peek() ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+                    val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
 
                     lastSafeNode = if (topNode.safe) {
                         topNode
