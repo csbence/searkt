@@ -28,11 +28,9 @@ import kotlin.system.measureTimeMillis
  */
 class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     // Configuration
-    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION.toString()] as? String ?: throw MetronomeException("Target selection strategy not found"))
-    val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO.toString()] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
-    val commitmentStrategy: CommitmentStrategy = CommitmentStrategy.valueOf(configuration[Configurations.COMMITMENT_STRATEGY.toString()] as? String ?: throw MetronomeException("Commitment strategy not found"))
-
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
+    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+    val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
+    val commitmentStrategy: CommitmentStrategy = CommitmentStrategy.valueOf(configuration[Configurations.COMMITMENT_STRATEGY] as? String ?: throw MetronomeException("Commitment strategy not found"))
 
     class Node<StateType : State<StateType>>(
             override val state: StateType,
@@ -41,7 +39,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             override var actionCost: Long,
             override var action: Action,
             var iteration: Long,
-            override var open: Boolean = false,
             parent: Node<StateType>? = null) : SearchNode<StateType>, Indexable, Safe {
 
         /** Item index in the open list. */
@@ -49,12 +46,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         override var safe = false
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
-        var predecessors: MutableList<Edge<StateType>> = arrayListOf()
+        var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
         var parent: Node<StateType>
 
         override fun getParent(): SearchNode<StateType> = parent
+        override fun getPredecessorsNodes(): List<SearchEdge<SearchNode<StateType>>> = predecessors
 
         val f: Double
             get() = cost + heuristic
@@ -214,7 +212,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         } else {
             initializeAStar()
             // Create and add initial node to open
-            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
+            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
             nodes[state] = node
             addToOpenList(node)
         }
@@ -299,7 +297,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             val successorNode = getNode(sourceNode, successor)
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -307,7 +305,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = Long.MAX_VALUE
-                    open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -357,8 +354,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     actionCost = 0,
                     action = NoOperationAction,
                     cost = Long.MAX_VALUE,
-                    iteration = 0,
-                    open = false)
+                    iteration = 0)
 
             nodes[state] = node
             node
@@ -384,8 +380,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     action = successor.action,
                     parent = parent,
                     cost = Long.MAX_VALUE,
-                    iteration = iterationCounter,
-                    open = false)
+                    iteration = iterationCounter
+            )
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -508,20 +504,16 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
         return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 
 }
@@ -601,15 +593,29 @@ fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domai
             ?.run { RealTimePlanner.ActionBundle(this.action, this.actionCost) }
 }
 
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType>> predecessorSafetyPropagation(safeNodes: List<NodeType>) where NodeType : Safe {
+    val backedUpNodes: HashSet<SearchNode<StateType>> = safeNodes.toHashSet()
+    var nodesToBackup: List<SearchNode<StateType>> = safeNodes
+
+    while (nodesToBackup.isNotEmpty()) {
+        nodesToBackup = nodesToBackup
+                .flatMap { it.getPredecessorsNodes().map { it.node } }
+                .filter { it !in backedUpNodes }
+                .onEach { backedUpNodes.add(it) }
+    }
+}
+
+data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long)
+
 interface SearchNode<StateType : State<StateType>> {
     val state: StateType
     var heuristic: Double
     var cost: Long
     var actionCost: Long
     var action: Action
-    var open: Boolean
 
     fun getParent(): SearchNode<StateType>
+    fun getPredecessorsNodes(): List<SearchEdge<SearchNode<StateType>>>
 }
 
 interface Safe {

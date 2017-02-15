@@ -40,10 +40,8 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import java.util.stream.Collectors
 
 /**
  * Configuration executor to execute experiment configurations.
@@ -233,7 +231,7 @@ object ConfigurationExecutor {
             RTA_STAR -> executeRealTimeAStar(configuration, domain, sourceState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
-            S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain), configuration, domain, sourceState)
+            S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             S_ONE -> executeRealTimeSearch(SOnePlanner(domain), configuration, domain, sourceState)
             else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }

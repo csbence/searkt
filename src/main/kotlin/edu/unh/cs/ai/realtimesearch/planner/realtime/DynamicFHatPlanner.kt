@@ -34,7 +34,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
-                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) : Indexable {
 
         /** Item index in the open list. */
@@ -266,7 +265,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = Long.MAX_VALUE
-                    open = false
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -453,19 +451,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
         return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 }

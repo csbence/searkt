@@ -27,13 +27,13 @@ import kotlin.system.measureTimeMillis
  *
  * This loop continue until the goal has been found
  */
+@Deprecated("Use SZero with parameters")
 class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
-                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null,
                                              var safe: Boolean = false) : Indexable {
 
@@ -170,7 +170,7 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         var currentNode = node
         addToOpenList(node)
@@ -232,7 +232,6 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = MAX_VALUE
-                    open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -288,8 +287,8 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
-                    iteration = iterationCounter,
-                    open = false)
+                    iteration = iterationCounter
+            )
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -483,20 +482,15 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
-        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
-        return node
+        return openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 
 }

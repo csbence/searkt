@@ -32,8 +32,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
-                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) : Indexable {
+
 
         /** Item index in the open list. */
         override var index: Int = -1
@@ -164,7 +164,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         var currentNode = node
         addToOpenList(node)
@@ -205,7 +205,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
 
-
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -222,7 +221,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = MAX_VALUE
-                    open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -278,8 +276,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
-                    iteration = iterationCounter,
-                    open = false)
+                    iteration = iterationCounter
+            )
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -395,20 +393,16 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
         return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 
 }
