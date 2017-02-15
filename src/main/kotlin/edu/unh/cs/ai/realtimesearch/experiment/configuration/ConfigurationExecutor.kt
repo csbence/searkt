@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
@@ -65,7 +66,6 @@ object ConfigurationExecutor {
                 val seconds = MILLISECONDS.toSeconds(expectedCompletionMillis) % 60
                 val minutes = MILLISECONDS.toMinutes(expectedCompletionMillis) % 60
                 val hours = MILLISECONDS.toHours(expectedCompletionMillis) % 60
-                val secondsPerExperiment = MILLISECONDS.toSeconds(millisecondPerExperiment)
 
                 val builder = StringBuilder("\r|                            | $currentProgress/$maxProgress | ${Math.round(ratio * 100)}% | avg: $millisecondPerExperiment ms/exp | rem: ${hours}h ${minutes}m ${seconds}s |")
                 builder.append("\r|")
@@ -77,18 +77,14 @@ object ConfigurationExecutor {
         }
 
         val progressBar = ProgressBar(configurations.size)
-        val forkJoinPool = ForkJoinPool(parallelCores)
 
-        val task = forkJoinPool.submit(Callable {
-            val configurationStream = if (parallelCores > 1) configurations.parallelStream() else configurations.stream()
-            val results = configurationStream.map {
-                progressBar.updateProgress()
-                executeConfiguration(it, dataRootPath)
-            }.collect(Collectors.toList())
-            results
-        })
-
-        return task.get()
+        val executor = Executors.newFixedThreadPool(parallelCores)
+        return configurations
+                .map { executor.submit(Callable<ExperimentResult>{ executeConfiguration(it, dataRootPath)}) }
+                .map { val experimentResult = it.get()
+                    progressBar.updateProgress()
+                    experimentResult
+                }
     }
 
     fun executeConfiguration(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
