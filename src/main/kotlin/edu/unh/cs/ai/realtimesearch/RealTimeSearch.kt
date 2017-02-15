@@ -1,8 +1,10 @@
 package edu.unh.cs.ai.realtimesearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
@@ -26,15 +28,15 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
 //            domains = listOf(
-//                    RACETRACK to "input/racetrack/uniform.track",
-//                    RACETRACK to "input/racetrack/barto-big.track",
-//                    RACETRACK to "input/racetrack/barto-small.track",
-//                    RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+//                    Domains.RACETRACK to "input/racetrack/uniform.track",
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+//                    Domains.RACETRACK to "input/racetrack/barto-small.track",
+//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
 ////                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
             domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
-            planners = listOf(A_STAR, LSS_LRTA_STAR, SAFE_RTS, S_ONE, S_ZERO),
-            actionDurations = listOf(50L, 3200L, 6400L, 12800L, 25600L, 51200L),
+            planners = listOf(A_STAR),
+            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L, 6400L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
@@ -43,10 +45,10 @@ fun main(args: Array<String>) {
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.1, 0.3, 0.5, 1.0, 2.0, 5.0)),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString())),
                     Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString()))
-            ),
-            domainExtras = listOf(
-//                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
             )
+//            domainExtras = listOf(
+//                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
+//            )
     )
 
 //    configurations.forEach {
