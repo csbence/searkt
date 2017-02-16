@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
 
 /**
  * An action in the racetrack domain consists of an acceleration in any of the 8 directions
@@ -9,18 +8,14 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  *
  * TODO: copied much from GridWorld/VacuumWorld. Maybe refactor?
  */
-enum class RaceTrackAction(val index: Int) : Action {
-    LEFTUP(0), UP(1), RIGHTUP(2),
-    LEFT(3), NOOP(4), RIGHT(5),
-    LEFTDOWN(6), DOWN(7), RIGHTDOWN(8);
-
-
-    // Storage of all speed moves
-    private val acceleration = arrayOf(
-            Location(-1, 1), Location(0, 1), Location(1, 1),
-            Location(-1, 0), Location(0, 0), Location(1, 0),
-            Location(-1, -1), Location(0, -1), Location(1, -1)
-    )
-
-    fun getAcceleration() = acceleration[index]
+enum class RaceTrackAction(val aX: Int, val aY: Int) : Action {
+    LEFT_UP(-1, 1),
+    UP(0, 1),
+    RIGHT_UP(1, 1),
+    LEFT(-1, 0),
+    NO_OP(0, 0),
+    RIGHT(1, 0),
+    LEFT_DOWN(-1, -1),
+    DOWN(0, -1),
+    RIGHT_DOWN(1, -1)
 }

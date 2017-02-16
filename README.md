@@ -6,10 +6,12 @@
 
 ## TODO
 
+* implement foggy racetrack domain
+* implement / validate traffic domain (Jordan)
+* migrate s0 s1 (Bence / Will)
 * javadoc for sliding tile puzzle
 * get tests to run 
 * refactor such that domains do not require to implement predecessors
-* implement new lsslrta by Dylan (the in-admissible one that maintains a expected error)
 * how to store/write results
 
 ## Conventions
@@ -103,12 +105,14 @@ Actions: up, down, left, right
 * time limit (`"timeLimit" : Long`)
 * action duration (`"actionDuration" : Long`)
     - Must be greater than zero
-* termination type (`"terminationType" : "time"`)
-    - Time is the only supported termination type
+* termination type (`"terminationType" : { "TIME" | "EXPANSION" | "UNLIMITED"`)
+    - The unlimited type is for debugging purposes only. The unlimited termination checker will never interrupt an iteration.
 
 ### Real-time search
 
-* time bound type (`"timeBoundType" : { "STATIC" | "DYNAMIC" }`)
+* time bound type (`"lookaheadType" : { "STATIC" | "DYNAMIC" }`)
+    - The original lookahead bound will be used for every iteration if static lookahead is selected.
+    - The available duration for planning depends on the duration of the committed actions when dynamic lookahead is used. 
 * commitment strategy (`"commitmentStrategy" : { "SINGLE" | "MULTIPLE" }`)
 
 ### Anytime search

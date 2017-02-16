@@ -33,7 +33,7 @@ class PointInertiaVisualizer : PointVisualizer() {
 
         // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()

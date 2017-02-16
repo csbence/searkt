@@ -109,7 +109,7 @@ data class SlidingTilePuzzleDynamicState(val zeroX: Int, val zeroY: Int, val til
 
 fun tiles(size: Int, init: SlidingTilePuzzleDynamicState.Tiles.() -> Unit): SlidingTilePuzzleDynamicState.Tiles {
     val internalTiles = ByteArray(size * size)
-    internalTiles.forEachIndexed { i, byte -> internalTiles[i] = -1 }
+    internalTiles.forEachIndexed { i, _ -> internalTiles[i] = -1 }
     val tiles = SlidingTilePuzzleDynamicState.Tiles(size, internalTiles)
 
     tiles.init()
@@ -119,7 +119,7 @@ fun tiles(size: Int, init: SlidingTilePuzzleDynamicState.Tiles.() -> Unit): Slid
 fun SlidingTilePuzzleDynamicState.Tiles.row(vararg args: Int) {
     val minusOne: Byte = -1
     val index = tiles.indexOfFirst { it == minusOne }
-    val row = args.map { it.toByte() }.toByteArray()
+    val row = args.map(Int::toByte).toByteArray()
 
     System.arraycopy(row, 0, this.tiles, index, this.dimension)
 }

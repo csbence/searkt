@@ -3,7 +3,8 @@ package edu.unh.cs.ai.realtimesearch.planner
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SearchNode
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -12,7 +13,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminati
  *
  * @param domain: The domain to plan in
  */
-abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner {
+abstract class RealTimePlanner<StateType : State<StateType>>(protected val domain: Domain<StateType>) : Planner<StateType>() {
     /**
      * Data class to store [Action]s along with their execution time.
      *
@@ -20,29 +21,14 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
      */
     data class ActionBundle(val action: Action, val duration: Long)
 
-    override var generatedNodeCount = 0
-    override var expandedNodeCount = 0
-
     /**
      * Returns an action while abiding the termination checker's criteria.
      *
-     * @param state is the state to pick an action for
+     * @param sourceState is the sourceState to pick an action for
      * @param terminationChecker provides the termination criteria
-     * @return an action for current state
+     * @return an action for current sourceState
      */
-    abstract fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle>
-
-    /**
-     * Resets the planner for a new run. This function is called whenever a new run starts. This should prepare
-     * the learner for a completely new unrelated selectAction call experiment. Some learners maintain plans,
-     * for example, rather than plan for every single selectAction call, and this should clear out such data.
-     *
-     * NOTE: do not forget to call super.reset() when implementing this. Will reset the node count
-     */
-    open fun reset() {
-        generatedNodeCount = 0
-        expandedNodeCount = 0
-    }
+    abstract fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle>
 
     /**
      * Called before the first [selectAction] call.
@@ -52,5 +38,30 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
     open fun init() {
 
     }
+
 }
 
+/**
+ * Extracts an action sequence that leads from the start state to the target state.
+ * The path follows the parent pointers from the target to the start in reversed order.
+ *
+ * @return path from source to target if exists.
+ */
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractSourctToTargetPath(targetNode: NodeType?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+    targetNode ?: return emptyList()
+
+    val actions = ArrayList<RealTimePlanner.ActionBundle>(1000)
+    var currentNode: NodeType = targetNode
+
+    if (targetNode.state == sourceState) {
+        return emptyList()
+    }
+
+    // keep on pushing actions to our queue until source state (our root) is reached
+    do {
+        actions.add(RealTimePlanner.ActionBundle(currentNode.action, currentNode.actionCost))
+        currentNode = currentNode.parent
+    } while (currentNode.state != sourceState)
+
+    return actions.reversed()
+}

@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
 }
 
 fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutableListOf()) {
-    val domainName = result.experimentConfiguration[Configurations.DOMAIN_NAME.toString()] as String
+    val domainName = result.configuration[Configurations.DOMAIN_NAME.toString()] as String
     params.add(0, result.toJson())
     when (Domains.valueOf(domainName)) {
         Domains.VACUUM_WORLD -> {

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.planner.realtime.Safe
 import java.util.*
 
 /**
@@ -10,7 +11,6 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     var resizable = false
     var size = 0
-        private set
 
     val backingArray: Array<T?>
         get() = queue
@@ -85,6 +85,7 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     fun clear() {
         for (i in 0..size - 1) {
+            queue[i]?.index = -1
             queue[i] = null
         }
 
@@ -104,6 +105,8 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         if (size != 0) {
             siftDown(0, x!!)
         }
+
+        result?.index = -1
         return result
     }
 
@@ -177,6 +180,7 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     fun update(item: T) {
         val index = item.index
+        if (index == -1) throw RuntimeException("Invalid index. Can't update the location of an item that is not on the heap.")
 
         if (siftUp(index) == index) {
             siftDown(index)
@@ -219,4 +223,14 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         }
         size = 0
     }
+}
+
+interface Indexable {
+    var index: Int
+    val open
+        get() = index >= 0
+}
+
+class X(override var index: Int, override var safe: Boolean) : Indexable, Safe {
+
 }

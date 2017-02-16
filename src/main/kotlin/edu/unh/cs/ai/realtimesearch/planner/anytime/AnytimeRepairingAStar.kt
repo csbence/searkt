@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.anytime
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
@@ -71,11 +72,12 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    fun solve(startState: StateType, gS: List<StateType>): MutableList<Action?> {
+    override fun selectAction(startState: StateType, terminationChecker: TerminationChecker): List<Action?> {
         //Solving backwards, so flip start and goal states
+        val goals = domain.getGoals()
 
         targetgoal = startState
-        for (goalState in gS) {
+        for (goalState in goals) {
             var tempNode = allNodes[goalState]
 
             if (tempNode == null) {
@@ -105,7 +107,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         return result
     }
 
-    fun update(): Double {
+    override fun update(): Double {
         inflationFactor *= 100
         inflationFactor -= 2
         inflationFactor /= 100

@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.visualizer.acrobot
 
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.Acrobot
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotAction
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotEnvironment
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
@@ -63,8 +62,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         // Parse results
         acrobotConfiguration = AcrobotConfiguration.fromJson(
-                experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
-        actionDuration = (experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
+                experimentResult.configuration[Configurations.RAW_DOMAIN.toString()] as String)
+        actionDuration = (experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long)
 
         for (action in experimentResult.actions) {
             actionList.add(AcrobotAction.valueOf(action))
@@ -119,10 +118,10 @@ open class AcrobotVisualizer : BaseVisualizer() {
         }
 
         val info = StringBuilder()
-        info.append("Algorithm: ").appendln(experimentResult.experimentConfiguration["algorithmName"])
-        info.append("Instance: ").appendln(experimentResult.experimentConfiguration["domainInstanceName"])
+        info.append("Algorithm: ").appendln(experimentResult.configuration["algorithmName"])
+        info.append("Instance: ").appendln(experimentResult.configuration["domainInstanceName"])
         info.append("Path Length: ").appendln(experimentResult.pathLength)
-        info.append("Action Duration: ").append(experimentResult.experimentConfiguration["actionDuration"])
+        info.append("Action Duration: ").append(experimentResult.configuration["actionDuration"])
         info.appendln(" ns")
         info.append("Action Execution Time: ").append(experimentResult.actionExecutionTime).appendln(" ns")
         val infoLabel = Label(info.toString())
@@ -197,12 +196,10 @@ open class AcrobotVisualizer : BaseVisualizer() {
         val stateList = mutableListOf<StateInfo>()
         val acrobotDomain = Acrobot(acrobotConfiguration, actionDuration)
 
-        val environment = AcrobotEnvironment(acrobotDomain, acrobotConfiguration.initialState)
-        var currentState = environment.getState()
+        var currentState = acrobotConfiguration.initialState
 
         for (action in actionList) {
-            environment.step(action)
-            val newState = environment.getState()
+            val newState = acrobotDomain.transition(currentState, action) ?:  throw RuntimeException("Invalid acrobot transition")
 
             // Assign interpolator for each link
             val linkInterpolation1: Interpolator =

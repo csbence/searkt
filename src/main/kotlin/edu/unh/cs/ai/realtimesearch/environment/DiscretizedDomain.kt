@@ -55,27 +55,10 @@ class DiscretizedDomain<StateType : DiscretizableState<StateType>, DomainType : 
      */
     override fun isGoal(state: DiscretizedState<StateType>): Boolean = domain.isGoal(state.state)
 
-    /**
-     * Prints the state values of the actual state and of the discretized state.
-     *
-     * @param state the state whose values should be printed
-     */
-    override fun print(state: DiscretizedState<StateType>): String {
-        val description = StringBuilder()
-        description.append("state:").append(domain.print(state.state))
-        description.append(",discretizedState:").append(domain.print(state.discretizedState))
-        return description.toString()
-    }
-
-    /**
-     * Retrieve a random state
-     */
-    override fun randomState(): DiscretizedState<StateType> = DiscretizedState(domain.randomState())
-
-    override fun getGoal(): List<DiscretizedState<StateType>> {
+    override fun getGoals(): List<DiscretizedState<StateType>> {
         val list: MutableList<DiscretizedState<StateType>> = arrayListOf()
 
-        for (goal in domain.getGoal()) {
+        for (goal in domain.getGoals()) {
             list.add(DiscretizedState(goal))
         }
 

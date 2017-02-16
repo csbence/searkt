@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
@@ -32,8 +32,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
-                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) : Indexable {
+
 
         /** Item index in the open list. */
         override var index: Int = -1
@@ -57,7 +57,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
-                return state.equals(other.state)
+                return state == other.state
             }
             return false
         }
@@ -88,7 +88,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
@@ -104,26 +104,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     var dijkstraTimer = 0L
         get
 
-
     /**
-     * Prepares LSS for a completely unrelated new search. Sets mode to init
-     * When a new action is selected, all members that persist during selection action phase are cleared
-     */
-    override fun reset() {
-        super.reset()
-
-        rootState = null
-
-        aStarPopCounter = 0
-        dijkstraPopCounter = 0
-        aStarTimer = 0L
-        dijkstraTimer = 0L
-
-        clearOpenList()
-    }
-
-    /**
-     * Selects a action given current state.
+     * Selects a action given current sourceState.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will
      * always be the first on in the current plan.
@@ -131,27 +113,27 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * LSS-LRTAStar will plan to a specific frontier, and continue
      * to plan from there. This planning abides a termination criteria, meaning that it plans under constraints
      *
-     * @param state is the current state
+     * @param sourceState is the current sourceState
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
-            rootState = state
-        } else if (state != rootState) {
-            // The given state should be the last target
-            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
+            rootState = sourceState
+        } else if (sourceState != rootState) {
+            // The given sourceState should be the last target
+            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
-        if (domain.isGoal(state)) {
-            // The start state is the goal state
-            logger.warn() { "selectAction: The goal state is already found." }
+        if (domain.isGoal(sourceState)) {
+            // The start sourceState is the goal sourceState
+            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root state: $state" }
+        logger.debug { "Root sourceState: $sourceState" }
         // Every turn learn then A* until time expires
 
         // Learning phase
@@ -162,9 +144,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(state, terminationChecker)
+            val targetNode = aStar(sourceState, terminationChecker)
 
-            plan = extractPlan(targetNode, state)
+            plan = extractPlan(targetNode, sourceState)
             rootState = targetNode.state
         }
 
@@ -178,11 +160,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TimeTerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, false)
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         var currentNode = node
         addToOpenList(node)
@@ -193,6 +175,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 aStarPopCounter++
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
             }
         }
 
@@ -238,7 +221,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = MAX_VALUE
-                    open = false // It is not on the open list yet, but it will be
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
@@ -294,8 +276,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
-                    iteration = iterationCounter,
-                    open = false)
+                    iteration = iterationCounter
+            )
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -316,7 +298,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * a better table of heuristics.
      *
      */
-    private fun dijkstra(terminationChecker: TimeTerminationChecker) {
+    private fun dijkstra(terminationChecker: TerminationChecker) {
         logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
@@ -392,7 +374,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
 
-        logger.debug() { "Extracting plan" }
+        logger.debug { "Extracting plan" }
 
         if (targetNode.state == sourceState) {
             return emptyList()
@@ -404,27 +386,23 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
-        logger.debug() { "Plan extracted" }
+        logger.debug { "Plan extracted" }
 
         return actions.reversed()
     }
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
         return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 
 }

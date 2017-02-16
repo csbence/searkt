@@ -13,11 +13,7 @@ open class DiscretizedState<ActualState : DiscretizableState<ActualState>>(val s
     fun copy(state: ActualState): DiscretizedState<ActualState> = DiscretizedState(state.copy())
     override fun copy(): DiscretizedState<ActualState> = copy(state)
 
-    val discretizedState: ActualState
-
-    init {
-        discretizedState = state.discretize()
-    }
+    val discretizedState: ActualState = state.discretize()
 
     override fun equals(other: Any?): Boolean {
         return when {

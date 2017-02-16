@@ -11,7 +11,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
                 domainPath: String? = null) : this() {
         this.domainName = domainName
         this.algorithmName = algorithmName
-        this.terminationCheckerType = terminationCheckerType
+        this.terminationType = terminationCheckerType
 
         if (rawDomain != null) {
             this.rawDomain = rawDomain
@@ -26,7 +26,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
     var rawDomain: String? by valueStore
     var domainPath: String by valueStore
     var algorithmName: String by valueStore
-    var terminationCheckerType: String by valueStore
+    var terminationType: String by valueStore
     var actionDuration: Long by valueStore
     var timeLimit: Long by valueStore
 

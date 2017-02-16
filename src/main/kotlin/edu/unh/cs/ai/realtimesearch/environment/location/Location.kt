@@ -21,6 +21,14 @@ data class Location(val x: Int, val y: Int) {
         return abs(x - other.x) + abs(y - other.y)
     }
 
+    override fun equals(other: Any?): Boolean {
+        return other is Location && other.x == x && other.y == y
+    }
+
+    override fun hashCode(): Int {
+        return x xor Integer.rotateLeft(y, 16)
+    }
+
     /**
      * Check if location is inside the boundaries.
      * The lower bound is inclusive the upper bound is exclusive.

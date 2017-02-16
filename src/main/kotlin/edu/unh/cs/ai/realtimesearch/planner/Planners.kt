@@ -7,4 +7,7 @@ enum class Planners {
     ARA_STAR,
     WEIGHTED_A_STAR,
     DYNAMIC_F_HAT,
+    SAFE_RTS,
+    S_ZERO,
+    S_ONE
 }

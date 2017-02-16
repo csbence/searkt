@@ -1,4 +1,5 @@
 *.log
+classes
 
 #3rd party libraries for testing
 /src/main/kotlin/edu/unh/cs/ai/realtimesearch/external
@@ -128,3 +129,4 @@ verbosegc*.txt
 __pycache__/
 *.py[cod]
 *$py.class
+/output/

@@ -1,13 +1,17 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
-import edu.unh.cs.ai.realtimesearch.agent.RTSAgent
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.Environment
+import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
@@ -16,38 +20,41 @@ import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 
 /**
- * An RTS experiment repeatedly queries the agent
+ * An RTS experiment repeatedly queries the planner
  * for an action by some constraint (allowed time for example).
  * After each selected action, the experiment then applies this action
  * to its environment.
  *
- * The states are given by the environment, the world. When creating the world
+ * The states are given by the environment, the domain. When creating the domain
  * it might be possible to determine what the initial state is.
  *
- * NOTE: assumes the same domain is used to create both the agent as the world
+ * NOTE: assumes the same domain is used to create both the planner as the domain
  *
- * @param agent is a RTS agent that will supply the actions
- * @param world is the environment
- * @param terminationChecker controls the constraint put upon the agent
+ * @param planner is a RTS planner that will supply the actions
+ * @param domain is the environment
+ * @param terminationChecker controls the constraint put upon the planner
  */
-class RealTimeExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
-                                                       val agent: RTSAgent<StateType>,
-                                                       val world: Environment<StateType>,
-                                                       val terminationChecker: TimeTerminationChecker) : Experiment() {
+class RealTimeExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
+                                                       val planner: RealTimePlanner<StateType>,
+                                                       val domain: Domain<StateType>,
+                                                       val initialState: StateType,
+                                                       val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(experimentConfiguration, Configurations.COMMITMENT_STRATEGY.toString())
-    private val actionDuration by lazyData<Long>(experimentConfiguration, Configurations.ACTION_DURATION.toString())
+    private val commitmentStrategy by lazyData<String>(configuration, Configurations.COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(configuration, Configurations.ACTION_DURATION.toString())
 
     /**
      * Runs the experiment
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-        logger.info { "Starting experiment from state ${world.getState()}" }
+        logger.debug { "Starting experiment from state $initialState" }
+        var currentState: StateType = initialState
 
         var totalPlanningNanoTime = 0L
         val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
@@ -55,68 +62,72 @@ class RealTimeExperiment<StateType : State<StateType>>(val experimentConfigurati
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
-        while (!world.isGoal()) {
+        while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
-                terminationChecker.init(timeBound)
+                terminationChecker.resetTo(timeBound)
 
-                actionList = agent.selectAction(world.getState(), terminationChecker);
+                actionList = planner.selectAction(currentState, terminationChecker)
 
                 if (actionList.size > 1 && singleStepLookahead) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
-
-                timeBound = 0
-                actionList.forEach {
-                    world.step(it.action) // Move the agent
-                    actions.add(it.action) // Save the action
-                    timeBound += it.duration.toLong() // Add up the action durations to calculate the time bound for the next iteration
-                }
             }
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state ${world.getState()}" }
+            timeBound = 0
+            actionList.forEach {
+                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                actions.add(it.action) // Save the action
+                timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
+            }
 
-            validateInteration(actionList, iterationNanoTime)
+            logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
+//            println(domain.print(currentState))
+//            Thread.sleep(1000)
+            validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
-
         }
 
         val pathLength: Long = actions.size.toLong()
-        val totalExecutionNanoTime = pathLength * actionDuration
-        val goalAchievementTime = actionDuration + totalExecutionNanoTime // We only plan during execution plus the first iteration
+        val totalExecutionNanoDuration = pathLength * actionDuration
+        val goalAchievementTime = when (TerminationType.valueOf(configuration.terminationType)) {
+            TIME -> actionDuration + totalExecutionNanoDuration // We only plan during execution plus the first iteration
+            EXPANSION -> actionDuration + pathLength * actionDuration
+            else -> throw MetronomeException("Unsupported termination checker")
+        }
+
         logger.info {
-            "Path length: [$pathLength] After ${agent.planner.expandedNodeCount} expanded " +
-                    "and ${agent.planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
-                    "(${agent.planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
+            "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
+                    "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                    "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
         return ExperimentResult(
-                experimentConfiguration = experimentConfiguration.valueStore,
-                expandedNodes = agent.planner.expandedNodeCount,
-                generatedNodes = agent.planner.generatedNodeCount,
+                configuration = configuration.valueStore,
+                expandedNodes = planner.expandedNodeCount,
+                generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,
-                actionExecutionTime = totalExecutionNanoTime,
+                actionExecutionTime = totalExecutionNanoDuration,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
-                actions = actions.map { it.toString() })
+                actions = actions.map(Action::toString))
     }
 
-    private fun validateInteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
+    private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
         if (actionList.isEmpty()) {
-            val planner = agent.planner
             val extras = if (planner is LssLrtaStarPlanner) {
                 "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
             } else {
                 ""
             }
 
-            throw RuntimeException("Select action did not return actions in the given time bound: ${terminationChecker.timeLimit}. The agent is confused. $extras")
+            throw RuntimeException("Select action did not return actions in the given bound. The planner is confused. $extras")
         }
 
         // Check if the algorithm satisfies the real-time bound
+        if (terminationChecker !is TimeTerminationChecker) return
         if (terminationChecker.timeLimit < iterationNanoTime) {
-            val planner = agent.planner
             val extras = if (planner is LssLrtaStarPlanner) {
                 "A*: ${planner.aStarTimer} Learning: ${planner.dijkstraTimer}"
             } else {

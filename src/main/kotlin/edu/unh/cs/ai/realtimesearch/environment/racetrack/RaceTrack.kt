@@ -1,13 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
+import org.slf4j.LoggerFactory
+import java.lang.Math.*
+import java.util.*
 
 /**
  * The racetrack domain is a gridworld with a specific start 'line' and finish 'line'. The
  * agent starts at one of the cells on the starting line, and the goal is to reach one of the
- * cells at the finish line. The shape of the track is variable, and driving of the grid returns
+ * cells at the finish line. The shape of the obstacles is variable, and driving of the grid returns
  * the agent to a cell on the starting line.
  *
  * The car can choose to accelerate up to 1 in either x or y direction, reaching a speed of up to
@@ -24,67 +29,77 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  */
 class RaceTrack(val width: Int,
                 val height: Int,
-                val track: Set<Location>,
-                val finish_line: Set<Location>,
+                val obstacles: Set<Location>,
+                val finishLine: Set<Location>,
                 val actionDuration: Long) : Domain<RaceTrackState> {
 
-    //private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
+    /** Pre-calculated heuristic value store */
+    val maxXSpeed = width / 2
+    val maxYSpeed = height / 2
+    val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
-    val maxXSpeed = getXSpeed()
-    val maxYSpeed = getYSpeed()
+    private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
-    fun getXSpeed(): Int {
-        var w = 1
-        var xSpeed = 0
+    private fun calculateDijkstraHeuristic(): Map<Location, Double> {
+        data class Node(val location: Location, val goalDistance: Double)
 
-        while (w <= width) {
-            w += xSpeed
-            xSpeed++
+        val heuristicMap = hashMapOf<Location, Double>()
+
+        val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
+            when {
+                lhsDistance < rhsDistance -> -1
+                lhsDistance > rhsDistance -> 1
+                else -> 0
+            }
         }
 
-        return xSpeed - 1
-    }
+        val queue = PriorityQueue<Node>(nodeComparator)
 
-    fun getYSpeed(): Int {
-        var h = 1
-        var ySpeed = 0
-
-        while (h <= height) {
-            h += ySpeed
-            ySpeed++
+        val discovered = HashSet<Location>()
+        finishLine.forEach {
+            queue.add(Node(it, 0.0))
+            heuristicMap[it] = 0.0
+            discovered += it
         }
 
-        return ySpeed - 1
+        while (queue.isNotEmpty()) {
+            val (location, goalDistance) = queue.poll()
+
+            predecessors(RaceTrackState(location.x, location.y, 0, 0))
+                    .filter { it.action != NO_OP }
+                    .map { Location(it.state.x, it.state.y) }
+                    .filter { it !in discovered }
+                    .forEach {
+                        discovered += it
+                        heuristicMap[it] = (goalDistance + actionDuration) / max(maxXSpeed, maxYSpeed)
+                        queue.add(Node(it, goalDistance + actionDuration))
+                    }
+        }
+
+        return heuristicMap
     }
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
         val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
 
         for (action in RaceTrackAction.values()) {
-            val new_x_speed = state.x_speed + action.getAcceleration().x
-            val new_y_speed = state.y_speed + action.getAcceleration().y
+            val newDX = state.dX + action.aX
+            val newDY = state.dY + action.aY
 
-            var x = state.x.toDouble()
-            var y = state.y.toDouble()
-            val dt = 0.1
-            val nSteps = 10
-            var valid = true
-
-            for (i in 0..nSteps - 1) {
-                x += new_x_speed * dt;
-                y += new_y_speed * dt;
-
-                if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
-                }
+            if (newDX == 0 && newDY == 0) {
+                // Identity and stop action
+                successors.add(SuccessorBundle(
+                        state = RaceTrackState(state.x, state.y, newDX, newDY),
+                        action = action,
+                        actionCost = actionDuration)
+                )
+                continue
             }
 
-            //filter on legal moves (not too fast and on the track)
-            if (valid) {
-
+            //filter on legal moves (not too fast and on the obstacles)
+            if (isCollisionFree(state.x, state.y, newDX, newDY)) {
                 successors.add(SuccessorBundle(
-                        RaceTrackState(state.x + new_x_speed, state.y + new_y_speed, new_x_speed, new_y_speed),
+                        RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
                         action,
                         actionCost = actionDuration))
             }
@@ -93,116 +108,112 @@ class RaceTrack(val width: Int,
         return successors
     }
 
+    fun isCollisionFree(x: Int, y: Int, dX: Int, dY: Int): Boolean {
+        val distance = round(sqrt(pow(dX.toDouble(), 2.0) + pow(dY.toDouble(), 2.0)))
+
+        var xRunnung = x.toDouble()
+        var yRunning = y.toDouble()
+
+        val dt = 1.0 / distance
+        var valid = true
+
+        val stepX = dX * dt
+        val stepY = dY * dt
+
+        for (i in 1..distance.toInt()) {
+            xRunnung += stepX
+            yRunning += stepY
+
+            if (!isLegalLocation(xRunnung, yRunning)) {
+                valid = false
+                break
+            }
+        }
+        return valid
+    }
+
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *
-     * @param location the location to test
-     * @return true if location is legal
+     * @return true if location is legal, else false.
      */
     fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
-                y < height && Location(Math.round(x.toFloat()), Math.round(y.toFloat())) !in track
+                y < height && Location(Math.round(x).toInt(), Math.round(y).toInt()) !in obstacles
     }
 
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState): Double {
-        var h = distance(state)
-        //        return 0.0
-        if (maxXSpeed > maxYSpeed)
-            return h / maxYSpeed
-        return h / maxYSpeed
-    }
+    override fun heuristic(state: RaceTrackState) = distance(state) * actionDuration
 
-    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState): Double {
-        var h = distance(startState, endState)
-        //        return 0.0
-        if (maxXSpeed > maxYSpeed)
-            return h / maxYSpeed * actionDuration
-        return h / maxYSpeed * actionDuration
-    }
+    override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = distance(startState, endState) * actionDuration
 
-    // Distance is the max(min(dx), min(dy))
+    /**
+     * Calculates the minimum number of steps to reach the closest goal position.
+     */
     override fun distance(state: RaceTrackState): Double {
-        var dx = Double.MAX_VALUE
-        var dy = Double.MAX_VALUE
-
-        for (it in finish_line) {
-            val xdist = Math.abs(state.x - it.x)
-            if (xdist < dx)
-                dx = xdist.toDouble()
-            val ydist = Math.abs(state.y - it.y)
-            if (ydist < dy)
-                dy = ydist.toDouble()
-        }
-        val retval = Math.max(dx.toDouble(), dy.toDouble())
-        return retval;
+        val distanceFunction: (Location) -> Double = { (x, y) -> max(abs(state.x - x) / max(maxXSpeed, maxYSpeed).toDouble(), abs(state.y - y) / max(maxYSpeed, maxXSpeed).toDouble()) }
+        return distanceFunction(finishLine.minBy(distanceFunction)!!)
+        // TODO: would it make sense to have an ArrayList version of finishLine on hand for optimal iteration?
     }
 
-    // Distance is the max(min(dx), min(dy))
-    fun distance(startState: RaceTrackState, endState: RaceTrackState): Double {
-        val xdist = Math.abs(startState.x - endState.x)
-        val ydist = Math.abs(startState.y - endState.y)
-
-        val retval = Math.max(xdist.toDouble(), ydist.toDouble())
-        return retval;
-    }
+    fun distance(startState: RaceTrackState, endState: RaceTrackState) = max(
+            abs(startState.x - endState.x) / maxXSpeed.toDouble(),
+            abs(startState.y - endState.y) / maxYSpeed.toDouble()
+    )
 
     override fun isGoal(state: RaceTrackState): Boolean {
         val newLocation = Location(state.x, state.y)
-        return newLocation in finish_line
+        return newLocation in finishLine
     }
 
     /**
      * agent = @
-     * blocked cell = ' '
-     * track = #
+     * obstacles = #
      * finish line = $
      * start line = %
      */
     override fun print(state: RaceTrackState): String {
         val description = StringBuilder()
         for (h in 1..height) {
-            for (w in 1..width) {
-                val charCell = when (Location(w, h)) {
-                    in finish_line -> '$'
-                    in track -> '*'
-                    else -> ' '
-                }
-                description.append(charCell)
-            }
+            (1..width)
+                    .map {
+                        when (Location(it, h)) {
+                            Location(state.x, state.y) -> '@'
+                            in finishLine -> '$'
+                            in obstacles -> '#'
+                            else -> ' '
+                        }
+                    }
+                    .forEach { description.append(it) }
             description.append("\n")
         }
 
         return description.toString()
     }
 
-    /**
-     * TODO: implement racetrack.randomState()
-     */
-    override fun randomState(): RaceTrackState {
-        throw UnsupportedOperationException("Random state not implemented for racetrack domain")
-    }
-
-    override fun getGoal(): List<RaceTrackState> {
+    override fun getGoals(): List<RaceTrackState> {
         val list: MutableList<RaceTrackState> = arrayListOf()
-        for (it in finish_line) {
+        for ((x, y) in finishLine) {
             for (xS in 0..maxXSpeed) {
                 for (yS in 0..maxYSpeed) {
-                    if (xS == 0 && yS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                    } else if (xS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
-                    } else if (yS == 0) {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
-                    } else {
-                        list.add(RaceTrackState(it.x, it.y, xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, yS))
-                        list.add(RaceTrackState(it.x, it.y, xS, -yS))
-                        list.add(RaceTrackState(it.x, it.y, -xS, -yS))
+                    when {
+                        xS == 0 && yS == 0 -> list.add(RaceTrackState(x, y, xS, yS))
+                        xS == 0 -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, xS, -yS))
+                        }
+                        yS == 0 -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, -xS, yS))
+                        }
+                        else -> {
+                            list.add(RaceTrackState(x, y, xS, yS))
+                            list.add(RaceTrackState(x, y, -xS, yS))
+                            list.add(RaceTrackState(x, y, xS, -yS))
+                            list.add(RaceTrackState(x, y, -xS, -yS))
+                        }
                     }
                 }
             }
@@ -211,37 +222,33 @@ class RaceTrack(val width: Int,
         return list
     }
 
-    override fun predecessors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
-        val predecessors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
+    override fun predecessors(state: RaceTrackState) = successors(state)
 
-        for (action in RaceTrackAction.values()) {
-            val new_x_speed = state.x_speed
-            val new_y_speed = state.y_speed
+    /**
+     * The agent is safe when its velocity is zero.
+     */
+    override fun isSafe(state: RaceTrackState): Boolean = (state.dX == 0 && state.dY == 0) || isGoal(state)
 
-            var x: Double
-            var y: Double
-            val dt = 0.1
-            val nSteps = 10
-            var valid = true
+    override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
+        val startLocation = Location(state.x, state.y)
+        val goalDistance = heuristicMap[startLocation] ?: throw MetronomeException("Goal is not reachable from initial state.")
+        val locations = ArrayList<Location>()
+        heuristicMap.filter { (_, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
+                .mapTo(locations, { it.key })
 
-            for (i in 1..nSteps) {
-                x = state.x - (new_x_speed * (dt * i));
-                y = state.y - (new_y_speed * (dt * i));
-
-                if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
-                }
-            }
-
-            //filter on legal moves (not too fast and on the track)
-            if (valid) {
-                predecessors.add(SuccessorBundle(
-                        RaceTrackState(state.x - new_x_speed, state.y - new_y_speed, new_x_speed - action.getAcceleration().x, new_y_speed - action.getAcceleration().y),
-                        action,
-                        actionCost = actionDuration))
-            }
+        locations[Random(seed).nextInt(locations.size)].let {
+            return RaceTrackState(it.x, it.y, 0, 0)
         }
-        return predecessors
     }
+
+    /**
+     * Assuming that the acceleration of the agent is 1. To reach a safe state takes at least as many steps as the
+     * maximum velocity of the agent over all dimensions.
+     *
+     * Int = max(abs(state.dX), abs(state.dY)
+     * @return returns a lower bound on the number of steps to reach a safe state.
+     */
+    override fun safeDistance(state: RaceTrackState): Pair<Int, Int> = max(abs(state.dX), abs(state.dY)) to min(abs(state.dX), abs(state.dY))
+
+    override fun getIdentityAction(state: RaceTrackState): SuccessorBundle<RaceTrackState>? = if (state.dX == 0 && state.dY == 0) SuccessorBundle(state, NO_OP, actionDuration) else null
 }

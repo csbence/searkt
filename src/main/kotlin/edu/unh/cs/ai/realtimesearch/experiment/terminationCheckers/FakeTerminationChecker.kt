@@ -3,15 +3,13 @@ package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
 /**
  * Will never fail the test, for debugging purposes
  */
-class FakeTerminationChecker() : TimeTerminationChecker() {
-    override var startTime: Long = 0
-    override var timeLimit: Long = 0
+object FakeTerminationChecker : TerminationChecker {
+    override fun remaining(): Long = Long.MAX_VALUE
 
-    /**
-     * Does nothing.
-     */
-    override fun init(timeBound: Long) {
-    }
+    override fun elapsed(): Long = 0
+
+    override fun resetTo(bound: Long) {}
+    override fun notifyExpansion() {}
 
     /**
      * Will never terminate.

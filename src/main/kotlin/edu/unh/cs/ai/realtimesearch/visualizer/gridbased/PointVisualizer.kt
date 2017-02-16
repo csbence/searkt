@@ -89,7 +89,7 @@ open class PointVisualizer : GridBasedVisualizer() {
         processCommandLine(parameters.raw.toTypedArray())
 
         visualizerSetup()
-        actionDuration = experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long
+        actionDuration = experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long
         animationTime = convertNanoUpDouble(actionDuration, TimeUnit.MILLISECONDS)
         //        if (animationTime < minimumAnimationTime)
         animationTime = minimumAnimationTime
@@ -124,7 +124,7 @@ open class PointVisualizer : GridBasedVisualizer() {
 
         // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationTime / convertNanoUpDouble(experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             sequentialTransition.play()
