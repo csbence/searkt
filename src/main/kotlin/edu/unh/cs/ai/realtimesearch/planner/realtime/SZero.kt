@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -39,25 +40,18 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                                              override var action: Action,
                                              var iteration: Long,
                                              parent: Node<StateType>? = null,
-                                             override var safe: Boolean = false) : Indexable, Safe, SearchNode<StateType> {
+                                             override var safe: Boolean = false) : Indexable, Safe, SearchNode<StateType, Node<StateType>> {
         /** Item index in the open list. */
         override var index: Int = -1
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
-        var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
+        override var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
-        var parent: Node<StateType>
-
-        override fun getParent(): SearchNode<StateType> = parent
-        override fun getPredecessorsNodes(): List<SearchEdge<SearchNode<StateType>>> = predecessors
+        override var parent: Node<StateType> = parent ?: this
 
         val f: Double
             get() = cost + heuristic
-
-        init {
-            this.parent = parent ?: this
-        }
 
         override fun hashCode(): Int {
             return state.hashCode()
@@ -139,7 +133,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
-            logger.warn() { "selectAction: The goal sourceState is already found." }
+            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
@@ -156,7 +150,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(sourceState, terminationChecker)
 
-            when(safetyBackup) {
+            when (safetyBackup) {
                 SafeZeroSafetyBackup.PARENT -> backUpSafetyThroughParents()
                 SafeZeroSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
@@ -169,7 +163,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 targetNode
             }
 
-            plan = extractPlan(safeTargetNode, sourceState)
+            plan = extractSourctToTargetPath(safeTargetNode, sourceState)
             rootState = targetNode.state
         }
 
@@ -457,29 +451,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         return Pair(topOfOpen!!, topOfOpen.f)
     }
 
-    /**
-     * Given a state, this function returns the path according to the tree pointers
-     */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
-        val actions = ArrayList<ActionBundle>(1000)
-        var currentNode = targetNode
-
-        logger.debug { "Extracting plan" }
-
-        if (targetNode.state == sourceState) {
-            return emptyList()
-        }
-
-        // keep on pushing actions to our queue until source state (our root) is reached
-        do {
-            actions.add(ActionBundle(currentNode.action, currentNode.actionCost))
-            currentNode = currentNode.parent
-        } while (currentNode.state != sourceState)
-
-        logger.debug { "Plan extracted" }
-
-        return actions.reversed()
-    }
 }
 
 enum class SafeZeroConfiguration {

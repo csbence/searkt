@@ -12,6 +12,7 @@ import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
@@ -39,27 +40,20 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             override var actionCost: Long,
             override var action: Action,
             var iteration: Long,
-            parent: Node<StateType>? = null) : SearchNode<StateType>, Indexable, Safe {
+            parent: Node<StateType>? = null) : SearchNode<StateType, Node<StateType>>, Indexable, Safe {
 
         /** Item index in the open list. */
         override var index: Int = -1
         override var safe = false
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
-        var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
+        override var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
-        var parent: Node<StateType>
-
-        override fun getParent(): SearchNode<StateType> = parent
-        override fun getPredecessorsNodes(): List<SearchEdge<SearchNode<StateType>>> = predecessors
+        override var parent: Node<StateType> = parent ?: this
 
         val f: Double
             get() = cost + heuristic
-
-        init {
-            this.parent = parent ?: this
-        }
 
         override fun hashCode(): Int {
             return state.hashCode()
@@ -160,7 +154,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(sourceState, terminationChecker)
 
-            plan = extractPlan(targetNode, sourceState)
+            plan = extractSourctToTargetPath(targetNode, sourceState)
 
             rootState = targetNode?.state
         }
@@ -206,27 +200,19 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      * Will just repeatedly expand according to A*.
      */
     private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType>? {
-        // actual core steps of A*, building the tree
-        if (continueSearch) {
-            continueSearch = false
-        } else {
-            initializeAStar()
-            // Create and add initial node to open
-            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
-            nodes[state] = node
-            addToOpenList(node)
-        }
+        logger.debug { "Starting A* from state: $state" }
+        initializeAStar(state)
+
         var lastSafeNode: Node<StateType>? = null
 
         var currentNode = openList.peek()!!
-        logger.debug { "Starting A* from state: $state" }
 
         var totalExpansionDuration = 0L
         var totalSafetyDuration = 0L
 
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
-            currentNode = popOpenList()
+            currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
 
             if (domain.isGoal(currentNode.state)) {
                 currentNode.state.takeIf { domain.isSafe(it) } ?: throw MetronomeException("Goal state must be safe!")
@@ -272,12 +258,19 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
+    private fun initializeAStar(state: StateType) {
+        if (continueSearch) {
+            continueSearch = false
+        } else {
+            iterationCounter++
+            openList.clear()
+            openList.reorder(fValueComparator)
 
-    private fun initializeAStar() {
-        iterationCounter++
-        clearOpenList()
-
-        openList.reorder(fValueComparator)
+            // Create and add initial node to open
+            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+            nodes[state] = node
+            openList.add(node)
+        }
     }
 
     /**
@@ -287,7 +280,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      */
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
-
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -329,7 +321,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!successorNode.open) {
-                    addToOpenList(successorNode) // Fresh node not on the open yet
+                    openList.add(successorNode) // Fresh node not on the open yet
                 } else {
                     openList.update(successorNode)
                 }
@@ -417,7 +409,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
-            val node = popOpenList()
+            val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
+
             node.iteration = iterationCounter
 
             val currentHeuristicValue = node.heuristic
@@ -452,7 +445,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
-                    addToOpenList(predecessorNode)
+                    openList.add(predecessorNode)
                 } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
                     predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
@@ -500,20 +493,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Plan extracted" }
 
         return actions.reversed()
-    }
-
-    private fun clearOpenList() {
-        logger.debug { "Clear open list" }
-        openList.clear()
-    }
-
-    private fun popOpenList(): Node<StateType> {
-        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        return node
-    }
-
-    private fun addToOpenList(node: Node<StateType>) {
-        openList.add(node)
     }
 
 }
@@ -593,29 +572,33 @@ fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domai
             ?.run { RealTimePlanner.ActionBundle(this.action, this.actionCost) }
 }
 
-fun <StateType : State<StateType>, NodeType : SearchNode<StateType>> predecessorSafetyPropagation(safeNodes: List<NodeType>) where NodeType : Safe {
-    val backedUpNodes: HashSet<SearchNode<StateType>> = safeNodes.toHashSet()
-    var nodesToBackup: List<SearchNode<StateType>> = safeNodes
+fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNodes: List<NodeType>)
+        where NodeType : SearchNode<StateType, NodeType>, NodeType : Safe {
+    val backedUpNodes: HashSet<NodeType> = safeNodes.toHashSet()
+    var nodesToBackup: List<NodeType> = safeNodes
 
     while (nodesToBackup.isNotEmpty()) {
         nodesToBackup = nodesToBackup
-                .flatMap { it.getPredecessorsNodes().map { it.node } }
+                .flatMap { it.predecessors.map { it.node } }
                 .filter { it !in backedUpNodes }
-                .onEach { backedUpNodes.add(it) }
+                .onEach {
+                    backedUpNodes.add(it)
+                    it.safe = true
+                }
     }
 }
 
 data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long)
 
-interface SearchNode<StateType : State<StateType>> {
+interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> {
     val state: StateType
     var heuristic: Double
     var cost: Long
     var actionCost: Long
     var action: Action
 
-    fun getParent(): SearchNode<StateType>
-    fun getPredecessorsNodes(): List<SearchEdge<SearchNode<StateType>>>
+    val parent: NodeType
+    val predecessors: List<SearchEdge<NodeType>>
 }
 
 interface Safe {
@@ -624,18 +607,17 @@ interface Safe {
 
 
 private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
-        where Node : SearchNode<StateType>, Node : Indexable, Node : Safe {
+        where Node : SearchNode<StateType, Node>, Node : Indexable, Node : Safe {
     val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
     nodes.sortBy { it.cost + it.heuristic }
 
     nodes.forEach {
         var currentNode = it
-        while (currentNode.getParent() !== currentNode) {
+        while (currentNode.parent != currentNode) {
             if (currentNode.safe) {
                 return currentNode
             }
-            @Suppress("UNCHECKED_CAST")
-            currentNode = currentNode.getParent() as Node
+            currentNode = currentNode.parent
         }
     }
 
