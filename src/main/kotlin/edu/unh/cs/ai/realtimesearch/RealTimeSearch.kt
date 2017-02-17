@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecut
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
@@ -27,24 +28,25 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-//            domains = listOf(
-//                    Domains.RACETRACK to "input/racetrack/uniform.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-small.track",
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
-////                    TRAFFIC to "input/traffic/vehicle0.v"
-//            ),
-            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+            domains = listOf(
+                    Domains.RACETRACK to "input/racetrack/uniform.track",
+                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+                    Domains.RACETRACK to "input/racetrack/barto-small.track",
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+//                    TRAFFIC to "input/traffic/vehicle0.v"
+            ),
+//            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+//            domains = listOf( TRAFFIC to "input/traffic/vehicle1.v" ),
             planners = listOf(A_STAR),
-            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L, 6400L),
+            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
             plannerExtras = listOf(
-                    Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(BEST_SAFE.toString(), SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(0.1, 0.3, 0.5, 1.0, 2.0, 5.0)),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString())),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString(), CommitmentStrategy.MULTIPLE.toString()))
+                    Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
+                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
+                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString()))
             )
 //            domainExtras = listOf(
 //                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
