@@ -232,7 +232,6 @@ object ConfigurationExecutor {
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
-            S_ONE -> executeRealTimeSearch(SOnePlanner(domain), configuration, domain, sourceState)
             else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }

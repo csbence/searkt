@@ -17,6 +17,9 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfigura
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroConfiguration
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafety
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafetyBackup
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
@@ -29,28 +32,31 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.RACETRACK to "input/racetrack/uniform.track",
-                    Domains.RACETRACK to "input/racetrack/barto-big.track",
-                    Domains.RACETRACK to "input/racetrack/barto-small.track",
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
+//                    Domains.RACETRACK to "input/racetrack/quadruple-hansen.track"
+                    Domains.RACETRACK to "input/racetrack/barto-big.track"
+//                    Domains.RACETRACK to "input/racetrack/barto-small.track",
+//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-doubled.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
 //            domains = listOf( TRAFFIC to "input/traffic/vehicle1.v" ),
-            planners = listOf(A_STAR),
-            actionDurations = listOf(50L, 100L, 200L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(S_ZERO, A_STAR),
+            actionDurations = listOf(50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString()))
+                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
+                    Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
+                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
+                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString()))
+            ),
+            domainExtras = listOf(
+                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..5L)
             )
-//            domainExtras = listOf(
-//                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
-//            )
     )
 
 //    configurations.forEach {
@@ -65,7 +71,7 @@ fun main(args: Array<String>) {
 
     println("${configurations.size} configuration has been generated.")
 
-    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 15)
+    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
 
     val objectMapper = ObjectMapper()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
