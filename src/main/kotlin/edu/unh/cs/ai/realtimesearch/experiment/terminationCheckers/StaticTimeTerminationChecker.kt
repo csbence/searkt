@@ -13,7 +13,7 @@ class StaticTimeTerminationChecker(override var timeLimit: Long) : TimeTerminati
      *
      * The given time limit is ignored
      */
-    override fun resetTo(timeBound: Long) {
+    override fun resetTo(bound: Long) {
         startTime = System.nanoTime()
     }
 }

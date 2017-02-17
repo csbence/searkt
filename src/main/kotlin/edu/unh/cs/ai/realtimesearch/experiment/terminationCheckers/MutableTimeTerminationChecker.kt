@@ -10,10 +10,10 @@ class MutableTimeTerminationChecker : TimeTerminationChecker() {
     override var timeLimit: Long = 0
 
     /**
-     * Sets start time to now and the time limit to the given [timeBound].
+     * Sets start time to now and the time limit to the given [bound].
      */
-    override fun resetTo(timeBound: Long) {
+    override fun resetTo(bound: Long) {
         startTime = System.nanoTime()
-        timeLimit = timeBound
+        timeLimit = bound
     }
 }

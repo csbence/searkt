@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -208,7 +209,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         var currentNode = openList.peek()!!
 
         var totalExpansionDuration = 0L
+        var currentExpansionDuration = 0L
         var totalSafetyDuration = 0L
+        var costBucket = 10
 
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
@@ -219,26 +222,32 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 return currentNode
             }
 
-            totalExpansionDuration += measureLong(terminationChecker::elapsed) {
+            //Explore
+            currentExpansionDuration += measureLong(terminationChecker::elapsed) {
                 expandFromNode(currentNode)
                 terminationChecker.notifyExpansion()
             }
 
-            // Update best safe node
-            if (totalExpansionDuration * safetyExplorationRatio > totalSafetyDuration) {
-                totalSafetyDuration += measureLong(terminationChecker::elapsed) {
-                    val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+            if (currentExpansionDuration >= costBucket) {
+                // Switch to safety
+                totalExpansionDuration += currentExpansionDuration
+                currentExpansionDuration = 0L
 
-                    lastSafeNode = if (topNode.safe) {
-                        topNode
-                    } else {
-                        isComfortable(topNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
-                            // Save safe states from proof
-                            forEach { getUninitializedNode(it).safe = true }
-                            topNode.safe = true
-                            topNode
-                        } ?: lastSafeNode
-                    }
+                val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
+
+                val (safeNodeCandidate, safetyProofDuration) = proveSafety(currentNode, safetyTerminationChecker)
+                terminationChecker.notifyExpansion(safetyProofDuration)
+                totalSafetyDuration += safetyProofDuration
+
+                lastSafeNode = if (safeNodeCandidate != null) {
+                    // If proof was successful reset the bucket
+                    costBucket = 10
+                    safeNodeCandidate
+                } else {
+                    // Increase the
+                    costBucket *= 2
+                    lastSafeNode
                 }
             }
         }
@@ -256,6 +265,25 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             SAFE_TO_BEST -> selectSafeToBest(openList)
             BEST_SAFE -> lastSafeNode
         }
+    }
+
+    private fun proveSafety(currentNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
+        var targetSafeNode: Node<StateType>? = null
+        val safetyDuration = measureLong(terminationChecker::elapsed) {
+            val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+
+            targetSafeNode = if (topNode.safe) {
+                topNode
+            } else {
+                isComfortable(topNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
+                    // Save safe states from proof
+                    forEach { getUninitializedNode(it).safe = true }
+                    topNode.safe = true
+                    topNode
+                }
+            }
+        }
+        return Pair(targetSafeNode, safetyDuration)
     }
 
     private fun initializeAStar(state: StateType) {
