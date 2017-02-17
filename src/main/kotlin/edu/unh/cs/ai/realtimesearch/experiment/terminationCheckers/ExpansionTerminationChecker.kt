@@ -9,7 +9,7 @@ abstract class ExpansionTerminationChecker : TerminationChecker {
     abstract var expansionCount: Long
 
     override fun notifyExpansion(expansions: Long) {
-        expansionCount += expansionCount
+        expansionCount += expansions
     }
 
     override fun reachedTermination() = expansionCount >= expansionLimit
