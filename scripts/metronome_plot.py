@@ -3,7 +3,6 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import scipy.stats as st
 import seaborn as sns
 from pandas import DataFrame
 import statsmodels.stats.api as sms
@@ -12,8 +11,6 @@ import pandas as pd
 import json
 import re
 import statistics
-import pylab
-from math import log
 
 __author__ = 'Bence Cserna'
 
@@ -115,17 +112,10 @@ def print_survival_rate(df):
 
             survival_confint = proportion_confint(successes, total_trials, 0.05)
             survival_rate = (successes / (successes + deaths))
-            # survival_results = survival_results.append((action_duration, fields[1], survival_rate,
-            #                                            survival_confint[0], survival_confint[1]), ignore_index=True)
-            # srates.append(survival_rate)
-            # lower_bounds.append(survival_confint[0])
-            # upper_bounds.append(survival_confint[1])
-            # durations.append(action_duration)
             survival_results = add_row(survival_results,
                                       [fields[1], fields[0], survival_rate, survival_confint[0], survival_confint[1]])
 
 
-        # print(survival_results)
         fig, ax = plt.subplots()
         errors = []
         for alg, alg_group in survival_results.groupby('algorithmName'):
@@ -134,10 +124,7 @@ def print_survival_rate(df):
         errors = np.abs(errors)
         print(errors)
         survival = survival_results.pivot(index='actionDuration', columns='algorithmName', values='survival')
-        # survival = survival_results.pivot(index='actionDuration', columns='algorithmName', values='survival')
 
-
-        # durations = survival_results.groupby(['actionDuration', 'algorithmName'])
         survival.plot(ax=ax, yerr=errors,
                       xlim=[0, 7000], ylim=[0, 1.0],
                       capsize=4, capthick=1, ecolor='black', cmap=plt.get_cmap("rainbow"), elinewidth=1)
@@ -145,56 +132,7 @@ def print_survival_rate(df):
         plt.savefig('test.png', format='png')
 
 
-        # key = "{}_{}".format(domain_name, fields[1])
-        # algs.append(key)
-        # new_row = DataFrame([durations, srates, lower_bounds, upper_bounds],
-        #                     columns="actionDuration survival lbound rbound".split())
 
-        # new_row = DataFrame(
-        #         {"actionDuration" : durations, "survival" : srates, "lbound" : lower_bounds, "rbound" : upper_bounds})
-        # new_row = new_row.append({"actionDuration" : 300, "survival" : 30.0, "lbound" : 2, "rbound" : 1 }, ignore_index=True)
-        # new_row["algorithmName"] = fields[1]
-        # print(new_row)
-
-
-        # survival_results[key + "_survival"] = srates
-        # survival_results[key + "_lbound"] = lower_bounds
-        # survival_results[key + "rbound"] = upper_bounds
-
-
-
-
-
-def print_survival_rate2(df):
-    cur_name = ""
-    survival_results = DataFrame()
-    for keys, action_group in df.groupby(["domainPath", "algorithmName", "actionDuration"]):
-        if keys[1] != cur_name:
-            cur_name = keys[1]
-            print(cur_name)
-        domain_name = re.search("[^/]+$", keys[0]).group(0).rstrip(".track")
-
-        total_trials = len(action_group)
-        error_experiments = action_group[action_group["errorMessage"].notnull()]
-
-        deaths = len(error_experiments[error_experiments["errorMessage"] != "Timeout"])
-        timeouts = len(error_experiments) - deaths
-        successes = len(action_group[~action_group["errorMessage"].notnull()])
-
-        survival_confint = proportion_confint(successes, total_trials, 0.05)
-        print(survival_confint)
-        survival_rate = (successes / (successes + deaths)) * 100
-        timeout_rate = (successes / (successes + timeouts)) * 100
-        survival_results["{}_{}_{}".format(keys[0], keys[1])]
-        print("{}_{}: {}% / {}%".format(keys[2], domain_name, survival_rate, timeout_rate))
-
-
-def get_optimal_gat(df):
-    astar = df[df["algorithmName"] == "A_STAR"]
-    opt_gat = {}
-    for acols, action_group in astar.groupby(["actionDuration", "domainPath", "domainSeed"]):
-        opt_gat[(acols[0], acols[1], acols[2])] = action_group["pathLength"].mean() * acols[0]
-    return opt_gat
 
 def format_plot(plot):
     plot.set_xlabel('Action Duration')
@@ -243,14 +181,9 @@ def main():
 
     sns.set_style("white")
 
-
-
     # print_survival_rate(data)
     data = data[~data['errorMessage'].notnull()]
     data.sort_values(['domainPath', 'actionDuration'], ascending=True, inplace=True)
-    # data = data[data['actionDuration'] > 1000]
-
-    # print(data.groupby(["domainPath", "actionDuration", "algorithmName"]).mean())
 
     astar = data[data["algorithmName"] == "A_STAR"]
     astar["opt"] = astar["actionDuration"] * astar["pathLength"]
@@ -268,8 +201,6 @@ def main():
             mean = action_group["withinOpt"].mean()
             results = add_row(results, [fields[1], fields[0], mean, abs(mean - bound[0]), abs(mean - bound[1])])
 
-
-        # print(survival_results)
         fig, ax = plt.subplots()
         errors = []
         for alg, alg_group in results.groupby('algorithmName'):
@@ -284,62 +215,6 @@ def main():
         format_plot(plot)
         plt.savefig(domain_name + ".png", format='png')
 
-
-    # create one plot per domain
-    # for domain_path, domain_group in data.groupby(['domainPath']):
-    #     domain_name = re.search("[^/]+$", domain_path).group(0).rstrip(".track")
-    #     algs = []
-    #     df = DataFrame()
-    #     df['actionDuration'] = [i for i in data['actionDuration'].unique()]
-    #
-    #
-    #
-    #     for algorithm, algorithm_group in DataFrame(domain_group).groupby(['algorithmName']):
-    #         key = str(algorithm)
-    #         if key == 'SAFE_RTS':
-    #             for selection, selection_group in DataFrame(algorithm_group).groupby(
-    #                     ['TARGET_SELECTION', 'commitmentStrategy', 'SAFETY_EXPLORATION_RATIO']):
-    #                 if (selection[0] == "BEST_SAFE"):
-    #                     continue
-    #                 if (selection[1] == "MUlTIPLE"):
-    #                     continue
-    #                 if (selection[2] != 0.3):
-    #                     continue
-    #                 newkey = key + "_" + "_".join(map(str, selection))
-    #                 df = add_data(df, selection_group, newkey, algs, opt_gat, domain_path)
-    #         else:
-    #             df = add_data(df, algorithm_group, key, algs, opt_gat, domain_path)
-    #
-    #     plot = df.plot(x='actionDuration', y=algs, marker='x', figsize=(4.05, 4.05), cmap=plt.get_cmap("rainbow"))
-    #     # plot = df.boxplot(column=algs, figsize=(15, 15))
-    #
-    #     for alg in algs:
-    #         xalg = []
-    #         yalg = []
-    #         ylower = []
-    #         yupper = []
-    #         yerror = []
-    #         for index, action_duration in df['actionDuration'].iteritems():
-    #             xalg.append(action_duration)
-    #             yalg.append(df[alg][index])
-    #             ylower.append(df[alg + "_lerror"][index])
-    #             yupper.append(df[alg + "_rerror"][index])
-    #             # yerror.append(1 + ((yupper[len(yupper) - 1] - ylower[len(ylower) - 1]) / 2))
-    #             yerror.append(5)
-    #         # print([i for i in zip(ylower, yupper)])
-    #
-    #
-    #         mystuff = np.asarray(([i for i in ylower], [i for i in yupper]))
-    #
-    #
-    #
-    #         (_, caps, _) = plot.errorbar(xalg, yalg, yerr=mystuff, lolims=ylower, uplims=yupper)
-    #         for cap in caps:
-    #             cap.set_markeredgewidth(2)
-    #             cap.set_marker("_")
-    #
-    #     format_plot(plot, min_range, max_range)
-    #     plt.savefig(domain_name + '.png', format='png')
 
 
 
