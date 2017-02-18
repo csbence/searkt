@@ -17,7 +17,7 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.0-beta-38'
+    ext.kotlin_version = '1.1.0-rc-91'
     repositories {
         mavenCentral()
         maven {
