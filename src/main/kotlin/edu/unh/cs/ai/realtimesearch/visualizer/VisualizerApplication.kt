@@ -20,9 +20,8 @@ import java.io.File
  * @since 3/10/16
  */
 fun main(args: Array<String>) {
-    if (args.size < 1) {
-        throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
-    }
+    if (args.isEmpty()) throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
+
     val argsIterator = args.iterator()
     val fileName = argsIterator.next()
     val fileString = File(fileName).readText()
@@ -39,29 +38,13 @@ fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutabl
     val domainName = result.configuration[Configurations.DOMAIN_NAME.toString()] as String
     params.add(0, result.toJson())
     when (Domains.valueOf(domainName)) {
-        Domains.VACUUM_WORLD -> {
-            Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.GRID_WORLD -> {
-            Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.POINT_ROBOT -> {
-            Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.POINT_ROBOT_LOST -> {
-            Application.launch(PointVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.POINT_ROBOT_WITH_INERTIA -> {
-            Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.RACETRACK -> {
-            Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
-        }
-        Domains.ACROBOT -> {
-            Application.launch(AcrobotVisualizer::class.java, *params.toTypedArray())
-        }
-        else -> {
-            throw IllegalArgumentException("Error: Domain '$domainName' not recognized! Aborting")
-        }
+        Domains.VACUUM_WORLD -> Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+        Domains.GRID_WORLD -> Application.launch(VacuumVisualizer::class.java, *params.toTypedArray())
+        Domains.POINT_ROBOT -> Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        Domains.POINT_ROBOT_LOST -> Application.launch(PointVisualizer::class.java, *params.toTypedArray())
+        Domains.POINT_ROBOT_WITH_INERTIA -> Application.launch(PointInertiaVisualizer::class.java, *params.toTypedArray())
+        Domains.RACETRACK -> Application.launch(RacetrackVisualizer::class.java, *params.toTypedArray())
+        Domains.ACROBOT -> Application.launch(AcrobotVisualizer::class.java, *params.toTypedArray())
+        else -> throw IllegalArgumentException("Error: Domain '$domainName' not recognized! Aborting")
     }
 }

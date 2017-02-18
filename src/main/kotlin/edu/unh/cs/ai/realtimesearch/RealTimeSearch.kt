@@ -21,6 +21,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafety
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafetyBackup
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
@@ -60,8 +61,6 @@ fun main(args: Array<String>) {
     )
 
 //    configurations.forEach {
-//                println(it.toIndentedJson())
-//    }
 //        println(it.toIndentedJson())
 //        val instanceFileName = it.domainPath
 //        val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
@@ -74,8 +73,10 @@ fun main(args: Array<String>) {
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
 
     val objectMapper = ObjectMapper()
+
+    File("output").mkdir()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    println("Result has been saved to 'output/results.json'.")
+    println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())
 
