@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad",
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
                     Domains.RACETRACK to "input/racetrack/barto-big.track",
                     Domains.RACETRACK to "input/racetrack/uniform.track",
                     Domains.RACETRACK to "input/racetrack/barto-small.track"
