@@ -43,6 +43,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             var iteration: Long,
             parent: Node<StateType>? = null) : SearchNode<StateType, Node<StateType>>, Indexable, Safe {
 
+        /** test ver remove it */
+
+//        var proofParent: Node<StateType>? = null
+
         /** Item index in the open list. */
         override var index: Int = -1
         override var safe = false
@@ -68,11 +72,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         }
 
         override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
+            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
+//            return "Node: [State: $state \n       <> proof: ${if (proofParent == this) "self" else proofParent} safe: $safe]"
         }
     }
 
-    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
+    private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
     private var iterationCounter = 0L
 
     private val fValueComparator = java.util.Comparator<Node<StateType>> { lhs, rhs ->
@@ -98,6 +103,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
     private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fValueComparator)
+
+    private var safeNodes = mutableListOf<Node<StateType>>()
 
     private var rootState: StateType? = null
 
@@ -150,6 +157,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
+        // Backup safety (nodes that were identified in the learning step)
+        predecessorSafetyPropagation(safeNodes)
+        safeNodes.clear()
+
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
@@ -167,12 +178,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         if (plan!!.isEmpty()) {
             if (domain.isSafe(sourceState)) {
                 // The current state is safe, attempt an identity action
-                val actionBundle = domain.getIdentityAction(sourceState)
-
-                if (actionBundle != null) {
+                domain.getIdentityAction(sourceState)?.let {
                     continueSearch = true // The planner can continue the search in the next iteration since the state is not changed
                     safeActions = null // No further safe actions are available
-                    return listOf(ActionBundle(actionBundle.action, actionBundle.actionCost))
+                    return listOf(ActionBundle(it.action, it.actionCost))
                 }
             }
 
@@ -186,12 +195,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             // Return the next safe action from a previously generated plan if available
             val nextSafeAction = safeActions?.firstOrNull() ?:
                     bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false }) ?:
-                    throw MetronomeException("No safe successors are available.")
+                    throw MetronomeException("No safe successors are available. Can't move from $sourceState")
             return listOf(ActionBundle(nextSafeAction.action, nextSafeAction.duration))
         } else {
             // A safe plan is available
             safeActions = plan
         }
+
+//        plan!!.forEach { println("### Plan: $it") }
 
         return plan!!
     }
@@ -222,6 +233,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 return currentNode
             }
 
+            if (!currentNode.safe && domain.isSafe(currentNode.state)) {
+                currentNode.safe = true
+            }
+
             //Explore
             currentExpansionDuration += measureLong(terminationChecker::elapsed) {
                 expandFromNode(currentNode)
@@ -236,7 +251,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
                 val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
-                val (safeNodeCandidate, safetyProofDuration) = proveSafety(currentNode, safetyTerminationChecker)
+                val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+                val (safeNodeCandidate, safetyProofDuration) = proveSafety(topNode, safetyTerminationChecker)
+
                 terminationChecker.notifyExpansion(safetyProofDuration)
                 totalSafetyDuration += safetyProofDuration
 
@@ -267,19 +284,53 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         }
     }
 
-    private fun proveSafety(currentNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
+    private fun proveSafety(sourceNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
         var targetSafeNode: Node<StateType>? = null
-        val safetyDuration = measureLong(terminationChecker::elapsed) {
-            val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+//        println("Prove safety of $sourceNode")
 
-            targetSafeNode = if (topNode.safe) {
-                topNode
+        val safetyDuration = measureLong(terminationChecker::elapsed) {
+            targetSafeNode = if (sourceNode.safe) {
+                sourceNode
+            } else if (domain.isSafe(sourceNode.state)) {
+                sourceNode.safe = true
+//                sourceNode.proofParent = sourceNode
+                sourceNode
             } else {
-                isComfortable(topNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
+                isComfortable<StateType>(sourceNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
                     // Save safe states from proof
-                    forEach { getUninitializedNode(it).safe = true }
-                    topNode.safe = true
-                    topNode
+
+                    var parentState = firstOrNull()
+
+                    parentState?.let {
+                        val uninitializedNode = getUninitializedNode(it)
+//                        println("    >>>SetSafe: $uninitializedNode")
+
+//                        if (uninitializedNode.proofParent == null) {
+//                            uninitializedNode.proofParent = uninitializedNode
+                            uninitializedNode.safe = true
+//                        }
+                    }
+
+                    drop(1).forEach {
+                        val uninitializedNode = getUninitializedNode(it)
+
+                        uninitializedNode.safe = true
+
+//                        if (uninitializedNode.proofParent == null) {
+//                            val parentProof = getUninitializedNode(parentState!!)
+//
+//                            uninitializedNode.proofParent = parentProof
+//                            if (parentProof == uninitializedNode) {
+//                                "Self parent selected: $parentProof"
+//                            }
+//
+//                        }
+//                        println("       SetSafe: $uninitializedNode")
+
+//                        parentState = it
+                    }
+
+                    sourceNode
                 }
             }
         }
@@ -294,8 +345,16 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             openList.clear()
             openList.reorder(fValueComparator)
 
-            // Create and add initial node to open
-            val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+            val node = getUninitializedNode(state)
+            node.apply {
+                cost = 0
+                actionCost = 0
+                iteration = iterationCounter
+                parent = node
+                action = NoOperationAction
+                predecessors.clear()
+            }
+
             nodes[state] = node
             openList.add(node)
         }
@@ -441,6 +500,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
             node.iteration = iterationCounter
 
+            // Prepare safety propagation
+            if (node.safe) {
+                safeNodes.add(node)
+            }
+
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
@@ -448,7 +512,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 val predecessorNode = predecessor.node
 
                 // Propagate safety
-                if (node.safe) predecessorNode.safe = true
+//                if (node.safe) {
+//                    predecessorNode.safe = true
+//                    if (predecessorNode.proofParent == null) {
+//                        predecessorNode.proofParent = node
+//                    }
+//                }
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
@@ -514,7 +583,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         do {
             actions.add(RealTimePlanner.ActionBundle(currentNode.action, currentNode.actionCost))
             // Propagate safety
-            if (currentNode.safe) currentNode.parent.safe = true
+//            if (currentNode.safe) {
+//                currentNode.parent.safe = true
+//
+//                if (currentNode.parent.proofParent == null) {
+//                    currentNode.parent.proofParent = currentNode
+//                }
+//
+//            }
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
@@ -567,10 +643,13 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
         val currentNode = priorityQueue.poll() ?: return null
 
         if (domain.isSafe(currentNode.state) || (isSafe != null && isSafe(currentNode.state))) {
+
             // Backtrack to the root and return all safe states
             // The parent of the safe state is comfortable
             var backTrackNode: Node? = currentNode
+//            println("Safe: ${backTrackNode!!.state} explicit: ${domain.isSafe(currentNode.state)}")
             while (backTrackNode != null) {
+//                println("   Prove safety: ${backTrackNode.state}")
                 comfortableStates.add(backTrackNode.state)
                 backTrackNode = backTrackNode.parent
             }
@@ -595,6 +674,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
  */
 fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)): RealTimePlanner.ActionBundle? {
     return domain.successors(state)
+//            .onEach { println("         Successor: $it safe: ${domain.isSafe(it.state) || isSafe(it.state)}") }
             .filter { domain.isSafe(it.state) || isSafe(it.state) }
             .minBy { it.actionCost + domain.heuristic(it.state) }
             ?.run { RealTimePlanner.ActionBundle(this.action, this.actionCost) }

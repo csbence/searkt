@@ -82,7 +82,7 @@ object ConfigurationExecutor {
                 .map { val experimentResult = it.get()
                     progressBar.updateProgress()
                     experimentResult
-                }
+                }.also { executor.shutdown() }
     }
 
     fun executeConfiguration(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
