@@ -32,14 +32,14 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-            domains = listOf(
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                    Domains.RACETRACK to "input/racetrack/barto-big.track",
-                    Domains.RACETRACK to "input/racetrack/uniform.track"
-            ),
-//            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+//            domains = listOf(
+//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+//                    Domains.RACETRACK to "input/racetrack/uniform.track"
+//            ),
+            domains = (0..99).map { TRAFFIC to "input/traffic/50/traffic$it" },
 //            domains = listOf( TRAFFIC to "input/traffic/vehicle1.v" ),
-            planners = listOf(S_ZERO, A_STAR, LSS_LRTA_STAR, SAFE_RTS),
+            planners = listOf(S_ZERO),
             actionDurations = listOf(50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
@@ -59,6 +59,9 @@ fun main(args: Array<String>) {
             )
     )
 
+    val reruns = listOf("input/traffic/50/traffic2" to 100, "input/traffic/50/traffic2" to 150, "input/traffic/50/traffic2" to 200, "input/traffic/50/traffic2" to 250, "input/traffic/50/traffic2" to 400, "input/traffic/50/traffic2" to 800, "input/traffic/50/traffic2" to 1600, "input/traffic/50/traffic2" to 3200, "input/traffic/50/traffic2" to 6400, "input/traffic/50/traffic2" to 12800, "input/traffic/50/traffic3" to 400, "input/traffic/50/traffic33" to 12800, "input/traffic/50/traffic35" to 50, "input/traffic/50/traffic35" to 100, "input/traffic/50/traffic35" to 3200, "input/traffic/50/traffic35" to 12800, "input/traffic/50/traffic36" to 50, "input/traffic/50/traffic36" to 100, "input/traffic/50/traffic36" to 200, "input/traffic/50/traffic36" to 250, "input/traffic/50/traffic36" to 800, "input/traffic/50/traffic36" to 1600, "input/traffic/50/traffic36" to 3200, "input/traffic/50/traffic36" to 6400, "input/traffic/50/traffic36" to 12800, "input/traffic/50/traffic38" to 100, "input/traffic/50/traffic38" to 150, "input/traffic/50/traffic38" to 200, "input/traffic/50/traffic38" to 400, "input/traffic/50/traffic38" to 800, "input/traffic/50/traffic38" to 1600, "input/traffic/50/traffic38" to 3200, "input/traffic/50/traffic50" to 800, "input/traffic/50/traffic51" to 50, "input/traffic/50/traffic51" to 100, "input/traffic/50/traffic51" to 150, "input/traffic/50/traffic51" to 200, "input/traffic/50/traffic51" to 250, "input/traffic/50/traffic51" to 400, "input/traffic/50/traffic51" to 800, "input/traffic/50/traffic51" to 1600, "input/traffic/50/traffic51" to 3200, "input/traffic/50/traffic51" to 6400, "input/traffic/50/traffic51" to 12800, "input/traffic/50/traffic66" to 50, "input/traffic/50/traffic66" to 100, "input/traffic/50/traffic66" to 150, "input/traffic/50/traffic66" to 200, "input/traffic/50/traffic66" to 250, "input/traffic/50/traffic66" to 400, "input/traffic/50/traffic66" to 800, "input/traffic/50/traffic66" to 1600, "input/traffic/50/traffic66" to 3200, "input/traffic/50/traffic66" to 6400, "input/traffic/50/traffic66" to 12800, "input/traffic/50/traffic67" to 400, "input/traffic/50/traffic67" to 12800, "input/traffic/50/traffic85" to 800, "input/traffic/50/traffic93" to 50, "input/traffic/50/traffic93" to 100, "input/traffic/50/traffic93" to 150, "input/traffic/50/traffic93" to 200, "input/traffic/50/traffic93" to 250, "input/traffic/50/traffic93" to 400, "input/traffic/50/traffic93" to 800, "input/traffic/50/traffic93" to 1600, "input/traffic/50/traffic93" to 3200, "input/traffic/50/traffic93" to 6400, "input/traffic/50/traffic93" to 12800, "input/traffic/50/traffic98" to 12800)
+    val filtered = configurations.filter { i -> reruns.any { i.domainPath == it.first && i.actionDuration == it.second.toLong() } }
+
 //    configurations.forEach {
 //        println(it.toIndentedJson())
 //        val instanceFileName = it.domainPath
@@ -69,7 +72,7 @@ fun main(args: Array<String>) {
 
     println("${configurations.size} configuration has been generated.")
 
-    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
+    val results = ConfigurationExecutor.executeConfigurations(filtered, dataRootPath = null, parallelCores = 1)
 
     val objectMapper = ObjectMapper()
 
