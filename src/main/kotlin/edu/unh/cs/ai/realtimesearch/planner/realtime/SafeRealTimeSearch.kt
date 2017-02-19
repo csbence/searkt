@@ -281,6 +281,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         return when (targetSelection) {
             SAFE_TO_BEST -> selectSafeToBest(openList)
             BEST_SAFE -> lastSafeNode
+            BEST_SAFE_ON_OPEN -> throw MetronomeException("Invalid configuration. Do not use best safe on open with SRTS.")
         }
     }
 
@@ -714,7 +715,7 @@ interface Safe {
 }
 
 
-private fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
+fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
         where Node : SearchNode<StateType, Node>, Node : Indexable, Node : Safe {
     val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
     nodes.sortBy { it.cost + it.heuristic }
@@ -744,6 +745,8 @@ enum class SafeRealTimeSearchConfiguration {
 enum class SafeRealTimeSearchTargetSelection {
     /** Select the best safe predecessor of a the best node on open that has such predecessor. */
     SAFE_TO_BEST,
-    /** Select the best safe node on open. */
-    BEST_SAFE
+    /** Select the best safe node in LSS. */
+    BEST_SAFE,
+    /** Select the best on open */
+    BEST_SAFE_ON_OPEN
 }
