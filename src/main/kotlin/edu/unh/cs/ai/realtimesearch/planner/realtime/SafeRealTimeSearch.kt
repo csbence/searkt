@@ -16,8 +16,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.*
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -30,7 +29,7 @@ import kotlin.system.measureTimeMillis
  */
 class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     // Configuration
-    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+    val targetSelection: SafeRealTimeSearchTargetSelection = valueOf(configuration[TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
     val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
     val commitmentStrategy: CommitmentStrategy = CommitmentStrategy.valueOf(configuration[Configurations.COMMITMENT_STRATEGY] as? String ?: throw MetronomeException("Commitment strategy not found"))
 
