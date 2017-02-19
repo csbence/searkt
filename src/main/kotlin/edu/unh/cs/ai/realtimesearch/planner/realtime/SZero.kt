@@ -32,6 +32,7 @@ import kotlin.system.measureTimeMillis
  */
 class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
+    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -155,15 +156,13 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 SafeZeroSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
 
-            val safestNodeOnOpen: Pair<Node<StateType>, Double> = safeNodeOnOpen()
-
-            val safeTargetNode = if (safestNodeOnOpen.second != -1.0) {
-                safestNodeOnOpen.first
-            } else {
-                targetNode
+            val targetSafeNode = when (targetSelection) {
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. S0 does not implement the BEST_SAFE strategy")
+                SafeRealTimeSearchTargetSelection.BEST_SAFE_ON_OPEN -> safeNodeOnOpen()
             }
 
-            plan = extractSourctToTargetPath(safeTargetNode, sourceState)
+            plan = extractSourctToTargetPath(targetSafeNode ?: targetNode, sourceState)
             rootState = targetNode.state
         }
 
@@ -411,7 +410,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     /**
      *
      */
-    private fun safeNodeOnOpen(): Pair<Node<StateType>, Double> {
+    private fun safeNodeOnOpen(): Node<StateType>? {
         val placeBackOnOpen = ArrayList<Node<StateType>?>()
         var topOfOpen = openList.pop()
         var hasSafeTopLevelActions = false
@@ -444,11 +443,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         // if the open list is empty there is no
         // safe node on open to travel up
         // return -1 and do what LSS does
-        if (openList.isEmpty()) {
-            return Pair(topOfOpen!!, -1.0)
-        }
-        // open list had something safe on it
-        return Pair(topOfOpen!!, topOfOpen.f)
+        return if (openList.isEmpty()) topOfOpen!! else null
     }
 
 }
