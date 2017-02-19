@@ -32,14 +32,12 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-//            domains = listOf(
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
-//                    Domains.RACETRACK to "input/racetrack/uniform.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-small.track"
-////                    TRAFFIC to "input/traffic/vehicle0.v"
-//            ),
-            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
+            domains = listOf(
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+                    Domains.RACETRACK to "input/racetrack/uniform.track"
+            ),
+//            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
 //            domains = listOf( TRAFFIC to "input/traffic/vehicle1.v" ),
             planners = listOf(S_ZERO, A_STAR, LSS_LRTA_STAR, SAFE_RTS),
             actionDurations = listOf(50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
@@ -49,15 +47,16 @@ fun main(args: Array<String>) {
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
-                    Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
+                    Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString()))
+                    Triple(S_ZERO, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.SINGLE.toString()))
+            ),
+            domainExtras = listOf(
+                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
             )
-//            domainExtras = listOf(
-//                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
-//            )
     )
 
 //    configurations.forEach {
