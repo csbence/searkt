@@ -1,13 +1,12 @@
 package edu.unh.cs.ai.realtimesearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import edu.unh.cs.ai.realtimesearch.environment.Domains
+import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
@@ -15,7 +14,6 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.BEST_SAFE
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafety
@@ -34,15 +32,15 @@ fun main(args: Array<String>) {
     val configurations = generateConfigurations(
 //            domains = listOf(
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 ////                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
-            domains = (0..99).map { TRAFFIC to "input/traffic/vehicle$it.v" },
-//            domains = listOf( TRAFFIC to "input/traffic/vehicle1.v" ),
-            planners = listOf(S_ZERO, A_STAR, LSS_LRTA_STAR, SAFE_RTS),
-            actionDurations = listOf(50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            domains = (0..99).map { TRAFFIC to "input/traffic/50/traffic$it" },
+//            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
+            planners = listOf(SAFE_RTS),
+            actionDurations = listOf(50L), //, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
@@ -50,14 +48,15 @@ fun main(args: Array<String>) {
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
                     Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(S_ZERO, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
                     Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString()))
+            ),
+            domainExtras = listOf(
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)
             )
-//            domainExtras = listOf(
-//                    Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..25L)
-//            )
     )
 
 //    configurations.forEach {
