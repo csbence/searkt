@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -10,13 +9,12 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
+import edu.unh.cs.ai.realtimesearch.planner.extractSourceToTargetPath
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.*
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.valueOf
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -31,7 +29,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     // Configuration
     val targetSelection: SafeRealTimeSearchTargetSelection = valueOf(configuration[TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
     val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
-    val commitmentStrategy: CommitmentStrategy = CommitmentStrategy.valueOf(configuration[Configurations.COMMITMENT_STRATEGY] as? String ?: throw MetronomeException("Commitment strategy not found"))
 
     class Node<StateType : State<StateType>>(
             override val state: StateType,
@@ -41,10 +38,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             override var action: Action,
             var iteration: Long,
             parent: Node<StateType>? = null) : SearchNode<StateType, Node<StateType>>, Indexable, Safe {
-
-        /** test ver remove it */
-
-//        var proofParent: Node<StateType>? = null
 
         /** Item index in the open list. */
         override var index: Int = -1
@@ -72,7 +65,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         override fun toString(): String {
             return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
-//            return "Node: [State: $state \n       <> proof: ${if (proofParent == this) "self" else proofParent} safe: $safe]"
         }
     }
 
@@ -108,7 +100,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     private var rootState: StateType? = null
 
     private var continueSearch = false
-    private var safeActions: List<ActionBundle>? = null
 
     // Performance measurement
     private var aStarPopCounter = 0
@@ -163,54 +154,45 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(sourceState, terminationChecker)
+            val (targetNode, lastSafeNode) = aStar(sourceState, terminationChecker)
 
-            plan = extractSourctToTargetPath(targetNode, sourceState)
+            val currentSafeTarget = when (targetSelection) {
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
+            }
 
-            rootState = targetNode?.state
+            val targetSafeNode = currentSafeTarget
+                    ?: attemptIdentityAction(sourceState)
+                    ?: bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false })?.let { nodes[it] }
+                    ?: targetNode
+
+            plan = extractSourceToTargetPath(targetSafeNode, sourceState)
+            rootState = targetSafeNode.state
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
-        // Safety action, to make sure that no empty plan is returned
-        if (plan!!.isEmpty()) {
-            if (domain.isSafe(sourceState)) {
-                // The current state is safe, attempt an identity action
-                domain.getIdentityAction(sourceState)?.let {
-                    continueSearch = true // The planner can continue the search in the next iteration since the state is not changed
-                    safeActions = null // No further safe actions are available
-                    return listOf(ActionBundle(it.action, it.actionCost))
-                }
+        return plan!!
+    }
+
+    private fun attemptIdentityAction(sourceState: StateType): Node<StateType>? {
+        if (domain.isSafe(sourceState)) {
+            // The current state is safe, attempt an identity action
+            domain.getIdentityAction(sourceState)?.let {
+                continueSearch = true // The planner can continue the search in the next iteration since the state is not changed
+                return nodes[it.state]
             }
-
-            logger.info("Safe plan was used")
-
-            safeActions = when (commitmentStrategy) {
-                CommitmentStrategy.SINGLE -> safeActions?.drop(1) // We assume the agent only used one action
-                CommitmentStrategy.MULTIPLE -> emptyList() // The agent is committed to the head of the list so we have no more
-            }
-
-            // Return the next safe action from a previously generated plan if available
-            val nextSafeAction = safeActions?.firstOrNull() ?:
-                    bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false }) ?:
-                    throw MetronomeException("No safe successors are available. Can't move from $sourceState")
-            return listOf(ActionBundle(nextSafeAction.action, nextSafeAction.duration))
-        } else {
-            // A safe plan is available
-            safeActions = plan
         }
 
-//        plan!!.forEach { println("### Plan: $it") }
-
-        return plan!!
+        return null
     }
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType>? {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Pair<Node<StateType>, Node<StateType>?> {
         logger.debug { "Starting A* from state: $state" }
         initializeAStar(state)
 
@@ -229,7 +211,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
             if (domain.isGoal(currentNode.state)) {
                 currentNode.state.takeIf { domain.isSafe(it) } ?: throw MetronomeException("Goal state must be safe!")
-                return currentNode
+                return currentNode to null
             }
 
             if (!currentNode.safe && domain.isSafe(currentNode.state)) {
@@ -268,20 +250,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
         }
 
-//        if (node == currentNode && !domain.isGoal(currentNode.state)) {
-        //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-//        } else {
-//            logger.debug { "A* : expanded $expandedNodes nodes" }
-//        }
-
         logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
 
-        return when (targetSelection) {
-            SAFE_TO_BEST -> selectSafeToBest(openList)
-            BEST_SAFE -> lastSafeNode
-            BEST_SAFE_ON_OPEN -> throw MetronomeException("Invalid configuration. Do not use best safe on open with SRTS.")
-        }
+        return currentNode to lastSafeNode
     }
 
     private fun proveSafety(sourceNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
@@ -303,12 +275,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
                     parentState?.let {
                         val uninitializedNode = getUninitializedNode(it)
-//                        println("    >>>SetSafe: $uninitializedNode")
-
-//                        if (uninitializedNode.proofParent == null) {
-//                            uninitializedNode.proofParent = uninitializedNode
-                            uninitializedNode.safe = true
-//                        }
+                        uninitializedNode.safe = true
                     }
 
                     drop(1).forEach {
@@ -316,18 +283,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
                         uninitializedNode.safe = true
 
-//                        if (uninitializedNode.proofParent == null) {
-//                            val parentProof = getUninitializedNode(parentState!!)
-//
-//                            uninitializedNode.proofParent = parentProof
-//                            if (parentProof == uninitializedNode) {
-//                                "Self parent selected: $parentProof"
-//                            }
-//
-//                        }
-//                        println("       SetSafe: $uninitializedNode")
-
-//                        parentState = it
                     }
 
                     sourceNode
@@ -672,12 +627,12 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
  *
  * @return the best safe successor if available, else null.
  */
-fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)): RealTimePlanner.ActionBundle? {
+fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)): StateType? {
     return domain.successors(state)
 //            .onEach { println("         Successor: $it safe: ${domain.isSafe(it.state) || isSafe(it.state)}") }
             .filter { domain.isSafe(it.state) || isSafe(it.state) }
             .minBy { it.actionCost + domain.heuristic(it.state) }
-            ?.run { RealTimePlanner.ActionBundle(this.action, this.actionCost) }
+            ?.state
 }
 
 fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNodes: List<NodeType>)
@@ -745,7 +700,5 @@ enum class SafeRealTimeSearchTargetSelection {
     /** Select the best safe predecessor of a the best node on open that has such predecessor. */
     SAFE_TO_BEST,
     /** Select the best safe node in LSS. */
-    BEST_SAFE,
-    /** Select the best on open */
-    BEST_SAFE_ON_OPEN
+    BEST_SAFE
 }
