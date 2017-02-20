@@ -10,7 +10,7 @@ import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
+import edu.unh.cs.ai.realtimesearch.planner.extractSourceToTargetPath
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -159,10 +159,9 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             val targetSafeNode = when (targetSelection) {
                 SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. S0 does not implement the BEST_SAFE strategy")
-                SafeRealTimeSearchTargetSelection.BEST_SAFE_ON_OPEN -> safeNodeOnOpen()
             }
 
-            plan = extractSourctToTargetPath(targetSafeNode ?: targetNode, sourceState)
+            plan = extractSourceToTargetPath(targetSafeNode ?: targetNode, sourceState)
             rootState = targetNode.state
         }
 

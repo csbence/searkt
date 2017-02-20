@@ -47,7 +47,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
  *
  * @return path from source to target if exists.
  */
-fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractSourctToTargetPath(targetNode: NodeType?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractSourceToTargetPath(targetNode: NodeType?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
     targetNode ?: return emptyList()
 
     val actions = ArrayList<RealTimePlanner.ActionBundle>(1000)
