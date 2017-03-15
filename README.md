@@ -1,11 +1,6 @@
 # Metronome Real-time Search
 
 
-
-## Roadmap
-
-* develop a meaningful experiment runner environment, with various input and proper results
-
 ## Conventions
 
 * Naming
