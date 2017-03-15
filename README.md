@@ -26,7 +26,7 @@ State space: (`x`,`y`, {dirty locations})
 
 Actions: up, down, left, right, vacuum 
 
-#### Race Track (#ref-1)
+#### Race Track [[1]](#ref-1)
 
 A 2D grid of a track of any shape of cells (representing possible locations of the car) connecting a starting and finish line. The goal is for the car to reach the finish line from the start location.
 
@@ -45,7 +45,7 @@ Dynamics:
 
 The Race Track domain contains dead end states from which the agent cannot reach any of the goal states.
 
-#### Acrobot (#ref-2)
+#### Acrobot  [[2]](#ref-2)
 
 The Acrobot is a two link planar robot arm.  The system is underactuated and torque may be applied to the middle joint in order to move the two links.
 
@@ -63,7 +63,7 @@ Actions: up, down, left, right
 
 #### Traffic World
 
-Traffic World is a dynamic world that presents exogenous dangers to the agent. It is an extension of the traffic domain used by (#ref-2): reminiscent of the video game Frogger, the agent must navigate a grid from the upper-left to the lower-right using four-way movement while avoiding moving obstacles. A cartoon sketch is shown at the bottom right of Figure~\ref{fig:benchmarks}.  (The white cells are bunkers, which are described below.)  Each obstacle moves either vertically or horizontally, one cell per timestep.  Obstacles bounce off the edges of the grid but pass through each other.  While these velocities are known to the agent, and hence the domain is deterministic, the system state space is large, involving both the location of the agent and the obstacles (or equivalently, the timestep).  In addition to the four moves, the agent can also execute a no-op action and remain stationary.  We extend the domain to include special bunker cells, off of which dynamic obstacles bounce, protecting the agent.  The cost-to-go heuristic *h* is the Manhattan distance, which is perfect in the absence of obstacles. 100 random instances of 50 by 50 cells are provided with the framework in which each cell has a 50% chance to be the starting position of an obstacle or a 10% chance of being a bunker.
+Traffic World is a dynamic world that presents exogenous dangers to the agent. It is an extension of the traffic domain used by [[3]](#ref-2): reminiscent of the video game Frogger, the agent must navigate a grid from the upper-left to the lower-right using four-way movement while avoiding moving obstacles. A cartoon sketch is shown at the bottom right of Figure~\ref{fig:benchmarks}.  (The white cells are bunkers, which are described below.)  Each obstacle moves either vertically or horizontally, one cell per timestep.  Obstacles bounce off the edges of the grid but pass through each other.  While these velocities are known to the agent, and hence the domain is deterministic, the system state space is large, involving both the location of the agent and the obstacles (or equivalently, the timestep).  In addition to the four moves, the agent can also execute a no-op action and remain stationary.  We extend the domain to include special bunker cells, off of which dynamic obstacles bounce, protecting the agent.  The cost-to-go heuristic *h* is the Manhattan distance, which is perfect in the absence of obstacles. 100 random instances of 50 by 50 cells are provided with the framework in which each cell has a 50% chance to be the starting position of an obstacle or a 10% chance of being a bunker.
 
 ## Configuration Format
 
