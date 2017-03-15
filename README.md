@@ -13,7 +13,7 @@ Configuration in Metronome are specified using JSON configuration objects. These
 * Anytime Repairing A*
 * Real-time A*
 * LSS-LRTA*
-* Dynamic \hat{f}
+* Dynamic f-hat
 * Safe Real-time Search
 
 ## Domains
