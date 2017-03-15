@@ -4,16 +4,6 @@
 
 * develop a meaningful experiment runner environment, with various input and proper results
 
-## TODO
-
-* implement foggy racetrack domain
-* implement / validate traffic domain (Jordan)
-* migrate s0 s1 (Bence / Will)
-* javadoc for sliding tile puzzle
-* get tests to run 
-* refactor such that domains do not require to implement predecessors
-* how to store/write results
-
 ## Conventions
 
 * Naming
@@ -23,7 +13,6 @@
     - No abbreviations
 * Style
     - Braces open on same line
-    - Braces are always present after loops and if statements
 * Use Javadoc on functions and classes, but mind the verbosity
 * Logging is done using the different levels:
     - error: Actual errors / wrong stuff
