@@ -71,6 +71,7 @@ object ConfigurationExecutor {
                     builder.append(if (it / 28.0 > ratio) "" else "\u2588")
                 }
                 print(builder.toString())
+                System.out.flush()
             }
         }
 
