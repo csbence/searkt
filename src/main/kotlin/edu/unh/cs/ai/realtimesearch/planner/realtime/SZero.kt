@@ -230,6 +230,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             // check for safety if safe add to the safe nodes
             if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
+                successorNode.safe = true
             }
 
             // Add the current state as the predecessor of the child state

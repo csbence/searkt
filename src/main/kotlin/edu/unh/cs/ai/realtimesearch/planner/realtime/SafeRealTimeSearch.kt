@@ -211,6 +211,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
             if (domain.isGoal(currentNode.state)) {
                 currentNode.state.takeIf { domain.isSafe(it) } ?: throw MetronomeException("Goal state must be safe!")
+                currentNode.safe = true
                 return currentNode to null
             }
 
