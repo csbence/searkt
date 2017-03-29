@@ -207,13 +207,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
-            currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
 
-            if (domain.isGoal(currentNode.state)) {
-                currentNode.state.takeIf { domain.isSafe(it) } ?: throw MetronomeException("Goal state must be safe!")
-                currentNode.safe = true
-                return currentNode to null
-            }
+            openList.peek()?.let {
+                if (domain.isGoal(it.state)) return it to null // Return the goal without removing from the open list
+            } ?: throw GoalNotReachableException("Open list is empty.")
+
+            currentNode = openList.pop()!!
 
             if (!currentNode.safe && domain.isSafe(currentNode.state)) {
                 currentNode.safe = true
@@ -233,7 +232,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
                 val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
-                val topNode = openList.peek() ?: currentNode ?: throw MetronomeException("Open list is empty! Goal is not reachable")
+                val topNode = openList.peek() ?: currentNode ?: throw GoalNotReachableException("Goal is not reachable")
                 val (safeNodeCandidate, safetyProofDuration) = proveSafety(topNode, safetyTerminationChecker)
 
                 terminationChecker.notifyExpansion(safetyProofDuration)
@@ -254,7 +253,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
 
-        return currentNode to lastSafeNode
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
 
     private fun proveSafety(sourceNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
@@ -270,9 +269,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 sourceNode
             } else {
                 isComfortable<StateType>(sourceNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
-                    // Save safe states from proof
-
-                    var parentState = firstOrNull()
+                    val parentState = firstOrNull()
 
                     parentState?.let {
                         val uninitializedNode = getUninitializedNode(it)
@@ -330,6 +327,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
+
+            // check for safety if safe add to the safe nodes
+            if (domain.isSafe(successorNode.state)) {
+                safeNodes.add(successorNode)
+                successorNode.safe = true
+            }
 
             // Add the current state as the predecessor of the child state
             successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))

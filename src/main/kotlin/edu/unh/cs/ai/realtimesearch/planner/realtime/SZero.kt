@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -181,28 +180,31 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
 
         val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
-        var currentNode = node
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
-                aStarPopCounter++
-                currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-                expandFromNode(currentNode)
-                terminationChecker.notifyExpansion()
-            }
+//        val expandedNodes = measureInt({ expandedNodeCount }) {
+        while (!terminationChecker.reachedTermination()) {
+            aStarPopCounter++
+
+            openList.peek()?.let {
+                if (domain.isGoal(it.state)) return it
+            } ?: throw GoalNotReachableException("Open list is empty.")
+
+            expandFromNode(openList.pop()!!)
+            terminationChecker.notifyExpansion()
         }
+//        }
 
-        if (node == currentNode && !domain.isGoal(currentNode.state)) {
-            //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-        } else {
-            logger.debug { "A* : expanded $expandedNodes nodes" }
-        }
+//        if (node == currentNode && !domain.isGoal(currentNode.state)) {
+        //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
+//        } else {
+//            logger.debug { "A* : expanded $expandedNodes nodes" }
+//        }
 
-        logger.debug { "Done with AStar at $currentNode" }
+//        logger.debug { "Done with AStar at $currentNode" }
 
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
