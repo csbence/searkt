@@ -302,19 +302,19 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
      *
      *
      */
-    private fun updateSafeNodes(): Unit {
+    private fun updateSafeNodes() {
         while (safeNodes.isNotEmpty()) {
             val safeNode = safeNodes.first()
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent !== currentParent?.parent) {
+            while (currentParent !== currentParent.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }
             // update the safe nodes of predecessors also
             val predecessors = safeNode.predecessors
-            (0..predecessors.size -1).forEach {
+            (0 until predecessors.size).forEach {
                 var currentPredecessor: Node<StateType>? = predecessors[it].node
                 while (currentPredecessor !== currentPredecessor?.parent) {
                     currentPredecessor?.safe = safeNode.safe
@@ -358,9 +358,7 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
-            for (predecessor in node.predecessors) {
-
-                val predecessorNode = predecessor.node
+            for ((predecessorNode, _, actionCost) in node.predecessors) {
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
@@ -381,14 +379,14 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
                     addToOpenList(predecessorNode)
-                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     openList.update(predecessorNode) // Update priority
 
                     // Frontier nodes could be also visited

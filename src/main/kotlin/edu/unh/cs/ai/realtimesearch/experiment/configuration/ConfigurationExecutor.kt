@@ -163,8 +163,6 @@ object ConfigurationExecutor {
             POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(configuration, domainStream)
             RACETRACK -> executeRaceTrack(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
-
-            else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown domain type: $domainName")
         }
     }
 
@@ -233,7 +231,6 @@ object ConfigurationExecutor {
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
-            else -> ExperimentResult(configuration.valueStore, errorMessage = "Unknown algorithm: $algorithmName")
         }
     }
 

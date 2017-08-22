@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.environment.Domains.TRAFFIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
@@ -31,20 +30,17 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
-            domains = listOf(
-                    Domains.RACETRACK to args[1]
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+//            domains = listOf(
+//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
-//                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
-//            domains = (0..99).map { TRAFFIC to "input/traffic/50/traffic$it" },
-//            domains = listOf( TRAFFIC to "input/traffic/50/traffic${args[0].toInt()}"),
-            planners = listOf(SAFE_RTS),
-//            actionDurations = listOf(50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            actionDurations = listOf(args[2].toLong()),
-//            actionDurations = listOf(50L),
+////                    TRAFFIC to "input/traffic/vehicle0.v"
+//            ),
+            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
+//            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
+            planners = listOf(S_ZERO),
+            actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
@@ -59,8 +55,7 @@ fun main(args: Array<String>) {
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString()))
             ),
             domainExtras = listOf(
-//                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), args[0].toLong()..args[0].toLong())
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)
             )
     )
 
@@ -79,8 +74,7 @@ fun main(args: Array<String>) {
     val objectMapper = ObjectMapper()
 
     File("output").mkdir()
-    File("output/results.json").appendText("\n" + objectMapper.writeValueAsString(results))
-//    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results))}
+    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
     println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())

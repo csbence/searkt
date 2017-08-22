@@ -320,7 +320,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent !== currentParent?.parent) {
+            while (currentParent !== currentParent.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }
