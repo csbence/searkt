@@ -231,6 +231,7 @@ object ConfigurationExecutor {
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
+            SIMPLE_SAFE -> executeSimpleSafeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
         }
     }
 
