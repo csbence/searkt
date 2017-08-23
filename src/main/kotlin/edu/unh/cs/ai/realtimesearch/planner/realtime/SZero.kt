@@ -31,8 +31,8 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-    val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
-    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+    private val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
+    private val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -317,7 +317,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent !== currentParent?.parent) {
+            while (currentParent !== currentParent.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }

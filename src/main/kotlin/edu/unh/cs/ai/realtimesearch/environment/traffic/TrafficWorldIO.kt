@@ -39,9 +39,9 @@ object VehicleWorldIO {
         val targetLocation = arrayListOf<Location>()
 
         try {
-            (0..rowCount - 1).forEach { y ->
+            (0 until rowCount).forEach { y ->
                 val line = inputScanner.nextLine()
-                (0..columnCount - 1).forEach { x ->
+                (0 until columnCount).forEach { x ->
                     val coin = random.nextBoolean()
                     when (line[x]) {
                         '#' -> obstacles.add(MovingObstacle(x, y, if (coin) random.nextInt(1) + 1 else 0, if (!coin) random.nextInt(1) + 1 else 0))
