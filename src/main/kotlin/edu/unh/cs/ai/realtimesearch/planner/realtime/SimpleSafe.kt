@@ -89,7 +89,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
     private val safeNodes = ArrayList<Node<StateType>>()
 
-    private val k: Int = configuration[Configurations.LOOKAHEAD_DEPTH_LIMIT] as? Int ?: throw MetronomeException("Lookahead depth limit not found") // TODO make part of configuration
+    private val k: Int = configuration[Configurations.LOOKAHEAD_DEPTH_LIMIT] as? Int ?: throw MetronomeException("Lookahead depth limit not found")
 
     private val fValueComparator = Comparator<Node<StateType>> {lhs, rhs ->
         when {
@@ -141,7 +141,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
 
-        val lastBreadthFirstNode = kBoundedDepthFirstWithReset(sourceState, terminationChecker, k)
+        kBoundedDepthFirstWithReset(sourceState, terminationChecker, k)
 
 //        logger.debug { "Last BFS node $lastBreadthFirstNode" }
 
@@ -183,7 +183,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         nodes[state] = node
         openListQueue.add(node)
 
-        var currentIteration: Int = 0
+        var currentIteration = 0
         logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() && currentIteration < k) {
