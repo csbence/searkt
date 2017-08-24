@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import groovyjarjarcommonscli.*
-import javafx.applicatRealTimeSearchimport
+import javafx.application.Application
 import kotlin.system.exitProcess
 
 

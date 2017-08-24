@@ -16,7 +16,6 @@ import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
-import javax.security.auth.login.Configuration
 import kotlin.system.measureTimeMillis
 import kotlin.Long.Companion.MAX_VALUE
 
@@ -142,7 +141,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
 
-        kBoundedDepthFirstWithReset(sourceState, terminationChecker, k)
+        val lastBreadthFirstNode = kBoundedDepthFirstWithReset(sourceState, terminationChecker, k)
+
+//        logger.debug { "Last BFS node $lastBreadthFirstNode" }
 
         if (openList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
@@ -168,6 +169,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
+        logger.debug { "Termination checker remaining resources: ${terminationChecker.remaining()}" }
         return plan!!
     }
 
@@ -184,7 +186,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         var currentIteration: Int = 0
         logger.debug { "Starting BFS from state: $state" }
 
-        while (!terminationChecker.reachedTermination() || currentIteration < k) {
+        while (!terminationChecker.reachedTermination() && currentIteration < k) {
             openListQueue.peek()?.let {
                 if (domain.isGoal(it.state)) return it
             } ?: throw GoalNotReachableException ("Open list is empty during k-BFS")
@@ -194,8 +196,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             currentIteration++
         }
 
-        resetSearchTree(openListQueue)
-        return openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+        openListQueue.peek()?.let {
+            resetSearchTree(openListQueue)
+            return it
+        } ?: throw GoalNotReachableException("Open list is empty during k-BFS")
     }
 
     /**
@@ -434,15 +438,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         if (openList.isEmpty()) {
             logger.debug { "Done with Dijkstra" }
         } else {
-            logger.warn { "Incompletet learning step. Lists: Open(${openList.size})" }
+            logger.warn { "Incomplete learning step. Lists: Open(${openList.size})" }
         }
     }
-
-
-
-
-
-
 }
 
 enum class SimpleSafeConfiguration {

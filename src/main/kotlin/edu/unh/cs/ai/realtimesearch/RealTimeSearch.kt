@@ -12,13 +12,10 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
+import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroConfiguration
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafety
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafetyBackup
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SimpleSafeConfiguration
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
@@ -54,12 +51,18 @@ fun main(args: Array<String>) {
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
-                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT.toString(), listOf(10000))
+                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT.toString(), listOf(10000)),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP.toString(), listOf(SimpleSafeSafetyBackup.PREDECESSOR.toString())),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY.toString(), listOf(SimpleSafeSafety.PREFERRED.toString())),
+                    Triple(SIMPLE_SAFE, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
+                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString()))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)
             )
     )
+
+    configurations.forEach(::println)
 
 //    configurations.forEach {
 //        println(it.toIndentedJson())
@@ -77,6 +80,7 @@ fun main(args: Array<String>) {
 
     File("output").mkdir()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+    println("$results")
     println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())
