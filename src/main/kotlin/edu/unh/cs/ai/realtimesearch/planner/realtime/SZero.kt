@@ -72,7 +72,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
-    val safeNodes = ArrayList<Node<StateType>>()
+    private val safeNodes = ArrayList<Node<StateType>>()
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
@@ -165,7 +165,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
 
         return plan!!
     }
@@ -360,9 +360,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
-            for (predecessor in node.predecessors) {
-
-                val predecessorNode = predecessor.node
+            for ((predecessorNode, _, actionCost) in node.predecessors) {
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
@@ -383,14 +381,14 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
                     openList.add(predecessorNode)
-                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     openList.update(predecessorNode) // Update priority
 
                     // Frontier nodes could be also visited

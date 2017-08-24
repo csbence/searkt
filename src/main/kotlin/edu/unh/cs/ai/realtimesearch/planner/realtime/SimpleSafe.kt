@@ -1,3 +1,23 @@
+package edu.unh.cs.ai.realtimesearch.planner.realtime
+
+import edu.unh.cs.ai.realtimesearch.MetronomeException
+import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.logging.debug
+import edu.unh.cs.ai.realtimesearch.logging.trace
+import edu.unh.cs.ai.realtimesearch.logging.warn
+import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.extractSourceToTargetPath
+import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
+import edu.unh.cs.ai.realtimesearch.util.resize
+import org.slf4j.LoggerFactory
+import java.util.*
+import kotlin.system.measureTimeMillis
+import kotlin.Long.Companion.MAX_VALUE
+
 /**
  * SimpleSafe as described in "Avoiding Dead Ends in Real-time Heuristic Search"
  *
@@ -22,9 +42,8 @@
  */
 
 class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-    val safetyBackup = SimpleSafeSafetyBackup.valueOf(configuration[SimpleSafeConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
 
-    val targetSelection : SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: MetronomeException("Target selection strategy not found"))
+    private val targetSelection : SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -44,7 +63,368 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         /** Parent pointer that points to the min cost predecessor */
         override var parent: Node<StateType> = parent ?: this
 
+        val f: Double
+            get() = cost + heuristic
+
+        override fun hashCode(): Int {
+            return state.hashCode()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other != null && other is Node<*>) {
+                return state == other.state
+            }
+            return false
+        }
+
+        override fun toString(): String {
+            return "Node: [State: $state, h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
+        }
     }
+
+    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
+
+    private var iterationCounter = 0L
+
+    private val safeNodes = ArrayList<Node<StateType>>()
+
+    private val k: Int = 1000 // TODO make part of configuration
+
+    private val fValueComparator = Comparator<Node<StateType>> {lhs, rhs ->
+        when {
+            lhs.f < rhs.f -> -1
+            lhs.f > rhs.f -> 1
+            lhs.cost > rhs.cost -> -1 // break ties on g
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
+    private val heuristicComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
+    }
+
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>> (100000000, 1.toFloat()).resize()
+
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator)
+
+    private var rootState: StateType? = null
+
+    private var aStarPopCounter = 0
+    private var dijkstraPopCounter = 0
+    var aStarTimer = 0L
+        get
+    var dijkstraTimer = 0L
+        get
+
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
+        // first search iteration check
+
+
+        if (rootState == null) {
+            rootState = sourceState
+        } else if (sourceState != rootState) {
+            logger.debug {"Inconsistent world sourceState. Expected $rootState got $sourceState"}
+        }
+
+        if (domain.isGoal(sourceState)) {
+            logger.warn {"selectAction: The goal sourceState is already found."}
+        }
+
+        logger.debug{ "Root sourceState: $sourceState" }
+
+        // Every turn do k-breadth-first search to learn safe states
+        // then A* until time expires
+
+        kBoundedDepthFirstWithReset(sourceState, terminationChecker, k)
+
+        if (openList.isNotEmpty()) {
+            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
+        }
+
+        var plan: List<ActionBundle>? = null
+        aStarTimer += measureTimeMillis {
+            val targetNode = aStar(sourceState, terminationChecker)
+
+            val targetSafeNode = when (targetSelection) {
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
+            }
+
+            plan = extractSourceToTargetPath(targetSafeNode ?: targetNode, sourceState)
+            rootState = targetNode.state
+        }
+
+        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
+        return plan!!
+    }
+
+    /**
+     * Runs local breadth-first search then clears the search tree
+     * except for the safe nodes we learn about up to a depth k
+     */
+    private fun kBoundedDepthFirstWithReset(state: StateType, terminationChecker: TerminationChecker, k: Int): Node<StateType> {
+        val openListQueue = LinkedList<Node<StateType>>()
+        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+        nodes[state] = node
+        openListQueue.add(node)
+
+        var currentIteration: Int = 0
+        logger.debug { "Starting BFS from state: $state" }
+
+        while (!terminationChecker.reachedTermination() || currentIteration < k) {
+            openListQueue.peek()?.let {
+                if (domain.isSafe(it.state)) safeNodes.add(it)
+            } ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+
+            openListQueue.peek()?.let {
+                if (domain.isGoal(it.state)) return it
+            } ?: throw GoalNotReachableException ("Open list is empty during k-BFS")
+
+            expandFromNode(openListQueue.pop()!!, openListQueue)
+            terminationChecker.notifyExpansion()
+            currentIteration++
+        }
+
+        resetSearchTree(openListQueue)
+        return openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+    }
+
+    /**
+     * Expands a node and add it to closed list, similar to expandFromNode
+     * but uses the queue implementation being passed in, for each successor
+     * it will add it to the open list passed and store its g value as long as the
+     * state has not been seen before, or is found with a lower g value.
+     */
+    private fun expandFromNode(sourceNode: Node<StateType>, openListQueue: Queue<Node<StateType>>) {
+        expandedNodeCount++
+
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state)) {
+            val successorState = successor.state
+            logger.trace {"Considering successor $successorState" }
+
+            val successorNode = getNode(sourceNode, successor)
+
+            // do not need to worry about predecessors because we are dumping the nodes after
+
+            if (successorNode.iteration != iterationCounter) {
+                successorNode.apply {
+                    iteration = iterationCounter
+                    predecessors.clear()
+                    cost = MAX_VALUE
+                }
+            }
+
+            // skip if we circle back to the parent
+            if (successorState == sourceNode.parent.state) {
+                continue
+            }
+
+            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            // always add the successor doing a BFS
+            successorNode.apply {
+                cost = successorGValueFromCurrent
+                parent = sourceNode
+                action = successor.action
+                actionCost = successor.actionCost
+            }
+
+            logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size ${openListQueue.size}" }
+            logger.trace { "Adding it to the cost table with value ${successorNode.cost}" }
+            // we always add the node doing a BFS
+            openListQueue.add(successorNode)
+        }
+    }
+
+    /**
+     * Runs AStar until termination and returns the path to the head of openlist
+     * Will just repeatedly expand according to A*.
+     */
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
+        // build the fabulous (and glorious) A* tree / essential
+        initializeAStar()
+
+        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0 , 0, NoOperationAction, iterationCounter)
+        nodes[state] = node
+        openList.add(node)
+        logger.debug { "Starting A* from state: $state" }
+
+        while (!terminationChecker.reachedTermination()) {
+            aStarPopCounter++
+
+            openList.peek()?.let {
+                if (domain.isGoal(it.state)) return it
+            } ?: throw GoalNotReachableException( "Open list is empty")
+
+            expandFromNode(openList.pop()!!)
+            terminationChecker.notifyExpansion()
+
+        }
+        return openList.peek() ?: throw GoalNotReachableException ("Open list is empty.")
+    }
+
+    private fun initializeAStar() {
+        iterationCounter++
+        openList.clear()
+        safeNodes.clear()
+        openList.reorder(fValueComparator)
+    }
+
+    private fun resetSearchTree(openListQueue: Queue<Node<StateType>>) {
+        openList.clear()
+        nodes.clear()
+        openListQueue.clear()
+        openList.reorder(fValueComparator)
+    }
+
+    /**
+     * Expands a node and add it to the closed list. For each successor
+     * it will add it to the open list and store it's g value, as long as the
+     * state has not been seen before, or is found with a lower g value
+     */
+    private fun expandFromNode(sourceNode: Node<StateType>) {
+        expandedNodeCount++
+
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state)) {
+            val successorState = successor.state
+            logger.trace {"Considering successor $successorState" }
+
+            val successorNode = getNode(sourceNode, successor)
+
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+
+            // out dated nodes are updated
+            if (successorNode.iteration != iterationCounter) {
+                successorNode.apply {
+                    iteration = iterationCounter
+                    predecessors.clear()
+                    cost = MAX_VALUE
+                }
+            }
+
+            // skip is we got back to the parent
+            if (successorState == sourceNode.parent.state) {
+                continue
+            }
+
+            // only generated states that are not yet visited or whose cost values are lower than this path
+            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            if (successorNode.cost > successorGValueFromCurrent) {
+                successorNode.apply {
+                    cost = successorGValueFromCurrent
+                    parent = sourceNode
+                    action = successor.action
+                    actionCost = successor.actionCost
+                }
+
+                logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size : ${openList.size}" }
+                logger.trace { "Adding it the cost table with value ${successorNode.cost}" }
+
+                if (!successorNode.open) {
+                    openList.add(successorNode)
+                } else {
+                    openList.update(successorNode)
+                }
+            } else {
+                logger.trace {
+                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
+                }
+            }
+        }
+    }
+
+    /**
+     * Get a node for the state if it exists, else create new node.
+     *
+     * @return node corresponding to the given state.
+     */
+    private fun getNode(parent: Node<StateType>, successor: SuccessorBundle<StateType>) : Node<StateType> {
+        val successorState = successor.state
+        val tempSuccessorNode = nodes[successorState]
+
+        return if (tempSuccessorNode == null) {
+            generatedNodeCount++
+
+            val undiscoveredNode = Node(
+                    state = successorState,
+                    heuristic = domain.heuristic(successorState),
+                    actionCost = successor.actionCost,
+                    action = successor.action,
+                    parent = parent,
+                    cost = MAX_VALUE,
+                    iteration = iterationCounter
+            )
+
+            nodes[successorState] = undiscoveredNode
+            undiscoveredNode
+        } else {
+            tempSuccessorNode
+        }
+    }
+
+    /**
+     * Performs Dikjatra until runs out of resources or done
+     *
+     * Updates the mode to SEARCH if done with DIJKSTRA
+     *
+     * Dijkstra updates repeatedly pop the state s according to their heuristic value, and then update
+     * the cost values for all it's visited successors, based on the heuristic s.
+     *
+     * This increases the stored heuristic value, ensuring that A* won't go in circles, and in general generating
+     * a better table of heuristics.
+     */
+    private fun dijkstra(terminationChecker: TerminationChecker) {
+        logger.debug { "Start: Dijkstra" }
+
+        iterationCounter++
+
+        openList.reorder(heuristicComparator)
+
+        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
+            // check closed list
+            val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
+            node.iteration = iterationCounter
+
+            val currentHeuristicValue = node.heuristic
+
+            for ((predecessorNode, _, actionCost) in node.predecessors) {
+                if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
+                    // the node was already learned and closed in current iteration
+                    continue
+                }
+
+                val predecessorHeuristicValue = predecessorNode.heuristic
+
+                if (!predecessorNode.open){
+                    // node is not open yet because it was not visited in the current planning iteration
+
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
+
+                    assert(predecessorNode.iteration == iterationCounter - 1)
+
+                    predecessorNode.iteration = iterationCounter
+                    openList.add(predecessorNode)
+                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
+                    openList.update(predecessorNode)
+                }
+            }
+        }
+        if (openList.isEmpty()) {
+            logger.debug { "Done with Dijkstra" }
+        } else {
+            logger.warn { "Incompletet learning step. Lists: Open(${openList.size})" }
+        }
+    }
+
+
 
 
 
