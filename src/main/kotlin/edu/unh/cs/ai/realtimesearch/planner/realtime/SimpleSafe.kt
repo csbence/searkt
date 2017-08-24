@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -15,6 +16,7 @@ import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
+import javax.security.auth.login.Configuration
 import kotlin.system.measureTimeMillis
 import kotlin.Long.Companion.MAX_VALUE
 
@@ -42,7 +44,7 @@ import kotlin.Long.Companion.MAX_VALUE
  */
 
 class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-
+    private val safetyBackup = SimpleSafeSafetyBackup.valueOf(configuration[SimpleSafeConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
     private val targetSelection : SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
@@ -88,7 +90,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
     private val safeNodes = ArrayList<Node<StateType>>()
 
-    private val k: Int = 1000 // TODO make part of configuration
+    private val k: Int = configuration[Configurations.LOOKAHEAD_DEPTH_LIMIT] as? Int ?: throw MetronomeException("Lookahead depth limit not found") // TODO make part of configuration
 
     private val fValueComparator = Comparator<Node<StateType>> {lhs, rhs ->
         when {
@@ -150,6 +152,11 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(sourceState, terminationChecker)
 
+            when (safetyBackup) {
+               SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
+                SimpleSafeSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
+            }
+
             val targetSafeNode = when (targetSelection) {
                 SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
@@ -178,10 +185,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() || currentIteration < k) {
-            openListQueue.peek()?.let {
-                if (domain.isSafe(it.state)) safeNodes.add(it)
-            } ?: throw GoalNotReachableException("Open list is empty during k-BFS")
-
             openListQueue.peek()?.let {
                 if (domain.isGoal(it.state)) return it
             } ?: throw GoalNotReachableException ("Open list is empty during k-BFS")
@@ -212,6 +215,11 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val successorNode = getNode(sourceNode, successor)
 
             // do not need to worry about predecessors because we are dumping the nodes after
+            // but care about safety still
+            if (domain.isSafe(successorNode.state)) {
+                safeNodes.add(successorNode)
+                successorNode.safe = true
+            }
 
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -297,6 +305,12 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             logger.trace {"Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
+
+            // safety check
+            if (domain.isSafe(successorNode.state)) {
+                safeNodes.add(successorNode)
+                successorNode.safe = true
+            }
 
             successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 

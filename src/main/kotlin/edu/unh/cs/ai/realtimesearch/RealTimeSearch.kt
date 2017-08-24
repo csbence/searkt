@@ -18,6 +18,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSel
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafety
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeZeroSafetyBackup
+import edu.unh.cs.ai.realtimesearch.planner.realtime.SimpleSafeConfiguration
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
@@ -39,7 +40,7 @@ fun main(args: Array<String>) {
 //            ),
             domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
 //            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
-            planners = listOf(S_ZERO),
+            planners = listOf(SIMPLE_SAFE),
             actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
@@ -52,7 +53,8 @@ fun main(args: Array<String>) {
                     Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString()))
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT.toString(), listOf(10000))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)

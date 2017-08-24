@@ -6,8 +6,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentResultFromJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import groovyjarjarcommonscli.*
-import javafx.application.Application
+import javafx.applicatRealTimeSearchimport
 import kotlin.system.exitProcess
+
 
 /**
  * Base application for visualizers.  Handles command line parsing and provides framework for easily adding custom
