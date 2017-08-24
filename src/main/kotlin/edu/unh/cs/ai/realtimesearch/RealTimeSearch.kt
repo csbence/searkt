@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit.NANOSECONDS
 class Input
 
 fun main(args: Array<String>) {
-    val logger = LoggerFactory.getLogger("Real-time search")
+//    val logger = LoggerFactory.getLogger("Real-time search")
 
     val configurations = generateConfigurations(
 //            domains = listOf(
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 ////                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
-            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
+            domains = (88..99).map { TRAFFIC to "input/traffic/50/traffic$it" },
 //            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
             planners = listOf(SIMPLE_SAFE),
             actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
@@ -80,7 +80,7 @@ fun main(args: Array<String>) {
 
     File("output").mkdir()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    println("$results")
+    println("${results}")
     println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())
