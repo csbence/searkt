@@ -102,7 +102,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
                     "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
-        return ExperimentResult(
+        val experimentResult = ExperimentResult(
                 configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
@@ -112,6 +112,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString))
+
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 
     private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {

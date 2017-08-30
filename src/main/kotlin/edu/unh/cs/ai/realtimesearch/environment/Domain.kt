@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+
 /**
  * A domain is a definition of a problem setting. It is defined by the state type and the possible state transitions.
  */
@@ -39,7 +41,7 @@ interface Domain<State> {
     fun getGoals(): List<State> = TODO()
 
     /**
-     * @param sourceState
+     * @param sourceState is the start state of the transition.
      * @param action is an action to be applied on the sourceState.
      * @return the successor state from a state and a given action when the action is applicable, else null.
      */
@@ -91,6 +93,8 @@ interface Domain<State> {
      * Returns a randomized start state for the domain where the seed is used for the randomization.
      */
     fun randomizedStartState(state: State, seed: Long): State = TODO("This function is not implemented for the domain")
+
+    fun appendDomainSpecificResults(results: ExperimentData) {}
 }
 
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)
