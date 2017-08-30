@@ -672,6 +672,9 @@ interface Safe {
     var safe: Boolean
 }
 
+interface Depth {
+    var depth: Int
+}
 
 fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
         where Node : SearchNode<StateType, Node>, Node : Indexable, Node : Safe {

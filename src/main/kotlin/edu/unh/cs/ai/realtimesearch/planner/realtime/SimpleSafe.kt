@@ -46,6 +46,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
     private val safetyBackup = SimpleSafeSafetyBackup.valueOf(configuration[SimpleSafeConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
     private val targetSelection : SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
+    private val versionNumber = SimpleSafeVersion.valueOf(configuration[SimpleSafeConfiguration.VERSION] as? String ?: throw MetronomeException("Version number not found"))
+
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
                                              override var cost: Long,
@@ -53,8 +55,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                                              override var action: Action,
                                              var iteration: Long,
                                              parent: Node<StateType>? = null,
-                                             override var safe: Boolean = false)
-        : Indexable, Safe, SearchNode<StateType, Node<StateType>> {
+                                             override var safe: Boolean = false,
+                                             override var depth: Int)
+        : Indexable, Safe, SearchNode<StateType, Node<StateType>>, Depth{
         /** Item index in the open list */
         override var index: Int = -1
 
@@ -141,8 +144,11 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
 
-        val nodesGenerated = depthFirstSearch(sourceState, terminationChecker, depthBound)
-        resetSearchTree(nodesGenerated)
+        val nodesGenerated = breadthFirstSearch(sourceState, terminationChecker, depthBound)
+
+        if(versionNumber == SimpleSafeVersion.ONE) {
+            resetSearchTree(nodesGenerated)
+        }
 
 //        logger.debug { "Last BFS node $lastBreadthFirstNode" }
 
@@ -155,7 +161,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val targetNode = aStar(sourceState, terminationChecker)
 
             when (safetyBackup) {
-               SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
+                SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
                 SimpleSafeSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
 
@@ -178,9 +184,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      * Runs local breadth-first search then clears the search tree
      * except for the safe nodes we learn about up to a depth k
      */
-    private fun depthFirstSearch(state: StateType, terminationChecker: TerminationChecker, depthBound: Int): Queue<Node<StateType>> {
+    private fun breadthFirstSearch(state: StateType, terminationChecker: TerminationChecker, depthBound: Int): Queue<Node<StateType>> {
         val openListQueue = LinkedList<Node<StateType>>()
-        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
         nodes[state] = node
         openListQueue.add(node)
 
@@ -192,9 +198,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 if (domain.isGoal(it.state)) return openListQueue
             } ?: throw GoalNotReachableException ("Open list is empty during k-BFS")
 
-            expandFromNode(openListQueue.pop()!!, openListQueue)
+            val foundSafeNode = expandFromNode(openListQueue.pop()!!, openListQueue)
             terminationChecker.notifyExpansion()
-            currentIteration++
+            currentIteration = openListQueue.peek().depth
+
+            if(versionNumber == SimpleSafeVersion.TWO) {
+                if(foundSafeNode) {
+                    currentIteration = depthBound + 1
+                }
+            }
         }
 
         openListQueue.peek()?.let {
@@ -208,9 +220,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      * it will add it to the open list passed and store its g value as long as the
      * state has not been seen before, or is found with a lower g value.
      */
-    private fun expandFromNode(sourceNode: Node<StateType>, openListQueue: Queue<Node<StateType>>) {
+    private fun expandFromNode(sourceNode: Node<StateType>, openListQueue: Queue<Node<StateType>>) : Boolean {
         expandedNodeCount++
-
+        var foundSafeNode = false
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -218,11 +230,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             val successorNode = getNode(sourceNode, successor)
 
+            // update the node depth to be one mor than the parent
+            successorNode.depth = sourceNode.depth + 1
+
             // do not need to worry about predecessors because we are dumping the nodes after
             // but care about safety still
             if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
+                foundSafeNode = true
             }
 
             if (successorNode.iteration != iterationCounter) {
@@ -245,6 +261,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 parent = sourceNode
                 action = successor.action
                 actionCost = successor.actionCost
+                depth = parent.depth + 1
             }
 
             logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size ${openListQueue.size}" }
@@ -252,6 +269,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             // we always add the node doing a BFS
             openListQueue.add(successorNode)
         }
+        return foundSafeNode
     }
 
     /**
@@ -262,7 +280,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // build the fabulous (and glorious) A* tree / essential
         initializeAStar()
 
-        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0 , 0, NoOperationAction, iterationCounter)
+        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0 , 0, NoOperationAction, iterationCounter, null, false, 0)
         nodes[state] = node
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
@@ -309,6 +327,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             logger.trace {"Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
+            successorNode.depth = sourceNode.depth + 1
 
             // safety check
             if (domain.isSafe(successorNode.state)) {
@@ -340,6 +359,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                     parent = sourceNode
                     action = successor.action
                     actionCost = successor.actionCost
+                    depth = parent.depth + 1
                 }
 
                 logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size : ${openList.size}" }
@@ -377,12 +397,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
-                    iteration = iterationCounter
+                    iteration = iterationCounter,
+                    depth = parent.depth + 1
             )
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
         } else {
+            parent.depth += 1
+            tempSuccessorNode.depth = parent.depth + 1
             tempSuccessorNode
         }
     }
@@ -444,7 +467,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 }
 
 enum class SimpleSafeConfiguration {
-    SAFETY_BACKUP, SAFETY
+    SAFETY_BACKUP, SAFETY, VERSION
 }
 
 enum class SimpleSafeSafetyBackup {
@@ -453,4 +476,8 @@ enum class SimpleSafeSafetyBackup {
 
 enum class SimpleSafeSafety {
     ABSOLUTE, PREFERRED
+}
+
+enum class SimpleSafeVersion {
+    ONE, TWO
 }
