@@ -118,7 +118,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                     "(${planner.expandedNodeCount / convertNanoUpDouble(idlePlanningTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
-        return ExperimentResult(
+        val experimentResult = ExperimentResult(
                 configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
@@ -129,6 +129,9 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 pathLength = pathLength,
                 actions = actions.map(String::toString)
         )
+
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 }
 

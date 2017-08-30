@@ -42,7 +42,7 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
     @JsonAnyGetter
     fun getProperties() = valueStore
 
-    operator fun set(key: String, value: Any) {
+    operator fun <T> set(key: String, value: T) {
         valueStore[key] = value
     }
 
