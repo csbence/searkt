@@ -4,7 +4,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
@@ -45,8 +45,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(configuration, Configurations.COMMITMENT_STRATEGY.toString())
-    private val actionDuration by lazyData<Long>(configuration, Configurations.ACTION_DURATION.toString())
+    private val commitmentStrategy by lazyData<String>(configuration, COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(configuration, ACTION_DURATION.toString())
+    private val expansionLimit by lazyData<Long>(configuration, EXPANSION_LIMIT.toString())
 
     /**
      * Runs the experiment
@@ -86,6 +87,10 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
+
+            if (expansionLimit <= planner.expandedNodeCount) {
+                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the expansion limit: $expansionLimit")
+            }
         }
 
         val pathLength: Long = actions.size.toLong()
