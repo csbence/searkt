@@ -15,6 +15,7 @@ enum class Configurations(val configurationName: String) {
     RAW_DOMAIN              ("rawDomain"),
     DOMAIN_PATH             ("domainPath"),
     TIME_LIMIT              ("timeLimit"),
+    EXPANSION_LIMIT         ("expansionLimit"),
     ACTION_DURATION         ("actionDuration"),
     TERMINATION_TYPE        ("terminationType"),
     // Domain-specific configurations

@@ -29,6 +29,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
     var terminationType: String by valueStore
     var actionDuration: Long by valueStore
     var timeLimit: Long by valueStore
+    var expansionLimit: Long by valueStore
 
     override fun contains(key: String) = valueStore.containsKey(key)
 }
