@@ -16,7 +16,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
@@ -44,8 +43,6 @@ fun main(args: Array<String>) {
             actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             domains = (26..26).map { Domains.TRAFFIC to "input/traffic/50/traffic$it" },
 //            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
-            planners = listOf(S_ZERO),
-            actionDurations = listOf(50L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),

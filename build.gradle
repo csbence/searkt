@@ -1,8 +1,8 @@
 group 'unh-ai'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'kotlin'
 apply plugin: 'application'
+apply plugin: "org.jetbrains.kotlin.jvm"
 
 applicationDefaultJvmArgs = [
         "-server", "-XX:+AggressiveOpts", "-ea", //"–XX:+UseG1GC",
@@ -17,10 +17,13 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.4'
+    ext.kotlin_version = '1.2-M2'
 
     repositories {
         mavenCentral()
+        maven {
+            url "http://dl.bintray.com/kotlin/kotlin-eap-1.2"
+        }
     }
 
     dependencies {
@@ -31,7 +34,7 @@ buildscript {
 repositories {
     mavenCentral()
     maven {
-        url "http://dl.bintray.com/kotlin/kotlin-eap-1.1"
+        url "http://dl.bintray.com/kotlin/kotlin-eap-1.2"
     }
 }
 
