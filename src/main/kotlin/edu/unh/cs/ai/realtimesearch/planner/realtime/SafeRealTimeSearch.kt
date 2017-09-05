@@ -147,14 +147,15 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
-        // Backup safety (nodes that were identified in the learning step)
-        predecessorSafetyPropagation(safeNodes)
-        safeNodes.clear()
 
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val (targetNode, lastSafeNode) = aStar(sourceState, terminationChecker)
+
+            // Backup safety
+            predecessorSafetyPropagation(safeNodes)
+            safeNodes.clear()
 
             val currentSafeTarget = when (targetSelection) {
                 SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
@@ -329,7 +330,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             val successorNode = getNode(sourceNode, successor)
 
             // check for safety if safe add to the safe nodes
-            if (domain.isSafe(successorNode.state)) {
+            if (domain.isSafe(successorNode.state) || successorNode.safe) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
             }
@@ -458,11 +459,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
 
             node.iteration = iterationCounter
-
-            // Prepare safety propagation
-            if (node.safe) {
-                safeNodes.add(node)
-            }
 
             val currentHeuristicValue = node.heuristic
 
