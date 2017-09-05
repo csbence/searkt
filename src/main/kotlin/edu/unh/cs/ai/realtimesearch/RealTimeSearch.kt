@@ -35,8 +35,9 @@ fun main(args: Array<String>) {
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 ////                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
-            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
+//            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
 //            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
+            domains = listOf(RACETRACK to "input/racetrack/long.track"),
             planners = listOf(SIMPLE_SAFE),
             actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
