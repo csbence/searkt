@@ -29,24 +29,21 @@ fun main(args: Array<String>) {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
     val configurations = generateConfigurations(
-//            domains = listOf(
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track"
+            domains = listOf(
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track",
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
-////                    TRAFFIC to "input/traffic/vehicle0.v"
-//            ),
+//                    TRAFFIC to "input/traffic/vehicle0.v"
+            ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-//            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
-//            domains = listOf(RACETRACK to "input/racetrack/long.track"),
-            planners = listOf(SIMPLE_SAFE),
-            actionDurations = listOf(12800L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            domains = (26..26).map { Domains.TRAFFIC to "input/traffic/50/traffic$it" },
-//            domains = listOf( TRAFFIC to "input/traffic/50/traffic86" ),
+            planners = listOf(SAFE_RTS),
+            actionDurations = listOf(150),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(10, MINUTES),
             expansionLimit = 10000000,
+            stepLimit = 10000000,
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
@@ -55,17 +52,17 @@ fun main(args: Array<String>) {
                     Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT.toString(), listOf(10)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP.toString(), listOf(SimpleSafeSafetyBackup.PREDECESSOR.toString())),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY.toString(), listOf(SimpleSafeSafety.PREFERRED.toString())),
                     Triple(SIMPLE_SAFE, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
-                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY.toString(), listOf(CommitmentStrategy.MULTIPLE.toString())),
+                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION.toString(), listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 5L..5L)
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
             )
     )
 

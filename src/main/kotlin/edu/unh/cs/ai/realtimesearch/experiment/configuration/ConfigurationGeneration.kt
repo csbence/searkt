@@ -29,6 +29,7 @@ fun generateConfigurations(
         lookaheadType: LookaheadType,
         timeLimit: Long,
         expansionLimit: Long,
+        stepLimit: Long,
         domainExtras: List<Triple<Domains, String, Iterable<Long>>>? = null,
         plannerExtras: Iterable<Triple<Planners, String, Iterable<Any>>>? = null): Collection<GeneralExperimentConfiguration> {
 
@@ -42,6 +43,7 @@ fun generateConfigurations(
     configurations = configurations.cartesianProduct(LOOKAHEAD_TYPE.toString(), listOf(lookaheadType.toString())).toMutableList()
     configurations = configurations.cartesianProduct(TIME_LIMIT.toString(), listOf(timeLimit)).toMutableList()
     configurations = configurations.cartesianProduct(EXPANSION_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
+    configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
 
     // Apply planner and domain specific extras
     fun <T> applyExtras(extras: Iterable<Triple<T, String, Iterable<Any>>>?, matchKey: String) {

@@ -48,6 +48,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
     private val commitmentStrategy by lazyData<String>(configuration, COMMITMENT_STRATEGY.toString())
     private val actionDuration by lazyData<Long>(configuration, ACTION_DURATION.toString())
     private val expansionLimit by lazyData<Long>(configuration, EXPANSION_LIMIT.toString())
+    private val stepLimit by lazyData<Long>(configuration, STEP_LIMIT.toString())
 
     /**
      * Runs the experiment
@@ -90,6 +91,10 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
             if (expansionLimit <= planner.expandedNodeCount) {
                 return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the expansion limit: $expansionLimit")
+            }
+
+            if (stepLimit <= actions.size) {
+                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the step limit: $stepLimit")
             }
         }
 
