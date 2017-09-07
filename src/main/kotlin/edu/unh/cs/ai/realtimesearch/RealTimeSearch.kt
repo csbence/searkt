@@ -39,10 +39,10 @@ fun main(args: Array<String>) {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(LSS_LRTA_STAR),
-            actionDurations = listOf(150),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(10),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(10, MINUTES),
+            timeLimit = NANOSECONDS.convert(100, MINUTES),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
