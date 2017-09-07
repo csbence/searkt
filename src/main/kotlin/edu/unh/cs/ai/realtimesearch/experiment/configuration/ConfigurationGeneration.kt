@@ -31,7 +31,7 @@ fun generateConfigurations(
         expansionLimit: Long,
         stepLimit: Long,
         domainExtras: List<Triple<Domains, String, Iterable<Long>>>? = null,
-        plannerExtras: Iterable<Triple<Planners, String, Iterable<Any>>>? = null): Collection<GeneralExperimentConfiguration> {
+        plannerExtras: Iterable<Triple<Planners, Any, Iterable<Any>>>? = null): Collection<GeneralExperimentConfiguration> {
 
     var configurations: Collection<Map<String, Any>> = domains.map {
         mapOf(DOMAIN_NAME.toString() to it.first.toString(), DOMAIN_PATH.toString() to it.second)
@@ -43,19 +43,19 @@ fun generateConfigurations(
     configurations = configurations.cartesianProduct(LOOKAHEAD_TYPE.toString(), listOf(lookaheadType.toString())).toMutableList()
     configurations = configurations.cartesianProduct(TIME_LIMIT.toString(), listOf(timeLimit)).toMutableList()
     configurations = configurations.cartesianProduct(EXPANSION_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
-    configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
+    configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(stepLimit)).toMutableList()
 
     // Apply planner and domain specific extras
-    fun <T> applyExtras(extras: Iterable<Triple<T, String, Iterable<Any>>>?, matchKey: String) {
+    fun <T> applyExtras(extras: Iterable<Triple<T, Any, Iterable<Any>>>?, matchKey: Any) {
         extras?.forEach { (matchValue, key, values) ->
-            val irrelevantConfigurations = configurations.filter { it[matchKey] != matchValue.toString() }
-            val relevantConfigurations = configurations.filter { it[matchKey] == matchValue.toString() }
+            val irrelevantConfigurations = configurations.filter { it[matchKey.toString()] != matchValue.toString() }
+            val relevantConfigurations = configurations.filter { it[matchKey.toString()] == matchValue.toString() }
 
-            configurations = irrelevantConfigurations + relevantConfigurations.cartesianProduct(key, values).toMutableList()
+            configurations = irrelevantConfigurations + relevantConfigurations.cartesianProduct(key.toString(), values).toMutableList()
         }
     }
-    applyExtras(plannerExtras, ALGORITHM_NAME.toString())
-    applyExtras(domainExtras, DOMAIN_NAME.toString())
+    applyExtras(plannerExtras, ALGORITHM_NAME)
+    applyExtras(domainExtras, DOMAIN_NAME)
 
     return configurations.map { GeneralExperimentConfiguration(HashMap(it)) }
 }

@@ -131,7 +131,7 @@ object ConfigurationExecutor {
             return ExperimentResult(configuration.valueStore, "Timeout")
         }
 
-        logger.info("Experiment successful.")
+        logger.info("Experiment execution is done.")
 
         return experimentResult!!
     }

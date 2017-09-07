@@ -30,14 +30,15 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
+                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
+//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track",
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SAFE_RTS),
+            planners = listOf(LSS_LRTA_STAR),
             actionDurations = listOf(150),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
@@ -45,21 +46,21 @@ fun main(args: Array<String>) {
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
-                    Triple(SAFE_RTS, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO.toString(), listOf(1.0)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
-                    Triple(S_ZERO, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
-                    Triple(S_ZERO, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP.toString(), listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY.toString(), listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT.toString(), listOf(10)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP.toString(), listOf(SimpleSafeSafetyBackup.PREDECESSOR.toString())),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY.toString(), listOf(SimpleSafeSafety.PREFERRED.toString())),
-                    Triple(SIMPLE_SAFE, TARGET_SELECTION.toString(), listOf(SAFE_TO_BEST.toString())),
-                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION.toString(), listOf(SimpleSafeVersion.TWO.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY.toString(), listOf(commitmentStrategy))
+                    Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
+                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
+                    Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(S_ZERO, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
+                    Triple(S_ZERO, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
+                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SimpleSafeSafetyBackup.PREDECESSOR.toString())),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
+                    Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
+                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
@@ -84,7 +85,7 @@ fun main(args: Array<String>) {
 
     File("output").mkdir()
     PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    println("${results}")
+    println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())
