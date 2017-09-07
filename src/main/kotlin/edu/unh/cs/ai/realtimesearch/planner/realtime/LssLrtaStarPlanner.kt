@@ -213,6 +213,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
+
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {

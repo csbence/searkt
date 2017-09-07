@@ -16,8 +16,8 @@ import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.system.measureTimeMillis
 import kotlin.Long.Companion.MAX_VALUE
+import kotlin.system.measureTimeMillis
 
 /**
  * SimpleSafe as described in "Avoiding Dead Ends in Real-time Heuristic Search"
@@ -230,6 +230,12 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             val successorNode = getNode(sourceNode, successor)
 
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
+
             // update the node depth to be one mor than the parent
             successorNode.depth = sourceNode.depth + 1
 
@@ -269,6 +275,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             // we always add the node doing a BFS
             openListQueue.add(successorNode)
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
+
         return foundSafeNode
     }
 

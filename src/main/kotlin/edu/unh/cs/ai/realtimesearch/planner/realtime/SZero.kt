@@ -229,6 +229,12 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
 
             val successorNode = getNode(sourceNode, successor)
 
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
+
             // check for safety if safe add to the safe nodes
             if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
@@ -278,6 +284,8 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 }
             }
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**

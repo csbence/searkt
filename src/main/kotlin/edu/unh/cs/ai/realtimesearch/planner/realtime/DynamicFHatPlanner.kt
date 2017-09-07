@@ -256,6 +256,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
+
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -314,6 +320,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             nextHeuristicError += (localHeuristicError - nextHeuristicError) / expandedNodeCount
             nextDistanceError += (localDistanceError - nextDistanceError) / expandedNodeCount
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**

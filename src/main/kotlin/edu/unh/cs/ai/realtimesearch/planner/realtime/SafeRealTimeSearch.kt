@@ -321,11 +321,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
-//            if (successorNode.heuristic == Double.POSITIVE_INFINITY
-//                    && successorNode.iteration != iterationCounter) {
-//                // Ignore this successor as it is a dead end
-//                continue
-//            }
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
 
             // check for safety if safe add to the safe nodes
             if (successorNode.safe || domain.isSafe(successorNode.state)) {
