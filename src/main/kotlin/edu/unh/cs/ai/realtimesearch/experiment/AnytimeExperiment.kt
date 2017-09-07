@@ -51,6 +51,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
         var totalPlanningTime = 0L
+        var iterationCount = 0L
 
         while (!domain.isGoal(currentState)) {
             logger.debug { "Start anytime search" }
@@ -123,6 +124,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningTime,
+                iterationCount = iterationCount,
                 actionExecutionTime = totalExecutionNanoTime,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = idlePlanningTime,

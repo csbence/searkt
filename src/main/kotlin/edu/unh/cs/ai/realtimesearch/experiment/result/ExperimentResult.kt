@@ -28,6 +28,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
                 expandedNodes: Int,
                 generatedNodes: Int,
                 planningTime: Long,
+                iterationCount: Long,
                 actionExecutionTime: Long,
                 goalAchievementTime: Long,
                 idlePlanningTime: Long,
@@ -40,6 +41,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         this.expandedNodes = expandedNodes
         this.generatedNodes = generatedNodes
         this.planningTime = planningTime
+        this.iterationCount = iterationCount
         this.actionExecutionTime = actionExecutionTime
         this.goalAchievementTime = goalAchievementTime
         this.idlePlanningTime = idlePlanningTime
@@ -60,6 +62,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
     var expandedNodes: Int by valueStore
     var generatedNodes: Int by valueStore
     var planningTime: Long by valueStore
+    var iterationCount: Long by valueStore
     var actionExecutionTime: Long by valueStore
     var goalAchievementTime: Long by valueStore
     var idlePlanningTime: Long by valueStore

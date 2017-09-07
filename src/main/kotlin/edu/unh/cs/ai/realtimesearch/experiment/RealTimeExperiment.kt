@@ -59,6 +59,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
         var currentState: StateType = initialState
 
         var totalPlanningNanoTime = 0L
+        var iterationCount = 0L
         val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         var timeBound = actionDuration
@@ -68,6 +69,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.resetTo(timeBound)
 
+                iterationCount++
                 actionList = planner.selectAction(currentState, terminationChecker)
 
                 if (actionList.size > 1 && singleStepLookahead) {
@@ -117,6 +119,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,
+                iterationCount = iterationCount,
                 actionExecutionTime = totalExecutionNanoDuration,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,

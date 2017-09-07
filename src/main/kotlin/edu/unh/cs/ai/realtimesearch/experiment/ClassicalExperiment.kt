@@ -64,6 +64,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,
+                iterationCount = 1,
                 actionExecutionTime = pathLength * configuration.actionDuration,
                 goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
                 idlePlanningTime = planningTime,
