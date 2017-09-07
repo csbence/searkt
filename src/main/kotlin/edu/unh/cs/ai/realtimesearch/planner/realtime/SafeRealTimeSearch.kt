@@ -333,9 +333,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 successorNode.safe = true
             }
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
-
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -345,6 +342,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -377,7 +377,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
         }
 
-//        sourceNode.heuristic = Double.POSITIVE_INFINITY
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     private fun getUninitializedNode(state: StateType): Node<StateType> {

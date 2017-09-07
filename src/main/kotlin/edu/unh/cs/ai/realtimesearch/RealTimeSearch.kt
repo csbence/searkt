@@ -30,16 +30,16 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
+//                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track",
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(LSS_LRTA_STAR),
-            actionDurations = listOf(10),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(SAFE_RTS),
+            actionDurations = listOf(150),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(100, MINUTES),

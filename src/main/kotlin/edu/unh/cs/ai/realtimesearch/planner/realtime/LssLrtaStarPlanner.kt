@@ -119,6 +119,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
+        println(sourceState)
 
         if (rootState == null) {
             rootState = sourceState
@@ -212,9 +213,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
-
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -224,6 +222,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -255,6 +256,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             }
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**

@@ -247,7 +247,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         expandedNodeCount += 1
 
         // Select the best children to update the distance and heuristic error
-        var bestChildNode: Node<StateType>? = null
+        var bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -255,9 +255,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
-
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -268,6 +265,9 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {

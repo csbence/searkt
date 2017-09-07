@@ -235,9 +235,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 successorNode.safe = true
             }
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
-
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -247,6 +244,9 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -312,7 +312,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     /**
      * Backs up safety through the parent pointers
      */
-    private fun backUpSafetyThroughParents(): Unit {
+    private fun backUpSafetyThroughParents() {
         while (safeNodes.isNotEmpty()) {
             val safeNode = safeNodes.first()
             safeNodes.remove(safeNode)

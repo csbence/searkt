@@ -223,9 +223,6 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
                 safeNodes.add(successorNode)
             }
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
-
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
                 successorNode.apply {
@@ -235,6 +232,9 @@ class SOnePlanner<StateType : State<StateType>>(domain: Domain<StateType>) : Rea
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
