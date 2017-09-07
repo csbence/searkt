@@ -194,9 +194,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() && currentIteration < depthBound) {
-            openListQueue.peek()?.let {
-                if (domain.isGoal(it.state)) return openListQueue
-            } ?: throw GoalNotReachableException ("Open list is empty during k-BFS")
+
+            val topNode = openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+            if (domain.isGoal(topNode.state)) return openListQueue
 
             val foundSafeNode = expandFromNode(openListQueue.pop()!!, openListQueue)
             terminationChecker.notifyExpansion()
@@ -209,9 +209,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
         }
 
-        openListQueue.peek()?.let {
-            return openListQueue
-        } ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+        openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+        return openListQueue
     }
 
     /**

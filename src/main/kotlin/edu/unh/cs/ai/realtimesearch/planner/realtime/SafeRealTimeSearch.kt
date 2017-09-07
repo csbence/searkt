@@ -206,9 +206,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
 
-            openList.peek()?.let {
-                if (domain.isGoal(it.state)) return it to null // Return the goal without removing from the open list
-            } ?: throw GoalNotReachableException("Open list is empty.")
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode to topNode
 
             currentNode = openList.pop()!!
 
@@ -235,16 +234,16 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
                 val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
-                val topNode = openList.peek() ?: currentNode ?: throw GoalNotReachableException("Goal is not reachable")
-                val safetyProofDuration = proveSafety(topNode, safetyTerminationChecker)
+                val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
+                val safetyProofDuration = proveSafety(nextTopNode, safetyTerminationChecker)
 
                 terminationChecker.notifyExpansion(safetyProofDuration)
                 totalSafetyDuration += safetyProofDuration
 
-                if (topNode.safe) {
+                if (nextTopNode.safe) {
                     // If proof was successful reset the bucket
                     costBucket = 10
-                    safeNodes.add(topNode)
+                    safeNodes.add(nextTopNode)
                 } else {
                     // Increase the
                     costBucket *= 2

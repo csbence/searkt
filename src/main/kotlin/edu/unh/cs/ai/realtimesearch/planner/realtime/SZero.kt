@@ -187,9 +187,8 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
 
-            openList.peek()?.let {
-                if (domain.isGoal(it.state)) return it
-            } ?: throw GoalNotReachableException("Open list is empty.")
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode
 
             expandFromNode(openList.pop()!!)
             terminationChecker.notifyExpansion()

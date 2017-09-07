@@ -210,10 +210,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            while (!terminationChecker.reachedTermination()) {
                 aStarPopCounter++
+
+                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+                if (domain.isGoal(topNode.state)) return topNode
+
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
             }
         }
 
@@ -225,7 +230,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         logger.debug { "Done with AStar at $currentNode" }
 
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
