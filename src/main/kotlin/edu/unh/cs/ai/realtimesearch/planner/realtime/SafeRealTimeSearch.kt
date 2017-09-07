@@ -52,9 +52,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         val f: Double
             get() = cost + heuristic
 
-        override fun hashCode(): Int {
-            return state.hashCode()
-        }
+        override fun hashCode(): Int = state.hashCode()
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
@@ -147,7 +145,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
 
-
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
@@ -193,9 +190,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Pair<Node<StateType>, Node<StateType>?> {
-        logger.debug { "Starting A* from state: $state" }
-        initializeAStar(state)
+    private fun aStar(sourceState: StateType, terminationChecker: TerminationChecker): Pair<Node<StateType>, Node<StateType>?> {
+        logger.debug { "Starting A* from sourceState: $sourceState" }
+        initializeAStar(sourceState)
 
         var lastSafeNode: Node<StateType>? = null
 
@@ -219,6 +216,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 currentNode.safe = true
             }
 
+            if (currentNode.safe) {
+                safeNodes.add(currentNode)
+                lastSafeNode = currentNode
+            }
+
             //Explore
             currentExpansionDuration += measureLong(terminationChecker::elapsed) {
                 expandFromNode(currentNode)
@@ -234,19 +236,18 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
                 val topNode = openList.peek() ?: currentNode ?: throw GoalNotReachableException("Goal is not reachable")
-                val (safeNodeCandidate, safetyProofDuration) = proveSafety(topNode, safetyTerminationChecker)
+                val safetyProofDuration = proveSafety(topNode, safetyTerminationChecker)
 
                 terminationChecker.notifyExpansion(safetyProofDuration)
                 totalSafetyDuration += safetyProofDuration
 
-                lastSafeNode = if (safeNodeCandidate != null) {
+                if (topNode.safe) {
                     // If proof was successful reset the bucket
                     costBucket = 10
-                    safeNodeCandidate
+                    safeNodes.add(topNode)
                 } else {
                     // Increase the
                     costBucket *= 2
-                    lastSafeNode
                 }
             }
         }
@@ -257,38 +258,30 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
 
-    private fun proveSafety(sourceNode: Node<StateType>, terminationChecker: TerminationChecker): Pair<Node<StateType>?, Long> {
-        var targetSafeNode: Node<StateType>? = null
-//        println("Prove safety of $sourceNode")
+    private fun proveSafety(sourceNode: Node<StateType>, terminationChecker: TerminationChecker): Long {
+        return measureLong(terminationChecker::elapsed) {
+            when {
+                sourceNode.safe -> {}
+                domain.isSafe(sourceNode.state) -> sourceNode.safe = true
+                else -> {
+                    val safetyProof = isComfortable(
+                            sourceNode.state,
+                            terminationChecker,
+                            domain,
+                            { state -> nodes[state]?.safe ?: false })
 
-        val safetyDuration = measureLong(terminationChecker::elapsed) {
-            targetSafeNode = if (sourceNode.safe) {
-                sourceNode
-            } else if (domain.isSafe(sourceNode.state)) {
-                sourceNode.safe = true
-//                sourceNode.proofParent = sourceNode
-                sourceNode
-            } else {
-                isComfortable<StateType>(sourceNode.state, terminationChecker, domain, { state -> nodes[state]?.safe ?: false })?.run {
-                    val parentState = firstOrNull()
+                    safetyProof?.run {
+                        // Mark all nodes as safe
+                        forEach {
+                            val uninitializedNode = getUninitializedNode(it)
+                            uninitializedNode.safe = true
+                        }
 
-                    parentState?.let {
-                        val uninitializedNode = getUninitializedNode(it)
-                        uninitializedNode.safe = true
+                        sourceNode.safe = true
                     }
-
-                    drop(1).forEach {
-                        val uninitializedNode = getUninitializedNode(it)
-
-                        uninitializedNode.safe = true
-
-                    }
-
-                    sourceNode
                 }
             }
         }
-        return Pair(targetSafeNode, safetyDuration)
     }
 
     private fun initializeAStar(state: StateType) {
@@ -322,15 +315,20 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount += 1
 
-        val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
 
+//            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+//                    && successorNode.iteration != iterationCounter) {
+//                // Ignore this successor as it is a dead end
+//                continue
+//            }
+
             // check for safety if safe add to the safe nodes
-            if (domain.isSafe(successorNode.state) || successorNode.safe) {
+            if (successorNode.safe || domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
             }
@@ -354,7 +352,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // only generate those state that are not visited yet or whose cost value are lower than this path
-            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            val successorGValueFromCurrent = sourceNode.cost + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
@@ -378,6 +376,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             }
         }
+
+//        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     private fun getUninitializedNode(state: StateType): Node<StateType> {
