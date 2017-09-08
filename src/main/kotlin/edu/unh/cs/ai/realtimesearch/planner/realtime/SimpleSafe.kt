@@ -141,10 +141,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
 
-        val nodesGenerated = breadthFirstSearch(sourceState, terminationChecker, depthBound)
+        breadthFirstSearch(sourceState, terminationChecker, depthBound)
 
         if(versionNumber == SimpleSafeVersion.ONE) {
-            resetSearchTree(nodesGenerated)
+            resetSearchTree()
         }
 
 //        logger.debug { "Last BFS node $lastBreadthFirstNode" }
@@ -181,23 +181,23 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      * Runs local breadth-first search then clears the search tree
      * except for the safe nodes we learn about up to a depth k
      */
-    private fun breadthFirstSearch(state: StateType, terminationChecker: TerminationChecker, depthBound: Int): Queue<Node<StateType>> {
-        val openListQueue = LinkedList<Node<StateType>>()
+    private fun breadthFirstSearch(state: StateType, terminationChecker: TerminationChecker, depthBound: Int) {
+        val breadthFirstFrontier = ArrayDeque<Node<StateType>>()
         val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
         nodes[state] = node
-        openListQueue.add(node)
+         breadthFirstFrontier.add(node)
 
         var currentIteration = 0
         logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() && currentIteration < depthBound) {
 
-            val topNode = openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
-            if (domain.isGoal(topNode.state)) return openListQueue
+            val topNode =  breadthFirstFrontier.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+            if (domain.isGoal(topNode.state)) return
 
-            val foundSafeNode = expandFromNode(openListQueue.pop()!!, openListQueue)
+            val foundSafeNode = expandFromNode( breadthFirstFrontier.pop()!!,  breadthFirstFrontier)
             terminationChecker.notifyExpansion()
-            currentIteration = openListQueue.peek()?.depth ?: throw GoalNotReachableException("Open list is empty during k-BFS")
+            currentIteration =  breadthFirstFrontier.peek()?.depth ?: throw GoalNotReachableException("Open list is empty during k-BFS")
 
             if(versionNumber == SimpleSafeVersion.TWO) {
                 if(foundSafeNode) {
@@ -205,9 +205,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 }
             }
         }
-
-        openListQueue.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
-        return openListQueue
+        breadthFirstFrontier.peek() ?: throw GoalNotReachableException("Open list is empty during k-BFS")
     }
 
     /**
@@ -293,9 +291,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
 
-            openList.peek()?.let {
-                if (domain.isGoal(it.state)) return it
-            } ?: throw GoalNotReachableException( "Open list is empty")
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode
 
             expandFromNode(openList.pop()!!)
             terminationChecker.notifyExpansion()
@@ -311,10 +308,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         openList.reorder(fValueComparator)
     }
 
-    private fun resetSearchTree(openListQueue: Queue<Node<StateType>>) {
+    private fun resetSearchTree() {
         openList.clear()
         nodes.clear()
-        openListQueue.clear()
         openList.reorder(fValueComparator)
     }
 
