@@ -197,7 +197,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             val foundSafeNode = expandFromNode(openListQueue.pop()!!, openListQueue)
             terminationChecker.notifyExpansion()
-            currentIteration = openListQueue.peek().depth
+            currentIteration = topNode.depth
 
             if(versionNumber == SimpleSafeVersion.TWO) {
                 if(foundSafeNode) {
