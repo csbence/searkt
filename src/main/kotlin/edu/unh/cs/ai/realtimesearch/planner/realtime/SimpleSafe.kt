@@ -197,7 +197,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             val foundSafeNode = expandFromNode(openListQueue.pop()!!, openListQueue)
             terminationChecker.notifyExpansion()
-            currentIteration = topNode.depth
+            currentIteration = openListQueue.peek()?.depth ?: throw GoalNotReachableException("Open list is empty during k-BFS")
 
             if(versionNumber == SimpleSafeVersion.TWO) {
                 if(foundSafeNode) {
