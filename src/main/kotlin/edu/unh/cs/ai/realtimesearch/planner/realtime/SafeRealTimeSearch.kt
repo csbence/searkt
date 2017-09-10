@@ -124,6 +124,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
 
+        println(iterationCounter)
         if (rootState == null) {
             rootState = sourceState
         } else if (sourceState != rootState) {
@@ -155,6 +156,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             safeNodes.clear()
 
             val currentSafeTarget = when (targetSelection) {
+                // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
                 SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
             }
@@ -215,7 +217,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
                 currentNode.safe = true
             }
 
-            if (currentNode.safe) {
+            if (currentNode.safe && currentNode != sourceState) {
                 safeNodes.add(currentNode)
                 lastSafeNode = currentNode
             }
