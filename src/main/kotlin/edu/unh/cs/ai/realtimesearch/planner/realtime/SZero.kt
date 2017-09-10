@@ -183,7 +183,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
-//        val expandedNodes = measureInt({ expandedNodeCount }) {
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
 
@@ -193,16 +192,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             expandFromNode(openList.pop()!!)
             terminationChecker.notifyExpansion()
         }
-//        }
-
-//        if (node == currentNode && !domain.isGoal(currentNode.state)) {
-        //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-//        } else {
-//            logger.debug { "A* : expanded $expandedNodes nodes" }
-//        }
-
-//        logger.debug { "Done with AStar at $currentNode" }
-
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
