@@ -110,7 +110,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
         logger.info {
             "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                    "and ${planner.generatedNodeCount} generated nodes in $totalPlanningNanoTime ns. " +
                     "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
