@@ -54,16 +54,15 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         override fun hashCode(): Int = state.hashCode()
 
-        override fun equals(other: Any?): Boolean {
-            if (other != null && other is Node<*>) {
-                return state == other.state
-            }
-            return false
+        override fun equals(other: Any?): Boolean = when (other) {
+            null -> false
+            is Node<*> -> state == other.state
+            is State<*> -> state == other
+            else -> false
         }
 
-        override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
-        }
+        override fun toString(): String =
+                "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
     }
 
     private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
@@ -124,7 +123,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
 
-        println(iterationCounter)
         if (rootState == null) {
             rootState = sourceState
         } else if (sourceState != rootState) {
