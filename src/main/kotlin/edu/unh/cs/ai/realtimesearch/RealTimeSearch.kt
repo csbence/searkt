@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/all/16"
+                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(WEIGHTED_A_STAR),
-            actionDurations = listOf(1000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = TIME,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(100, MINUTES),
