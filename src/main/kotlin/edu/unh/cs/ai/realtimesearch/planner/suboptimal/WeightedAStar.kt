@@ -148,7 +148,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             actions.add(iterationNode.action)
             iterationNode = iterationNode.parent!!
         }
-        assert(actions.first() == startState)
+        assert(startState == iterationNode.state )
         return actions.reversed()
     }
 }
