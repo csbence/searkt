@@ -5,7 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import java.lang.Math.abs
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
-    val goalState: SlidingTilePuzzle4State by lazy {
+    private val goalState: SlidingTilePuzzle4State by lazy {
         val state = SlidingTilePuzzle4State(0, 0, 0.0)
         for (i in 0..15) {
             state[i] = i.toByte()
@@ -49,20 +49,18 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         return null
     }
 
-    override fun heuristic(state: SlidingTilePuzzle4State): Double {
-        return state.heuristic * actionDuration
-    }
+    override fun heuristic(state: SlidingTilePuzzle4State): Double = state.heuristic * actionDuration
 
     override fun heuristic(startState: SlidingTilePuzzle4State, endState: SlidingTilePuzzle4State): Double {
         var manhattanSum = 0.0
-        var zero: Byte = 0
+        val zero: Byte = 0
 
-        for (xStart in 0..size - 1) {
-            for (yStart in 0..size - 1) {
+        for (xStart in 0 until size) {
+            for (yStart in 0 until size) {
                 val value = startState[startState.getIndex(xStart, yStart)]
                 if (value == zero) continue
 
-                for (endIndex in 0..size * size - 1) {
+                for (endIndex in 0 until size * size) {
                     if (endState[endIndex] != value) {
                         continue
                     }
@@ -80,10 +78,10 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     fun initialHeuristic(state: SlidingTilePuzzle4State): Double {
         var manhattanSum = 0.0
-        var zero: Byte = 0
+        val zero: Byte = 0
 
-        for (x in 0..size - 1) {
-            for (y in 0..size - 1) {
+        for (x in 0 until size) {
+            for (y in 0 until size) {
                 val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 

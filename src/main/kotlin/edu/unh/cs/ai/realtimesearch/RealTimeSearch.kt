@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMM
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
@@ -20,6 +21,7 @@ import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import javax.security.auth.login.Configuration
 
 class Input
 
@@ -30,17 +32,18 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
+                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/all/16"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
-                    Domains.RACETRACK to "input/racetrack/barto-big.track"
+//                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SAFE_RTS),
-            actionDurations = listOf(150),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            terminationType = EXPANSION,
+            planners = listOf(WEIGHTED_A_STAR),
+            actionDurations = listOf(1000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = TIME,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(100, MINUTES),
             expansionLimit = 10000000,
@@ -60,7 +63,8 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy))
+                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)

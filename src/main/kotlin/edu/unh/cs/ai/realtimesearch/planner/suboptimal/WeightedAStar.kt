@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
-import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -50,7 +50,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(10000000, fValueComparator)
+    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
 
 
     override fun plan(state: StateType): List<Action> {
@@ -66,13 +66,49 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         while (openList.isNotEmpty()) {
             expandedNodeCount++
 
-            val currentNode = openList.pop()
-            if(!currentNode.open)
-        }
+            val currentNode = openList.peek()
+            if(!(currentNode?.open)!!) {
+               continue // if node is not open skip it
+            }
 
+            if (domain.isGoal(currentNode.state)) {
+                executionNanoTime = System.nanoTime() - startTime
+                return extractPlan(currentNode)
+            }
+
+            openList.pop() // remove current node to generate successors
+            // expand with duplicate detection
+
+            domain.successors(currentNode.state).forEach { successor ->
+                if(successor.state != currentNode.state) {
+                    generatedNodeCount++
+
+                    val existingSuccessorNode = nodes[successor.state]
+                    val newCost = successor.actionCost + currentNode.cost
+
+                    when {
+                        existingSuccessorNode == null -> {
+                            val newSuccessorNode = Node(successor.state,
+                                    weight * domain.heuristic(successor.state), newCost,successor.actionCost,
+                                    successor.action,iterationCounter,currentNode)
+                            nodes[newSuccessorNode.state] = newSuccessorNode
+                            openList.add(newSuccessorNode)
+                        }
+                        existingSuccessorNode.open && existingSuccessorNode.cost > newCost -> {
+                            val newSuccessorNode = Node(successor.state,
+                                    weight * domain.heuristic(successor.state), newCost, successor.actionCost,
+                                    successor.action, iterationCounter, currentNode)
+                            nodes[newSuccessorNode.state] = newSuccessorNode
+                            openList.add(newSuccessorNode)
+                        }
+                    }
+                }
+            }
+        }
+        throw GoalNotReachableException()
     }
 
-    fun extractPlan(solutionNode: Node<StateType>): List<Action> {
+    private fun extractPlan(solutionNode: Node<StateType>): List<Action> {
         val actions = arrayListOf<Action>()
         var iterationNode = solutionNode
         while(iterationNode.parent != iterationNode) {
