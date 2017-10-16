@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import org.junit.Test
@@ -118,6 +119,39 @@ class WeightedAStarTest {
         println(plan)
         println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
+        println("timesReplaced: ${aStarAgent.timesReplaced}")
+    }
+
+    @Test
+    fun testWeightedAStarGridWorld1() {
+        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/cups.vw")
+        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
+        val initialState = gridWorld.initialState
+        val aStarAgent = WeightedAStar(gridWorld.domain, 1.0)
+        val plan = aStarAgent.plan(initialState)
+        var currentState = initialState
+        plan.forEach { action ->
+            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
+        }
+        println(plan)
+        println(plan.size)
+        println("timesReplaced: ${aStarAgent.timesReplaced}")
+    }
+
+
+    @Test
+    fun testWeightedAStarGridWorld2() {
+        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw")
+        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
+        val initialState = gridWorld.initialState
+        val aStarAgent = WeightedAStar(gridWorld.domain, 1.0)
+        val plan = aStarAgent.plan(initialState)
+        var currentState = initialState
+        plan.forEach { action ->
+            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
+        }
+        println(plan)
+        println(plan.size)
         println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 }
