@@ -35,7 +35,8 @@ object SlidingTilePuzzleIO {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(dimension, actionDuration)
-        val slidingTilePuzzleState = SlidingTilePuzzle4State(0, 0, 0.0)
+        val tiles = ByteArray(16, {0.toByte()})
+        val slidingTilePuzzleState = SlidingTilePuzzle4State(0, tiles, 0.0)
 
         try {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()

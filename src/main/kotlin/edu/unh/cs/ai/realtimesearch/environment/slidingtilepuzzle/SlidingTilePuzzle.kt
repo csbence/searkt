@@ -2,17 +2,16 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
+    val logger = LoggerFactory.getLogger(SlidingTilePuzzle::class.java)!!
+
     private val goalState: SlidingTilePuzzle4State by lazy {
-        val state = SlidingTilePuzzle4State(0, 0, 0.0)
-        for (i in 0..15) {
-            state[i] = i.toByte()
-        }
-
+        val tiles = ByteArray(16, { it.toByte() })
+        val state = SlidingTilePuzzle4State(0, tiles, 0.0)
         assert(initialHeuristic(state) == 0.0)
-
         state
     }
 
@@ -32,13 +31,13 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     private fun successorState(state: SlidingTilePuzzle4State, relativeX: Int, relativeY: Int): SlidingTilePuzzle4State? {
         val newZeroIndex = state.zeroIndex + state.getIndex(relativeX, relativeY)
-        val savedTiles = state.tiles
+        val savedTiles = ByteArray(16, {state.tiles[it]})
 
         if (newZeroIndex >= 0 && newZeroIndex < size * size) {
             state[state.zeroIndex] = state[newZeroIndex]
             state[newZeroIndex] = 0
 
-            val modifiedTiles = state.tiles
+            val modifiedTiles = ByteArray(16, {state.tiles[it]})
             val heuristic = initialHeuristic(state)
 
             state.tiles = savedTiles

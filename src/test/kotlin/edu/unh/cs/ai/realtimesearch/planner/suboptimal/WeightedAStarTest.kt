@@ -1,46 +1,14 @@
-package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
+package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
-import edu.unh.cs.ai.realtimesearch.Input
-import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.planner.Planners
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertTrue
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
-class AStarPlannerTest {
-
-//    @Test
-//    fun testOptimality() {
-//        val input = Input::class.java.classLoader.getResourceAsStream("input/vacuum/squiggle.vw") ?: throw RuntimeException("Resource not found")
-//        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-//        val manualConfiguration = GeneralExperimentConfiguration(
-//                                Domains.SLIDING_TILE_PUZZLE.toString(),
-//                Domains.GRID_WORLD.toString(),
-//                rawDomain,
-//                Planners.A_STAR.toString(),
-//                "time")
-//
-//        manualConfiguration[Configurations.ACTION_DURATION.toString()] = 10L
-//        manualConfiguration[Configurations.TIME_LIMIT.toString()] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
-//
-//        val result = ConfigurationExecutor.executeConfiguration(manualConfiguration)
-//        assertTrue(result.pathLength == 15L)
-//
-//    }
-
-
+class WeightedAStarTest {
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
         temp.deleteOnExit()
@@ -62,7 +30,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         kotlin.test.assertTrue { aStarAgent.plan(initialState).isEmpty() }
     }
 
@@ -72,7 +40,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -85,7 +53,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -98,11 +66,12 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
+        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
     @Test
@@ -111,11 +80,12 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
+        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
     @Test
@@ -124,7 +94,7 @@ class AStarPlannerTest {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
             val plan = aStarAgent.plan(initialState)
             var currentState = initialState
             plan.forEach { action ->
@@ -132,6 +102,7 @@ class AStarPlannerTest {
             }
             println(plan)
             println(plan.size)
+            println("timesReplaced: ${aStarAgent.timesReplaced}")
         }
     }
 
@@ -141,11 +112,12 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
         val plan = aStarAgent.plan(initialState)
         println("plan length: ${plan.size}")
         println(plan)
         println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
+        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 }

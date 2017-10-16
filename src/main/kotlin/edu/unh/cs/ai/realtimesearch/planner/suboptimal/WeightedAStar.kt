@@ -14,7 +14,6 @@ import java.util.HashMap
 class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double = 1.0) : ClassicalPlanner<StateType>() {
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
-                                             var iteration: Long,
                                              var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
 
         override var index: Int = -1
@@ -32,11 +31,12 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override fun hashCode(): Int = state.hashCode()
 
         override fun toString(): String =
-                "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
+                "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
+    var timesReplaced = 0
+
     private val logger = LoggerFactory.getLogger(WeightedAStar::class.java)
-    private var iterationCounter = 0L
 
     private val fValueComparator = Comparator<WeightedAStar.Node<StateType>> { lhs, rhs ->
         when {
@@ -51,12 +51,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
     private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
 
-    private fun initializeAStar(): Long {
-        iterationCounter++
-        openList.clear()
-        openList.reorder(fValueComparator)
-        return System.currentTimeMillis()
-    }
+    private fun initializeAStar(): Long = System.currentTimeMillis()
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -65,12 +60,11 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             generatedNodeCount++
             val undiscoveredNode = Node(
                     state = successorState,
-                    heuristic = domain.heuristic(successorState),
+                    heuristic = weight * domain.heuristic(successorState),
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Long.MAX_VALUE,
-                    iteration = iterationCounter
+                    cost = Long.MAX_VALUE
             )
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -85,26 +79,27 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
-            if (successorNode.heuristic == Double.POSITIVE_INFINITY
-                    && successorNode.iteration != iterationCounter) {
-                continue
-            }
-
-            if (successorNode.iteration != iterationCounter) {
-                successorNode.apply {
-                    iteration = iterationCounter
-                    cost = Long.MAX_VALUE
-                }
-            }
-
+//            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+//                    && successorNode.iteration != iterationCounter) {
+//                continue
+//            }
+//
+//            if (successorNode.iteration != iterationCounter) {
+//                successorNode.apply {
+//                    iteration = iterationCounter
+//                    cost = Long.MAX_VALUE
+//                }
+//            }
+//
             // skip if we have our parent as a successor
             if (successorState == sourceNode.parent?.state) {
                 continue
             }
 
-            // only generate states which have no been visited or with a cheaper cost
+            // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
+                assert(successorNode.state == successor.state)
                 successorNode.apply {
                     cost = successorGValueFromCurrent
                     parent = sourceNode
@@ -114,18 +109,18 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 if (!successorNode.open) {
                     openList.add(successorNode)
                 } else {
+                    timesReplaced++
                     openList.update(successorNode)
                 }
             }
         }
-        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     override fun plan(state: StateType): List<Action> {
         val startTime = initializeAStar()
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
+        var currentNode: Node<StateType>
         nodes[state] = node
-        var currentNode = node
         openList.add(node)
         generatedNodeCount++
 
