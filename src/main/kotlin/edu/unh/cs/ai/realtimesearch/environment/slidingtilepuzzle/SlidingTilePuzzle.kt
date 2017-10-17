@@ -93,7 +93,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     override fun distance(state: SlidingTilePuzzle4State) = state.heuristic
 
-    override fun isGoal(state: SlidingTilePuzzle4State) = state.heuristic == 0.0
+    override fun isGoal(state: SlidingTilePuzzle4State) = state.heuristic == 0.0 && state == goalState
 
     override fun getGoals(): List<SlidingTilePuzzle4State> = listOf(goalState)
 

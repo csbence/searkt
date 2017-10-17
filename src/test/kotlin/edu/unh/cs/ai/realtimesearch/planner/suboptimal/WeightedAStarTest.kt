@@ -141,7 +141,7 @@ class WeightedAStarTest {
 
     @Test
     fun testWeightedAStarGridWorld2() {
-        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/empty.vw")
+        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")
         val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
         val initialState = gridWorld.initialState
         val aStarAgent = WeightedAStar(gridWorld.domain, 1.0)
