@@ -19,7 +19,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzle4State>> = arrayListOf()
 
         for (action in SlidingTilePuzzleAction.values()) {
-            val successorState = successorState(state, action.relativeX, action.relativeY)
+            val successorState = successorState(state, action.relativeX, action.relativeY, action)
 
             if (successorState != null) {
                 successorBundles.add(SuccessorBundle(successorState, action, actionDuration))
@@ -29,15 +29,21 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         return successorBundles
     }
 
-    private fun successorState(state: SlidingTilePuzzle4State, relativeX: Int, relativeY: Int): SlidingTilePuzzle4State? {
+    private fun successorState(state: SlidingTilePuzzle4State, relativeX: Int, relativeY: Int, action: SlidingTilePuzzleAction): SlidingTilePuzzle4State? {
         val newZeroIndex = state.zeroIndex + state.getIndex(relativeX, relativeY)
-        val savedTiles = ByteArray(16, {state.tiles[it]})
+        val actionAllowed = when (action) {
+            SlidingTilePuzzleAction.NORTH -> state.zeroIndex >= size
+            SlidingTilePuzzleAction.SOUTH -> state.zeroIndex < ((size * size) - size)
+            SlidingTilePuzzleAction.WEST -> (state.zeroIndex % size) > 0
+            SlidingTilePuzzleAction.EAST -> (state.zeroIndex % size) < (size - 1)
+        }
+        val savedTiles = ByteArray(16, { state.tiles[it] })
 
-        if (newZeroIndex >= 0 && newZeroIndex < size * size) {
+        if (newZeroIndex >= 0 && newZeroIndex < size * size && actionAllowed) {
             state[state.zeroIndex] = state[newZeroIndex]
             state[newZeroIndex] = 0
 
-            val modifiedTiles = ByteArray(16, {state.tiles[it]})
+            val modifiedTiles = ByteArray(16, { state.tiles[it] })
             val heuristic = initialHeuristic(state)
 
             state.tiles = savedTiles

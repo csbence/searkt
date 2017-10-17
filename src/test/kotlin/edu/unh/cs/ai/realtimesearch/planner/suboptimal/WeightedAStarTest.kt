@@ -8,6 +8,8 @@ import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class WeightedAStarTest {
     private fun createInstanceFromString(puzzle: String): InputStream {
@@ -91,6 +93,7 @@ class WeightedAStarTest {
 
     @Test
     fun testAStar6() {
+        val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
@@ -101,9 +104,8 @@ class WeightedAStarTest {
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
             }
-            println(plan)
-            println(plan.size)
-            println("timesReplaced: ${aStarAgent.timesReplaced}")
+            assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+            assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
         }
     }
 
@@ -121,6 +123,53 @@ class WeightedAStarTest {
         kotlin.test.assertTrue { plan.isNotEmpty() }
         println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
+
+    @Test
+    fun testAStar8() {
+        var experimentNumber = 0
+        val instanceNumbers = intArrayOf(42,47,55)
+        val optimalSolutionLengths = intArrayOf(42,47,41)
+        for (i in instanceNumbers) {
+            print("Executing $i...")
+            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+            val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
+            val initialState = slidingTilePuzzle.initialState
+            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
+            val plan = aStarAgent.plan(initialState)
+            var currentState = initialState
+            plan.forEach { action ->
+                currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
+            }
+            assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+            assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
+            println("total time: ${aStarAgent.executionNanoTime}")
+            experimentNumber++
+        }
+    }
+
+    @Test
+    fun testAStarHardPuzzle() {
+        var experimentNumber = 0
+        val instanceNumbers = intArrayOf(1,3)
+        val optimalSolutionLengths = intArrayOf(57,59)
+        for (i in instanceNumbers) {
+            print("Executing $i...")
+            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+            val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
+            val initialState = slidingTilePuzzle.initialState
+            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
+            val plan = aStarAgent.plan(initialState)
+            var currentState = initialState
+            plan.forEach { action ->
+                currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
+            }
+            assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+            assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
+            println("total time: ${aStarAgent.executionNanoTime}")
+            experimentNumber++
+        }
+    }
+
 
     @Test
     fun testWeightedAStarGridWorld1() {
@@ -154,4 +203,5 @@ class WeightedAStarTest {
         println(plan.size)
         println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
+
 }
