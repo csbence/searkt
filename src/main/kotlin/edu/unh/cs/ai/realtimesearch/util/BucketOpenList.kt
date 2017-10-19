@@ -88,7 +88,15 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
     fun replace(element: T, replacement: T) {
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
-        lookUpTable[elementGHPair]!!.nodes.remove(element)
+        val bucketLookUp = lookUpTable[elementGHPair]
+        bucketLookUp!!.nodes.remove(element)
+        if (bucketLookUp.nodes.isEmpty()) {
+            openList.remove(bucketLookUp)
+        }
+        if (element.getFValue() == minFValue) {
+            recomputeMinFValue() // recompute the new minimum f value on open
+            openList.reorder(PotentialComparator(bound, fMin)) // resort open list with new minimum f
+        }
         insert(replacement)
     }
 

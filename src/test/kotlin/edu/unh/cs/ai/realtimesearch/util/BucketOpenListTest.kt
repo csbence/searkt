@@ -138,7 +138,7 @@ class BucketOpenListTest {
             assertTrue { removedElement!!.getHValue() == 2.0 }
         }
         assertTrue { bop.minFValue == 4.0 }
-         (1 until 10).forEach {
+        (1 until 10).forEach {
             assertTrue { bop.minFValue == 4.0 }
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 4.0 }
@@ -146,7 +146,7 @@ class BucketOpenListTest {
             assertTrue { removedElement!!.getHValue() == 1.0 }
         }
         assertTrue { bop.minFValue == 5.0 }
-         (1 until 10).forEach {
+        (1 until 10).forEach {
             assertTrue { bop.minFValue == 5.0 }
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 5.0 }
@@ -154,7 +154,7 @@ class BucketOpenListTest {
             assertTrue { removedElement!!.getHValue() == 2.0 }
         }
         assertTrue { bop.minFValue == 5.0 }
-         (1 until 10).forEach {
+        (1 until 10).forEach {
             assertTrue { bop.minFValue == 5.0 }
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 5.0 }
@@ -172,6 +172,32 @@ class BucketOpenListTest {
         }
         assertTrue { bop.minFValue == 3.0 }
         println(bop)
-   }
+    }
+
+
+    @Test
+    fun replacementTest() {
+        val bop = BucketOpenList<BucketOpenListTest.Node>(1.0)
+        val element = Node(5.0, 4.0, 1.0, 0)
+        val element2 = Node(4.0, 2.0, 2.0, 0)
+        val element3 = Node(4.0, 3.0, 1.0, 1)
+        val element4 = Node(3.0, 1.0, 2.0, 3)
+        val element5 = Node(5.0, 3.0, 2.0, 1)
+
+        bop.add(element)
+        assertTrue { bop.getBucket(element)!!.nodes.first() == element }
+        bop.add(element3)
+        assertTrue { bop.getBucket(element3)!!.nodes.first() == element3 }
+        bop.replace(element3, element2)
+        assertTrue { bop.getBucket(element3)!!.nodes.size == 0 }
+        assertTrue { bop.getBucket(element2)!!.nodes.first() == element2 }
+        bop.add(element4)
+        assertTrue { bop.getBucket(element4)!!.nodes.first() == element4 }
+        bop.add(element5)
+        assertTrue { bop.getBucket(element5)!!.nodes.first() == element5 }
+        bop.replace(element5,element)
+        println(bop)
+        assertTrue { bop.getBucket(element5)!!.nodes.size ==  0 }
+    }
 }
 
