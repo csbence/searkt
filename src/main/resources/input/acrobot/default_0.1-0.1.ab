@@ -15,7 +15,7 @@
     "velocity": 0.1,
     "position": 0.1
   },
-  "initialState": {
+  "initialWorldState": {
     "link1": {
       "velocity": 0.0,
       "position": 4.71238898038469
