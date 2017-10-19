@@ -41,8 +41,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
-    var timesReplaced = 0
-
     private val logger = LoggerFactory.getLogger(WeightedAStar::class.java)
 
     private val fValueComparator = Comparator<WeightedAStar.Node<StateType>> { lhs, rhs ->
@@ -55,8 +53,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
+    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(1000000000, 1.toFloat()).resize()
+    private var openList = AdvancedPriorityQueue(1000000000, fValueComparator)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
@@ -116,7 +114,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 if (!successorNode.open) {
                     openList.add(successorNode)
                 } else {
-                    timesReplaced++
                     openList.update(successorNode)
                 }
             }

@@ -74,7 +74,6 @@ class WeightedAStarTest {
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
-        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
     @Test
@@ -88,7 +87,6 @@ class WeightedAStarTest {
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
-        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
     @Test
@@ -121,7 +119,6 @@ class WeightedAStarTest {
         println(plan)
         println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
-        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
     @Test
@@ -150,6 +147,7 @@ class WeightedAStarTest {
     @Test
     fun testAStarHardPuzzle() {
         var experimentNumber = 0
+        val weight = 1.1
         val instanceNumbers = intArrayOf(1,3)
         val optimalSolutionLengths = intArrayOf(57,59)
         for (i in instanceNumbers) {
@@ -157,14 +155,15 @@ class WeightedAStarTest {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.0)
+            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, weight)
             val plan = aStarAgent.plan(initialState)
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
-            assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
+            print("...plan size: ${plan.size}...")
+            assertTrue {optimalSolutionLengths[experimentNumber]*weight >= plan.size}
             println("total time: ${aStarAgent.executionNanoTime}")
             experimentNumber++
         }
@@ -184,7 +183,6 @@ class WeightedAStarTest {
         }
         println(plan)
         println(plan.size)
-        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
 
@@ -201,7 +199,6 @@ class WeightedAStarTest {
         }
         println(plan)
         println(plan.size)
-        println("timesReplaced: ${aStarAgent.timesReplaced}")
     }
 
 }
