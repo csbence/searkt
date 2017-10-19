@@ -107,7 +107,7 @@ for json_file in args:
         if not quiet:
             print("Skipping non-existent file '%s'" % json_file)
 
-# TODO cleanup and remove code duplication
+# TODO cleanup and pop code duplication
 domain_groups = True
 if num_domains != 1:
     if num_algorithms < num_domains:
