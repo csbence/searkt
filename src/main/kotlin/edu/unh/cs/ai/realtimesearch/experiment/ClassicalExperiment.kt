@@ -1,9 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
@@ -20,40 +24,54 @@ import org.slf4j.LoggerFactory
  *
  * @param planner is the planner that is involved in the experiment
  * @param domain is the domain of the planner. Used for random state generation
- * @param initState is the optional initial state
- *
+ * @param initialState is the start state of the planner.
  */
-class ClassicalExperiment<StateType : State<StateType>>(val experimentConfiguration: GeneralExperimentConfiguration,
+class ClassicalExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
                                                         val planner: ClassicalPlanner<StateType>,
                                                         val domain: Domain<StateType>,
-                                                        val initState: State<StateType>? = null) : Experiment() {
+                                                        val initialState: StateType) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
-        val state: StateType = initState?.copy() ?: domain.randomState()
+        val state: StateType = initialState
         //        logger.warn { "Starting experiment with state $state on planner $planner" }
 
         val cpuNanoTime = measureThreadCpuNanoTime {
             actions = planner.plan(state)
         }
 
+        val planningTime: Long = when (TerminationType.valueOf(configuration.terminationType)) {
+            TIME -> cpuNanoTime
+            EXPANSION -> planner.expandedNodeCount.toLong()
+            else -> throw MetronomeException("Unknown termination type")
+        }
+
         // log results
         val pathLength = actions.size.toLong()
         logger.info { "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes" }
 
-        return ExperimentResult(
-                experimentConfiguration = experimentConfiguration.valueStore,
+        var currentState = initialState
+        // validate path
+        actions.forEach {
+            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")
+        }
+
+        val experimentResult = ExperimentResult(
+                configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,
-                actionExecutionTime = pathLength * experimentConfiguration.actionDuration,
-                goalAchievementTime = cpuNanoTime + pathLength * experimentConfiguration.actionDuration,
-                idlePlanningTime = cpuNanoTime,
+                iterationCount = 1,
+                actionExecutionTime = pathLength * configuration.actionDuration,
+                goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
+                idlePlanningTime = planningTime,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString))
 
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 }

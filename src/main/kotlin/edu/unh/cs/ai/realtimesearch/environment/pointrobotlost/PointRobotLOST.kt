@@ -84,7 +84,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
 
     /*
     * eight way - octile distance
-    * max(min(dx), min(dy))/3
+    * max(min(dX), min(dy))/3
     * euclidiean distance
     * */
     override fun heuristic(state: PointRobotLOSTState): Double {
@@ -146,11 +146,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         return description.toString()
     }
 
-    override fun randomState(): PointRobotLOSTState {
-        throw UnsupportedOperationException()
-    }
-
-    override fun getGoal(): List<PointRobotLOSTState> {
+    override fun getGoals(): List<PointRobotLOSTState> {
         return listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
     }
 

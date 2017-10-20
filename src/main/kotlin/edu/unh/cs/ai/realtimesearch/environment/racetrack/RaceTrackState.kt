@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.environment.State
+import java.lang.Integer.rotateLeft
 
 /**
  * A state in the racetrack domain contains a current location (in a cell, similar to gridworld)
@@ -10,21 +11,20 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  *
  * The actual size and shape of the world is state-independent, so not implemented here
  */
-data class RaceTrackState(val x: Int, val y: Int, val x_speed: Int, val y_speed: Int) : State<RaceTrackState> {
+data class RaceTrackState(val x: Int, val y: Int, val dX: Int, val dY: Int) : State<RaceTrackState> {
 
     override fun equals(other: Any?): Boolean {
-        if (other !is RaceTrackState)
-            return false
-        if (other.x == x && other.y == y && other.x_speed == x_speed && other.y_speed == y_speed) {
-            return true;
+        return when {
+            other !is RaceTrackState -> false
+            other.x == x && other.y == y && other.dX == dX && other.dY == dY -> true
+            else -> false
         }
-        return false;
     }
 
     override fun hashCode(): Int {
-        return x.toInt() xor Integer.reverse(y.toInt())
+        return x xor rotateLeft(y, 8) xor rotateLeft(dX, 16) xor rotateLeft(dY, 24)
     }
 
-    override fun copy() = RaceTrackState(x, y, x_speed, y_speed)
+    override fun copy() = RaceTrackState(x, y, dX, dY)
 }
 

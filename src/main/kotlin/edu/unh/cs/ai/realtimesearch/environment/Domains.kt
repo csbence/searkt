@@ -8,5 +8,6 @@ enum class Domains {
     POINT_ROBOT_WITH_INERTIA,
     RACETRACK,
     SLIDING_TILE_PUZZLE_4,
-    VACUUM_WORLD
+    VACUUM_WORLD,
+    TRAFFIC
 }

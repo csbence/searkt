@@ -4,9 +4,10 @@ package edu.unh.cs.ai.realtimesearch.experiment.configuration
  * Valid experiment configuration keys.
  *
  * @author Mike Bogochow
+ * @author Bence Cserna (bence@cserna.net)
  * @since 4/3/16
  */
-enum class Configurations {
+enum class Configurations(val configurationName: String) {
     // General configurations
     ALGORITHM_NAME          ("algorithmName"),
     DOMAIN_NAME             ("domainName"),
@@ -14,10 +15,14 @@ enum class Configurations {
     RAW_DOMAIN              ("rawDomain"),
     DOMAIN_PATH             ("domainPath"),
     TIME_LIMIT              ("timeLimit"),
+    EXPANSION_LIMIT         ("expansionLimit"),
+    STEP_LIMIT              ("stepLimit"),
     ACTION_DURATION         ("actionDuration"),
     TERMINATION_TYPE        ("terminationType"),
+    // Domain-specific configurations
+    DOMAIN_SEED             ("domainSeed"),
     // Real-time search configurations
-    TIME_BOUND_TYPE         ("timeBoundType"),
+    LOOKAHEAD_TYPE          ("lookaheadType"),
     COMMITMENT_STRATEGY     ("commitmentStrategy"),
     LOOKAHEAD_DEPTH_LIMIT   ("lookaheadDepthLimit"),
     // Anytime search configurations
@@ -28,12 +33,6 @@ enum class Configurations {
     NUM_ACTIONS             ("numActions"),
     ACTION_FRACTION         ("actionFraction"),
     STATE_FRACTION          ("stateFraction");
-
-
-    val configurationName: String
-    constructor(configurationName: String) {
-        this.configurationName = configurationName
-    }
 
     companion object {
         val valueMap by lazy {

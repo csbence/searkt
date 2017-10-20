@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
@@ -34,7 +34,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
                                              var correctedHeuristic: Double,
-                                             var open: Boolean = false,
                                              parent: Node<StateType>? = null) : Indexable {
 
         /** Item index in the open list. */
@@ -143,26 +142,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var nextDistanceError = 0.0
 
     /**
-     * Prepares LSS for a completely unrelated new search. Sets mode to init
-     * When a new action is selected, all members that persist during selection action phase are cleared
-     */
-    override fun reset() {
-        super.reset()
-
-        rootState = null
-
-        aStarPopCounter = 0
-        dijkstraPopCounter = 0
-        aStarTimer = 0L
-        dijkstraTimer = 0L
-        heuristicError = 0.0
-        distanceError = 0.0
-
-        clearOpenList()
-    }
-
-    /**
-     * Selects a action given current state.
+     * Selects a action given current sourceState.
      *
      * LSS_LRTA* will generate a full plan to some frontier, and stick to that plan. So the action returned will
      * always be the first on in the current plan.
@@ -170,27 +150,27 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * LSS-LRTAStar will plan to a specific frontier, and continue
      * to plan from there. This planning abides a termination criteria, meaning that it plans under constraints
      *
-     * @param state is the current state
+     * @param sourceState is the current sourceState
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(state: StateType, terminationChecker: TimeTerminationChecker): List<ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
 
         if (rootState == null) {
-            rootState = state
-        } else if (state != rootState) {
-            // The given state should be the last target
-            logger.debug { "Inconsistent world state. Expected $rootState got $state" }
+            rootState = sourceState
+        } else if (sourceState != rootState) {
+            // The given sourceState should be the last target
+            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
-        if (domain.isGoal(state)) {
-            // The start state is the goal state
-            logger.warn { "selectAction: The goal state is already found." }
+        if (domain.isGoal(sourceState)) {
+            // The start sourceState is the goal sourceState
+            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root state: $state" }
+        logger.debug { "Root sourceState: $sourceState" }
 
         // Learning phase
         if (openList.isNotEmpty()) {
@@ -200,12 +180,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(state, terminationChecker)
+            val targetNode = aStar(sourceState, terminationChecker)
             // Update error estimates
             distanceError = nextDistanceError
             heuristicError = nextHeuristicError
 
-            plan = extractPlan(targetNode, state)
+            plan = extractPlan(targetNode, sourceState)
             rootState = targetNode.state
         }
 
@@ -219,7 +199,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TimeTerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
@@ -230,10 +210,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            while (!terminationChecker.reachedTermination()) {
                 aStarPopCounter++
+
+                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+                if (domain.isGoal(topNode.state)) return topNode
+
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
             }
         }
 
@@ -245,7 +230,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         logger.debug { "Done with AStar at $currentNode" }
 
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
@@ -267,7 +252,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         expandedNodeCount += 1
 
         // Select the best children to update the distance and heuristic error
-        var bestChildNode: Node<StateType>? = null
+        var bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -276,8 +261,11 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -285,10 +273,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     iteration = iterationCounter
                     predecessors.clear()
                     cost = Long.MAX_VALUE
-                    open = false
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -335,6 +325,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             nextHeuristicError += (localHeuristicError - nextHeuristicError) / expandedNodeCount
             nextDistanceError += (localDistanceError - nextDistanceError) / expandedNodeCount
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**
@@ -383,7 +375,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      * a better table of heuristics.
      *
      */
-    private fun dijkstra(terminationChecker: TimeTerminationChecker) {
+    private fun dijkstra(terminationChecker: TerminationChecker) {
         logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
@@ -472,19 +464,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     private fun clearOpenList() {
         logger.debug { "Clear open list" }
-        openList.applyAndClear {
-            it.open = false
-        }
+        openList.clear()
     }
 
     private fun popOpenList(): Node<StateType> {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        node.open = false
         return node
     }
 
     private fun addToOpenList(node: Node<StateType>) {
         openList.add(node)
-        node.open = true
     }
 }

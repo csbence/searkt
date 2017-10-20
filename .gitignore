@@ -1,4 +1,5 @@
 *.log
+classes
 
 #3rd party libraries for testing
 /src/main/kotlin/edu/unh/cs/ai/realtimesearch/external
@@ -33,11 +34,9 @@ hs_err_pid*
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
 
-*.iml
-
 ## Directory-based project format:
 .idea/
-# if you remove the above rule, at least ignore the following:
+# if you pop the above rule, at least ignore the following:
 
 # User-specific stuff:
 # .idea/workspace.xml
@@ -128,3 +127,4 @@ verbosegc*.txt
 __pycache__/
 *.py[cod]
 *$py.class
+/output/

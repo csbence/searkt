@@ -9,6 +9,7 @@ import groovyjarjarcommonscli.*
 import javafx.application.Application
 import kotlin.system.exitProcess
 
+
 /**
  * Base application for visualizers.  Handles command line parsing and provides framework for easily adding custom
  * options per visualizer implementation.
@@ -52,10 +53,10 @@ abstract class BaseVisualizer : Application() {
             throw InvalidResultException("Failed to parse result", e)
         }
 
-        if (experimentResult.experimentConfiguration["rawDomain"] == null)
+        if (experimentResult.configuration["rawDomain"] == null)
             throw InvalidResultException("Visualizer must have raw domain in result")
 
-        rawDomain = experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String
+        rawDomain = experimentResult.configuration[Configurations.RAW_DOMAIN.toString()] as String
 
         processOptions(cmd)
     }

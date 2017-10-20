@@ -62,8 +62,8 @@ open class AcrobotVisualizer : BaseVisualizer() {
 
         // Parse results
         acrobotConfiguration = AcrobotConfiguration.fromJson(
-                experimentResult.experimentConfiguration[Configurations.RAW_DOMAIN.toString()] as String)
-        actionDuration = (experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long)
+                experimentResult.configuration[Configurations.RAW_DOMAIN.toString()] as String)
+        actionDuration = (experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long)
 
         for (action in experimentResult.actions) {
             actionList.add(AcrobotAction.valueOf(action))
@@ -118,10 +118,10 @@ open class AcrobotVisualizer : BaseVisualizer() {
         }
 
         val info = StringBuilder()
-        info.append("Algorithm: ").appendln(experimentResult.experimentConfiguration["algorithmName"])
-        info.append("Instance: ").appendln(experimentResult.experimentConfiguration["domainInstanceName"])
+        info.append("Algorithm: ").appendln(experimentResult.configuration["algorithmName"])
+        info.append("Instance: ").appendln(experimentResult.configuration["domainInstanceName"])
         info.append("Path Length: ").appendln(experimentResult.pathLength)
-        info.append("Action Duration: ").append(experimentResult.experimentConfiguration["actionDuration"])
+        info.append("Action Duration: ").append(experimentResult.configuration["actionDuration"])
         info.appendln(" ns")
         info.append("Action Execution Time: ").append(experimentResult.actionExecutionTime).appendln(" ns")
         val infoLabel = Label(info.toString())

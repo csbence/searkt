@@ -125,7 +125,7 @@ class VacuumWorld(val width: Int,
      * Creates a state with a random initial location for the agent and
      * initialAmountDirty number of random dirty cells
      */
-    override fun randomState(): VacuumWorldState {
+    fun randomState(): VacuumWorldState {
         val dirtyCells = arrayListOf(randomLocation(width, height))
 
         // generate random locations until enough
@@ -152,7 +152,7 @@ class VacuumWorld(val width: Int,
         )
     }
 
-    override fun getGoal(): List<VacuumWorldState> {
+    override fun getGoals(): List<VacuumWorldState> {
         throw UnsupportedOperationException()
     }
 

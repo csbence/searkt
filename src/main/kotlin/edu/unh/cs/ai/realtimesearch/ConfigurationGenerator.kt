@@ -6,9 +6,9 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.DYNAMIC
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TimeBoundType.STATIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
@@ -23,11 +23,11 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
-val terminationType = "time"
-val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
-val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
+private val terminationType = "time"
+private val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
+private val actionDurations = listOf(6000000, 10000000, 20000000, 40000000, 80000000, 160000000, 320000000, 640000000)
 //val actionDurations = listOf(850000000, 960000000, 1070000000, 1280000000)
-val lookaheadLimits = listOf(20)
+private val lookaheadLimits = listOf(20)
 private var useDomainPaths = false
 
 /**
@@ -38,7 +38,7 @@ private var useDomainPaths = false
 fun main(args: Array<String>) {
     val configurations = mutableListOf<MutableMap<String, Any?>>()
 
-    if (args.size > 0 && args.first().equals("-p")) {
+    if (args.isNotEmpty() && args.first() == "-p") {
         useDomainPaths = true
     }
 
@@ -83,10 +83,10 @@ fun main(args: Array<String>) {
                         if (domain == ACROBOT) {
                             val instance = domainConfiguration["domainInstanceName"] ?: continue
                             if (actionDuration <= 80000000) {
-                                if (!instance.equals("0.3-0.3"))
+                                if (instance != "0.3-0.3")
                                     continue
                             } else if (actionDuration <= 160000000) {
-                                if (instance.equals("0.07-0.07") || instance.equals("0.08-0.08"))
+                                if (instance == "0.07-0.07" || instance == "0.08-0.08")
                                     continue
                             }
                         }
@@ -128,8 +128,8 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
     )
 
     val racetrackMaps = listOf(
-            //            "input/racetrack/barto-big.track",
-            //            "input/racetrack/barto-small.track"
+            //            "input/racetrack/barto-big.obstacles",
+            //            "input/racetrack/barto-small.obstacles"
             "input/racetrack/hansen-bigger.track",
             "input/racetrack/long.track"
     )
@@ -195,20 +195,16 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                         stateConfiguration = stateConfiguration
                 )
                 configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to "${JsonOutput.toJson(acrobotConfiguration)}",
+                        Configurations.RAW_DOMAIN.toString() to JsonOutput.toJson(acrobotConfiguration),
                         Configurations.DOMAIN_INSTANCE_NAME.toString() to "$bound-$bound"
                 ))
             }
         }
-        GRID_WORLD, VACUUM_WORLD -> {
-            for (map in gridMaps) {
-                configurations.add(getDomainConfigurationMap(map))
-            }
+        GRID_WORLD, VACUUM_WORLD, TRAFFIC -> {
+            gridMaps.mapTo(configurations) { getDomainConfigurationMap(it) }
         }
         POINT_ROBOT, POINT_ROBOT_LOST -> {
-            for (map in pointRobotMaps) {
-                configurations.add(getDomainConfigurationMap(map))
-            }
+            pointRobotMaps.mapTo(configurations) { getDomainConfigurationMap(it) }
         }
         POINT_ROBOT_WITH_INERTIA -> {
             for (actionFraction in pointRobotWithInertiaActionFractions) {
@@ -218,7 +214,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                             val valueMap = getDomainConfigurationMap(map)
                             valueMap.put(Configurations.ACTION_FRACTION.toString(), actionFraction.toDouble())
                             valueMap.put(Configurations.NUM_ACTIONS.toString(), numActions.toLong())
-                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction.toDouble())
+                            valueMap.put(Configurations.STATE_FRACTION.toString(), stateFraction)
                             configurations.add(valueMap)
                         }
                     }
@@ -226,16 +222,13 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
             }
         }
         RACETRACK -> {
-            for (map in racetrackMaps) {
-                configurations.add(getDomainConfigurationMap(map))
-            }
+            racetrackMaps.mapTo(configurations) { getDomainConfigurationMap(it) }
         }
         SLIDING_TILE_PUZZLE_4 -> {
             //            for (instanceName in 1..100) {
-            for (instanceName in slidingTileSolvableMaps) {
-                val map = "$slidingTile4MapRoot$instanceName"
-                configurations.add(getDomainConfigurationMap(map))
-            }
+            slidingTileSolvableMaps
+                    .map { "$slidingTile4MapRoot$it" }
+                    .mapTo(configurations) { getDomainConfigurationMap(it) }
         }
     }
 
@@ -267,22 +260,22 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
 
     when (planner) {
         DYNAMIC_F_HAT, LSS_LRTA_STAR -> {
-            for (timeBoundType in TimeBoundType.values()) {
+            for (timeBoundType in LookaheadType.values()) {
 
                 when (timeBoundType) {
                     STATIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
                         ))
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
                     DYNAMIC -> {
                         configurations.add(mutableMapOf<String, Any?>(
-                                Configurations.TIME_BOUND_TYPE.toString() to timeBoundType,
+                                Configurations.LOOKAHEAD_TYPE.toString() to timeBoundType,
                                 Configurations.COMMITMENT_STRATEGY.toString() to MULTIPLE
                         ))
                     }
@@ -291,26 +284,26 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
             }
         }
         RTA_STAR -> {
-            for (lookaheadDepthLimit in lookaheadLimits) {
-                configurations.add(mutableMapOf<String, Any?>(
-                        Configurations.LOOKAHEAD_DEPTH_LIMIT.toString() to lookaheadDepthLimit,
-                        Configurations.TIME_BOUND_TYPE.toString() to STATIC,
+            lookaheadLimits.mapTo(configurations) {
+                mutableMapOf<String, Any?>(
+                        Configurations.LOOKAHEAD_DEPTH_LIMIT.toString() to it,
+                        Configurations.LOOKAHEAD_TYPE.toString() to STATIC,
                         Configurations.COMMITMENT_STRATEGY.toString() to SINGLE
-                ))
+                )
             }
         }
         ARA_STAR -> {
-            for (maxCount in maxCounts) {
-                configurations.add(mutableMapOf<String, Any?>(
-                        Configurations.ANYTIME_MAX_COUNT.toString() to maxCount
-                ))
+            maxCounts.mapTo(configurations) {
+                mutableMapOf<String, Any?>(
+                        Configurations.ANYTIME_MAX_COUNT.toString() to it
+                )
             }
         }
         WEIGHTED_A_STAR -> {
-            for (weight in weights) {
-                configurations.add(mutableMapOf(
-                        Configurations.WEIGHT.toString() to weight
-                ))
+            weights.mapTo(configurations) {
+                mutableMapOf(
+                        Configurations.WEIGHT.toString() to it
+                )
             }
         }
         else -> configurations.add(mutableMapOf())

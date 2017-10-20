@@ -59,10 +59,10 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         val timeToRun = actionList.size * animationStepDuration
 
-        isARAStar = experimentResult.experimentConfiguration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
+        isARAStar = experimentResult.configuration[Configurations.ALGORITHM_NAME.toString()] == Planners.ARA_STAR.toString()
         if (isARAStar) {
             moveRobot = false
-            anytimeMaxCount = experimentResult.experimentConfiguration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
+            anytimeMaxCount = experimentResult.configuration[Configurations.ANYTIME_MAX_COUNT.toString()] as Long
             araStarXOriginal = agentView.agent.x
             araStarYOriginal = agentView.agent.y
             araStarX = agentView.agent.x
@@ -85,7 +85,7 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         // Delay startup of animation to simulate idle planning time
         Thread({
-            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.experimentConfiguration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
+            val delayTime = convertNanoUpDouble(experimentResult.idlePlanningTime, TimeUnit.MILLISECONDS) * animationStepDuration / convertNanoUpDouble(experimentResult.configuration[Configurations.ACTION_DURATION.toString()] as Long, TimeUnit.MILLISECONDS)
             println("Delay:  $delayTime")
             Thread.sleep(delayTime.toLong())
             pathTransition.play()

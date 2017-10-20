@@ -16,6 +16,10 @@ import org.slf4j.LoggerFactory
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
+    override fun isSafe(state: GridWorldState): Boolean {
+        return false
+    }
+
     /**
      * Part of the Domain interface.
      */
@@ -57,7 +61,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
 
     override fun heuristic(startState: GridWorldState, endState: GridWorldState): Double {
         return Math.abs(startState.agentLocation.x - endState.agentLocation.x) + Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
-        //        return state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+        //        return state.run { location.manhattanDistance(goal).toDouble() }
     }
 
     /**
@@ -105,11 +109,11 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      * Creates a state with a random initial location for the agent and
      * initialAmountDirty number of random dirty cells
      */
-    override fun randomState(): GridWorldState {
+    fun randomState(): GridWorldState {
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getGoal(): List<GridWorldState> {
+    override fun getGoals(): List<GridWorldState> {
         return listOf(GridWorldState(targetLocation))
     }
 

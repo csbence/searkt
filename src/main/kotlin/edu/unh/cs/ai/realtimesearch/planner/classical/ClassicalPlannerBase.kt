@@ -13,12 +13,8 @@ import kotlin.system.measureNanoTime
  *
  * @param domain is the domain to plan in
  */
-abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : ClassicalPlanner<StateType> {
-
+abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : ClassicalPlanner<StateType>() {
     private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
-    override var generatedNodeCount = 0
-    override var expandedNodeCount = 0
-    override var executionNanoTime: Long = 0
 
     data class Node<State>(val parent: Node<State>?, val state: State,
                            val action: Action?, val cost: Double)
@@ -70,9 +66,9 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
                 currentNode = expandNode(currentNode)
             }
 
-            if (expandedNodeCount % 100000 == 0) {
-                System.gc()
-            }
+//            if (expandedNodeCount % 100000 == 0) {
+//                System.gc()
+//            }
         }
 
         return extractPlan(currentNode)

@@ -8,7 +8,7 @@ import java.util.*
  * @author Bence Cserna (bence@cserna.net)
  */
 fun <K, V> HashMap<K, V>.resize(): HashMap<K, V> {
-    val nodesClass = javaClass
+    val nodesClass = this::class.java
 
     val resizeMethod = nodesClass.declaredMethods.first {
         it.name == "resize"

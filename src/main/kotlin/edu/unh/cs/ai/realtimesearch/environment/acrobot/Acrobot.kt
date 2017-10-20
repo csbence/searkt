@@ -167,11 +167,11 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
     /**
      * Returns the initial state in which all state values are zeroed.
      */
-    override fun randomState(): AcrobotState {
+    fun randomState(): AcrobotState {
         return AcrobotState(0.0, 0.0, 0.0, 0.0, configuration.stateConfiguration)
     }
 
-    override fun getGoal(): List<AcrobotState> {
+    override fun getGoals(): List<AcrobotState> {
         return listOf(configuration.goalState)
     }
 

@@ -8,17 +8,15 @@ import java.util.*
 class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private var comparator: Comparator<in T>) {
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
-    var resizable = false
+    private var resizable = false
     var size = 0
-        private set
 
     val backingArray: Array<T?>
         get() = queue
 
     companion object {
-        inline operator fun <reified T : Indexable> invoke(capacity: Int, comparator: Comparator<in T>): AdvancedPriorityQueue<T> {
-            return AdvancedPriorityQueue(arrayOfNulls(capacity), comparator)
-        }
+        inline operator fun <reified T : Indexable> invoke(capacity: Int, comparator: Comparator<in T>): AdvancedPriorityQueue<T> =
+                AdvancedPriorityQueue(arrayOfNulls(capacity), comparator)
     }
 
     private fun grow(minCapacity: Int) {
@@ -66,25 +64,21 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         size += 1
     }
 
-    fun peek(): T? {
-        return if (size == 0) null else queue[0]
-    }
+    fun peek(): T? = if (size == 0) null else queue[0]
 
-    operator fun contains(item: T): Boolean {
-        return item.index != -1
-    }
+    operator fun contains(item: T): Boolean = item.index != -1
 
-    fun remove(item: T): Boolean {
-        if (item.index == -1) {
-            return false
-        } else {
+    fun remove(item: T): Boolean = when {
+        item.index == -1 -> false
+        else -> {
             removeAt(item.index)
-            return true
+            true
         }
     }
 
     fun clear() {
-        for (i in 0..size - 1) {
+        for (i in 0 until size) {
+            queue[i]?.index = -1
             queue[i] = null
         }
 
@@ -104,6 +98,8 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         if (size != 0) {
             siftDown(0, x!!)
         }
+
+        result?.index = -1
         return result
     }
 
@@ -177,6 +173,7 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     fun update(item: T) {
         val index = item.index
+        if (index == -1) throw RuntimeException("Invalid index. Can't update the location of an item that is not on the heap.")
 
         if (siftUp(index) == index) {
             siftDown(index)
@@ -196,7 +193,6 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
     fun siftUp(index: Int) = siftUp(index, queue[index]!!)
 
-
     fun siftDown(index: Int) = siftDown(index, queue[index]!!)
 
     fun isEmpty() = size == 0
@@ -204,7 +200,7 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
     fun isNotEmpty() = !isEmpty()
 
     inline fun forEach(action: (T) -> Unit) {
-        for (i in 0..size - 1) {
+        for (i in 0 until size) {
             action(backingArray[i]!!)
         }
     }
@@ -213,10 +209,16 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
      * Apply the given action to every item in the priority queue and clear the priority queue.
      */
     inline fun applyAndClear(action: (T) -> Unit) {
-        for (i in 0..size - 1) {
+        for (i in 0 until size) {
             action(backingArray[i]!!)
             backingArray[i] = null
         }
         size = 0
     }
+}
+
+interface Indexable {
+    var index: Int
+    val open
+        get() = index >= 0
 }
