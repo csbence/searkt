@@ -4,6 +4,7 @@ interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
     fun getHValue(): Double
+    fun updateIndex(i: Int)
     override fun toString(): String
 }
 
@@ -80,24 +81,17 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         return stringBuilder.toString()
     }
 
-    private fun recomputeMinFValue() {
-        if (openList.isNotEmpty()) {
-            fMin = openList.peek()!!.f
-            openList.forEach { bucket ->
-                if (bucket.f < fMin) {
-                    fMin = bucket.f
-                }
-            }
-        } else {
-            fMin = Double.MAX_VALUE
-        }
+    fun update(element: T) {
+
     }
+
 
     fun replace(element: T, replacement: T) {
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
         val bucketLookUp = lookUpTable[elementGHPair] ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
 
         bucketLookUp.nodes.remove(element)
+        element.updateIndex(-1)
 
         if (bucketLookUp.nodes.isEmpty()) {
             openList.remove(bucketLookUp)
@@ -109,6 +103,19 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         }
 
         insert(replacement)
+    }
+
+    private fun recomputeMinFValue() {
+        if (openList.isNotEmpty()) {
+            fMin = openList.peek()!!.f
+            openList.forEach { bucket ->
+                if (bucket.f < fMin) {
+                    fMin = bucket.f
+                }
+            }
+        } else {
+            fMin = Double.MAX_VALUE
+        }
     }
 
     private fun insert(element: T) {
@@ -125,6 +132,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = arrayListOf(element)
             val newBucket = Bucket(element.getFValue(), element.getGValue(), element.getHValue(), bucketNodes)
 
+            element.updateIndex(bucketNodes.indexOf(element))
             openList.add(newBucket)
             lookUpTable[elementGHPair] = newBucket
 
@@ -133,6 +141,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = targetBucket.nodes
 
             bucketNodes.add(element)
+            element.updateIndex(bucketNodes.indexOf(element))
             if (bucketNodes.size == 1) openList.add(targetBucket)
         }
     }
@@ -156,6 +165,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             openList.reorder(PotentialComparator(bound, fMin)) // resort open list with new minimum f
         }
 
+        firstElementInTopBucket.updateIndex(-1)
         return firstElementInTopBucket
     }
 
