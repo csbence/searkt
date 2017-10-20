@@ -30,16 +30,20 @@ fun main(args: Array<String>) {
 
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
+    val korfDomains = mutableListOf<Pair<Domains, String>>()
+
+    (1 until 101).forEach { korfDomains.add(Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it") }
+
     val configurations = generateConfigurations(
-            domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
+            domains = korfDomains,//listOf(
+//                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
+//            ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(DYNAMIC_POTENTIAL_SEARCH, WEIGHTED_A_STAR),
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
