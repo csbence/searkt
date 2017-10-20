@@ -99,7 +99,15 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
                 assert(successorNode.state == successor.state)
-                successorNode.apply {
+                val successorReplacement = Node(
+                        successorNode.state,
+                        successorNode.heuristic,
+                        successorNode.cost,
+                        successorNode.actionCost,
+                        successorNode.action,
+                        successorNode.parent
+                )
+                successorReplacement.apply {
                     cost = successorGValueFromCurrent
                     parent = sourceNode
                     action = successor.action
@@ -108,7 +116,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
                 if (!successorNode.open) {
                     openList.add(successorNode)
                 } else {
-                    openList.update(successorNode)
+                    openList.replace(successorNode, successorReplacement)
                 }
             }
         }

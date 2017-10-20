@@ -81,11 +81,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         return stringBuilder.toString()
     }
 
-    fun update(element: T) {
-
-    }
-
-
     fun replace(element: T, replacement: T) {
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
         val bucketLookUp = lookUpTable[elementGHPair] ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
