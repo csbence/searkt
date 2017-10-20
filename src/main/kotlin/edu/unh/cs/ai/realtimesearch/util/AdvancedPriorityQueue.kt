@@ -191,9 +191,9 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         }
     }
 
-    private fun siftUp(index: Int) = siftUp(index, queue[index]!!)
+    fun siftUp(index: Int) = siftUp(index, queue[index]!!)
 
-    private fun siftDown(index: Int) = siftDown(index, queue[index]!!)
+    fun siftDown(index: Int) = siftDown(index, queue[index]!!)
 
     fun isEmpty() = size == 0
 

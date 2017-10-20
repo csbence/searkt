@@ -243,7 +243,7 @@ def plot_gat_stacked_bars(data: dict, labels: list, title: str = "", stats_type:
         idle_stats, idle_stats_confidence_interval_low, idle_stats_confidence_interval_high = \
             mean_confidence_intervals(y_idle)
 
-    # Format axes to remove unnecessary borders and tick marks
+    # Format axes to pop unnecessary borders and tick marks
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -324,7 +324,7 @@ def plot_node_count_bars(data, labels, title="", stats_type="median", log10=True
         expanded_stats, expanded_confidence_interval_low, expanded_confidence_interval_high = \
             mean_confidence_intervals(y_expanded)
 
-    # Format axes to remove unnecessary borders and tick marks
+    # Format axes to pop unnecessary borders and tick marks
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -381,7 +381,7 @@ def plot_gat_bars(data, labels, title=""):
     med, med_confidence_interval_low, med_confidence_interval_high = median_confidence_intervals(y)
     mean, mean_confidence_interval_low, mean_confidence_interval_high = mean_confidence_intervals(y)
 
-    # Format axes to remove unnecessary borders and tick marks
+    # Format axes to pop unnecessary borders and tick marks
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -429,7 +429,7 @@ def plot_gat_boxplots(data, labels, title="", showviolin=False):
     # Calculate stats
     med, confidence_interval_low, confidence_interval_high = median_confidence_intervals(y)
 
-    # Format axes to remove unnecessary borders and tick marks
+    # Format axes to pop unnecessary borders and tick marks
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -494,7 +494,7 @@ def plot_gat_duration_error(data: dict, action_durations: list, title: str = "",
     handles = []
     x = np.arange(1, len(action_durations) + 1)
 
-    # Format axes to remove unnecessary borders and tick marks
+    # Format axes to pop unnecessary borders and tick marks
     fig = plt.figure()
     ax = plt.subplot()
     ax.spines['top'].set_visible(False)

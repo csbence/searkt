@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.State
+import java.util.*
 
 /**
  * State of a sliding tile puzzle.
@@ -17,35 +18,29 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  * (0, 1) == 3
  *
  */
-data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: Long, val heuristic: Double) : State<SlidingTilePuzzle4State> {
+data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double) : State<SlidingTilePuzzle4State> {
 
-    override fun copy(): SlidingTilePuzzle4State {
-        return SlidingTilePuzzle4State(zeroIndex, tiles, heuristic)
-    }
+    override fun copy(): SlidingTilePuzzle4State = SlidingTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic)
 
-    fun getIndex(x: Int, y: Int): Int {
-        return 4 * y + x
-    }
+    fun getIndex(x: Int, y: Int): Int = 4 * y + x
 
-    operator fun get(index: Int): Byte {
-        return ((tiles shr (index * 4)).toInt() and 0xF).toByte()
-    }
+    operator fun get(index: Int): Byte = tiles[index]
 
     operator fun set(index: Int, value: Byte) {
-        tiles = tiles and (0xFL shl (index * 4)).inv() or (value.toLong() shl (index * 4))
+        tiles[index] = value
     }
 
     override fun hashCode(): Int {
-        return (tiles shr 32 xor tiles).toInt()
+        var hashCode = 0
+        tiles.forEach { byte -> hashCode = (hashCode shl 1) xor byte.toInt() }
+        return hashCode
     }
 
-    override fun equals(other: Any?): Boolean {
-        return when {
-            other == null -> false
-            other === this -> true
-            other !is SlidingTilePuzzle4State -> false
-            else -> tiles == other.tiles
-        }
+    override fun equals(other: Any?): Boolean = when {
+        other == null -> false
+        other === this -> true
+        other !is SlidingTilePuzzle4State -> false
+        else -> tiles contentEquals other.tiles
     }
 }
 

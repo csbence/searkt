@@ -15,8 +15,8 @@ enum class GridWorldAction(val index: Int) : Action {
     // Storage of all relative locations (up down left right), returned by reference
     private val relativeLocations = arrayOf(
             Location(-1, 0),
-            Location(0, -1),
             Location(0, 1),
+            Location(0, -1),
             Location(1, 0)
     )
 

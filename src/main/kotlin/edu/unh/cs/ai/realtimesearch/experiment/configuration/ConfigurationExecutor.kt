@@ -35,6 +35,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -255,7 +256,7 @@ object ConfigurationExecutor {
 
     private fun <StateType : State<StateType>> executeWeightedAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val weight = configuration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
-        val aStarPlanner = ClassicalAStarPlanner(domain, weight)
+        val aStarPlanner = WeightedAStar(domain, weight)
         val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
