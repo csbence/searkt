@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val korfDomains = mutableListOf<Pair<Domains, String>>()
 
-    (1 until 101).forEach { korfDomains.add(Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it") }
+    (1 until 2).forEach { korfDomains.add(Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it") }
 
     val configurations = generateConfigurations(
             domains = korfDomains,//listOf(
