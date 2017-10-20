@@ -47,7 +47,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
-    private val nodes: HashMap<StateType, DynamicPotentialSearch.Node<StateType>> = HashMap<StateType, DynamicPotentialSearch.Node<StateType>>(1000000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, DynamicPotentialSearch.Node<StateType>> = HashMap<StateType, DynamicPotentialSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
     private var openList = BucketOpenList<Node<StateType>>(weight)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
@@ -102,18 +102,18 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
                 val successorReplacement = Node(
                         successorNode.state,
                         successorNode.heuristic,
-                        successorNode.cost,
-                        successorNode.actionCost,
-                        successorNode.action,
-                        successorNode.parent
+                        successorGValueFromCurrent,
+                        successor.actionCost,
+                        successor.action,
+                        sourceNode
                 )
-                successorReplacement.apply {
-                    cost = successorGValueFromCurrent
-                    parent = sourceNode
-                    action = successor.action
-                    actionCost = successor.actionCost
-                }
                 if (!successorNode.open) {
+                    successorNode.apply {
+                        cost = successorGValueFromCurrent
+                        parent = sourceNode
+                        action = successor.action
+                        actionCost = successor.actionCost
+                    }
                     openList.add(successorNode)
                 } else {
                     openList.replace(successorNode, successorReplacement)

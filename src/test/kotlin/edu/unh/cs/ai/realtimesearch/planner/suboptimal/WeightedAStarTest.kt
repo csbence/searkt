@@ -147,7 +147,7 @@ class WeightedAStarTest {
     @Test
     fun testAStarHardPuzzle() {
         var experimentNumber = 0
-        val weight = 1.1
+        val weight = 2.0
         val instanceNumbers = intArrayOf(1,3)
         val optimalSolutionLengths = intArrayOf(57,59)
         for (i in instanceNumbers) {
