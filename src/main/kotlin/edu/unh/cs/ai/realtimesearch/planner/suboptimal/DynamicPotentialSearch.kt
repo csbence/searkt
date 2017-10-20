@@ -75,7 +75,8 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+        for (successor in successors) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
 //            if (successorNode.heuristic == Double.POSITIVE_INFINITY

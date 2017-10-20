@@ -87,6 +87,7 @@ class WeightedAStarTest {
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
+        println(aStarAgent.executionNanoTime)
     }
 
     @Test
@@ -103,6 +104,7 @@ class WeightedAStarTest {
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+            println("execution Time: ${aStarAgent.executionNanoTime}")
             assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
         }
     }
@@ -123,10 +125,9 @@ class WeightedAStarTest {
 
     @Test
     fun testAStar8() {
-        var experimentNumber = 0
         val instanceNumbers = intArrayOf(42,47,55)
         val optimalSolutionLengths = intArrayOf(42,47,41)
-        for (i in instanceNumbers) {
+        for ((experimentNumber, i) in instanceNumbers.withIndex()) {
             print("Executing $i...")
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
@@ -140,17 +141,15 @@ class WeightedAStarTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
             println("total time: ${aStarAgent.executionNanoTime}")
-            experimentNumber++
         }
     }
 
     @Test
     fun testAStarHardPuzzle() {
-        var experimentNumber = 0
-        val weight = 2.0
+        val weight = 1.7
         val instanceNumbers = intArrayOf(1,3)
         val optimalSolutionLengths = intArrayOf(57,59)
-        for (i in instanceNumbers) {
+        for ((experimentNumber, i) in instanceNumbers.withIndex()) {
             print("Executing $i...")
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
@@ -165,7 +164,6 @@ class WeightedAStarTest {
             print("...plan size: ${plan.size}...")
             assertTrue {optimalSolutionLengths[experimentNumber]*weight >= plan.size}
             println("total time: ${aStarAgent.executionNanoTime}")
-            experimentNumber++
         }
     }
 

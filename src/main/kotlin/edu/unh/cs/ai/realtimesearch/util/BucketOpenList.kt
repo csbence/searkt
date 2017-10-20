@@ -19,8 +19,10 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         override fun compare(leftBucket: T, rightBucket: T): Int {
             if (leftBucket != null && rightBucket != null) {
                 if (leftBucket is Bucket<*> && rightBucket is Bucket<*>) {
-                    val leftBucketPotential = ((bound * fMin) - leftBucket.g) / (leftBucket.h)
-                    val rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
+                    var leftBucketPotential = ((bound * fMin) - leftBucket.g) / (leftBucket.h)
+                    var rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
+                    if(leftBucket.h == 0.0) leftBucketPotential = Double.MAX_VALUE
+                    if(rightBucket.h == 0.0) rightBucketPotential = Double.MAX_VALUE
                     return Math.signum(rightBucketPotential - leftBucketPotential).toInt()
                 }
             }
