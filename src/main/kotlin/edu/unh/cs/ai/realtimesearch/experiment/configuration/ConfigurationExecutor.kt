@@ -70,7 +70,7 @@ object ConfigurationExecutor {
                 (1..28).forEach {
                     builder.append(if (it / 28.0 > ratio) "" else "\u2588")
                 }
-                print(builder.toString())
+                println(builder.toString())
                 System.out.flush()
             }
         }
@@ -131,7 +131,7 @@ object ConfigurationExecutor {
             return ExperimentResult(configuration.valueStore, "Timeout")
         }
 
-        logger.info("Experiment execution is done.")
+//        logger.info("Experiment execution is done.")
 
         return experimentResult!!
     }

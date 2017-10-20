@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SearchNode
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -47,7 +46,7 @@ abstract class RealTimePlanner<StateType : State<StateType>>(protected val domai
  *
  * @return path from source to target if exists.
  */
-fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractSourceToTargetPath(targetNode: NodeType?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractPath(targetNode: NodeType?, sourceState: StateType): List<RealTimePlanner.ActionBundle> {
     targetNode ?: return emptyList()
 
     val actions = ArrayList<RealTimePlanner.ActionBundle>(1000)
@@ -64,4 +63,17 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
     } while (currentNode.state != sourceState)
 
     return actions.reversed()
+}
+
+data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long)
+
+interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> {
+    val state: StateType
+    var heuristic: Double
+    var cost: Long
+    var actionCost: Long
+    var action: Action
+
+    val parent: NodeType
+    val predecessors: List<SearchEdge<NodeType>>
 }
