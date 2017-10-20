@@ -8,10 +8,13 @@ import kotlin.test.assertNotEquals
 
 class BucketOpenListTest {
 
-    private data class Node(var f: Double, var g: Double, var h: Double, val state: Int) : BucketNode {
+    private data class Node(var f: Double, var g: Double, var h: Double, var state: Int) : BucketNode {
         override fun getFValue(): Double = f
         override fun getGValue(): Double = g
         override fun getHValue(): Double = h
+        override fun updateIndex(i: Int) {
+            state = i
+        }
     }
 
     @Test
@@ -195,9 +198,9 @@ class BucketOpenListTest {
         assertTrue { bop.getBucket(element4)!!.nodes.first() == element4 }
         bop.add(element5)
         assertTrue { bop.getBucket(element5)!!.nodes.first() == element5 }
-        bop.replace(element5,element)
+        bop.replace(element5, element)
         println(bop)
-        assertTrue { bop.getBucket(element5)!!.nodes.size ==  0 }
+        assertTrue { bop.getBucket(element5)!!.nodes.size == 0 }
     }
 }
 
