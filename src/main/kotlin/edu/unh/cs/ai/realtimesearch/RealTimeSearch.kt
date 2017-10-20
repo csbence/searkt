@@ -9,7 +9,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMM
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
@@ -21,7 +20,6 @@ import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import javax.security.auth.login.Configuration
 
 class Input
 
@@ -43,7 +41,7 @@ fun main(args: Array<String>) {
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(WEIGHTED_A_STAR),
             actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            terminationType = TIME,
+            terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(100, MINUTES),
             expansionLimit = 10000000,
