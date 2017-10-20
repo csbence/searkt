@@ -35,6 +35,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
@@ -80,8 +81,9 @@ object ConfigurationExecutor {
 
         val executor = Executors.newFixedThreadPool(parallelCores)
         return configurations
-                .map { executor.submit(Callable<ExperimentResult>{ executeConfiguration(it, dataRootPath)}) }
-                .map { val experimentResult = it.get()
+                .map { executor.submit(Callable<ExperimentResult> { executeConfiguration(it, dataRootPath) }) }
+                .map {
+                    val experimentResult = it.get()
                     progressBar.updateProgress()
                     experimentResult
                 }.also { executor.shutdown() }
@@ -233,6 +235,7 @@ object ConfigurationExecutor {
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
+            DYNAMIC_POTENTIAL_SEARCH -> executeDynamicPotentialSearch(configuration, domain, sourceState)
         }
     }
 
@@ -257,6 +260,14 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeWeightedAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val weight = configuration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
         val aStarPlanner = WeightedAStar(domain, weight)
+        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
+
+        return classicalExperiment.run()
+    }
+
+    private fun <StateType : State<StateType>> executeDynamicPotentialSearch(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        val weight = configuration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
+        val aStarPlanner = DynamicPotentialSearch(domain, weight)
         val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
 
         return classicalExperiment.run()
