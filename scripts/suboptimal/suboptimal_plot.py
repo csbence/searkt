@@ -1,32 +1,37 @@
+#! /usr/bin/env python
+
 import simplejson as json
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import random
 from pprint import pprint
+from IPython.display import display, HTML
 
-json_file = 'results.json'
+json_file = 'resultsl.json'
 json_data = open(json_file)
 data = json.load(json_data)
 json_data.close()
 
+tips = sns.load_dataset("tips")
+display(tips)
+
+dataDict = dict()
+
 for key in data[0].keys():
-    print(key)
+    dataDict[key] = []
 
-df = pd.DataFrame()
-df['x'] = [2.0, 2.0]
-df['y'] = [data[0]['goalAchievementTime'], data[1]['goalAchievementTime']]
+dataDict["weight"] = []
 
-sns.set_style('darkgrid')
-ax = sns.pointplot(x="Suboptimality_Bound", y="Nodes_Expanded", data=df)
+display(dataDict)
 
-print(str(data[0]['configuration']))
-config_dict = data[0]['configuration']
-print(str(data_config['algorithmName']))
-print(str(data[0]['planningTime']/1000000.0) + 'ms')
-print(str(data[0]['goalAchievementTime']) + ' nodes expanded')
+for i in range(0,100):
+    dataDict["weight"].append(2.0)
+    for key in data[i].keys():
+        print(data[i][str(key)])
+        dataDict[key].append(data[i][str(key)])
 
-
-print(str(data[1]['planningTime']/1000000.0) + 'ms')
-print(str(data[1]['goalAchievementTime']) + ' nodes expanded')
-
+weightedAStarDf = pd.DataFrame(dataDict)
+display(weightedAStarDf)
+ax = sns.pointplot(x='weight',y='generatedNodes',data=weightedAStarDf)
+plt.show()
