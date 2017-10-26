@@ -1,14 +1,23 @@
-sendSlackNotification.bash "#experiments" "experiment_bot" "William just started running experiments."
-
-echo "Running Experiments!"
-
-echo "Test 1..."
-
-echo "Test 2..."
-
-echo "Test 3..."
-
-echo "Exiting!"
-
-sendSlackNotification.bash "#experiments" "experiment_bot" "William's experiments just finished."
+../../gradlew run -Pweight="2.0" -Palg="wa*"
+../../gradlew run -Pweight="1.9" -Palg="wa*"
+../../gradlew run -Pweight="1.8" -Palg="wa*"
+../../gradlew run -Pweight="1.7" -Palg="wa*"
+../../gradlew run -Pweight="1.6" -Palg="wa*"
+../../gradlew run -Pweight="1.5" -Palg="wa*"
+../../gradlew run -Pweight="1.4" -Palg="wa*"
+../../gradlew run -Pweight="1.3" -Palg="wa*"
+../../gradlew run -Pweight="1.2" -Palg="wa*"
+../../gradlew run -Pweight="1.1" -Palg="wa*"
+../../gradlew run -Pweight="1.0" -Palg="wa*"
+../../gradlew run -Pweight="2.0" -Palg="dps"
+../../gradlew run -Pweight="1.9" -Palg="dps"
+../../gradlew run -Pweight="1.8" -Palg="dps"
+../../gradlew run -Pweight="1.7" -Palg="dps"
+../../gradlew run -Pweight="1.6" -Palg="dps"
+../../gradlew run -Pweight="1.5" -Palg="dps"
+../../gradlew run -Pweight="1.4" -Palg="dps"
+../../gradlew run -Pweight="1.3" -Palg="dps"
+../../gradlew run -Pweight="1.2" -Palg="dps"
+../../gradlew run -Pweight="1.1" -Palg="dps"
+../../gradlew run -Pweight="1.0" -Palg="dps"
 
