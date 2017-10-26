@@ -28,6 +28,16 @@ class Input
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
 
+    val weight = args[0].toDouble()
+    val alg = args[1]
+
+    val plannerToRun =
+            if (alg == "wa*"){
+                WEIGHTED_A_STAR
+            } else {
+                DYNAMIC_POTENTIAL_SEARCH
+            }
+
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
     val korfDomains = mutableListOf<Pair<Domains, String>>()
@@ -45,7 +55,7 @@ fun main(args: Array<String>) {
 //                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(DYNAMIC_POTENTIAL_SEARCH, WEIGHTED_A_STAR),
+            planners = listOf(plannerToRun),
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
@@ -68,8 +78,8 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.3)),
-                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(1.3))
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(weight)),
+                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(weight))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)

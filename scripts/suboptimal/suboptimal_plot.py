@@ -10,8 +10,8 @@ from IPython.display import display, HTML
 
 data_w = []
 data = dict()
-weights = [1.5, 1.7, 2.0]
-wFiles = ['results.wa.dps.1.5.json', 'results.wa.dps.1.7.json','results.wa.dps.2.json']
+weights = [1.3, 1.5, 1.7, 2.0]
+wFiles = ['results.wa.dps.1.3.json','results.wa.dps.1.5.json', 'results.wa.dps.1.7.json','results.wa.dps.2.json']
 algorithms = ['wA*', 'dps']
 begins = [0, 100]
 ends = [100, 200]
@@ -42,7 +42,7 @@ def addInstances(weightIndex, alg, begin, end):
 makeJson()
 initDictionary(data_w[0])
 
-for i in range(0,3):
+for i in range(0,4):
     addInstances(i, "wA*", 0, 100)
     addInstances(i, "dps", 100, 200)
 
