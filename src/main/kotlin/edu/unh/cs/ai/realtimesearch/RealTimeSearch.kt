@@ -105,7 +105,7 @@ fun main(args: Array<String>) {
     File("output").mkdir()
     PrintWriter("output/results.$plannerToRun.$weight.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
     println("\n$results")
-    println("\nResult has been saved to 'output/results.json'.")
+    println("\nResult has been saved to 'output/results.$plannerToRun.$weight.json'.")
 
     println(results.summary())
 
