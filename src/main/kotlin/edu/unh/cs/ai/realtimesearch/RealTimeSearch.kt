@@ -59,7 +59,7 @@ fun main(args: Array<String>) {
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(100, MINUTES),
+            timeLimit = NANOSECONDS.convert(15, MINUTES),
             expansionLimit = 100000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
