@@ -1,23 +1,26 @@
-./gradlew run -Pweight="2.0" -Palg="wa*"
-./gradlew run -Pweight="1.9" -Palg="wa*"
-./gradlew run -Pweight="1.8" -Palg="wa*"
-./gradlew run -Pweight="1.7" -Palg="wa*"
-./gradlew run -Pweight="1.6" -Palg="wa*"
-./gradlew run -Pweight="1.5" -Palg="wa*"
-./gradlew run -Pweight="1.4" -Palg="wa*"
-./gradlew run -Pweight="1.3" -Palg="wa*"
-./gradlew run -Pweight="1.2" -Palg="wa*"
-./gradlew run -Pweight="1.1" -Palg="wa*"
-./gradlew run -Pweight="1.0" -Palg="wa*"
-./gradlew run -Pweight="2.0" -Palg="dps"
-./gradlew run -Pweight="1.9" -Palg="dps"
-./gradlew run -Pweight="1.8" -Palg="dps"
-./gradlew run -Pweight="1.7" -Palg="dps"
-./gradlew run -Pweight="1.6" -Palg="dps"
-./gradlew run -Pweight="1.5" -Palg="dps"
-./gradlew run -Pweight="1.4" -Palg="dps"
-./gradlew run -Pweight="1.3" -Palg="dps"
-./gradlew run -Pweight="1.2" -Palg="dps"
-./gradlew run -Pweight="1.1" -Palg="dps"
-./gradlew run -Pweight="1.0" -Palg="dps"
+sendSlackNotification.bash "#experiments" "experiment_bot" "William just started running experiments."
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 2.0 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.9 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.8 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.7 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.6 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.5 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.4 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.3 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.2 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.1 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.0 wa*
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 2.0 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.9 dps 
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.8 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.7 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.6 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.5 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.4 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.3 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.2 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.1 dps
+java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.0 dps
+endSlackNotification.bash "#experiments" "experiment_bot" "William's experiments just finished."
+
 
