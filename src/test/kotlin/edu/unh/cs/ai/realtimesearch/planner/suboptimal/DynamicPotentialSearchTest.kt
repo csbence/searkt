@@ -97,11 +97,24 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, 1.35)
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.35)
         val plan = aStarAgent.plan(initialState)
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size * 1.35 >= 12 }
+    }
+
+    @Test
+    fun testKorfInstance12() {
+        val tiles = "14 1 9 6 4 8 12 5 7 2 3 0 10 11 13 15"
+        val instance = createInstanceFromString(tiles)
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = slidingTilePuzzle.initialState
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val plan = aStarAgent.plan(initialState)
+        println("" + plan + "\nlength ${plan.size}")
+        kotlin.test.assertTrue { plan.isNotEmpty() }
+        kotlin.test.assertTrue { plan.size <= 45 * 1.0 }
     }
 
 
@@ -122,6 +135,21 @@ class DynamicPotentialSearchTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
         }
+    }
+
+
+    @Test
+    fun testKorfInstance1() {
+        val weight = 1.7
+        val tiles = "14 13 15 7 11 12 9 5 6 0 2 1 4 8 10 3"
+        val instance = createInstanceFromString(tiles)
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = slidingTilePuzzle.initialState
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, weight)
+        val plan = aStarAgent.plan(initialState)
+        println("" + plan + "\nlength ${plan.size}")
+        kotlin.test.assertTrue { plan.isNotEmpty() }
+        kotlin.test.assertTrue { plan.size  <= 57 * weight }
     }
 
     @Test
