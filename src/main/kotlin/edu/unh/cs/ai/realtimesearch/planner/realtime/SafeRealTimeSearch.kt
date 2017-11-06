@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
@@ -17,7 +18,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSel
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.system.measureTimeMillis
 

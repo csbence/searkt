@@ -36,7 +36,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.Class
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.Callable

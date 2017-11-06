@@ -161,7 +161,8 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
      * @param state the state whose values should be printed
      */
     override fun print(state: AcrobotState): String {
-        return state.toJson()
+//        return state.toJson()
+        TODO()
     }
 
     /**

@@ -11,7 +11,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 
 /**
  * An experiments meant for classical search, such as depth first search.

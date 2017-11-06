@@ -11,7 +11,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 

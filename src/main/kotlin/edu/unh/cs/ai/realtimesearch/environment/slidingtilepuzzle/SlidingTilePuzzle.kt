@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.lang.Math.abs
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {

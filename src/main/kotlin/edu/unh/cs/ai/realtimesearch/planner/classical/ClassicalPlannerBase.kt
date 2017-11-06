@@ -3,7 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import kotlin.system.measureNanoTime
 
 /**

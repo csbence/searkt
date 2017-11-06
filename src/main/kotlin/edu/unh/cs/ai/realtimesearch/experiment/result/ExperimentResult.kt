@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
@@ -15,7 +14,7 @@ import java.util.concurrent.TimeUnit
  *
  * The systemProperties property is initialized at construction time.
  */
-@JsonSerialize(`as` = ExperimentData::class)
+//@JsonSerialize(`as` = ExperimentData::class)
 class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(experimentConfiguration: Map<String, Any?>,
                 errorMessage: String?) : this() {

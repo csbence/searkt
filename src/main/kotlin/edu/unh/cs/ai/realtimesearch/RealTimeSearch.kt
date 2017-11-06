@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
@@ -16,8 +15,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import java.io.File
-import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -83,12 +80,13 @@ fun main(args: Array<String>) {
 
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
 
-    val objectMapper = ObjectMapper()
-
-    File("output").mkdir()
-    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    println("\n$results")
+//    val objectMapper = ObjectMapper()
+//
+//    File("output").mkdir()
+//    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+//    println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
+//    TODO("We should print searialize JSON somehow")
 
     println(results.summary())
 

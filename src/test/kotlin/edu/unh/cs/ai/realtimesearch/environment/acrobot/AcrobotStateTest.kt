@@ -2,7 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import org.junit.Test
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

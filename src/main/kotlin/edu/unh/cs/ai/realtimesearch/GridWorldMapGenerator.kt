@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch
 
-import org.springframework.util.StringUtils
 import java.util.*
 
 /**
@@ -27,7 +26,7 @@ class GridWorldMapGenerator(private var baseMap: String) {
     init {
         // Replace initial start and end states with empty space
         baseMap = baseMap.replace(START_CELL, EMPTY_CELL).replace(END_CELL, EMPTY_CELL)
-        emptyCount = StringUtils.countOccurrencesOf(baseMap, EMPTY_CELL.toString())
+        emptyCount = baseMap.count { it == EMPTY_CELL }
 
         if (emptyCount < 2)
             throw IllegalArgumentException("Not enough empty cells in map")

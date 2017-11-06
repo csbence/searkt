@@ -5,7 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.toLocationSet
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.lang.Math.abs
 
 /**

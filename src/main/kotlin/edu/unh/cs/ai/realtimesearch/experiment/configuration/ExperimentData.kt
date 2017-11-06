@@ -1,12 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter
-import com.fasterxml.jackson.annotation.JsonAnySetter
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.ExperimentDeserializer
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
-
 /**
  * Base class for JSON serialization.
  *
@@ -18,8 +11,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
  *
  * MAP is the top level item.
  */
-@JsonDeserialize(using = ExperimentDeserializer::class)
-open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> = hashMapOf()) {
+//@JsonDeserialize(using = ExperimentDeserializer::class)
+open class ExperimentData(val valueStore: MutableMap<String, Any?> = hashMapOf()) {
     init {
         valueStore.remove("valueStore")
         valueStore.remove("properties")
@@ -33,13 +26,13 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
         return valueStore[key.toString()]
     }
 
-    @JsonAnySetter
+//    @JsonAnySetter
     fun set(key: String, value: String) {
         valueStore[key] = value
     }
 
     @Suppress("unused")
-    @JsonAnyGetter
+//    @JsonAnyGetter
     fun getProperties() = valueStore
 
     operator fun <T> set(key: String, value: T) {
@@ -51,8 +44,8 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
 
     open fun contains(key: String): Boolean = valueStore.contains(key)
 
-    override fun toString(): String {
-        return toIndentedJson()
-    }
+//    override fun toString(): String {
+//        return toIndentedJson()
+//    }
 }
 

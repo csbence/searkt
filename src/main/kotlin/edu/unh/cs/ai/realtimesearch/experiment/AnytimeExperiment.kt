@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 

@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.util.*
 import kotlin.comparisons.compareBy
 

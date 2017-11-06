@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStar
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
 import groovy.json.JsonOutput
 import org.junit.Test
-import org.slf4j.LoggerFactory
+import edu.unh.cs.ai.realtimesearch.logging.LoggerFactory
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

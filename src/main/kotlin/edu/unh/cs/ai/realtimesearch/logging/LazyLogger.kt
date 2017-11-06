@@ -1,6 +1,37 @@
 package edu.unh.cs.ai.realtimesearch.logging
 
-import org.slf4j.Logger
+object LoggerFactory {
+    fun getLogger(name: String) = Logger()
+    fun getLogger(name: Any) = Logger()
+}
+
+class Logger {
+    val isInfoEnabled = false
+    val isDebugEnabled = false
+    val isTraceEnabled = false
+    val isErrorEnabled = false
+    val isWarnEnabled = false
+
+    fun info(message: String, any: Any? = null) {
+
+    }
+
+    fun debug(message: String) {
+
+    }
+
+    fun trace(message: String) {
+
+    }
+
+    fun error(message: String) {
+
+    }
+
+    fun warn(message: String) {
+
+    }
+}
 
 inline fun Logger.info(log: () -> String) {
     if (isInfoEnabled) {

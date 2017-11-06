@@ -1,10 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
+//import groovy.json.JsonOutput
+//import groovy.json.JsonSlurper
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotLink
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotState
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
-import java.io.InputStream
 
 /**
  * An acrobot domain configuration.  The acrobot domain does not have different map instances like
@@ -38,13 +37,13 @@ data class AcrobotConfiguration(
          * Returns an AcrobotConfiguration from the given string contents.
          * @param string a string in JSON format representing an AcrobotConfiguration
          */
-        fun fromJson(string: String): AcrobotConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
+//        fun fromJson(string: String): AcrobotConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
 
         /**
          * Returns an AcrobotConfiguration from the given stream contents.
          * @param stream a stream with JSON format content representing an AcrobotConfiguration
          */
-        fun fromJsonStream(stream: InputStream): AcrobotConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
+//        fun fromJsonStream(stream: InputStream): AcrobotConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
 
         /**
          * Returns an AcrobotConfiguration from the given map.
@@ -71,5 +70,5 @@ data class AcrobotConfiguration(
             "stateConfiguration" to stateConfiguration.toMap()
     )
 
-    fun toJson(): String = JsonOutput.toJson(this)
+//    fun toJson(): String = JsonOutput.toJson(this)
 }
