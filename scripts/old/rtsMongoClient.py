@@ -131,7 +131,7 @@ all_domains = {"GRID_WORLD": [],
                "SLIDING_TILE_PUZZLE_4": [],
                "ACROBOT": [],
                "POINT_ROBOT": [],
-               "POINT_ROBOT_WITH_INERTIA": get_pri_configurations(),  # need to remove for older data
+               "POINT_ROBOT_WITH_INERTIA": get_pri_configurations(),  # need to pop for older data
                "RACETRACK": []}
 
 # Lists of known domain instances
@@ -614,7 +614,7 @@ def remove_algorithms(data: dict, labels: list, indices: dict, plot_without: tup
     :param data: The data dict
     :param labels: The labels list
     :param indices: The indices list which provides what indices in the collections belong to which algorithm
-    :param plot_without: The algorithms to remove
+    :param plot_without: The algorithms to pop
     :return: A underscore ('_') separated string of the removed algorithm names. Empty string if nothing removed.
     """
     removed = ""
@@ -769,7 +769,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                         else:
                             removed += "_" + algorithm
 
-                # Plot it if there was anything to remove and there is still data left over
+                # Plot it if there was anything to pop and there is still data left over
                 if removed and algorithm_gat_per_duration:
                     if not quiet:
                         print("Plotting error plot: {} - {} - {} without {}".format(domain, instance,
@@ -830,7 +830,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                         plots_markdown += plot_stacked(gat_data, gat_labels)
 
                         removed = remove_algorithms(gat_data, gat_labels, gat_indices, plot_without)
-                        # Plot it if there was anything to remove and there is still data left over
+                        # Plot it if there was anything to pop and there is still data left over
                         if removed and gat_data['goalAchievementTime'] and gat_data["idlePlanningTime"]:
                             new_file_header = "{}_{}_{}_NO_{}".format(domain, instance_file_name, action_duration,
                                                                       removed)
@@ -842,7 +842,7 @@ def plot_all_for_domain(db, domain: str, instances: list, plot_average: bool = F
                         plots_markdown += plot_node_bars(node_data, node_labels)
 
                         removed = remove_algorithms(node_data, node_labels, node_indices, plot_without)
-                        # Plot it if there was anything to remove and there is still data left over
+                        # Plot it if there was anything to pop and there is still data left over
                         if removed and node_data['generatedNodes'] and node_data["expandedNodes"]:
                             new_file_header = "{}_{}_{}_NO_{}".format(domain, instance_file_name, action_duration,
                                                                       removed)

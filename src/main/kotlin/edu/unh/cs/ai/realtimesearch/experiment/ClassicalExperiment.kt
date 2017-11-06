@@ -53,16 +53,25 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
         val pathLength = actions.size.toLong()
         logger.info { "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes" }
 
-        return ExperimentResult(
+        var currentState = initialState
+        // validate path
+        actions.forEach {
+            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")
+        }
+
+        val experimentResult = ExperimentResult(
                 configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,
+                iterationCount = 1,
                 actionExecutionTime = pathLength * configuration.actionDuration,
                 goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
                 idlePlanningTime = planningTime,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString))
 
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 }

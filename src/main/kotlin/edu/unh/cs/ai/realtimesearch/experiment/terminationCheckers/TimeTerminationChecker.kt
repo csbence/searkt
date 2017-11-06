@@ -12,9 +12,9 @@ abstract class TimeTerminationChecker(val epsilon: Long = TimeUnit.NANOSECONDS.c
     /**
      * Sets start time to now
      */
-    abstract override fun resetTo(timeBound: Long)
+    abstract override fun resetTo(bound: Long)
 
-    override fun notifyExpansion() {}
+    override fun notifyExpansion(expansions: Long) {}
 
     /**
      * Checks whether the allowed time has passed since resetTo

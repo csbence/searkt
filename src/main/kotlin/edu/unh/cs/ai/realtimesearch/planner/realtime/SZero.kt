@@ -3,14 +3,12 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.extractSourctToTargetPath
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -32,6 +30,7 @@ import kotlin.system.measureTimeMillis
  */
 class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
     val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
+    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -72,7 +71,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
-    val safeNodes = ArrayList<Node<StateType>>()
+    private val safeNodes = ArrayList<Node<StateType>>()
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
@@ -155,20 +154,17 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 SafeZeroSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
 
-            val safestNodeOnOpen: Pair<Node<StateType>, Double> = safeNodeOnOpen()
-
-            val safeTargetNode = if (safestNodeOnOpen.second != -1.0) {
-                safestNodeOnOpen.first
-            } else {
-                targetNode
+            val targetSafeNode = when (targetSelection) {
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. S0 does not implement the BEST_SAFE strategy")
             }
 
-            plan = extractSourctToTargetPath(safeTargetNode, sourceState)
+            plan = extractPath(targetSafeNode ?: targetNode, sourceState)
             rootState = targetNode.state
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+        logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
 
         return plan!!
     }
@@ -183,28 +179,19 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
 
         val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
-        var currentNode = node
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
-        val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
-                aStarPopCounter++
-                currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-                expandFromNode(currentNode)
-                terminationChecker.notifyExpansion()
-            }
+        while (!terminationChecker.reachedTermination()) {
+            aStarPopCounter++
+
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode
+
+            expandFromNode(openList.pop()!!)
+            terminationChecker.notifyExpansion()
         }
-
-        if (node == currentNode && !domain.isGoal(currentNode.state)) {
-            //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-        } else {
-            logger.debug { "A* : expanded $expandedNodes nodes" }
-        }
-
-        logger.debug { "Done with AStar at $currentNode" }
-
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
@@ -229,13 +216,17 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
 
             val successorNode = getNode(sourceNode, successor)
 
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
+
             // check for safety if safe add to the safe nodes
             if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
+                successorNode.safe = true
             }
-
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -246,6 +237,9 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -277,6 +271,8 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 }
             }
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**
@@ -311,7 +307,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     /**
      * Backs up safety through the parent pointers
      */
-    private fun backUpSafetyThroughParents(): Unit {
+    private fun backUpSafetyThroughParents() {
         while (safeNodes.isNotEmpty()) {
             val safeNode = safeNodes.first()
             safeNodes.remove(safeNode)
@@ -319,7 +315,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             var currentParent = safeNode.parent
             // always update the safe nodes
             // through the parent pointers
-            while (currentParent !== currentParent?.parent) {
+            while (currentParent !== currentParent.parent) {
                 currentParent.safe = safeNode.safe
                 currentParent = currentParent.parent
             }
@@ -359,9 +355,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
-            for (predecessor in node.predecessors) {
-
-                val predecessorNode = predecessor.node
+            for ((predecessorNode, _, actionCost) in node.predecessors) {
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
@@ -382,14 +376,14 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
                     openList.add(predecessorNode)
-                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     openList.update(predecessorNode) // Update priority
 
                     // Frontier nodes could be also visited
@@ -411,7 +405,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
     /**
      *
      */
-    private fun safeNodeOnOpen(): Pair<Node<StateType>, Double> {
+    private fun safeNodeOnOpen(): Node<StateType>? {
         val placeBackOnOpen = ArrayList<Node<StateType>?>()
         var topOfOpen = openList.pop()
         var hasSafeTopLevelActions = false
@@ -444,11 +438,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         // if the open list is empty there is no
         // safe node on open to travel up
         // return -1 and do what LSS does
-        if (openList.isEmpty()) {
-            return Pair(topOfOpen!!, -1.0)
-        }
-        // open list had something safe on it
-        return Pair(topOfOpen!!, topOfOpen.f)
+        return if (openList.isEmpty()) topOfOpen!! else null
     }
 
 }

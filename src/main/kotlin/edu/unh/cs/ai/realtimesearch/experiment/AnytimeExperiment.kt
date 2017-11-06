@@ -51,6 +51,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
         var totalPlanningTime = 0L
+        var iterationCount = 0L
 
         while (!domain.isGoal(currentState)) {
             logger.debug { "Start anytime search" }
@@ -118,17 +119,21 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                     "(${planner.expandedNodeCount / convertNanoUpDouble(idlePlanningTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
-        return ExperimentResult(
+        val experimentResult = ExperimentResult(
                 configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningTime,
+                iterationCount = iterationCount,
                 actionExecutionTime = totalExecutionNanoTime,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = idlePlanningTime,
                 pathLength = pathLength,
                 actions = actions.map(String::toString)
         )
+
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 }
 

@@ -4,7 +4,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
@@ -45,8 +45,10 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(configuration, Configurations.COMMITMENT_STRATEGY.toString())
-    private val actionDuration by lazyData<Long>(configuration, Configurations.ACTION_DURATION.toString())
+    private val commitmentStrategy by lazyData<String>(configuration, COMMITMENT_STRATEGY.toString())
+    private val actionDuration by lazyData<Long>(configuration, ACTION_DURATION.toString())
+    private val expansionLimit by lazyData<Long>(configuration, EXPANSION_LIMIT.toString())
+    private val stepLimit by lazyData<Long>(configuration, STEP_LIMIT.toString())
 
     /**
      * Runs the experiment
@@ -57,6 +59,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
         var currentState: StateType = initialState
 
         var totalPlanningNanoTime = 0L
+        var iterationCount = 0L
         val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
 
         var timeBound = actionDuration
@@ -66,6 +69,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.resetTo(timeBound)
 
+                iterationCount++
                 actionList = planner.selectAction(currentState, terminationChecker)
 
                 if (actionList.size > 1 && singleStepLookahead) {
@@ -86,6 +90,14 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
+
+            if (expansionLimit <= planner.expandedNodeCount) {
+                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the expansion limit: $expansionLimit")
+            }
+
+            if (stepLimit <= actions.size) {
+                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the step limit: $stepLimit")
+            }
         }
 
         val pathLength: Long = actions.size.toLong()
@@ -98,20 +110,24 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
         logger.info {
             "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in ${totalPlanningNanoTime} ns. " +
+                    "and ${planner.generatedNodeCount} generated nodes in $totalPlanningNanoTime ns. " +
                     "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
         }
 
-        return ExperimentResult(
+        val experimentResult = ExperimentResult(
                 configuration = configuration.valueStore,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,
+                iterationCount = iterationCount,
                 actionExecutionTime = totalExecutionNanoDuration,
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString))
+
+        domain.appendDomainSpecificResults(experimentResult)
+        return experimentResult
     }
 
     private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {

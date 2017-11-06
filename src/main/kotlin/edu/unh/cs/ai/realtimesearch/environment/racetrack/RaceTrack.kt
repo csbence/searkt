@@ -1,10 +1,12 @@
 package edu.unh.cs.ai.realtimesearch.environment.racetrack
 
 import edu.unh.cs.ai.realtimesearch.MetronomeException
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import org.slf4j.LoggerFactory
 import java.lang.Math.*
 import java.util.*
@@ -37,6 +39,8 @@ class RaceTrack(val width: Int,
     val maxXSpeed = width / 2
     val maxYSpeed = height / 2
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
+
+    private val velocities = mutableListOf<Double>()
 
     private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
@@ -251,4 +255,20 @@ class RaceTrack(val width: Int,
     override fun safeDistance(state: RaceTrackState): Pair<Int, Int> = max(abs(state.dX), abs(state.dY)) to min(abs(state.dX), abs(state.dY))
 
     override fun getIdentityAction(state: RaceTrackState): SuccessorBundle<RaceTrackState>? = if (state.dX == 0 && state.dY == 0) SuccessorBundle(state, NO_OP, actionDuration) else null
+
+    override fun transition(sourceState: RaceTrackState, action: Action): RaceTrackState? {
+        val targetState = super.transition(sourceState, action)
+
+        if (targetState != null) {
+            val xVelocity = (sourceState.x - targetState.x).toDouble()
+            val yVelocity = (sourceState.y - targetState.y).toDouble()
+            velocities.add(hypot(xVelocity, yVelocity))
+        }
+
+        return targetState
+    }
+
+    override fun appendDomainSpecificResults(results: ExperimentData) {
+        results["averageVelocity"] = velocities.average()
+    }
 }

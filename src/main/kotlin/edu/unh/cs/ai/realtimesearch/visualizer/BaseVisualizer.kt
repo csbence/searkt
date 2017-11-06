@@ -9,6 +9,7 @@ import groovyjarjarcommonscli.*
 import javafx.application.Application
 import kotlin.system.exitProcess
 
+
 /**
  * Base application for visualizers.  Handles command line parsing and provides framework for easily adding custom
  * options per visualizer implementation.

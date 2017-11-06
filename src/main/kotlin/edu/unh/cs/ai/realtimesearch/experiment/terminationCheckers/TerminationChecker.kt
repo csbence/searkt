@@ -21,7 +21,7 @@ interface TerminationChecker {
      *
      * It is only used by the expansion based termination checkers.
      */
-    fun notifyExpansion()
+    fun notifyExpansion(expansions: Long = 1)
 
     /**
      * Reset the termination checker to a given bound.

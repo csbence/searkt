@@ -9,5 +9,5 @@ enum class Planners {
     DYNAMIC_F_HAT,
     SAFE_RTS,
     S_ZERO,
-    S_ONE
+    SIMPLE_SAFE
 }

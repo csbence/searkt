@@ -12,7 +12,6 @@ import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
-import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
 
@@ -42,18 +41,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
-        var parent: Node<StateType>
+        var parent = parent ?: this
 
         val f: Double
             get() = cost + heuristic
 
-        init {
-            this.parent = parent ?: this
-        }
-
-        override fun hashCode(): Int {
-            return state.hashCode()
-        }
+        override fun hashCode(): Int = state.hashCode()
 
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
@@ -62,9 +55,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             return false
         }
 
-        override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
-        }
+        override fun toString(): String =
+                "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
     }
 
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
@@ -92,7 +84,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(10000000, fValueComparator)
+    private var openList = AdvancedPriorityQueue(10000000, fValueComparator)
 
     private var rootState: StateType? = null
 
@@ -119,6 +111,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
+        println(sourceState)
 
         if (rootState == null) {
             rootState = sourceState
@@ -167,13 +160,17 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         var currentNode = node
-        addToOpenList(node)
+        openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            while (!terminationChecker.reachedTermination()) {
                 aStarPopCounter++
-                currentNode = popOpenList()
+
+                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+                if (domain.isGoal(topNode.state)) return topNode
+
+                currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
                 expandFromNode(currentNode)
                 terminationChecker.notifyExpansion()
             }
@@ -187,12 +184,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         logger.debug { "Done with AStar at $currentNode" }
 
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
         iterationCounter++
-        clearOpenList()
+        logger.debug { "Clear open list" }
+        openList.clear()
 
         openList.reorder(fValueComparator)
     }
@@ -212,8 +210,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -224,6 +225,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -245,7 +249,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
 
                 if (!successorNode.open) {
-                    addToOpenList(successorNode) // Fresh node not on the open yet
+                    openList.add(successorNode)
+                    // Fresh node not on the open yet
                 } else {
                     openList.update(successorNode)
                 }
@@ -255,6 +260,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 }
             }
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**
@@ -313,14 +320,13 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
             // Closed list should be checked
-            val node = popOpenList()
+            val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
             node.iteration = iterationCounter
 
             val currentHeuristicValue = node.heuristic
 
             // update heuristic value for each predecessor
-            for (predecessor in node.predecessors) {
-                val predecessorNode = predecessor.node
+            for ((predecessorNode, _, actionCost) in node.predecessors) {
 
                 if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
                     // This node was already learned and closed in the current iteration
@@ -341,14 +347,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     assert(predecessorNode.iteration == iterationCounter - 1)
                     predecessorNode.iteration = iterationCounter
 
-                    addToOpenList(predecessorNode)
-                } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                    openList.add(predecessorNode)
+                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
                     // This node was visited in this learning phase, but the current path is better then the previous
-                    predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                    predecessorNode.heuristic = currentHeuristicValue + actionCost
                     openList.update(predecessorNode) // Update priority
 
                     // Frontier nodes could be also visited TODO
@@ -389,20 +395,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Plan extracted" }
 
         return actions.reversed()
-    }
-
-    private fun clearOpenList() {
-        logger.debug { "Clear open list" }
-        openList.clear()
-    }
-
-    private fun popOpenList(): Node<StateType> {
-        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-        return node
-    }
-
-    private fun addToOpenList(node: Node<StateType>) {
-        openList.add(node)
     }
 
 }

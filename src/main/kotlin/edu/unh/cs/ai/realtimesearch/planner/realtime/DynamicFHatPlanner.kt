@@ -210,10 +210,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination() && !domain.isGoal(currentNode.state)) {
+            while (!terminationChecker.reachedTermination()) {
                 aStarPopCounter++
+
+                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+                if (domain.isGoal(topNode.state)) return topNode
+
                 currentNode = popOpenList()
                 expandFromNode(currentNode)
+                terminationChecker.notifyExpansion()
             }
         }
 
@@ -225,7 +230,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
         logger.debug { "Done with AStar at $currentNode" }
 
-        return currentNode
+        return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
@@ -247,7 +252,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         expandedNodeCount += 1
 
         // Select the best children to update the distance and heuristic error
-        var bestChildNode: Node<StateType>? = null
+        var bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -256,8 +261,11 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
 
             val successorNode = getNode(sourceNode, successor)
 
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY
+                    && successorNode.iteration != iterationCounter) {
+                // Ignore this successor as it is a dead end
+                continue
+            }
 
             // If the node is outdated it should be updated.
             if (successorNode.iteration != iterationCounter) {
@@ -268,6 +276,9 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     // parent, action, and actionCost is outdated too, but not relevant.
                 }
             }
+
+            // Add the current state as the predecessor of the child state
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -314,6 +325,8 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             nextHeuristicError += (localHeuristicError - nextHeuristicError) / expandedNodeCount
             nextDistanceError += (localDistanceError - nextDistanceError) / expandedNodeCount
         }
+
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
     }
 
     /**

@@ -9,7 +9,7 @@ object FakeTerminationChecker : TerminationChecker {
     override fun elapsed(): Long = 0
 
     override fun resetTo(bound: Long) {}
-    override fun notifyExpansion() {}
+    override fun notifyExpansion(expansions: Long) {}
 
     /**
      * Will never terminate.

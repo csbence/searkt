@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.isComfortable
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
