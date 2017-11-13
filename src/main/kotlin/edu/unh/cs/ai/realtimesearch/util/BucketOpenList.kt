@@ -5,7 +5,7 @@ interface BucketNode {
     fun getGValue(): Double
     fun getHValue(): Double
     fun updateIndex(i: Int)
-    fun getIndex(): Int
+    fun getNodeIndex(): Int
     override fun toString(): String
 }
 
@@ -63,7 +63,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
        }
 
         fun remove(element: T): T {
-            val i = element.getIndex()
+            val i = element.getNodeIndex()
             val removedNode = nodes.removeAt(i)
             val lastNode = nodes.removeAt(free - 1)
             nodes.add(i, lastNode)

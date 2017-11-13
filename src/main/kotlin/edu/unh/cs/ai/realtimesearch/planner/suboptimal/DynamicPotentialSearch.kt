@@ -14,6 +14,10 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var parent: DynamicPotentialSearch.Node<StateType>? = null) : Indexable, BucketNode {
+        override fun getNodeIndex(): Int {
+            return index
+        }
+
         override fun updateIndex(i: Int) {
             index = i
         }

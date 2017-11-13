@@ -147,12 +147,10 @@ object ConfigurationExecutor {
     private fun unsafeConfigurationExecution(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult? {
         val domainName: String = configuration.domainName
 
-        val domainStream: InputStream = if (configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
-            configuration.rawDomain!!.byteInputStream()
-        } else if (dataRootPath != null) {
-            FileInputStream(dataRootPath + configuration.domainPath)
-        } else {
-            Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
+        val domainStream: InputStream = when {
+            configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null -> configuration.rawDomain!!.byteInputStream()
+            dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
+            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }
 
         val domain = Domains.valueOf(domainName)

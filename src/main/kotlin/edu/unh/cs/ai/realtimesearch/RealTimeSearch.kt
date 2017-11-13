@@ -86,7 +86,7 @@ fun main(args: Array<String>) {
             )
     )
 
-    configurations.forEach(::println)
+//    configurations.forEach(::println)
 
 //    configurations.forEach {
 //        println(it.toIndentedJson())

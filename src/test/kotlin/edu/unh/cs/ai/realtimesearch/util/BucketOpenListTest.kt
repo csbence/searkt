@@ -9,6 +9,7 @@ import kotlin.test.assertNotEquals
 class BucketOpenListTest {
 
     private data class Node(var f: Double, var g: Double, var h: Double, var state: Int) : BucketNode {
+        override fun getNodeIndex(): Int = state
         override fun getFValue(): Double = f
         override fun getGValue(): Double = g
         override fun getHValue(): Double = h
