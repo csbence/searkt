@@ -7,9 +7,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.extractSourceToTargetPath
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -30,8 +29,8 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-    val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
-    val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+    private val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
+    private val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -160,7 +159,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. S0 does not implement the BEST_SAFE strategy")
             }
 
-            plan = extractSourceToTargetPath(targetSafeNode ?: targetNode, sourceState)
+            plan = extractPath(targetSafeNode ?: targetNode, sourceState)
             rootState = targetNode.state
         }
 

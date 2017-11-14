@@ -8,9 +8,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.extractSourceToTargetPath
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -57,7 +56,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                                              parent: Node<StateType>? = null,
                                              override var safe: Boolean = false,
                                              override var depth: Int)
-        : Indexable, Safe, SearchNode<StateType, Node<StateType>>, Depth{
+        : Indexable, Safe, SearchNode<StateType, Node<StateType>>, Depth {
         /** Item index in the open list */
         override var index: Int = -1
 
@@ -125,6 +124,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // first search iteration check
 
+        println("$iterationCounter :: $sourceState")
 
         if (rootState == null) {
             rootState = sourceState
@@ -141,7 +141,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
 
-        breadthFirstSearch(sourceState, terminationChecker, depthBound)
 
         if(versionNumber == SimpleSafeVersion.ONE) {
             resetSearchTree()
@@ -152,6 +151,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         if (openList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
         }
+
+        breadthFirstSearch(sourceState, terminationChecker, depthBound)
 
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
@@ -167,7 +168,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
             }
 
-            plan = extractSourceToTargetPath(targetSafeNode ?: targetNode, sourceState)
+            plan = extractPath(targetSafeNode ?: targetNode, sourceState)
             rootState = targetNode.state
         }
 

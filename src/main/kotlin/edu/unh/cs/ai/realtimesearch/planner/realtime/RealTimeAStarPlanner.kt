@@ -3,6 +3,9 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -11,7 +14,8 @@ import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, var depthLimit: Int) : RealTimePlanner<StateType>(domain) {
+class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, var configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+    private val depthLimit: Long = configuration.getTypedValue(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
 
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
     data class MiniminNode<StateType : State<StateType>>(val state: StateType, val cost: Double, val depth: Int)
@@ -23,10 +27,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
 
     val openList: Queue<MiniminNode<StateType>> = ArrayDeque(1000000)
     //    val closedList: MutableSet<StateType> = HashSet<StateType>(1000000, 1.5F).resize()
-
-    init {
-        depthLimit = 20
-    }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         val successors = domain.successors(sourceState)
@@ -66,7 +66,7 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
     private fun evaluateSuccessors(successors: List<SuccessorBundle<StateType>>, terminationChecker: TerminationChecker): List<SuccessorHeuristicPair<StateType>> {
         var successorHeuristicPairs = heuristicLookahead(successors, 0, terminationChecker) ?: throw InsufficientTerminationCriterionException("Not enough time to calculate the successor f values.")
 
-        for (depth in 1..depthLimit) {
+        for (depth in 1..depthLimit.toInt()) {
             successorHeuristicPairs = heuristicLookahead(successors, depth, terminationChecker) ?: return successorHeuristicPairs
         }
 

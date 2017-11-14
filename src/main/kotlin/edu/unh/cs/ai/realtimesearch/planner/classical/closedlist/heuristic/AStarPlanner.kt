@@ -14,7 +14,7 @@ import java.util.*
  *
  * Requires a domain with an admissible heuristic function.
  */
-class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double = 1.0) : ClassicalPlanner<StateType>() {
+class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) : ClassicalPlanner<StateType>() {
     private val logger = LoggerFactory.getLogger(AStarPlanner::class.java)
 
     private val openList = PriorityQueue { lhs: Node<StateType>, rhs: Node<StateType> ->
