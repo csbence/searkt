@@ -18,8 +18,8 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfigura
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import java.io.File
 import java.io.PrintWriter
-import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 class Input
 
@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
             actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(100, MINUTES),
+            timeLimit = NANOSECONDS.convert(1, SECONDS),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(

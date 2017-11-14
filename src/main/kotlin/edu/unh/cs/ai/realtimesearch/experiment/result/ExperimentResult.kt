@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 @JsonSerialize(`as` = ExperimentData::class)
 class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
     constructor(experimentConfiguration: Map<String, Any?>,
-                errorMessage: String?) : this() {
+                errorMessage: String? = null) : this() {
         this.configuration = experimentConfiguration
         this.errorMessage = errorMessage
         this.success = false

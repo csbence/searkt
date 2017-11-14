@@ -31,9 +31,8 @@ import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
+import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.ClassicalAStarPlanner
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.SimpleAStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
@@ -224,11 +223,11 @@ object ConfigurationExecutor {
         val sourceState = seed?.run { domain.randomizedStartState(initialState, this) } ?: initialState
 
         return when (Planners.valueOf(algorithmName)) {
-            WEIGHTED_A_STAR -> executeWeightedAStar(configuration, domain, sourceState)
-            A_STAR -> executeAStar(configuration, domain, sourceState)
+            WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, sourceState)
             DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
-            RTA_STAR -> executeRealTimeAStar(configuration, domain, sourceState)
+            RTA_STAR -> executeRealTimeSearch(RealTimeAStarPlanner(domain, configuration), configuration, domain, sourceState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
@@ -237,36 +236,14 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeRealTimeSearch(planner: RealTimePlanner<StateType>, configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        return RealTimeExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
+        val realTimeExperiment = RealTimeExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration))
+        val experimentResult = realTimeExperiment.run()
+
+        return experimentResult
     }
 
-    private fun <StateType : State<StateType>> executePureAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val aStarPlanner = SimpleAStar(domain)
-        aStarPlanner.search(initialState)
-
-        return ExperimentResult(configuration.valueStore, errorMessage = "Incompatible output format.")
-    }
-
-    private fun <StateType : State<StateType>> executeAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val aStarPlanner = AStarPlanner(domain, 1.0)
-        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
-
-        return classicalExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeWeightedAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val weight = configuration.getTypedValue<Double>(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
-        val aStarPlanner = WeightedAStar(domain, weight)
-        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
-
-        return classicalExperiment.run()
-    }
-
-    private fun <StateType : State<StateType>> executeClassicalAStar(configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val aStarPlanner = ClassicalAStarPlanner(domain, 1.0)
-        val classicalExperiment = ClassicalExperiment(configuration, aStarPlanner, domain, initialState)
-
-        return classicalExperiment.run()
+    private fun <StateType : State<StateType>> executeOfflineSearch(planner: ClassicalPlanner<StateType>, configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
+        return ClassicalExperiment(configuration, planner, domain, initialState).run()
     }
 
     private fun getTerminationChecker(configuration: GeneralExperimentConfiguration): TerminationChecker {
@@ -283,14 +260,6 @@ object ConfigurationExecutor {
             terminationType == UNLIMITED -> FakeTerminationChecker
             else -> throw MetronomeException("Invalid termination checker configuration")
         }
-    }
-
-    private fun <StateType : State<StateType>> executeRealTimeAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        val depthLimit = experimentConfiguration.getTypedValue<Long>(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
-        val realTimeAStarPlanner = RealTimeAStarPlanner(domain, depthLimit.toInt())
-        val rtsExperiment = RealTimeExperiment(experimentConfiguration, realTimeAStarPlanner, domain, initialState, getTerminationChecker(experimentConfiguration))
-
-        return rtsExperiment.run()
     }
 
     private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {

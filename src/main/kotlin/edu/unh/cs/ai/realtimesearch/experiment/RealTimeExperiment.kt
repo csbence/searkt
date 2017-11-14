@@ -91,12 +91,36 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
             totalPlanningNanoTime += iterationNanoTime
 
+            fun createSnapshotResult(): ExperimentResult {
+                val experimentResult = ExperimentResult(experimentConfiguration = configuration.valueStore)
+                experimentResult.apply {
+                    expandedNodes = planner.expandedNodeCount
+                    generatedNodes = planner.generatedNodeCount
+                    planningTime = totalPlanningNanoTime
+                    iterationCount = iterationCount
+                    goalAchievementTime = goalAchievementTime
+                    idlePlanningTime = actionDuration
+                    pathLength = actions.size.toLong()
+                    actionExecutionTime = pathLength * actionDuration
+                    this.actions = actions.map(Action::toString)
+                }
+                return experimentResult
+            }
+
             if (expansionLimit <= planner.expandedNodeCount) {
-                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the expansion limit: $expansionLimit")
+                val experimentResult = createSnapshotResult()
+                experimentResult.apply {
+                    errorMessage = "The planner exceeded the expansion limit: $expansionLimit"
+                }
+                return experimentResult
             }
 
             if (stepLimit <= actions.size) {
-                return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "The planner exceeded the step limit: $stepLimit")
+                val experimentResult = createSnapshotResult()
+                experimentResult.apply {
+                    errorMessage = "The planner exceeded the step limit: $stepLimit"
+                }
+                return experimentResult
             }
         }
 
