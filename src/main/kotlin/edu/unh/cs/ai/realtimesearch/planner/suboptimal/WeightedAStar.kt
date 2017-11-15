@@ -1,18 +1,25 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
 import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.HashMap
+import kotlin.Comparator
 
-class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val weight: Double = 1.0) : ClassicalPlanner<StateType>() {
+class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
+    private val weight: Double = configuration.getTypedValue(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
+
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
+
 
         override var index: Int = -1
 
@@ -44,8 +51,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
+    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(1000000000, 1.toFloat()).resize()
+    private var openList = AdvancedPriorityQueue(1000000000, fValueComparator)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
