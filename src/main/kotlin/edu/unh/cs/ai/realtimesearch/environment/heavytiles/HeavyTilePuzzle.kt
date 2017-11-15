@@ -19,10 +19,10 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
         val successorBundles: MutableList<SuccessorBundle<HeavyTilePuzzle4State>> = arrayListOf()
 
         for (action in HeavyTilePuzzleAction.values()) {
-            val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
             val successorState = successorState(state, action.relativeX, action.relativeY, action)
 
             if (successorState != null) {
+                val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
                 successorBundles.add(SuccessorBundle(successorState, action, actionDuration * tileToBeMoved))
             }
         }

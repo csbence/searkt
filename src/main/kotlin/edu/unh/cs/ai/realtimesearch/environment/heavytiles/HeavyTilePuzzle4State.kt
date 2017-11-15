@@ -20,6 +20,8 @@ import java.util.*
  */
 data class HeavyTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double) : State<HeavyTilePuzzle4State> {
 
+
+
     override fun copy(): HeavyTilePuzzle4State = HeavyTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic)
 
     fun getIndex(x: Int, y: Int): Int = 4 * y + x

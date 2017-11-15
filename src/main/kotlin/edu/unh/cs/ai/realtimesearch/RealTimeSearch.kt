@@ -64,8 +64,8 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(2.0)),
-                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(2.0))
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(25.0)),
+                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(25.0))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)

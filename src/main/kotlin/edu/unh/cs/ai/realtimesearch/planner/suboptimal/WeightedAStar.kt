@@ -51,8 +51,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(1000000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(1000000000, fValueComparator)
+    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
