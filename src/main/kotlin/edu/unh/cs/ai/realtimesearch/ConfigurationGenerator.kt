@@ -230,6 +230,16 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                     .map { "$slidingTile4MapRoot$it" }
                     .mapTo(configurations) { getDomainConfigurationMap(it) }
         }
+        SLIDING_TILE_PUZZLE_HEAVY -> {
+            slidingTileSolvableMaps
+                    .map {"$slidingTileSolvableMaps$it" }
+                    .mapTo(configurations) { getDomainConfigurationMap(it)}
+        }
+        SLIDING_TILE_PUZZLE_INVERSE -> {
+            slidingTileSolvableMaps
+                    .map{"$slidingTileSolvableMaps$it"}
+                    .mapTo(configurations) { getDomainConfigurationMap(it)}
+        }
     }
 
     return configurations
