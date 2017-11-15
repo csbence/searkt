@@ -28,39 +28,25 @@ class Input
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
 
-    val weight = args[0].toDouble()
-    val alg = args[1]
-
-    val plannerToRun =
-            if (alg == "wa*"){
-                WEIGHTED_A_STAR
-            } else {
-                DYNAMIC_POTENTIAL_SEARCH
-            }
-
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
-    val korfDomains = mutableListOf<Pair<Domains, String>>()
-
-    (1 until 101).forEach { korfDomains.add(Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it") }
-
     val configurations = generateConfigurations(
-            domains = korfDomains,//listOf(
-//                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
+            domains = listOf(
+                      Domains.SLIDING_TILE_PUZZLE_HEAVY to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-//            ),
+            ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(plannerToRun),
+            planners = listOf(DYNAMIC_POTENTIAL_SEARCH, WEIGHTED_A_STAR),
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(15, MINUTES),
-            expansionLimit = 100000000,
+            timeLimit = NANOSECONDS.convert(100, MINUTES),
+            expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
@@ -78,15 +64,15 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(weight)),
-                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(weight))
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(25.0)),
+                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(25.0))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
             )
     )
 
-//    configurations.forEach(::println)
+    configurations.forEach(::println)
 
 //    configurations.forEach {
 //        println(it.toIndentedJson())
@@ -103,9 +89,9 @@ fun main(args: Array<String>) {
     val objectMapper = ObjectMapper()
 
     File("output").mkdir()
-    PrintWriter("output/results.$plannerToRun.$weight.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
     println("\n$results")
-    println("\nResult has been saved to 'output/results.$plannerToRun.$weight.json'.")
+    println("\nResult has been saved to 'output/results.json'.")
 
     println(results.summary())
 
