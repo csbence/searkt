@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
@@ -220,7 +221,8 @@ object ConfigurationExecutor {
     }
 
     private fun executeInverseTilePuzzle(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        TODO("Implement the Inverse Tile Puzzle Domain!")
+        val slidingTilePuzzleInstance = InverseTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
     private fun executeAcrobot(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {

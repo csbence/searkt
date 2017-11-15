@@ -64,7 +64,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 successors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x + it.xdot, state.y + it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        actionDuration));
+                        actionDuration.toDouble()));
             }
         }
         return successors
@@ -172,7 +172,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 predecessors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x - it.xdot, state.y - it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        actionDuration));
+                        actionDuration.toDouble()));
             }
         }
         return predecessors

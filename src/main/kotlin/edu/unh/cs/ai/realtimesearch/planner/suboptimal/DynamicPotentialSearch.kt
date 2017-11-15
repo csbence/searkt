@@ -16,8 +16,8 @@ import java.util.*
 class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.getTypedValue(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var actionCost: Double, var action: Action,
                                              var parent: DynamicPotentialSearch.Node<StateType>? = null) : Indexable, BucketNode {
         override fun getNodeIndex(): Int {
             return index
@@ -32,7 +32,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
         override fun getFValue(): Double = f
 
-        override fun getGValue(): Double = cost.toDouble()
+        override fun getGValue(): Double = cost
 
         override fun getHValue(): Double = heuristic
 
@@ -72,7 +72,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Long.MAX_VALUE
+                    cost = Double.MAX_VALUE
             )
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -134,7 +134,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     override fun plan(state: StateType): List<Action> {
         val startTime = initializeAStar()
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction)
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)

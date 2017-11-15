@@ -258,10 +258,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             // always add the successor doing a BFS
             successorNode.apply {
-                cost = successorGValueFromCurrent
+                cost = successorGValueFromCurrent.toLong()
                 parent = sourceNode
                 action = successor.action
-                actionCost = successor.actionCost
+                actionCost = successor.actionCost.toLong()
                 depth = parent.depth + 1
             }
 
@@ -337,7 +337,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 successorNode.safe = true
             }
 
-            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
 
             // out dated nodes are updated
             if (successorNode.iteration != iterationCounter) {
@@ -357,10 +357,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
                 successorNode.apply {
-                    cost = successorGValueFromCurrent
+                    cost = successorGValueFromCurrent.toLong()
                     parent = sourceNode
                     action = successor.action
-                    actionCost = successor.actionCost
+                    actionCost = successor.actionCost.toLong()
                     depth = parent.depth + 1
                 }
 
@@ -395,7 +395,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,

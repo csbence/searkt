@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -10,6 +11,8 @@ import java.io.InputStream
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+val config = GeneralExperimentConfiguration()
 
 class DynamicPotentialSearchTest {
     private fun createInstanceFromString(puzzle: String): InputStream {

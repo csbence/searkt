@@ -22,7 +22,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             val successorState = successorState(state, action.relativeX, action.relativeY, action)
 
             if (successorState != null) {
-                successorBundles.add(SuccessorBundle(successorState, action, actionDuration))
+                successorBundles.add(SuccessorBundle(successorState, action, actionDuration.toDouble()))
             }
         }
 

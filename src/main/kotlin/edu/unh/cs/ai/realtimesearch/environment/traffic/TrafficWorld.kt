@@ -50,7 +50,7 @@ class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, 
                         SuccessorBundle(
                                 TrafficWorldState(newLocation, timestamp),
                                 action,
-                                actionCost = actionDuration
+                                actionCost = actionDuration.toDouble()
                         )
                 )
             }

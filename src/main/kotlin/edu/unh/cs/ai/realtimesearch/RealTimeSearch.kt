@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_HEAVY to "input/tiles/korf/4/real/12"
+                      Domains.SLIDING_TILE_PUZZLE_INVERSE to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
@@ -64,8 +64,8 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(25.0)),
-                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(25.0))
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(3.0)),
+                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(3.0))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
