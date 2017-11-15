@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
+                      Domains.SLIDING_TILE_PUZZLE_HEAVY to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
