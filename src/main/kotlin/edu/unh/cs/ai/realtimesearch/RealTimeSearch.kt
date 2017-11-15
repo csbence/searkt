@@ -28,26 +28,49 @@ class Input
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
 
+    val weight = args[0].toDouble()
+    val alg = args[1]
+    val domain = args[2]
+
+    val plannerToRun =
+            when (alg) {
+                "wa*" -> WEIGHTED_A_STAR
+                "dps" -> DYNAMIC_POTENTIAL_SEARCH
+                else -> A_STAR
+            }
+
+    val domainToRun =
+            when (domain) {
+                "stp" -> Domains.SLIDING_TILE_PUZZLE_4
+                "istp" -> Domains.SLIDING_TILE_PUZZLE_INVERSE
+                "hstp" -> Domains.SLIDING_TILE_PUZZLE_HEAVY
+                else -> Domains.SLIDING_TILE_PUZZLE_4
+            }
+
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
+    val korfDomains = mutableListOf<Pair<Domains, String>>()
+
+    (1 until 101).forEach { korfDomains.add(domainToRun to "input/tiles/korf/4/real/$it") }
+
     val configurations = generateConfigurations(
-            domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_INVERSE to "input/tiles/korf/4/real/12"
+            domains = korfDomains, //listOf(
+//                      domainToRun to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
+//            ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(DYNAMIC_POTENTIAL_SEARCH, WEIGHTED_A_STAR),
+            planners = listOf(plannerToRun),
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(100, MINUTES),
-            expansionLimit = 10000000,
-            stepLimit = 10000000,
+            timeLimit = NANOSECONDS.convert(15, MINUTES),
+            expansionLimit = 100000000,
+            stepLimit = 100000000,
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
@@ -64,8 +87,8 @@ fun main(args: Array<String>) {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(3.0)),
-                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(3.0))
+                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(weight)),
+                    Triple(DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(weight))
             ),
             domainExtras = listOf(
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
