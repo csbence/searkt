@@ -14,23 +14,23 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
 
     //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
-    var maxXSpeed = 0;
-    var maxYSpeed = 0;
+    var maxXSpeed = 0
+    var maxYSpeed = 0
 
-    fun getAllActions(): ArrayList<PointRobotLOSTAction> {
-        var a = ArrayList<PointRobotLOSTAction>()
-        maxXSpeed = width;
-        maxYSpeed = height;
+    private fun getAllActions(): ArrayList<PointRobotLOSTAction> {
+        val a = ArrayList<PointRobotLOSTAction>()
+        maxXSpeed = width
+        maxYSpeed = height
         val rangeXSpeed = width * 2
         val rangeYSpeed = height * 2
-        var itX = 0;
+        var itX = 0
         while (itX <= rangeXSpeed) {
-            var itY = 0;
+            var itY = 0
             while (itY <= rangeYSpeed) {
-                var xdot = ((itX) - width);
-                var ydot = ((itY) - height);
+                val xDot = ((itX) - width)
+                val yDot = ((itY) - height)
                 //                println("" + xdot + " " + ydot)
-                a.add(PointRobotLOSTAction(xdot.toDouble(), ydot.toDouble()))
+                a.add(PointRobotLOSTAction(xDot.toDouble(), yDot.toDouble()))
                 itY++
             }
             itX++
@@ -49,14 +49,14 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
             var valid = true
 
             for (i in 1..nSteps) {
-                var x = state.x + (it.xdot * (dt * i));
-                var y = state.y + (it.ydot * (dt * i));
+                val x = state.x + (it.xdot * (dt * i))
+                val y = state.y + (it.ydot * (dt * i))
                 //                x += it.xdot * dt;
                 //                y += it.ydot * dt;
 
                 if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
+                    valid = false
+                    break
                 }
             }
 
@@ -64,7 +64,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 successors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x + it.xdot, state.y + it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        actionDuration.toDouble()));
+                        actionDuration))
             }
         }
         return successors
@@ -77,7 +77,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
      * @param y coordinate of the location
      * @return true if location is legal
      */
-    fun isLegalLocation(x: Double, y: Double): Boolean {
+    private fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
                 y < height && Location(x.toInt(), y.toInt()) !in blockedCells
     }
@@ -121,18 +121,16 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                         + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius)
     }
 
-    override fun isGoal(state: PointRobotLOSTState): Boolean {
-        //        val curXLoc = (state.x * 2).toInt() / 2.0
-        //        val curYLoc = (state.y * 2).toInt() / 2.0
-        //
-        //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
-        //
-        //
-        //
-        //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
-        //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
-        return distance(state) <= 0;
-    }
+    override fun isGoal(state: PointRobotLOSTState): Boolean = distance(state) <= 0
+            //        val curXLoc = (state.x * 2).toInt() / 2.0
+            //        val curYLoc = (state.y * 2).toInt() / 2.0
+            //
+            //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+            //
+            //
+            //
+            //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+            //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
 
     override fun print(state: PointRobotLOSTState): String {
         val description = StringBuilder()
@@ -146,9 +144,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         return description.toString()
     }
 
-    override fun getGoals(): List<PointRobotLOSTState> {
-        return listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
-    }
+    override fun getGoals(): List<PointRobotLOSTState> = listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
 
     override fun predecessors(state: PointRobotLOSTState): List<SuccessorBundle<PointRobotLOSTState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotLOSTState>> = arrayListOf()
@@ -159,12 +155,12 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
             var valid = true
 
             for (i in 1..nSteps) {
-                var x = state.x - (it.xdot * (dt * i));
-                var y = state.y - (it.ydot * (dt * i));
+                val x = state.x - (it.xdot * (dt * i))
+                val y = state.y - (it.ydot * (dt * i))
 
                 if (!isLegalLocation(x, y)) {
-                    valid = false;
-                    break;
+                    valid = false
+                    break
                 }
             }
 
@@ -172,7 +168,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                 predecessors.add(SuccessorBundle(
                         PointRobotLOSTState(state.x - it.xdot, state.y - it.ydot),
                         PointRobotLOSTAction(it.xdot, it.ydot),
-                        actionDuration.toDouble()));
+                        actionDuration))
             }
         }
         return predecessors

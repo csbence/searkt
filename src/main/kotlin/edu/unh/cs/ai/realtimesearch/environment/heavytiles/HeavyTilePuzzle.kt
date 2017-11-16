@@ -23,7 +23,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
 
             if (successorState != null) {
                 val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
-                successorBundles.add(SuccessorBundle(successorState, action, (actionDuration * tileToBeMoved).toDouble()))
+                successorBundles.add(SuccessorBundle(successorState, action, (actionDuration * tileToBeMoved)))
             }
         }
 

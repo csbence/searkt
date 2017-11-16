@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 
     val korfDomains = mutableListOf<Pair<Domains, String>>()
 
-    (1 until 101).forEach { korfDomains.add(domainToRun to "input/tiles/korf/4/real/$it") }
+    (12 until 13).forEach { korfDomains.add(domainToRun to "input/tiles/korf/4/real/$it") }
 
     val configurations = generateConfigurations(
             domains = korfDomains, //listOf(
@@ -69,8 +69,8 @@ fun main(args: Array<String>) {
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(15, MINUTES),
-            expansionLimit = 100000000,
-            stepLimit = 100000000,
+            expansionLimit = 300000000,
+            stepLimit = 300000000,
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
@@ -112,7 +112,7 @@ fun main(args: Array<String>) {
     val objectMapper = ObjectMapper()
 
     File("output").mkdir()
-    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+    PrintWriter("output/results.$plannerToRun.$weight.$domainToRun.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
     println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
 

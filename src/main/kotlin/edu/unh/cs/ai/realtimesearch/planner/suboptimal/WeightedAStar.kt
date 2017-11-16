@@ -16,8 +16,8 @@ import kotlin.Comparator
 class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.getTypedValue(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
-                                             var actionCost: Double, var action: Action,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
+                                             var actionCost: Long, var action: Action,
                                              var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
 
 
@@ -67,7 +67,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Double.MAX_VALUE
+                    cost = Long.MAX_VALUE
             )
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -120,7 +120,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     override fun plan(state: StateType): List<Action> {
         val startTime = initializeAStar()
-        val node = Node(state, weight * domain.heuristic(state), 0.0, 0.0, NoOperationAction)
+        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)

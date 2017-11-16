@@ -11,10 +11,10 @@ import java.util.*
  * Double Integrator Domain
  */
 class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: Set<Location>,
-                            val endLocation: DoubleLocation, val goalRadius: Double,
-                            val numActions: Int = defaultNumActions,
-                            val actionFraction: Double = defaultActionFraction,
-                            val stateFraction: Double = defaultStateFraction,
+                            private val endLocation: DoubleLocation, private val goalRadius: Double,
+                            numActions: Int = defaultNumActions,
+                            actionFraction: Double = defaultActionFraction,
+                            private val stateFraction: Double = defaultStateFraction,
                             val actionDuration: Long) : Domain<PointRobotWithInertiaState> {
     companion object {
         val defaultNumActions = 3
@@ -22,8 +22,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         val defaultStateFraction = 0.5
     }
 
-    val numAction = numActions // total number of accelerations avaliable in one direction
-    val fractions = actionFraction // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
+    private val numAction = numActions // total number of accelerations avaliable in one direction
+    private val fractions = actionFraction // number of values between whole numbers i.e. How many actions should there be in the range [0,1)?
     var maxAcc = -1.0
     private var actions = getAllActions()
 
@@ -80,7 +80,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot + xDoubleDot, state.ydot + yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(xDoubleDot, yDoubleDot),
-                        actionDuration.toDouble()))
+                        actionDuration))
             }
         }
 
@@ -90,10 +90,11 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
     /**
      * Returns whether location within boundaries and not a blocked cell.
      *
-     * @param location the location to test
+     * @param x the location x to test
+     * @param y the location y to test
      * @return true if location is legal
      */
-    fun isLegalLocation(x: Double, y: Double): Boolean {
+    private fun isLegalLocation(x: Double, y: Double): Boolean {
         val inBounds = x >= 0 && y >= 0 && x < width &&
                 y < height
         val notBlocked = Location(x.toInt(), y.toInt()) !in blockedCells
@@ -216,9 +217,8 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
         throw UnsupportedOperationException()
     }
 
-    override fun getGoals(): List<PointRobotWithInertiaState> {
-        return listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0, stateFraction))
-    }
+    override fun getGoals(): List<PointRobotWithInertiaState> =
+            listOf(PointRobotWithInertiaState(endLocation.x, endLocation.y, 0.0, 0.0, stateFraction))
 
     override fun predecessors(state: PointRobotWithInertiaState): List<SuccessorBundle<PointRobotWithInertiaState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotWithInertiaState>> = arrayListOf()
@@ -249,7 +249,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 predecessors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
-                        actionDuration.toDouble()))
+                        actionDuration))
             }
         }
         return predecessors

@@ -11,14 +11,11 @@ import org.slf4j.LoggerFactory
  * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
  * the four directions, or to vacuum.
  *
- * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
-    override fun isSafe(state: GridWorldState): Boolean {
-        return false
-    }
+    override fun isSafe(state: GridWorldState): Boolean = false
 
     /**
      * Part of the Domain interface.
@@ -33,7 +30,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 successors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = actionDuration.toDouble()))
+                        actionCost = actionDuration))
             }
         }
 
@@ -90,15 +87,16 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
     override fun print(state: GridWorldState): String {
         val description = StringBuilder()
         for (h in 1..height) {
-            for (w in 1..width) {
-                val charCell = when (Location(w, h)) {
-                    state.agentLocation -> '@'
-                    targetLocation -> '*'
-                    in blockedCells -> '#'
-                    else -> '_'
-                }
-                description.append(charCell)
-            }
+            (1..width)
+                    .map {
+                        when (Location(it, h)) {
+                            state.agentLocation -> '@'
+                            targetLocation -> '*'
+                            in blockedCells -> '#'
+                            else -> '_'
+                        }
+                    }
+                    .forEach { description.append(it) }
             description.append("\n")
         }
 
@@ -113,9 +111,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getGoals(): List<GridWorldState> {
-        return listOf(GridWorldState(targetLocation))
-    }
+    override fun getGoals(): List<GridWorldState> = listOf(GridWorldState(targetLocation))
 
     override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
         val predecessors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
@@ -127,7 +123,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 predecessors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = 1.toDouble()))
+                        actionCost = 1))
             }
         }
 

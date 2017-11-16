@@ -23,7 +23,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
 
             if (successorState != null) {
                 val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
-                successorBundles.add(SuccessorBundle(successorState, action, actionDuration * (1.0 / tileToBeMoved)))
+                successorBundles.add(SuccessorBundle(successorState, action, actionDuration * ((1.0 / tileToBeMoved).toLong())))
             }
         }
 
@@ -91,7 +91,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
                 val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 
-                manhattanSum += abs(value / size - y) + abs(value % size - x) * (1.0 / value)
+                manhattanSum += abs(value / size - y) + abs(value % size - x) * ((1.0 / value).toLong())
             }
         }
 
