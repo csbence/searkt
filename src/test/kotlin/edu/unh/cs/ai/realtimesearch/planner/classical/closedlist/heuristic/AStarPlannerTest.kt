@@ -4,9 +4,9 @@ import edu.unh.cs.ai.realtimesearch.Input
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import org.junit.Test
 import java.io.File
@@ -20,6 +20,22 @@ import kotlin.test.assertTrue
  * @author Bence Cserna (bence@cserna.net)
  */
 class AStarPlannerTest {
+
+    private fun makeTestConfiguration(domain: Pair<Domains, DomainPath>, planner: Planners, weight: Double) = generateConfigurations(
+            domains = listOf(domain),
+            planners = listOf(planner),
+            actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = TerminationType.EXPANSION,
+            lookaheadType = LookaheadType.DYNAMIC,
+            timeLimit = TimeUnit.NANOSECONDS.convert(15, TimeUnit.MINUTES),
+            expansionLimit = 300000000,
+            stepLimit = 300000000,
+            plannerExtras = listOf(
+                    Triple(Planners.WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(weight))
+            ),
+            domainExtras = listOf()
+
+    )
 
 //    @Test
 //    fun testOptimality() {
@@ -62,7 +78,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         kotlin.test.assertTrue { aStarAgent.plan(initialState).isEmpty() }
     }
 
@@ -72,7 +88,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -85,7 +101,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -98,7 +114,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -111,7 +127,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         val plan = aStarAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -124,7 +140,7 @@ class AStarPlannerTest {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+            val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
             val plan = aStarAgent.plan(initialState)
             var currentState = initialState
             plan.forEach { action ->
@@ -141,7 +157,7 @@ class AStarPlannerTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain, 1.0)
+        val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
         val plan = aStarAgent.plan(initialState)
         println("plan length: ${plan.size}")
         println(plan)

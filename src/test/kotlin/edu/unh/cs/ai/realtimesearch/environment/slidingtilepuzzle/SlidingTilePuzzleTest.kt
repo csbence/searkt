@@ -1,14 +1,38 @@
 package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.DomainPath
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertTrue
 
 class SlidingTilePuzzleTest {
+
+    private fun makeTestConfiguration(domain: Pair<Domains, DomainPath>, planner: Planners, weight: Double) = generateConfigurations(
+            domains = listOf(domain),
+            planners = listOf(planner),
+            actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = TerminationType.EXPANSION,
+            lookaheadType = LookaheadType.DYNAMIC,
+            timeLimit = TimeUnit.NANOSECONDS.convert(15, TimeUnit.MINUTES),
+            expansionLimit = 300000000,
+            stepLimit = 300000000,
+            plannerExtras = listOf(
+                    Triple(Planners.WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(weight))
+            ),
+            domainExtras = listOf()
+
+    )
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
