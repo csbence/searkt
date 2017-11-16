@@ -1,20 +1,44 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.DomainPath
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-val config = GeneralExperimentConfiguration()
 
 class DynamicPotentialSearchTest {
+
+    private fun makeTestConfiguration(domain: Pair<Domains, DomainPath>, planner: Planners, weight: Double) = generateConfigurations(
+            domains = listOf(domain),
+            planners = listOf(planner),
+            actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = TerminationType.EXPANSION,
+            lookaheadType = LookaheadType.DYNAMIC,
+            timeLimit = TimeUnit.NANOSECONDS.convert(15, TimeUnit.MINUTES),
+            expansionLimit = 300000000,
+            stepLimit = 300000000,
+            plannerExtras = listOf(
+                    Triple(Planners.DYNAMIC_POTENTIAL_SEARCH, Configurations.WEIGHT, listOf(weight))
+            ),
+            domainExtras = listOf()
+
+    )
+
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
         temp.deleteOnExit()
@@ -37,7 +61,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/easy0")
+        val config = makeTestConfiguration(domainPair, Planners.DYNAMIC_POTENTIAL_SEARCH, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         kotlin.test.assertTrue { dynamicPotentialSearchAgent.plan(initialState).isEmpty() }
     }
 
