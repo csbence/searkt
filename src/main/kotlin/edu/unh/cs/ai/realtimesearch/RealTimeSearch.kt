@@ -18,8 +18,8 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfigura
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import java.io.File
 import java.io.PrintWriter
+import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import java.util.concurrent.TimeUnit.SECONDS
 
 class Input
 
@@ -30,21 +30,21 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
+//                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-//                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(WEIGHTED_A_STAR),
-            actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(SIMPLE_SAFE),
+            actionDurations = listOf(50),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, SECONDS),
-            expansionLimit = 10000000,
+            timeLimit = NANOSECONDS.convert(1, HOURS),
+            expansionLimit = 10000000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
@@ -65,7 +65,7 @@ fun main(args: Array<String>) {
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..0L)
             )
     )
 
