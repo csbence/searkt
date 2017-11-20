@@ -115,6 +115,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
     private var rootState: StateType? = null
 
+    private val discoveredNodes = HashSet<State<StateType>>()
+
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
@@ -195,27 +197,27 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         nodes[state] = node
         breadthFirstFrontier.add(node)
 
-        val discoveredNodes = HashSet<State<StateType>>()
+        discoveredNodes.clear()
         discoveredNodes.add(state)
 
         var currentIteration = 0
         logger.debug { "Starting BFS from state: $state" }
 
-        val breadthTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining()/2)
+        val breadthTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
         while (!breadthTerminationChecker.reachedTermination() && breadthFirstFrontier.isNotEmpty()) {
 
             if (domain.isGoal(breadthFirstFrontier.peek().state)) return breadthFirstFrontier.toList()
 
             val sourceNode = breadthFirstFrontier.pop()
-            expandFromNode(sourceNode, breadthFirstFrontier, discoveredNodes)
+            val foundSafeNode = expandFromNode(sourceNode, breadthFirstFrontier)
             terminationChecker.notifyExpansion()
             breadthTerminationChecker.notifyExpansion()
 
-//            if (versionNumber == SimpleSafeVersion.TWO) {
-//                if (foundSafeNode) {
-//                    return breadthFirstFrontier.toList()
-//                }
-//            }
+            if (versionNumber == SimpleSafeVersion.TWO) {
+                if (foundSafeNode) {
+                    return breadthFirstFrontier.toList()
+                }
+            }
         }
 
         breadthFirstFrontier.peek() ?: throw GoalNotReachableException("k-BFS found no nodes.")
@@ -228,11 +230,19 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      * it will add it to the open list passed and store its g value as long as the
      * state has not been seen before, or is found with a lower g value.
      */
-    private fun expandFromNode(sourceNode: Node<StateType>, openListQueue: Queue<Node<StateType>>, discoveredNodes: HashSet<State<StateType>>): Boolean {
+    private fun expandFromNode(sourceNode: Node<StateType>, openListQueue: Queue<Node<StateType>>): Boolean {
         expandedNodeCount++
         var foundSafeNode = false
+
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
+
+            // Avoid circles in the tree
+            if (successor.state in discoveredNodes) {
+                continue
+            }
+            discoveredNodes.add(successor.state)
+
             val successorState = successor.state
             logger.trace { "Considering successor $successorState" }
 
@@ -253,7 +263,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
             // do not need to worry about predecessors because we are dumping the nodes after
             // but care about safety still
-            if (domain.isSafe(successorNode.state)) {
+            if (successorNode.safe || domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
                 foundSafeNode = true
@@ -270,7 +280,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
-
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             // always add the successor doing a BFS
             successorNode.apply {
@@ -281,13 +290,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 depth = parent.depth + 1
             }
 
+            openListQueue.add(successorNode)
+
             logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size ${openListQueue.size}" }
             logger.trace { "Adding it to the cost table with value ${successorNode.cost}" }
-            // we always add the node doing a BFS
-            if (TODO("Check that the node to be added to the queue is the same as the iteration counter.")) {
-                openListQueue.add(successorNode)
-                nodes[successorNode.state] = successorNode
-            }
         }
 
         sourceNode.heuristic = Double.POSITIVE_INFINITY
@@ -338,6 +344,13 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
+
+            // Avoid circles in the tree
+            if (successorState in discoveredNodes) {
+                continue
+            }
+            discoveredNodes.add(successor.state)
+
             logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
@@ -349,11 +362,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
 
             // safety check
-//            if (sourceNode.safe || domain.isSafe(successorNode.state)) {
-//                safeNodes.add(successorNode)
-//                successorNode.safe = true
-//            }
-            successorNode.safe = false
+            if (sourceNode.safe || domain.isSafe(successorNode.state)) {
+                safeNodes.add(successorNode)
+                successorNode.safe = true
+            }
 
             // out dated nodes are updated
             if (successorNode.iteration != iterationCounter) {
