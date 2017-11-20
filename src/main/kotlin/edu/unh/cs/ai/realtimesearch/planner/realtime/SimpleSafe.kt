@@ -164,6 +164,14 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         val breathFirstSearchFrontier = breadthFirstSearch(sourceState, terminationChecker, depthBound)
         breathFirstSearchFrontier.forEach(openList::add)
 
+        if(!(nodes[sourceState]?.safe)!!) {
+            var safeNodeOnFrontier = false
+            breathFirstSearchFrontier.forEach { node ->
+                if(node.safe) safeNodeOnFrontier = true
+            }
+            if(!safeNodeOnFrontier) throw MetronomeException("THIS ALGORITHM IS GARBAGE!")
+        }
+
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(terminationChecker)
