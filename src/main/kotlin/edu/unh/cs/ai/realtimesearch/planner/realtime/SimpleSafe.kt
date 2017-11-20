@@ -160,7 +160,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
         initializeAStar()
 
-        val breathFirstSearchFrontier = breadthFirstSearch(sourceState, terminationChecker, depthBound).filter { domain.isSafe(it.state) }
+        val breathFirstSearchFrontier = breadthFirstSearch(sourceState, terminationChecker, depthBound)
         breathFirstSearchFrontier.forEach(openList::add)
 
         var plan: List<ActionBundle>? = null
@@ -203,15 +203,16 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         var currentIteration = 0
         logger.debug { "Starting BFS from state: $state" }
 
-        val breadthTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
-        while (!breadthTerminationChecker.reachedTermination() && breadthFirstFrontier.isNotEmpty()) {
+        while (!terminationChecker.reachedTermination() && breadthFirstFrontier.isNotEmpty() && currentIteration < depthBound) {
+
+            println("currentIteration: $currentIteration")
 
             if (domain.isGoal(breadthFirstFrontier.peek().state)) return breadthFirstFrontier.toList()
 
             val sourceNode = breadthFirstFrontier.pop()
             val foundSafeNode = expandFromNode(sourceNode, breadthFirstFrontier)
             terminationChecker.notifyExpansion()
-            breadthTerminationChecker.notifyExpansion()
+            currentIteration = breadthFirstFrontier.peek().depth
 
             if (versionNumber == SimpleSafeVersion.TWO) {
                 if (foundSafeNode) {
@@ -254,15 +255,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 continue
             }
 
-            // update the node depth to be one mor than the parent
+            // update the node depth to be one more than the parent
             successorNode.depth = sourceNode.depth + 1
 
             // skip if we circle back to the parent
             if (successorState == sourceNode.parent.state) {
                 continue
             }
-            // do not need to worry about predecessors because we are dumping the nodes after
-            // but care about safety still
+
+            // need to check for safety
             if (successorNode.safe || domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true

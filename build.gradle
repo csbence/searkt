@@ -10,6 +10,12 @@ applicationDefaultJvmArgs = [
         "-Xmx10g"
 ]
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all{
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
 if (project.hasProperty("mainClass")) {
     mainClassName = mainClass
 } else {
