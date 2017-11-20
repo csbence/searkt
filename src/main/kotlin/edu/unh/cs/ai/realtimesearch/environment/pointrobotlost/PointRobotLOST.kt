@@ -121,18 +121,16 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
                         + Math.pow((endState.y) - startState.y, 2.0)) - goalRadius)
     }
 
-    override fun isGoal(state: PointRobotLOSTState): Boolean {
-        //        val curXLoc = (state.x * 2).toInt() / 2.0
-        //        val curYLoc = (state.y * 2).toInt() / 2.0
-        //
-        //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
-        //
-        //
-        //
-        //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
-        //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
-        return distance(state) <= 0
-    }
+    override fun isGoal(state: PointRobotLOSTState): Boolean =//        val curXLoc = (state.x * 2).toInt() / 2.0
+            //        val curYLoc = (state.y * 2).toInt() / 2.0
+            //
+            //        //        println("" + state.x + " " + curXLoc + " " + state.y + " " + curYLoc)
+            //
+            //
+            //
+            //        return (endLocation.x + 0.5) == curXLoc && (endLocation.y + 0.5) == curYLoc
+            //        return endLocation.x == state.x && (endLocation.y + 0.5) == curYLoc
+            distance(state) <= 0
 
     override fun print(state: PointRobotLOSTState): String {
         val description = StringBuilder()
@@ -146,9 +144,7 @@ class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Loca
         return description.toString()
     }
 
-    override fun getGoals(): List<PointRobotLOSTState> {
-        return listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
-    }
+    override fun getGoals(): List<PointRobotLOSTState> = listOf(PointRobotLOSTState(endLocation.x, endLocation.y))
 
     override fun predecessors(state: PointRobotLOSTState): List<SuccessorBundle<PointRobotLOSTState>> {
         val predecessors: MutableList<SuccessorBundle<PointRobotLOSTState>> = arrayListOf()

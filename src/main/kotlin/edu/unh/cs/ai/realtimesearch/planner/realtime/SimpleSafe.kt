@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -25,9 +24,13 @@ import kotlin.system.measureTimeMillis
  * Planning phase - performs a breadth-first search to depth k, noting any
  * safe states that are generated.
  *
- * The tree is then cleared and restarts search back at the initial state and
+ * v1 The tree is then cleared and restarts search back at the initial state and
  * behaves like LSS-LRTA*, using its remaining expansion budget to perform
  * best-first search on f.
+ *
+ * v2 The tree is preserved, and the frontier of the breadth-first search is used
+ * as the starting point for best-first search on f (A* expansions.), using the
+ * remaining budget.
  *
  * After the learning phase marks the ancestors (via predecessors) of all generated
  * safe states (from both the breadth-first and best-first searches) as comfortable
@@ -38,7 +41,7 @@ import kotlin.system.measureTimeMillis
  *
  * If no actions are safe, it just commits to the best action.
  *
- * This look continues until the goal has been found.
+ * This loop continues until the goal has been found.
  *
  */
 
@@ -120,14 +123,12 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // first search iteration check
 
-        println("$iterationCounter :: $sourceState :: ${nodes[sourceState]?.safe}")
+        logger.info("$iterationCounter :: $sourceState :: ${nodes[sourceState]?.safe}")
 
         if (rootState == null) {
             rootState = sourceState
@@ -167,6 +168,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(terminationChecker)
 
+
             when (safetyBackup) {
                 SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
                 SimpleSafeSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
@@ -187,6 +189,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         return plan!!
     }
 
+
     /**
      * Runs local breadth-first search then clears the search tree
      * except for the safe nodes we learn about up to a depth k
@@ -201,16 +204,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         discoveredNodes.add(state)
 
         var currentIteration = 0
+        var foundSafeNode: Boolean
         logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() && breadthFirstFrontier.isNotEmpty() && currentIteration < depthBound) {
 
-            println("currentIteration: $currentIteration")
-
             if (domain.isGoal(breadthFirstFrontier.peek().state)) return breadthFirstFrontier.toList()
 
             val sourceNode = breadthFirstFrontier.pop()
-            val foundSafeNode = expandFromNode(sourceNode, breadthFirstFrontier)
+            foundSafeNode = expandFromNode(sourceNode, breadthFirstFrontier)
             terminationChecker.notifyExpansion()
             currentIteration = breadthFirstFrontier.peek().depth
 
@@ -219,6 +221,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                     return breadthFirstFrontier.toList()
                 }
             }
+
         }
 
         breadthFirstFrontier.peek() ?: throw GoalNotReachableException("k-BFS found no nodes.")
@@ -236,7 +239,20 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         var foundSafeNode = false
 
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+        for (successor in successors) {
+
+            val successorState = successor.state
+            logger.trace { "Considering successor $successorState" }
+
+            // skip if we circle back to the parent
+            if (successorState == sourceNode.parent.state) {
+            }
+
+            // skip if we are our own successor
+            if (sourceNode.state == successorState) {
+                continue
+            }
 
             // Avoid circles in the tree
             if (successor.state in discoveredNodes) {
@@ -244,10 +260,12 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
             discoveredNodes.add(successor.state)
 
-            val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
-
             val successorNode = getNode(sourceNode, successor)
+
+            if (successor.state == sourceNode.state) throw MetronomeException("LOOP DETECTED!")
+
+            // update the node depth to be one more than the parent
+            successorNode.depth = sourceNode.depth + 1
 
             if (successorNode.heuristic == Double.POSITIVE_INFINITY
                     && successorNode.iteration != iterationCounter) {
@@ -255,16 +273,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
                 continue
             }
 
-            // update the node depth to be one more than the parent
-            successorNode.depth = sourceNode.depth + 1
-
-            // skip if we circle back to the parent
-            if (successorState == sourceNode.parent.state) {
-                continue
-            }
 
             // need to check for safety
-            if (successorNode.safe || domain.isSafe(successorNode.state)) {
+            if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
                 foundSafeNode = true
@@ -313,7 +324,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
             if (domain.isGoal(topNode.state)) return topNode
 
-            topNode.safe = false
+//            topNode.safe = false
             expandFromNode(openList.pop()!!)
             terminationChecker.notifyExpansion()
 
@@ -343,8 +354,22 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         expandedNodeCount++
 
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+//        if (successors.isEmpty()) {
+//            logger.info("$sourceNode")
+//        }
+        for (successor in successors) {
             val successorState = successor.state
+
+            // skip is we got back to the parent
+            if (successorState == sourceNode.parent.state) {
+                continue
+            }
+
+            // skip if we are our own successor
+            if (successorState == sourceNode.state) {
+                continue
+            }
 
             // Avoid circles in the tree
             if (successorState in discoveredNodes) {
@@ -352,9 +377,15 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
             discoveredNodes.add(successor.state)
 
+            val successorNode = getNode(sourceNode, successor)
+
+            if (sourceNode.state == successor.state) throw MetronomeException("LOOP DETECTED!")
+
+            successorNode.depth = sourceNode.depth + 1
+
+
             logger.trace { "Considering successor $successorState" }
 
-            val successorNode = getNode(sourceNode, successor)
 
             if (successorNode.heuristic == Double.POSITIVE_INFINITY
                     && successorNode.iteration != iterationCounter) {
@@ -363,7 +394,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             }
 
             // safety check
-            if (sourceNode.safe || domain.isSafe(successorNode.state)) {
+            if (domain.isSafe(successorNode.state)) {
                 safeNodes.add(successorNode)
                 successorNode.safe = true
             }
@@ -379,10 +410,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
             successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
-            // skip is we got back to the parent
-            if (successorState == sourceNode.parent.state) {
-                continue
-            }
 
             // only generated states that are not yet visited or whose cost values are lower than this path
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -456,6 +483,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      * a better table of heuristics.
      */
     private fun dijkstra(terminationChecker: TerminationChecker) {
+        //logger.info("I AM DIJKSTRA HAHAHAHAHAAHAHAHAHAHAAHAHAHAHAHAAHAH~!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         logger.debug { "Start: Dijkstra" }
 
         iterationCounter++
