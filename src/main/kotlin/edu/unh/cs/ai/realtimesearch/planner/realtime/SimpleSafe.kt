@@ -197,6 +197,9 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         val breadthFirstFrontier = ArrayDeque<Node<StateType>>()
         val node = nodes[state] ?: Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
         node.parent = node
+        node.cost = 0
+        node.action = NoOperationAction
+        node.actionCost = 0
         node.iteration = iterationCounter + 1
 
         nodes[state] = node
@@ -310,7 +313,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
             logger.trace { "Adding it to the cost table with value ${successorNode.cost}" }
         }
 
-        sourceNode.heuristic = Double.POSITIVE_INFINITY
+//        sourceNode.heuristic = Double.POSITIVE_INFINITY
 
         return foundSafeNode
     }
