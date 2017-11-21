@@ -44,17 +44,17 @@ fun main(args: Array<String>) {
         seed = 0L..99L
     } else {
         planner = listOf(SIMPLE_SAFE)
-        duration = listOf(50L, 100L, 150L, 200L, 400L)
+        duration = listOf(100L)
         instance = listOf(
 //                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                Domains.RACETRACK to "input/racetrack/barto-big.track",
-                Domains.RACETRACK to "input/racetrack/uniform.track",
-                Domains.RACETRACK to "input/racetrack/barto-small.track"
+//                Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+                Domains.RACETRACK to "input/racetrack/barto-big.track"
+//                Domains.RACETRACK to "input/racetrack/uniform.track",
+//                Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
         )
-        seed = 0L..99L
+        seed = 53L..53L
     }
 
     val commitmentStrategy = CommitmentStrategy.MULTIPLE.toString()

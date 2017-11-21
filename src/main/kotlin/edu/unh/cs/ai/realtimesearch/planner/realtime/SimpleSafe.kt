@@ -201,6 +201,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         node.action = NoOperationAction
         node.actionCost = 0
         node.iteration = iterationCounter + 1
+        node.depth =0
 
         nodes[state] = node
         breadthFirstFrontier.add(node)
