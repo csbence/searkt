@@ -168,7 +168,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
         aStarTimer += measureTimeMillis {
             val targetNode = aStar(terminationChecker)
 
-
             when (safetyBackup) {
                 SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
                 SimpleSafeSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
@@ -196,7 +195,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
      */
     private fun breadthFirstSearch(state: StateType, terminationChecker: TerminationChecker, depthBound: Int): List<Node<StateType>> {
         val breadthFirstFrontier = ArrayDeque<Node<StateType>>()
-        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
+        val node = nodes[state] ?: Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
+        node.parent = node
+        node.iteration = iterationCounter + 1
+
         nodes[state] = node
         breadthFirstFrontier.add(node)
 
@@ -510,7 +512,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
                     predecessorNode.heuristic = currentHeuristicValue + actionCost
 
-                    assert(predecessorNode.iteration == iterationCounter - 1)
+                    assert(predecessorNode.iteration == iterationCounter - 1, {"Expected: ${iterationCounter - 1} got: ${predecessorNode.iteration}"})
 
                     predecessorNode.iteration = iterationCounter
                     openList.add(predecessorNode)
