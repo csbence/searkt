@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(SIMPLE_SAFE),
-            actionDurations = listOf(50),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(50L, 100L, 150L, 200L, 400L),//, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1, HOURS),
@@ -65,7 +65,7 @@ fun main(args: Array<String>) {
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..0L)
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..1L)
             )
     )
 

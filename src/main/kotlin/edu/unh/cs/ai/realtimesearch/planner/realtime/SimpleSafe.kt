@@ -128,7 +128,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // first search iteration check
 
-        logger.info("$iterationCounter :: $sourceState :: ${nodes[sourceState]?.safe}")
+//        logger.info("$iterationCounter :: $sourceState :: ${nodes[sourceState]?.safe}")
 
         if (rootState == null) {
             rootState = sourceState
@@ -163,14 +163,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
         val breathFirstSearchFrontier = breadthFirstSearch(sourceState, terminationChecker, depthBound)
         breathFirstSearchFrontier.forEach(openList::add)
-
-        if(!(nodes[sourceState]?.safe)!!) {
-            var safeNodeOnFrontier = false
-            breathFirstSearchFrontier.forEach { node ->
-                if(node.safe) safeNodeOnFrontier = true
-            }
-            if(!safeNodeOnFrontier) throw MetronomeException("THIS ALGORITHM IS GARBAGE!")
-        }
 
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
