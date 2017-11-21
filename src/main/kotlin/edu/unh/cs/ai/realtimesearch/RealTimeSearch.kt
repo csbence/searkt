@@ -32,10 +32,10 @@ fun main(args: Array<String>) {
             domains = listOf(
 //                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
-//                    Domains.RACETRACK to "input/racetrack/barto-big.track"
-//                    Domains.RACETRACK to "input/racetrack/uniform.track",
-//                    Domains.RACETRACK to "input/racetrack/barto-small.track"
+                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+                    Domains.RACETRACK to "input/racetrack/barto-big.track",
+                    Domains.RACETRACK to "input/racetrack/uniform.track",
+                    Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
