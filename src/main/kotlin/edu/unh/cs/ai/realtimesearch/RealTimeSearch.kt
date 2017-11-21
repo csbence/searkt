@@ -11,39 +11,62 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadT
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import java.io.File
-import java.io.PrintWriter
-import java.util.concurrent.TimeUnit.HOURS
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
-
-class Input
 
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
 
-    val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
+    // We might pull some args in
 
-    val configurations = generateConfigurations(
-            domains = listOf(
+    val planner: Iterable<Planners>
+    val duration: Iterable<Long>
+    val instance: Iterable<Pair<Domains, String>>
+    val seed: Iterable<Long>
+
+    // 3 planner
+    // 2 duration
+    // 1 domain target
+    // 0 seed
+
+    if (args.size == 3) {
+        planner = listOf(Planners.valueOf(args[2]))
+        duration = listOf(args[1].toLong())
+        instance = listOf(Domains.RACETRACK to args[0])
+//        seed = listOf(args[0].toLong())
+        seed = 0L..99L
+    } else {
+        planner = listOf(SIMPLE_SAFE)
+        duration = listOf(50L, 100L, 150L, 200L, 400L)
+        instance = listOf(
 //                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                    Domains.RACETRACK to "input/racetrack/barto-big.track",
-                    Domains.RACETRACK to "input/racetrack/uniform.track",
-                    Domains.RACETRACK to "input/racetrack/barto-small.track"
+                Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+                Domains.RACETRACK to "input/racetrack/barto-big.track",
+                Domains.RACETRACK to "input/racetrack/uniform.track",
+                Domains.RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
+        )
+        seed = 0L..99L
+    }
+
+    val commitmentStrategy = CommitmentStrategy.MULTIPLE.toString()
+
+    val configurations = generateConfigurations(
+            domains = instance,
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SIMPLE_SAFE),
-            actionDurations = listOf(50L, 100L, 150L, 200L, 400L),//, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = planner,
+            actionDurations = duration,//, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, HOURS),
+            timeLimit = NANOSECONDS.convert(30, MINUTES),
             expansionLimit = 10000000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
@@ -65,7 +88,7 @@ fun main(args: Array<String>) {
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 0L..1L)
+                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), seed)
             )
     )
 
@@ -86,11 +109,14 @@ fun main(args: Array<String>) {
     val objectMapper = ObjectMapper()
 
     File("output").mkdir()
-    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
-    println("\n$results")
+//    println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
 
+    File("output/${planner.first()}_results.json").appendText("\n" + objectMapper.writeValueAsString(results))
     println(results.summary())
+
+    // For some reason the process hangs if we don't kill it below (even if it ran successfully!).
+    System.exit(0)
 
 //    runVisualizer(result = results.first())
 }
