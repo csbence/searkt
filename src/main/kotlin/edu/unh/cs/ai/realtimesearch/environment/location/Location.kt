@@ -5,8 +5,9 @@ import java.lang.Math.abs
 /**
  * This represents a grid location, defined by its x and y coordinate.
  *
- * @param x: x index of the location
- * @param y: y index of the location
+ * @property x: x index of the location
+ * @property y: y index of the location
+ * @constructor creates a Location with values (x,y)
  */
 data class Location(val x: Int, val y: Int) {
 
