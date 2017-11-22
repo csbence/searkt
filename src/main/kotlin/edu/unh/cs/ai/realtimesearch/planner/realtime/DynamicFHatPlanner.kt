@@ -130,9 +130,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
 
     // Global error correction
     private var heuristicError = 0.0

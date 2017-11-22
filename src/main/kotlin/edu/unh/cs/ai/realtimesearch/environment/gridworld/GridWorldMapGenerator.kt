@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch
+package edu.unh.cs.ai.realtimesearch.environment.gridworld
 
 import org.springframework.util.StringUtils
 import java.util.*
