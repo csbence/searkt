@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.inversetiles
+package edu.unh.cs.ai.realtimesearch.environment.heavytiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
@@ -8,7 +8,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurati
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.planner.Planners
-import org.apache.commons.math3.analysis.function.Inverse
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -55,7 +54,7 @@ class InverseTilePuzzleTest {
     fun testZeroHeuristic() {
         val tiles = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
         assertEquals(0.0, heuristic)
     }
@@ -64,45 +63,45 @@ class InverseTilePuzzleTest {
     fun testHeuristic1() {
         val tiles = "1 0 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
-        assertEquals(100000.0, heuristic)
+        assertEquals(1.0, heuristic)
     }
 
     @Test
     fun testHeuristic2() {
         val tiles = "4 1 2 3 0 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
-        assertEquals(025000.0, heuristic)
+        assertEquals(4.0, heuristic)
     }
 
     @Test
     fun testHeuristic3() {
         val tiles = "1 2 0 3 5 4 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
-        assertEquals(195000.0, heuristic)
+        assertEquals(12.0, heuristic)
     }
 
     @Test
     fun testHeuristic4() {
         val tiles = "14 13 15 7 11 12 9 5 6 0 2 1 4 8 10 3"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
-        assertEquals(958313.0, heuristic)
+        assertEquals(353.0, heuristic)
     }
 
     @Test
     fun testHeuristic5() {
         val tiles = "14 9 12 13 15 4 8 10 0 2 1 7 3 11 5 6"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val heuristic = slidingTilePuzzle.domain.heuristic(slidingTilePuzzle.initialState)
-        assertEquals(1055438.0, heuristic)
+        assertEquals(436.0, heuristic)
 
     }
 
@@ -110,7 +109,7 @@ class InverseTilePuzzleTest {
     fun testSuccessors1() {
         val tiles = "1 2 0 3 5 4 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
         val successors = slidingTilePuzzle.domain.successors(slidingTilePuzzle.initialState)
         assertTrue(successors.size == 3)
     }
@@ -126,15 +125,15 @@ class InverseTilePuzzleTest {
         val s1Instance = createInstanceFromString(successor1)
         val s2Instance = createInstanceFromString(successor2)
         val s3Instance = createInstanceFromString(successor3)
-        val stp = InverseTilePuzzleIO.parseFromStream(initInstance, 1L)
-        val s1 = InverseTilePuzzleIO.parseFromStream(s1Instance, 1L)
-        val s2 = InverseTilePuzzleIO.parseFromStream(s2Instance, 1L)
-        val s3 = InverseTilePuzzleIO.parseFromStream(s3Instance, 1L)
+        val stp = HeavyTilePuzzleIO.parseFromStream(initInstance, 1L)
+        val s1 = HeavyTilePuzzleIO.parseFromStream(s1Instance, 1L)
+        val s2 = HeavyTilePuzzleIO.parseFromStream(s2Instance, 1L)
+        val s3 =HeavyTilePuzzleIO.parseFromStream(s3Instance, 1L)
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, InverseTilePuzzleAction.WEST, 50000L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, InverseTilePuzzleAction.EAST, 33333L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, InverseTilePuzzleAction.SOUTH, 16666L)) }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, HeavyTilePuzzleAction.WEST, 2L)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, HeavyTilePuzzleAction.EAST, 3L)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, HeavyTilePuzzleAction.SOUTH, 6L)) }
     }
 
     @Test
@@ -150,19 +149,21 @@ class InverseTilePuzzleTest {
         val s2Instance = createInstanceFromString(successor2)
         val s3Instance = createInstanceFromString(successor3)
         val s4Instance = createInstanceFromString(successor4)
-        val stp =InverseTilePuzzleIO.parseFromStream(initInstance, 1L)
-        val s1 = InverseTilePuzzleIO.parseFromStream(s1Instance, 1L)
-        val s2 = InverseTilePuzzleIO.parseFromStream(s2Instance, 1L)
-        val s3 = InverseTilePuzzleIO.parseFromStream(s3Instance, 1L)
-        val s4 = InverseTilePuzzleIO.parseFromStream(s4Instance, 1L)
+        val stp = HeavyTilePuzzleIO.parseFromStream(initInstance, 1L)
+        val s1 = HeavyTilePuzzleIO.parseFromStream(s1Instance, 1L)
+        val s2 = HeavyTilePuzzleIO.parseFromStream(s2Instance, 1L)
+        val s3 = HeavyTilePuzzleIO.parseFromStream(s3Instance, 1L)
+        val s4 = HeavyTilePuzzleIO.parseFromStream(s4Instance, 1L)
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
-        assertEquals(stp.domain.heuristic(stp.initialState), 827410.0)
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, InverseTilePuzzleAction.WEST, 6666L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, InverseTilePuzzleAction.NORTH, 50000L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, InverseTilePuzzleAction.EAST, 100000L)) }
-        assertTrue { successors.contains(SuccessorBundle(s4.initialState, InverseTilePuzzleAction.SOUTH, 7692L)) }
+        assertTrue { stp.domain.heuristic(stp.initialState) == 373.0 }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, HeavyTilePuzzleAction.WEST, 15L)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, HeavyTilePuzzleAction.NORTH, 2L)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, HeavyTilePuzzleAction.EAST, 1L)) }
+        assertTrue { successors.contains(SuccessorBundle(s4.initialState, HeavyTilePuzzleAction.SOUTH, 13L)) }
     }
+
+
 
 
 }

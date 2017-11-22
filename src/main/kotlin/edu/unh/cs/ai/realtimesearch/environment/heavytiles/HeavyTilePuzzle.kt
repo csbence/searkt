@@ -73,7 +73,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
                     val endX = endIndex / size
                     val endY = endIndex % size
 
-                    manhattanSum += abs(endX - yStart) + abs(endY - xStart)
+                    manhattanSum += (abs(endX - yStart) + abs(endY - xStart) ) * value
                     break
                 }
             }
@@ -91,7 +91,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
                 val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 
-                manhattanSum += abs(value / size - y) + abs(value % size - x) * value
+                manhattanSum += (abs(value / size - y) + abs(value % size - x)) * value
             }
         }
 

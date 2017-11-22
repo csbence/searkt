@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
 class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<InverseTilePuzzle4State> {
+    val significantDigitFactor = 100000L
     val logger = LoggerFactory.getLogger(InverseTilePuzzle::class.java)!!
 
     private val goalState: InverseTilePuzzle4State by lazy {
@@ -23,7 +24,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
 
             if (successorState != null) {
                 val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
-                successorBundles.add(SuccessorBundle(successorState, action, actionDuration * ((1.0 / tileToBeMoved).toLong())))
+                successorBundles.add(SuccessorBundle(successorState, action, actionDuration * ((1.0 / tileToBeMoved) * significantDigitFactor).toLong()))
             }
         }
 
@@ -73,7 +74,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
                     val endX = endIndex / size
                     val endY = endIndex % size
 
-                    manhattanSum += abs(endX - yStart) + abs(endY - xStart)
+                    manhattanSum += (abs(endX - yStart) + abs(endY - xStart)) * ((1.0 / value) * significantDigitFactor).toLong()
                     break
                 }
             }
@@ -91,7 +92,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
                 val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 
-                manhattanSum += abs(value / size - y) + abs(value % size - x) * ((1.0 / value).toLong())
+                manhattanSum += (abs(value / size - y) + abs(value % size - x)) * ((1.0 / value) * significantDigitFactor).toLong()
             }
         }
 
