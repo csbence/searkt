@@ -23,9 +23,9 @@ import kotlin.test.assertTrue
 
 class DynamicPotentialSearchTest {
 
-    private fun makeTestConfiguration(domain: Pair<Domains, DomainPath>, planner: Planners, weight: Double) = generateConfigurations(
+    private fun makeTestConfiguration(domain: Pair<Domains, DomainPath>, weight: Double) = generateConfigurations(
             domains = listOf(domain),
-            planners = listOf(planner),
+            planners = listOf(Planners.DYNAMIC_POTENTIAL_SEARCH),
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = TerminationType.EXPANSION,
             lookaheadType = LookaheadType.DYNAMIC,
@@ -62,7 +62,7 @@ class DynamicPotentialSearchTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/easy0")
-        val config = makeTestConfiguration(domainPair, Planners.DYNAMIC_POTENTIAL_SEARCH, 1.0).first()
+        val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         kotlin.test.assertTrue { dynamicPotentialSearchAgent.plan(initialState).isEmpty() }
     }
@@ -73,7 +73,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val dynamicPotentialSearchAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple1")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -86,7 +88,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val dynamicPotentialSearchAgent=DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple2")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -99,7 +103,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val dynamicPotentialSearchAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple3")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -112,7 +118,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val dynamicPotentialSearchAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple4")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -126,7 +134,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.35)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple4")
+        val config = makeTestConfiguration(domainPair, 1.35).first()
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = aStarAgent.plan(initialState)
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -139,7 +149,9 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/12")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = aStarAgent.plan(initialState)
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -154,7 +166,9 @@ class DynamicPotentialSearchTest {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val dynamicPotentialSearch = DynamicPotentialSearch(slidingTilePuzzle.domain, 1.0)
+            val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/$i")
+            val config = makeTestConfiguration(domainPair, 1.0).first()
+            val dynamicPotentialSearch = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
             val plan = dynamicPotentialSearch.plan(initialState)
             var currentState = initialState
             plan.forEach { action ->
@@ -174,24 +188,28 @@ class DynamicPotentialSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, weight)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/1")
+        val config = makeTestConfiguration(domainPair, weight).first()
+        val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
         val plan = aStarAgent.plan(initialState)
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
-        kotlin.test.assertTrue { plan.size  <= 57 * weight }
+        kotlin.test.assertTrue { plan.size <= 57 * weight }
     }
 
     @Test
     fun testDynamicPotentialSearchPuzzle() {
         val weight = 1.7
-        val instanceNumbers = intArrayOf(1,3)
-        val optimalSolutionLengths = intArrayOf(57,59)
+        val instanceNumbers = intArrayOf(1, 3)
+        val optimalSolutionLengths = intArrayOf(57, 59)
         for ((experimentNumber, i) in instanceNumbers.withIndex()) {
             print("Executing $i...")
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val dynamicPotentialSearchAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, weight)
+            val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/$i")
+            val config = makeTestConfiguration(domainPair, weight).first()
+            val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
             val plan = dynamicPotentialSearchAgent.plan(initialState)
             var currentState = initialState
             plan.forEach { action ->
@@ -199,7 +217,7 @@ class DynamicPotentialSearchTest {
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...")
-            assertTrue {optimalSolutionLengths[experimentNumber]*weight >= plan.size}
+            assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
             println("total time: ${dynamicPotentialSearchAgent.executionNanoTime}")
         }
     }
@@ -210,7 +228,9 @@ class DynamicPotentialSearchTest {
         val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/cups.vw")
         val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
         val initialState = gridWorld.initialState
-        val dynamicPotentialSearchAgent= DynamicPotentialSearch(gridWorld.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/vacuum/cups.vw")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(gridWorld.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         var currentState = initialState
         plan.forEach { action ->
@@ -226,7 +246,9 @@ class DynamicPotentialSearchTest {
         val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")
         val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
         val initialState = gridWorld.initialState
-        val dynamicPotentialSearchAgent= DynamicPotentialSearch(gridWorld.domain, 1.0)
+        val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/vacuum/maze.vw")
+        val config = makeTestConfiguration(domainPair, 1.0).first()
+        val dynamicPotentialSearchAgent = DynamicPotentialSearch(gridWorld.domain, config)
         val plan = dynamicPotentialSearchAgent.plan(initialState)
         var currentState = initialState
         plan.forEach { action ->

@@ -49,13 +49,13 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateTyp
             secondBestSuccessor == null -> {
                 // Only one action is available
                 heuristicTable[sourceState] = bestSuccessor.heuristicLookahead + bestSuccessor.successorBundle.actionCost
-                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost.toLong())
+                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }
             else -> {
                 // Save the second best action's f value
                 heuristicTable[sourceState] = secondBestSuccessor.heuristicLookahead + secondBestSuccessor.successorBundle.actionCost
                 // Use the best action
-                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost.toLong())
+                ActionBundle(bestSuccessor.successorBundle.action, bestSuccessor.successorBundle.actionCost)
             }
         }
 

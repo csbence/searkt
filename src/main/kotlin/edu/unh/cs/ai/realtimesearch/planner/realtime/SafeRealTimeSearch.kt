@@ -342,7 +342,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
+            successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -354,10 +354,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             if (successorNode.cost > successorGValueFromCurrent) {
                 // here we generate a state. We store it's g value and remember how to get here via the treePointers
                 successorNode.apply {
-                    cost = successorGValueFromCurrent.toLong()
+                    cost = successorGValueFromCurrent
                     parent = sourceNode
                     action = successor.action
-                    actionCost = successor.actionCost.toLong()
+                    actionCost = successor.actionCost
                 }
 
                 logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
@@ -413,7 +413,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost.toLong(),
+                    actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
                     cost = Long.MAX_VALUE,

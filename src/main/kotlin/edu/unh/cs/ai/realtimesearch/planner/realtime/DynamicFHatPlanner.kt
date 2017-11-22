@@ -252,7 +252,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
         expandedNodeCount += 1
 
         // Select the best children to update the distance and heuristic error
-        var bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
+        val bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -278,7 +278,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
             }
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -294,10 +294,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                 successorNode.apply {
                     val currentDistanceEstimate = distanceError / (1.0 - distanceError) // Dionne 2011 (3.8)
 
-                    cost = successorGValueFromCurrent.toLong()
+                    cost = successorGValueFromCurrent
                     parent = sourceNode
                     action = successor.action
-                    actionCost = successor.actionCost.toLong()
+                    actionCost = successor.actionCost
                     correctedHeuristic = heuristicError * currentDistanceEstimate + heuristic
                 }
 
@@ -349,7 +349,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(domain: Domain<StateType>
                     heuristic = heuristic,
                     distance = distance,
                     cost = Long.MAX_VALUE,
-                    actionCost = successor.actionCost.toLong(),
+                    actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
                     iteration = iterationCounter,
