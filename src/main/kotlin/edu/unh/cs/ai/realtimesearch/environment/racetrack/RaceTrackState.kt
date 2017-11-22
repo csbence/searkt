@@ -13,17 +13,13 @@ import java.lang.Integer.rotateLeft
  */
 data class RaceTrackState(val x: Int, val y: Int, val dX: Int, val dY: Int) : State<RaceTrackState> {
 
-    override fun equals(other: Any?): Boolean {
-        return when {
-            other !is RaceTrackState -> false
-            other.x == x && other.y == y && other.dX == dX && other.dY == dY -> true
-            else -> false
-        }
+    override fun equals(other: Any?): Boolean = when {
+        other !is RaceTrackState -> false
+        other.x == x && other.y == y && other.dX == dX && other.dY == dY -> true
+        else -> false
     }
 
-    override fun hashCode(): Int {
-        return x xor rotateLeft(y, 8) xor rotateLeft(dX, 16) xor rotateLeft(dY, 24)
-    }
+    override fun hashCode(): Int = x xor rotateLeft(y, 8) xor rotateLeft(dX, 16) xor rotateLeft(dY, 24)
 
     override fun copy() = RaceTrackState(x, y, dX, dY)
 }

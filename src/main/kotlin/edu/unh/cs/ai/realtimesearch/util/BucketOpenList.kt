@@ -4,13 +4,15 @@ interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
     fun getHValue(): Double
+    fun updateIndex(i: Int)
+    fun getNodeIndex(): Int
     override fun toString(): String
 }
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val openList = AdvancedPriorityQueue<Bucket<T>>(1000000000, PotentialComparator(bound, fMin))
-    private val lookUpTable = HashMap<GHPair, Bucket<T>>(10000000, 1.toFloat())
+    private val openList = AdvancedPriorityQueue<Bucket<T>>(100000000, PotentialComparator(bound, fMin))
+    private val lookUpTable = HashMap<GHPair, Bucket<T>>(1000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 
@@ -18,8 +20,10 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         override fun compare(leftBucket: T, rightBucket: T): Int {
             if (leftBucket != null && rightBucket != null) {
                 if (leftBucket is Bucket<*> && rightBucket is Bucket<*>) {
-                    val leftBucketPotential = ((bound * fMin) - leftBucket.g) / (leftBucket.h)
-                    val rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
+                    var leftBucketPotential = ((bound * fMin) - leftBucket.g) / (leftBucket.h)
+                    var rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
+                    if (leftBucket.h == 0.0) leftBucketPotential = Double.MAX_VALUE
+                    if (rightBucket.h == 0.0) rightBucketPotential = Double.MAX_VALUE
                     return Math.signum(rightBucketPotential - leftBucketPotential).toInt()
                 }
             }
@@ -32,6 +36,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     data class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
                                       val nodes: ArrayList<T>) : Indexable {
 
+        private var free = 0
+
         override var index: Int = -1
 
         override fun toString(): String {
@@ -42,6 +48,29 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             nodes.forEach { stringBuilder.appendln(it.toString()) }
             stringBuilder.appendln("---")
             return stringBuilder.toString()
+        }
+
+
+        fun add(element: T) {
+            nodes.add(free, element)
+            element.updateIndex(free)
+            free++
+        }
+
+        fun remove(): T {
+            val nodeToRemove = nodes[free - 1]
+            return remove(nodeToRemove)
+       }
+
+        fun remove(element: T): T {
+            val i = element.getNodeIndex()
+            val removedNode = nodes.removeAt(i)
+            val lastNode = nodes.removeAt(free - 1)
+            nodes.add(i, lastNode)
+            lastNode.updateIndex(i)
+            removedNode.updateIndex(-1)
+            free--
+            return removedNode
         }
     }
 
@@ -80,24 +109,12 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         return stringBuilder.toString()
     }
 
-    private fun recomputeMinFValue() {
-        if (openList.isNotEmpty()) {
-            fMin = openList.peek()!!.f
-            openList.forEach { bucket ->
-                if (bucket.f < fMin) {
-                    fMin = bucket.f
-                }
-            }
-        } else {
-            fMin = Double.MAX_VALUE
-        }
-    }
-
     fun replace(element: T, replacement: T) {
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
         val bucketLookUp = lookUpTable[elementGHPair] ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
 
         bucketLookUp.nodes.remove(element)
+        element.updateIndex(-1)
 
         if (bucketLookUp.nodes.isEmpty()) {
             openList.remove(bucketLookUp)
@@ -109,6 +126,19 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         }
 
         insert(replacement)
+    }
+
+    private fun recomputeMinFValue() {
+        if (openList.isNotEmpty()) {
+            fMin = openList.peek()!!.f
+            openList.forEach { bucket ->
+                if (bucket.f < fMin) {
+                    fMin = bucket.f
+                }
+            }
+        } else {
+            fMin = Double.MAX_VALUE
+        }
     }
 
     private fun insert(element: T) {
@@ -125,6 +155,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = arrayListOf(element)
             val newBucket = Bucket(element.getFValue(), element.getGValue(), element.getHValue(), bucketNodes)
 
+            element.updateIndex(bucketNodes.indexOf(element))
             openList.add(newBucket)
             lookUpTable[elementGHPair] = newBucket
 
@@ -133,6 +164,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = targetBucket.nodes
 
             bucketNodes.add(element)
+            element.updateIndex(bucketNodes.indexOf(element))
             if (bucketNodes.size == 1) openList.add(targetBucket)
         }
     }
@@ -156,6 +188,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             openList.reorder(PotentialComparator(bound, fMin)) // resort open list with new minimum f
         }
 
+        firstElementInTopBucket.updateIndex(-1)
         return firstElementInTopBucket
     }
 

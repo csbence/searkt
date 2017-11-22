@@ -9,6 +9,8 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotwithinertia.PointRobotWithInertia
@@ -34,6 +36,7 @@ import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
@@ -144,17 +147,17 @@ object ConfigurationExecutor {
     private fun unsafeConfigurationExecution(configuration: GeneralExperimentConfiguration, dataRootPath: String? = null): ExperimentResult? {
         val domainName: String = configuration.domainName
 
-        val domainStream: InputStream = if (configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null) {
-            configuration.rawDomain!!.byteInputStream()
-        } else if (dataRootPath != null) {
-            FileInputStream(dataRootPath + configuration.domainPath)
-        } else {
-            Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
+        val domainStream: InputStream = when {
+            configuration.valueStore[Configurations.RAW_DOMAIN.toString()] != null -> configuration.rawDomain!!.byteInputStream()
+            dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
+            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }
 
         val domain = Domains.valueOf(domainName)
         return when (domain) {
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
+            SLIDING_TILE_PUZZLE_HEAVY -> executeHeavyTilePuzzle(configuration, domainStream)
+            SLIDING_TILE_PUZZLE_INVERSE -> executeInverseTilePuzzle(configuration, domainStream)
             VACUUM_WORLD -> executeVacuumWorld(configuration, domainStream)
             GRID_WORLD -> executeGridWorld(configuration, domainStream)
             ACROBOT -> executeAcrobot(configuration, domainStream)
@@ -212,6 +215,16 @@ object ConfigurationExecutor {
         return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
+    private fun executeHeavyTilePuzzle(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = HeavyTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    }
+
+    private fun executeInverseTilePuzzle(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = InverseTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    }
+
     private fun executeAcrobot(configuration: GeneralExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val acrobotInstance = AcrobotIO.parseFromStream(domainStream, configuration.actionDuration)
         return executeDomain(configuration, acrobotInstance.domain, acrobotInstance.initialState)
@@ -232,6 +245,7 @@ object ConfigurationExecutor {
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
+            DYNAMIC_POTENTIAL_SEARCH -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 

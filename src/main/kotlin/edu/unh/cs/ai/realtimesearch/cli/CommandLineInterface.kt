@@ -87,8 +87,8 @@ fun createCommandLineMenu(args: Array<String>): Triple<GeneralExperimentConfigur
     val stringConfig = fileCmd.getOptionValue(stringOption.opt)
     val haveConfig = readConfig(fileConfig, stringConfig)
 
-    var manualConfiguration: GeneralExperimentConfiguration = GeneralExperimentConfiguration()
-    var outFile: String = ""
+    var manualConfiguration = GeneralExperimentConfiguration()
+    val outFile: String
     val visualizerParameters = mutableListOf<String>()
 
     if (haveConfig != null) {

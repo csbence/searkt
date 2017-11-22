@@ -6,20 +6,35 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.BucketNode
+import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
-import java.util.HashMap
-import kotlin.Comparator
+import java.util.*
 
-class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
+class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.getTypedValue(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it the the experiment configuration.")
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
-                                             var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
+                                             var parent: DynamicPotentialSearch.Node<StateType>? = null) : Indexable, BucketNode {
+        override fun getNodeIndex(): Int {
+            return index
+        }
 
+        override fun updateIndex(i: Int) {
+            index = i
+        }
+
+        override val open: Boolean
+            get() = index != -1
+
+        override fun getFValue(): Double = f
+
+        override fun getGValue(): Double = cost.toDouble()
+
+        override fun getHValue(): Double = heuristic
 
         override var index: Int = -1
 
@@ -39,20 +54,10 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
-    private val logger = LoggerFactory.getLogger(WeightedAStar::class.java)
+    private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
-    private val fValueComparator = Comparator<WeightedAStar.Node<StateType>> { lhs, rhs ->
-        when {
-            lhs.f < rhs.f -> -1
-            lhs.f > rhs.f -> 1
-            lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
-            lhs.cost < rhs.cost -> 1
-            else -> 0
-        }
-    }
-
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
+    private val nodes: HashMap<StateType, DynamicPotentialSearch.Node<StateType>> = HashMap<StateType, DynamicPotentialSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private var openList = BucketOpenList<Node<StateType>>(weight)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
@@ -63,7 +68,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             generatedNodeCount++
             val undiscoveredNode = Node(
                     state = successorState,
-                    heuristic = weight * domain.heuristic(successorState),
+                    heuristic = domain.heuristic(successorState),
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
@@ -79,7 +84,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+        for (successor in successors) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
 //            if (successorNode.heuristic == Double.POSITIVE_INFINITY
@@ -103,16 +109,24 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
                 assert(successorNode.state == successor.state)
-                successorNode.apply {
-                    cost = successorGValueFromCurrent
-                    parent = sourceNode
-                    action = successor.action
-                    actionCost = successor.actionCost
-                }
+                val successorReplacement = Node(
+                        successorNode.state,
+                        successorNode.heuristic,
+                        successorGValueFromCurrent,
+                        successor.actionCost,
+                        successor.action,
+                        sourceNode
+                )
                 if (!successorNode.open) {
+                    successorNode.apply {
+                        cost = successorGValueFromCurrent
+                        parent = sourceNode
+                        action = successor.action
+                        actionCost = successor.actionCost
+                    }
                     openList.add(successorNode)
                 } else {
-                    openList.update(successorNode)
+                    openList.replace(successorNode, successorReplacement)
                 }
             }
         }
@@ -120,19 +134,19 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     override fun plan(state: StateType): List<Action> {
         val startTime = initializeAStar()
-        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
 
         while (openList.isNotEmpty()) {
-            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
+            val topNode = openList.chooseNode() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
-            currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
+            currentNode = topNode
             expandFromNode(currentNode)
         }
         throw GoalNotReachableException()

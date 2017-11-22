@@ -75,7 +75,10 @@ task plot(type: Exec) {
 }
 
 run {
-    if (project.hasProperty("appArgs")) {
+    if (project.hasProperty("weight") && project.hasProperty("alg")) {
+        args = [weight, alg]
+    }
+    else if (project.hasProperty("appArgs")) {
         args = Eval.me(appArgs)
     }
 }
