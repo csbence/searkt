@@ -6,5 +6,5 @@ package edu.unh.cs.ai.realtimesearch.environment
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 interface DiscretizableState<out StateType : DiscretizableState<StateType>> : State<StateType> {
-    open fun discretize(): StateType
+    fun discretize(): StateType
 }
