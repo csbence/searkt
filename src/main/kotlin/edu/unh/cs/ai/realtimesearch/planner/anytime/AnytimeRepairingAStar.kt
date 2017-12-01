@@ -8,7 +8,6 @@ import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.comparisons.compareBy
 
 class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateType>) : AnytimePlanner<StateType>(domain) {
 
@@ -22,7 +21,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
     private var targetgoal: StateType? = null
     private var goalNode: Node<StateType>? = null
     private val allNodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1F).resize()
-    private var iterationCount = 0;
+    private var iterationCount = 0
 
     data class Node<State>(var parent: Node<State>? = null, val state: State, var action: Action? = null, var cost: Double = 0.0, var iteration: Int)
 
@@ -57,7 +56,7 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
 
                     closedList[it.state] = updatedSuccessorNode
 
-                    if (targetgoal!!.equals(it.state)) {
+                    if (targetgoal!! == it.state) {
                         goal = it.state
                         goalNode = updatedSuccessorNode
                     }
@@ -72,11 +71,11 @@ class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateTy
         }
     }
 
-    override fun selectAction(startState: StateType, terminationChecker: TerminationChecker): List<Action?> {
+    override fun selectAction(state: StateType, terminationChecker: TerminationChecker): List<Action?> {
         //Solving backwards, so flip start and goal states
         val goals = domain.getGoals()
 
-        targetgoal = startState
+        targetgoal = state
         for (goalState in goals) {
             var tempNode = allNodes[goalState]
 

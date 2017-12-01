@@ -6,14 +6,10 @@ import groovyjarjarcommonscli.*
 import java.io.File
 import kotlin.system.exitProcess
 
-private fun readConfig(fileConfig: String?, stringConfig: String?): GeneralExperimentConfiguration? {
-    return if (fileConfig != null) {
-        experimentConfigurationFromJson(File(fileConfig).readText())
-    } else if (stringConfig != null) {
-        experimentConfigurationFromJson(stringConfig)
-    } else {
-        null
-    }
+private fun readConfig(fileConfig: String?, stringConfig: String?): GeneralExperimentConfiguration? = when {
+    fileConfig != null -> experimentConfigurationFromJson(File(fileConfig).readText())
+    stringConfig != null -> experimentConfigurationFromJson(stringConfig)
+    else -> null
 }
 
 fun createCommandLineMenu(args: Array<String>): Triple<GeneralExperimentConfiguration, String, MutableList<String>> {

@@ -195,7 +195,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
 
         var lastSafeNode: Node<StateType>? = null
 
-        var currentNode = openList.peek()!!
+        var currentNode: Node<StateType>
 
         var totalExpansionDuration = 0L
         var currentExpansionDuration = 0L
@@ -250,7 +250,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(domain: Domain<StateType>
             }
         }
 
-        logger.debug { "Done with AStar at $currentNode" }
         logger.debug { "Last safe node: $lastSafeNode" }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
