@@ -156,15 +156,6 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
             state.inBounds(endStateBounds.lowerBound, endStateBounds.upperBound)
 
     /**
-     * Simply prints the state values.
-     *
-     * @param state the state whose values should be printed
-     */
-    override fun print(state: AcrobotState): String {
-        return state.toJson()
-    }
-
-    /**
      * Returns the initial state in which all state values are zeroed.
      */
     fun randomState(): AcrobotState {

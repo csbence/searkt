@@ -6,8 +6,6 @@ import edu.unh.cs.ai.realtimesearch.util.calculateDisplacement
 import edu.unh.cs.ai.realtimesearch.util.calculateVelocity
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.util.roundDownToDecimal
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
@@ -102,8 +100,6 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
         val linkMomentOfInertia2: Double = 1.0
         val gravity: Double = 9.8
 
-        fun fromJson(string: String): AcrobotState = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
-
         fun fromMap(map: Map<*, *>): AcrobotState {
             val link1 = map["link1"] as Map<*, *>
             val link2 = map["link2"] as Map<*, *>
@@ -124,8 +120,6 @@ data class AcrobotState(val link1: AcrobotLink, val link2: AcrobotLink, val conf
             "link2" to link2.toMap(),
             "configuration" to configuration.toMap()
     )
-
-    fun toJson(): String = JsonOutput.toJson(this)
 
     override fun discretize(): AcrobotState {
         return AcrobotState(

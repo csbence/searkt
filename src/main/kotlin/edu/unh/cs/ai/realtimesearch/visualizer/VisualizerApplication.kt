@@ -1,3 +1,4 @@
+/*
 package edu.unh.cs.ai.realtimesearch.visualizer
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
@@ -13,12 +14,14 @@ import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.VacuumVisualizer
 import javafx.application.Application
 import java.io.File
 
+*/
 /**
  * Main launcher for visualizers.
  *
  * @author Stephen Chambers, Mike Bogochow
  * @since 3/10/16
- */
+ *//*
+
 fun main(args: Array<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Visualizer takes one argument which is the result file. Aborting.")
 
@@ -47,4 +50,4 @@ fun runVisualizer(result: ExperimentResult, params: MutableList<String> = mutabl
         Domains.ACROBOT -> Application.launch(AcrobotVisualizer::class.java, *params.toTypedArray())
         else -> throw IllegalArgumentException("Error: Domain '$domainName' not recognized! Aborting")
     }
-}
+}*/

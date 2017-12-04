@@ -1,11 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter
-import com.fasterxml.jackson.annotation.JsonAnySetter
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.ExperimentDeserializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.SerialClassDescImpl
+import kotlinx.serialization.internal.StringSerializer
 
 /**
  * Base class for JSON serialization.
@@ -18,8 +16,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toIndentedJson
  *
  * MAP is the top level item.
  */
-@JsonDeserialize(using = ExperimentDeserializer::class)
-open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> = hashMapOf()) {
+open class ExperimentData(val valueStore: MutableMap<String, Any?> = hashMapOf()) {
     init {
         valueStore.remove("valueStore")
         valueStore.remove("properties")
@@ -33,16 +30,11 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
         return valueStore[key.toString()]
     }
 
-    @JsonAnySetter
     fun set(key: String, value: String) {
         valueStore[key] = value
     }
 
-    @Suppress("unused")
-    @JsonAnyGetter
-    fun getProperties() = valueStore
-
-    operator fun <T> set(key: String, value: T) {
+    operator fun set(key: String, value: Any) {
         valueStore[key] = value
     }
 
@@ -53,6 +45,64 @@ open class ExperimentData(@JsonIgnore val valueStore: MutableMap<String, Any?> =
 
     override fun toString(): String {
         return toIndentedJson()
+    }
+}
+
+
+object PolymorphicClassDesc : SerialClassDescImpl("kotlin.Any") {
+    override val kind: KSerialClassKind = KSerialClassKind.POLYMORPHIC
+}
+
+// Workaround until they fix the library
+object DataSerializer : KSerializer<Any?> {
+
+    override val serialClassDesc: KSerialClassDesc
+        get() = PolymorphicClassDesc
+
+    override fun save(output: KOutput, obj: Any?) {
+        when (obj) {
+            null -> {
+                output.writeStringValue("null")
+            }
+            is Map<*, *> -> (StringSerializer to DataSerializer).map.save(output, obj as Map<String, Any?>)
+            is List<*> -> DataSerializer.list.save(output, obj)
+            else -> {
+                val saver = serializerByValue(obj)
+                output.writeSerializableElementValue(serialClassDesc, 1, saver, obj)
+            }
+        }
+    }
+
+    override fun load(input: KInput): Any {
+        @Suppress("NAME_SHADOWING")
+        val input = input.readBegin(serialClassDesc)
+        var klassName: String? = null
+        var value: Any? = null
+        mainLoop@ while (true) {
+            when (input.readElement(serialClassDesc)) {
+                KInput.READ_ALL -> {
+                    klassName = input.readStringElementValue(serialClassDesc, 0)
+                    val loader = serializerByClass<Any>(klassName)
+                    value = input.readSerializableElementValue(serialClassDesc, 1, loader)
+                    break@mainLoop
+                }
+                KInput.READ_DONE -> {
+                    break@mainLoop
+                }
+                0 -> {
+                    klassName = input.readStringElementValue(serialClassDesc, 0)
+                }
+                1 -> {
+                    klassName = requireNotNull(klassName) { "Cannot read polymorphic value before its type token" }
+                    val loader = serializerByClass<Any>(klassName)
+                    value = input.readSerializableElementValue(serialClassDesc, 1, loader)
+                }
+                else -> throw SerializationException("Invalid index")
+            }
+        }
+
+        input.readEnd(serialClassDesc)
+        return requireNotNull(value) { "Polymorphic value have not been read" }
     }
 }
 

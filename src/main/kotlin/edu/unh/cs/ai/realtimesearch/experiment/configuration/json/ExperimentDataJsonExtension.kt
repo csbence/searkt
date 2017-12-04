@@ -1,27 +1,27 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration.json
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.DataSerializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import kotlinx.serialization.internal.StringSerializer
+import kotlinx.serialization.json.JSON
+import kotlinx.serialization.map
 
 fun <T : ExperimentData> T.toJson(): String {
-    val mapper = ObjectMapper()
-    return mapper.writeValueAsString(this)
+    val mapSerializer = (StringSerializer to DataSerializer).map
+    return JSON.stringify(mapSerializer, valueStore)
 }
 
 fun <T : ExperimentData> T.toIndentedJson(): String {
-    val mapper = ObjectMapper()
-    mapper.enable(SerializationFeature.INDENT_OUTPUT)
-    return mapper.writeValueAsString(this)
+    val mapSerializer = (StringSerializer to DataSerializer).map
+    return JSON.indented.stringify(mapSerializer, valueStore)
 }
 
 fun experimentDataFromJson(jsonExperimentConfiguration: String): ExperimentData {
-    val mapper = ObjectMapper().registerKotlinModule()
-    return mapper.readValue<ExperimentData>(jsonExperimentConfiguration)
+    val mapSerializer = (StringSerializer to DataSerializer).map
+    val valueMap = JSON.parse(mapSerializer, jsonExperimentConfiguration)
+    return ExperimentData(valueMap.toMutableMap())
 }
 
 fun experimentConfigurationFromJson(jsonExperimentConfiguration: String): GeneralExperimentConfiguration {

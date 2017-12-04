@@ -1,19 +1,19 @@
+/*
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.visualizer.BaseVisualizer
-import groovyjarjarcommonscli.CommandLine
-import groovyjarjarcommonscli.Option
-import groovyjarjarcommonscli.Options
 import javafx.stage.Screen
 import java.util.*
 
+*/
 /**
  * Base visualizer for grid-based domains.
  *
  * @author Mike Bogochow (mgp36@unh.edu)
  * @since April 8, 2016
- */
+ *//*
+
 abstract class GridBasedVisualizer : BaseVisualizer() {
     // Options
     protected val gridOptions = Options()
@@ -61,23 +61,27 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
 
     data class GridDimensions(val rowCount: Int, val columnCount: Int)
 
-    /**
+    */
+/**
      * Parse the map header and return the row and column counts.  Domains which have a different header than the
      * standard grid world header should override and do what they need with the extra values and then return the
      * row and column counts here.  Implementations must not read more than the header from the scanner.
      *
      * @param inputScanner scanner pointing to header of raw domain string
      * @return the row and column counts given in the header
-     */
+     *//*
+
     open protected fun parseMapHeader(inputScanner: Scanner): GridDimensions {
         val columnCount = inputScanner.nextLine().toInt()
         val rowCount = inputScanner.nextLine().toInt()
         return GridDimensions(rowCount, columnCount)
     }
 
-    /**
+    */
+/**
      * Parse map; fill {@link MapInfo}
-     */
+     *//*
+
     open protected fun parseMap(rawDomain: String): MapInfo {
         val inputScanner = Scanner(rawDomain.byteInputStream())
         val (rowCount, columnCount) = parseMapHeader(inputScanner)
@@ -106,13 +110,17 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         return mapInfo
     }
 
-    /**
+    */
+/**
      * Parse the experiment result for actions.  If the domain includes actions which cannot be directly translated
      * from the results as strings then the implementing visualizer should override this method.
      * {@link GridBasedVisualizer} will call this method after calling {@link BaseVisualizer#processCommandLine).
-     */
+     *//*
+
     open protected fun parseActions(): MutableList<String> {
-        /* Get action list from Application */
+        */
+/* Get action list from Application *//*
+
         val actionList: MutableList<String> = arrayListOf()
         for (action in experimentResult.actions) {
             actionList.add(action)
@@ -120,10 +128,12 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         return actionList
     }
 
-    /**
+    */
+/**
      * Performs parsing of results and graphical setup.  After this method is called, all {@link GridBasedVisualizer}
      * fields will be properly initialized.
-     */
+     *//*
+
     protected fun visualizerSetup() {
         actionList = parseActions()
 
@@ -161,4 +171,4 @@ abstract class GridBasedVisualizer : BaseVisualizer() {
         grid.children.add(agentView.agent)
         grid.children.add(agentView.tracker)
     }
-}
+}*/

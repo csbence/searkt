@@ -1,12 +1,13 @@
 package edu.unh.cs.ai.realtimesearch
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.DataSerializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
@@ -16,12 +17,12 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import kotlinx.serialization.json.JSON
+import kotlinx.serialization.list
 import java.io.File
 import java.io.PrintWriter
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-
-class Input
 
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
@@ -30,7 +31,7 @@ fun main(args: Array<String>) {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                      Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
+                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
 //                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
@@ -43,7 +44,7 @@ fun main(args: Array<String>) {
             actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, SECONDS),
+            timeLimit = NANOSECONDS.convert(1, MINUTES),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
@@ -69,6 +70,7 @@ fun main(args: Array<String>) {
             )
     )
 
+
     configurations.forEach(::println)
 
 //    configurations.forEach {
@@ -82,11 +84,10 @@ fun main(args: Array<String>) {
     println("${configurations.size} configuration has been generated.")
 
     val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
-
-    val objectMapper = ObjectMapper()
+    val resultsMaps = results.map { it.toJson() }
 
     File("output").mkdir()
-    PrintWriter("output/results.json", "UTF-8").use { it.write(objectMapper.writeValueAsString(results)) }
+    PrintWriter("output/results.json", "UTF-8").use { it.write(JSON.Companion.stringify(DataSerializer.list, resultsMaps)) }
     println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
 
@@ -94,4 +95,5 @@ fun main(args: Array<String>) {
 
 //    runVisualizer(result = results.first())
 }
+
 

@@ -1,3 +1,4 @@
+/*
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotHeader
@@ -21,48 +22,62 @@ import javafx.util.Duration
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+*/
 /**
  * Visualizer for the point robot domain.
  *
  * @author Stephen Chambers, Mike Bogochow
  * @since 2/29/16
- */
+ *//*
+
 open class PointVisualizer : GridBasedVisualizer() {
-    /**
+    */
+/**
      * Parsed header information from the raw domain.
-     */
+     *//*
+
     protected lateinit var header: PointRobotHeader
 
-    /**
+    */
+/**
      * The action duration of the experiment configuration.
-     */
+     *//*
+
     protected var actionDuration: Long = 0
 
-    /**
+    */
+/**
      * The total time the animation will run for.
-     */
+     *//*
+
     protected var animationTime: Double = 0.0
 
-    /**
+    */
+/**
      * The minimum animation time to ensure that the animation does not end too quickly.
-     */
+     *//*
+
     protected val minimumAnimationTime: Double = 500.0
 
-    /**
+    */
+/**
      * The current x position of the agent in the animation that is being built.
-     */
+     *//*
+
     protected var animationX = 0.0
 
-    /**
+    */
+/**
      * The current y position of the agent in the animation that is being built.
-     */
+     *//*
+
     protected var animationY = 0.0
 
     override var robotScale: Double = 4.0
 
-    override fun getOptions(): Options = super.getOptions()
-
-    override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
+//    override fun getOptions(): Options = super.getOptions()
+//
+//    override fun processOptions(cmd: CommandLine) = super.processOptions(cmd)
 
     override fun parseMapHeader(inputScanner: Scanner): GridDimensions {
         header = PointRobotIO.parseHeader(inputScanner)
@@ -97,7 +112,9 @@ open class PointVisualizer : GridBasedVisualizer() {
         val goalX = mapInfo.goalCells.first().x + header.goalLocationOffset.x
         val goalY = mapInfo.goalCells.first().y + header.goalLocationOffset.y
 
-        /* the goal radius */
+        */
+/* the goal radius *//*
+
         val goalCircle = Circle(goalX * tileSize, goalY * tileSize, header.goalRadius * tileSize)
         goalCircle.stroke = ThemeColors.GOAL_CIRCLE.stroke
         goalCircle.fill = ThemeColors.GOAL_CIRCLE.color
@@ -112,9 +129,11 @@ open class PointVisualizer : GridBasedVisualizer() {
         playAnimation(buildAnimation())
     }
 
-    /**
+    */
+/**
      * Forms a sequential transition from the given transitions and plays it.
-     */
+     *//*
+
     open protected fun playAnimation(transitions: List<PathTransition>) {
         val sequentialTransition = SequentialTransition()
         for (pathTransition in transitions) {
@@ -131,9 +150,11 @@ open class PointVisualizer : GridBasedVisualizer() {
         }).start()
     }
 
-    /**
+    */
+/**
      * Builds a list of transitions from the action list.
-     */
+     *//*
+
     open protected fun buildAnimation(): List<PathTransition> {
         val pathTransitions = mutableListOf<PathTransition>()
 
@@ -152,13 +173,15 @@ open class PointVisualizer : GridBasedVisualizer() {
         return pathTransitions
     }
 
-    /**
+    */
+/**
      * Forms necessary transitions for animation given x and y accelerations.
      *
      * @param xAcceleration acceleration on x-axis
      * @param yAcceleration acceleration on y-axis
      * @return list of transitions for animating the acceleration
-     */
+     *//*
+
     open protected fun animate(xAcceleration: String, yAcceleration: String): MutableList<PathTransition> {
         val path = Path()
         val robot = agentView.agent
@@ -179,7 +202,9 @@ open class PointVisualizer : GridBasedVisualizer() {
             grid.children.add(action)
         }
 
-        /* Animate the robot */
+        */
+/* Animate the robot *//*
+
         val pathTransition = PathTransition()
         pathTransition.duration = Duration.millis(animationTime)
         pathTransition.path = path
@@ -188,3 +213,4 @@ open class PointVisualizer : GridBasedVisualizer() {
         return mutableListOf(pathTransition)
     }
 }
+*/
