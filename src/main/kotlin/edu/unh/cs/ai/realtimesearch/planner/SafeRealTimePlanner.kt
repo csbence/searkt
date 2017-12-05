@@ -1,11 +1,16 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import java.util.*
+
+/**
+ * @author Bence Cserna (bence@cserna.net)
+ */
 
 interface Safe {
     var safe: Boolean
@@ -15,9 +20,38 @@ interface Depth {
     var depth: Int
 }
 
-/**
- * @author Bence Cserna (bence@cserna.net)
- */
+class SafeRealTimeSearchNode<StateType : State<StateType>>(
+        override val state: StateType,
+        override var heuristic: Double,
+        override var cost: Long,
+        override var actionCost: Long,
+        override var action: Action,
+        override var iteration: Long,
+        parent: SafeRealTimeSearchNode<StateType>? = null) : RealTimeSearchNode<StateType, SafeRealTimeSearchNode<StateType>>, Indexable, Safe {
+
+    /** Item index in the open list. */
+    override var index: Int = -1
+    override var safe = false
+
+    /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
+    override var predecessors: MutableList<SearchEdge<SafeRealTimeSearchNode<StateType>>> = arrayListOf()
+
+    /** Parent pointer that points to the min cost predecessor. */
+    override var parent: SafeRealTimeSearchNode<StateType> = parent ?: this
+
+    override fun hashCode(): Int = state.hashCode()
+
+    override fun equals(other: Any?): Boolean = when (other) {
+        null -> false
+        is SafeRealTimeSearchNode<*> -> state == other.state
+        is State<*> -> state == other
+        else -> false
+    }
+
+    override fun toString(): String =
+            "SafeRealTimeSearchNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
+}
+
 /**
  * Prove the safety of a given state. A state is safe (more precisely comfortable) if the state itself is safe or a
  * safe state is reachable from it. The explicit safety of a state is defined by the domain.
@@ -128,4 +162,20 @@ fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorit
     }
 
     return null
+}
+
+/**
+ * Selector to define how to pick the target node at the end of the planning iteration.
+ * The planner returns a sequence of actions from the agent's current location to the selected target node.
+ */
+enum class SafeRealTimeSearchTargetSelection {
+    /** Select the best safe predecessor of a the best node on open that has such predecessor. */
+    SAFE_TO_BEST,
+    /** Select the best safe node in LSS. */
+    BEST_SAFE
+}
+
+enum class SafeRealTimeSearchConfiguration {
+    TARGET_SELECTION,
+    SAFETY_EXPLORATION_RATIO
 }

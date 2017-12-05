@@ -28,7 +28,7 @@ import kotlin.system.measureTimeMillis
  *
  * This loop continue until the goal has been found
  */
-class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>() {
     private val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
     private val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
@@ -49,9 +49,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         /** Parent pointer that points to the min cost predecessor. */
         override var parent: Node<StateType> = parent ?: this
 
-        val f: Double
-            get() = cost + heuristic
-
         override fun hashCode(): Int {
             return state.hashCode()
         }
@@ -64,7 +61,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         }
 
         override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
+            return "SafeRealTimeSearchNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
         }
     }
 

@@ -14,7 +14,7 @@ import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, var configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, var configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>() {
     private val depthLimit: Long = configuration.getTypedValue(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
 
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
