@@ -18,7 +18,9 @@ args = parser.parse_args()
 
 data_wa = []
 data_dps = []
+data_comp = []
 data = dict()
+data_comp = dict()
 
 domains = ['SLIDING_TILE_PUZZLE_4', 'SLIDING_TILE_PUZZLE_HEAVY']
 algorithms = ['WEIGHTED_A_STAR', 'DYNAMIC_POTENTIAL_SEARCH']
@@ -26,6 +28,12 @@ regularTileWeights = [1.17, 1.20, 1.25, 1.33, 1.50, 1.78, 2.00, 2.33, 2.67, 2.75
 heavyTileWeights = [1.11, 1.13, 1.14, 1.17, 1.20, 1.25, 1.50, 2.00, 2.67, 3.00]
 dpsFiles = []
 waFiles = []
+
+regWAStarComp = [0.65, 0.72, 0.83, 0.93, 0.98, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+regDpsComp = [0.8, 0.82, 0.91, 0.95, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+heavyWAStarComp = [0.58, 0.61, 0.65, 0.69, 0.76, 0.81, 0.92, 1.0, 1.0, 1.0]
+heavyDpsComp = [0.62, 0.66, 0.7, 0.75, 0.79, 0.83, 0.98, 1.0, 1.0, 1.0]
 
 plotRegular = True
 domainToPlot = 'SLIDING_TILE_PUZZLE_4'
@@ -80,6 +88,32 @@ def initDictionary(dataJson):
         data[key] = []
     data["weight"] = []
     data["algorithm"] = []
+    data_comp["weight"] = []
+    data_comp["algorithm"] = []
+    data_comp["success"] = []
+
+
+def makeComp(alg):
+    success_list = []
+    print(alg)
+    print(args.to_plot)
+    if alg == "wA*-comp" and args.to_plot == "heavy":
+        success_list = heavyWAStarComp
+    elif alg == "wA*-comp" and args.to_plot == "regular":
+        success_list = regWAStarComp
+    elif alg == "dps-comp" and args.to_plot == "heavy":
+        success_list = heavyDpsComp
+    elif alg == "dps-comp" and args.to_plot == "regular":
+        success_list = regDpsComp
+    index = 0
+    print(success_list)
+    print(weights)
+    print(str(len(success_list) == len(weights)))
+    for weight in weights:
+        data_comp["algorithm"].append(alg)
+        data_comp["weight"].append(weight)
+        data_comp["success"].append(success_list[index])
+        index = index + 1
 
 
 def makeJson(wFiles, datar):
@@ -98,6 +132,7 @@ def addInstances(weightIndex, alg, begin, end, datar):
                 data[key].append(datar[weightIndex][i][str(key)])
             except KeyError:
                 data[key].append(0)
+
 
 overFiveMillion = dict()
 overFiveMillion["dps"] = 0
@@ -131,30 +166,36 @@ initDictionary(data_dps[7])
 for i in range(0,10):
     addInstances(i, "wA*", 0, 100, data_wa)
     addInstances(i, "dps", 0, 100, data_dps)
+    makeComp("dps-comp")
+    makeComp("wA*-comp")
 
 for key in data.keys():
     print(str(key) + ": len = " + str(len(data[key])))
 
 df = pd.DataFrame(data)
+df_comp = pd.DataFrame(data_comp)
 
 sns.set_context("paper")
 sns.set_style("dark", {"axes.facecolor": ".9"})
 
-success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
+# success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
 # plt.figure()
 
 filterOnNodesGenerated(df)
 
 # plt.figure()
 success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
+# plt.figure()
 
+sns.set_palette(sns.color_palette("husl", 8))
+
+success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_comp)
 print(overFiveMillion)
 
 # expanded_plot = sns.boxplot(x="weight", y="generatedNodes", notch=True, hue="algorithm", data=df2)
 # plt.figure()
 # expanded_plot.set(yscale="log")
+
 plt.show()
-
-
 
 
