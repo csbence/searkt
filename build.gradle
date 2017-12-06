@@ -67,7 +67,7 @@ task plot(type: Exec) {
 
 run {
     if (project.hasProperty("appArgs")) {
-        args = Eval.me(appArgs)
+        args Eval.me(appArgs)
     }
 }
 
