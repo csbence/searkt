@@ -66,6 +66,7 @@ object DataSerializer : KSerializer<Any?> {
             }
             is Map<*, *> -> (StringSerializer to DataSerializer).map.save(output, obj as Map<String, Any?>)
             is List<*> -> DataSerializer.list.save(output, obj)
+            is Any -> output.writeStringValue(obj.toString())
             else -> {
                 val saver = serializerByValue(obj)
                 output.writeSerializableElementValue(serialClassDesc, 1, saver, obj)

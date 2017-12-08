@@ -138,10 +138,9 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
             continue
         }
 
-        nodeFound(successorNode)
-
         // If the node is outdated it should be updated.
         if (successorNode.iteration != context.iterationCounter) {
+            nodeFound(successorNode)
             successorNode.apply {
                 iteration = context.iterationCounter
                 predecessors.clear()

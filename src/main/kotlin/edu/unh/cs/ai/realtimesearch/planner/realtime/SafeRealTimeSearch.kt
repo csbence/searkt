@@ -17,6 +17,7 @@ import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARG
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.valueOf
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -52,6 +53,30 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         get
     var dijkstraTimer = 0L
         get
+
+    var lastSafeNode: SafeRealTimeSearchNode<StateType>? = null
+
+    private val aStarSequence
+        get() = generateSequence {
+            aStarPopCounter++
+
+            val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+
+            if (currentNode.safe || domain.isSafe(currentNode.state)) {
+                currentNode.safe = true
+                safeNodes.add(currentNode)
+                lastSafeNode = currentNode
+            }
+
+            expandFromNode(this, currentNode) {
+                if (it.safe || domain.isSafe(it.state)) {
+                    safeNodes.add(it)
+                    it.safe = true
+                }
+            }
+
+            currentNode
+        }
 
     /**
      * Selects a action given current sourceState.
@@ -93,7 +118,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val (targetNode, lastSafeNode) = aStar(sourceState, terminationChecker)
+            val (targetNode, lastSafeNode) = microIteration(sourceState, terminationChecker)
 
             // Backup safety
             predecessorSafetyPropagation(safeNodes)
@@ -136,78 +161,62 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
+    private fun microIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
         logger.debug { "Starting A* from sourceState: $sourceState" }
         initializeAStar(sourceState)
-
-        var lastSafeNode: SafeRealTimeSearchNode<StateType>? = null
-
-        var currentNode: SafeRealTimeSearchNode<StateType>
 
         var totalExpansionDuration = 0L
         var currentExpansionDuration = 0L
         var totalSafetyDuration = 0L
         var costBucket = 10
+        lastSafeNode = null
 
-        while (!terminationChecker.reachedTermination()) {
-            aStarPopCounter++
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty."))
+                }
+                .onEach {
+                    terminationChecker.notifyExpansion()
+                    currentExpansionDuration++
+                }
+                .forEach {
+                    if (currentExpansionDuration >= costBucket) {
+                        // Switch to safety
+                        totalExpansionDuration += currentExpansionDuration
+                        currentExpansionDuration = 0L
 
-            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
-            if (domain.isGoal(topNode.state)) return topNode to topNode
+                        val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
-            currentNode = openList.pop()!!
+                        val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
+                        val safetyProofDuration = proveSafety(nextTopNode, safetyTerminationChecker)
 
-            if (!currentNode.safe && domain.isSafe(currentNode.state)) {
-                currentNode.safe = true
-            }
+                        terminationChecker.notifyExpansion(safetyProofDuration)
+                        totalSafetyDuration += safetyProofDuration
 
-            if (currentNode.safe && currentNode != sourceState) {
-                safeNodes.add(currentNode)
-                lastSafeNode = currentNode
-            }
-
-            //Explore
-            currentExpansionDuration += measureLong(terminationChecker::elapsed) {
-                expandFromNode(this, currentNode) {
-                    if (it.safe || domain.isSafe(it.state)) {
-                        safeNodes.add(it)
-                        it.safe = true
+                        if (nextTopNode.safe) {
+                            // If proof was successful reset the bucket
+                            costBucket = 10
+                            safeNodes.add(nextTopNode)
+                        } else {
+                            // Increase the
+                            costBucket *= 2
+                        }
                     }
                 }
 
-                terminationChecker.notifyExpansion()
-            }
-
-            if (currentExpansionDuration >= costBucket) {
-                // Switch to safety
-                totalExpansionDuration += currentExpansionDuration
-                currentExpansionDuration = 0L
-
-                val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
-                val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
-
-                val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
-                val safetyProofDuration = proveSafety(nextTopNode, safetyTerminationChecker)
-
-                terminationChecker.notifyExpansion(safetyProofDuration)
-                totalSafetyDuration += safetyProofDuration
-
-                if (nextTopNode.safe) {
-                    // If proof was successful reset the bucket
-                    costBucket = 10
-                    safeNodes.add(nextTopNode)
-                } else {
-                    // Increase the
-                    costBucket *= 2
-                }
-            }
-        }
+//        println("Micro Iteration Done")
 
         logger.debug { "Last safe node: $lastSafeNode" }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
 
+    /**
+     * Prove that the given node is safe and set its safety flag to true.
+     * The process will terminate when the termination checker expires or when the proof is completed.
+     * If the termination checker expires then the safety flag is not set.
+     */
     private fun proveSafety(sourceNode: SafeRealTimeSearchNode<StateType>, terminationChecker: TerminationChecker): Long {
         return measureLong(terminationChecker::elapsed) {
             when {
@@ -251,6 +260,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 parent = node
                 action = NoOperationAction
                 predecessors.clear()
+                safe = safe || domain.isSafe(state)
             }
 
             nodes[state] = node
@@ -307,3 +317,4 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         }
     }
 }
+
