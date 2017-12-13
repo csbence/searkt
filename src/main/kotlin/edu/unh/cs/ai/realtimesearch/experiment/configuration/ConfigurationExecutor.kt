@@ -257,7 +257,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeOfflineSearch(planner: ClassicalPlanner<StateType>, configuration: GeneralExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        return ClassicalExperiment(configuration, planner, domain, initialState).run()
+        return ClassicalExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
     }
 
     private fun getTerminationChecker(configuration: GeneralExperimentConfiguration): TerminationChecker {

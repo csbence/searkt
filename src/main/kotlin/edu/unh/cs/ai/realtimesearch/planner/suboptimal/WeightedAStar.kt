@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -118,7 +119,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    override fun plan(state: StateType): List<Action> {
+    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         val startTime = initializeAStar()
         val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
@@ -126,7 +127,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         openList.add(node)
         generatedNodeCount++
 
-        while (openList.isNotEmpty()) {
+        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.currentTimeMillis() - startTime
@@ -134,6 +135,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
+            terminationChecker.notifyExpansion()
         }
         throw GoalNotReachableException()
     }
