@@ -46,6 +46,6 @@ java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.14 dps htp
 java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.13 dps htp
 java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 1.11 dps htp
 
-endSlackNotification.bash "#experiments" "experiment_bot" "William's experiments just finished."
+sendSlackNotification.bash "#experiments" "experiment_bot" "William's experiments just finished."
 
 

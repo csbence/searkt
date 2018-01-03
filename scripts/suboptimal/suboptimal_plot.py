@@ -181,7 +181,7 @@ sns.set_style("dark", {"axes.facecolor": ".9"})
 # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
 # plt.figure()
 
-filterOnNodesGenerated(df)
+# filterOnNodesGenerated(df)
 
 # plt.figure()
 success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)

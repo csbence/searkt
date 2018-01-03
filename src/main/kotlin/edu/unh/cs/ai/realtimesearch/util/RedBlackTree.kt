@@ -64,8 +64,8 @@ class RedBlackTreeNode<K : RedBlackTreeElement<K, V>, V>(var key: K, var value: 
 
 }
 
-interface RedBlackTreeElement<K : RedBlackTreeElement<K, V>, V> {
-    fun getNode(): RedBlackTreeNode<K, V>
+interface RedBlackTreeElement<K : RedBlackTreeElement<K, V>, V>: Indexable {
+    fun getNode(): RedBlackTreeNode<K, V>?
     fun setNode(node: RedBlackTreeNode<K, V>?)
 }
 
@@ -79,7 +79,7 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
 
     fun delete(key: K) {
         val node = lookUp(key)
-        deleteNode(node)
+        deleteNode(node!!)
         key.setNode(null)
     }
 
@@ -99,7 +99,7 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
 
     fun lookUp(key: K) = key.getNode()
 
-    fun visit(l: K, u: K, op: Int, visitor: RedBlackTreeVisitor<K>) {
+    fun visit(l: K?, u: K?, op: Int, visitor: RedBlackTreeVisitor<K>) {
         visit(l, u, root!!, op, visitor)
     }
 
@@ -131,6 +131,18 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
             insertedNode.parent = n
         }
         insertCase1(insertedNode)
+    }
+
+    fun getValues(): List<V> {
+        val list = ArrayList<V>()
+        collectValues(root!!, list)
+        return list
+    }
+
+    private fun collectValues(node: RedBlackTreeNode<K,V>, list: MutableList<V>){
+        if (node.left != null) collectValues(node.left!!, list)
+        if (node.right != null) collectValues(node.right!!, list)
+        list.add(node.value)
     }
 
     private fun insertCase1(node: RedBlackTreeNode<K, V>) {
@@ -178,7 +190,7 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         }
     }
 
-    private fun visit(l: K, u: K, root: RedBlackTreeNode<K, V>, op: Int, visitor: RedBlackTreeVisitor<K>) {
+    private fun visit(l: K?, u: K?, root: RedBlackTreeNode<K, V>, op: Int, visitor: RedBlackTreeVisitor<K>) {
         if (vComparator.compare(root.key, l) > 0) {
             visit(l, u, root.left!!, op, visitor)
             if (vComparator.compare(root.key, u) <= 0) {
