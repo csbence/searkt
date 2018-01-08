@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
@@ -7,6 +8,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
+import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.*
 
 class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
@@ -57,15 +59,23 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val open = RedBlackTree(openNodeComparator, explicitNodeComparator)
     private val focal = AdvancedPriorityQueue(1000000, focalNodeComparator)
 
-    class ExplicitQueue<E>(val open: RedBlackTree<E, E>, val focal: AdvancedPriorityQueue<E>, private val id: Int) where E : RedBlackTreeElement<E, E>, E :Indexable {
+    private val FOCAL_ID = 1
+    private val CLEANUP_ID = 0
+
+    private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val openList = ExplicitQueue(open, focal, FOCAL_ID)
+    private val cleanup = AdvancedPriorityQueue(1000000, cleanupNodeComparator)
+
+
+    class ExplicitQueue<E>(val open: RedBlackTree<E, E>, val focal: AdvancedPriorityQueue<E>, private val id: Int) where E : RedBlackTreeElement<E, E>, E : Indexable {
         private val explicitComparator = open.vComparator
 
-        private class FocalVisitor<E>(val focal: AdvancedPriorityQueue<E>) : RedBlackTreeVisitor<E> where E: RedBlackTreeElement<E,E>, E : Indexable{
+        private class FocalVisitor<E>(val focal: AdvancedPriorityQueue<E>) : RedBlackTreeVisitor<E> where E : RedBlackTreeElement<E, E>, E : Indexable {
             private val ADD = 0
             private val REMOVE = 1
 
             override fun visit(k: E, op: Int) {
-                when(op) {
+                when (op) {
                     ADD -> if (k.index == -1) focal.add(k)
                     REMOVE -> focal.remove(k)
                 }
@@ -76,6 +86,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         fun isEmpty(): Boolean = open.peek() == null
 
+        fun isNotEmpty(): Boolean = !isEmpty()
+
         fun add(e: E, oldBest: E) {
             open.insert(e, e)
             if (explicitComparator.compare(e, oldBest) <= 0) {
@@ -83,7 +95,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             }
         }
 
-        fun updateFocal(oldBest: E?, newBest: E, fHatChange: Int) {
+        fun updateFocal(oldBest: E?, newBest: E?, fHatChange: Int) {
             if (oldBest == null || fHatChange != 0) {
                 if (oldBest != null && fHatChange < 0) {
                     open.visit(newBest, oldBest, 1, focalVisitor)
@@ -195,9 +207,124 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     }
 
-    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private fun insertNode(node: Node<StateType>, oldBestNode: Node<StateType>) {
+        openList.add(node, oldBestNode)
+        cleanup.add(node)
+        nodes[node.state] = node
     }
 
+    private fun selectNode(): Node<StateType> {
+        val bestDHat = openList.peekFocal() ?: throw MetronomeException("Focal is Empty!")
+        val bestFHat = openList.peekOpen() ?: throw MetronomeException("Open is Empty!")
+        val bestF = cleanup.peek() ?: throw MetronomeException("Cleanup is Empty!")
 
+        when {
+            bestDHat.fHat <= weight * bestF.f -> {
+                val chosenNode = openList.pollFocal() ?: throw MetronomeException("Focal is Empty!")
+                cleanup.remove(chosenNode)
+                return chosenNode
+            }
+            bestFHat.fHat <= weight * bestF.f -> {
+                val chosenNode = openList.pollOpen() ?: throw MetronomeException("Open is Empty!")
+                cleanup.remove(chosenNode)
+                return chosenNode
+            }
+            else -> {
+                val chosenNode = cleanup.pop() ?: throw MetronomeException("Cleanup is Empty!")
+                openList.remove(chosenNode)
+                return chosenNode
+            }
+        }
+    }
+
+    private fun initializeAStar(): Long = System.currentTimeMillis()
+
+    private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
+        val successorState = successorBundle.state
+        val tempSuccessorNode = nodes[successorState]
+        return if (tempSuccessorNode == null) {
+            generatedNodeCount++
+            val undiscoveredNode = Node(
+                    state = successorState,
+                    heuristic = weight * domain.heuristic(successorState),
+                    actionCost = successorBundle.actionCost,
+                    action = successorBundle.action,
+                    parent = sourceNode,
+                    cost = Long.MAX_VALUE,
+                    d = sourceNode.d + (domain.heuristic(successorState) / successorBundle.actionCost).toInt()
+            )
+            nodes[successorState] = undiscoveredNode
+            undiscoveredNode
+        } else {
+            tempSuccessorNode
+        }
+    }
+
+    private fun expandFromNode(sourceNode: Node<StateType>) {
+        expandedNodeCount++
+        val currentGValue = sourceNode.cost
+        for (successor in domain.successors(sourceNode.state)) {
+            val successorState = successor.state
+            val successorNode = getNode(sourceNode, successor)
+            // skip if we have our parent as a successor
+            if (successorState == sourceNode.parent?.state) {
+                continue
+            }
+
+            // only generate states which have not been visited or with a cheaper cost
+            val successorGValueFromCurrent = currentGValue + successor.actionCost
+            if (successorNode.cost > successorGValueFromCurrent) {
+                assert(successorNode.state == successor.state)
+                successorNode.apply {
+                    cost = successorGValueFromCurrent
+                    parent = sourceNode
+                    action = successor.action
+                    actionCost = successor.actionCost
+                }
+                if (!successorNode.open) {
+                    openList.add(successorNode, successorNode)
+                    insertNode(successorNode, successorNode)
+                } else {
+                    openList.focal.update(successorNode)
+                    insertNode(successorNode, successorNode)
+                }
+            }
+        }
+    }
+
+    private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
+        val actions = arrayListOf<Action>()
+        var iterationNode = solutionNode
+        while (iterationNode.parent != null) {
+            actions.add(iterationNode.action)
+            iterationNode = iterationNode.parent!!
+        }
+        assert(startState == iterationNode.state )
+        actions.reverse()
+        return actions
+    }
+
+    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
+        val startTime = initializeAStar()
+        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction, d = 0.0)
+        var currentNode: Node<StateType>
+        nodes[state] = node
+        openList.add(node, node)
+        generatedNodeCount++
+
+        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            val oldBest = openList.peekOpen()
+            val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
+            if (domain.isGoal(topNode.state)) {
+                executionNanoTime = System.currentTimeMillis() - startTime
+                return extractPlan(topNode, state)
+            }
+            expandFromNode(topNode)
+            val newBest = openList.peekOpen()
+            val fHatChange = openNodeComparator.compare(newBest, oldBest)
+            openList.updateFocal(oldBest, newBest, fHatChange)
+            terminationChecker.notifyExpansion()
+        }
+        throw GoalNotReachableException()
+    }
 }

@@ -29,6 +29,8 @@ heavyTileWeights = [1.11, 1.13, 1.14, 1.17, 1.20, 1.25, 1.50, 2.00, 2.67, 3.00]
 dpsFiles = []
 waFiles = []
 
+fields = ["errorMessage", "success", "expandedNodes", "generatedNodes"]
+
 regWAStarComp = [0.65, 0.72, 0.83, 0.93, 0.98, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 regDpsComp = [0.8, 0.82, 0.91, 0.95, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
@@ -54,16 +56,16 @@ for algorithm in algorithms:
         else:
             print("Unsupported algorithm " + algorithm + "!")
             exit()
-print("---")
-for f in waFiles:
-    print(f + "\n")
-for f in dpsFiles:
-    print(f + "\n")
-print("---")
+# print("---")
+# for f in waFiles:
+#     print(f + "\n")
+# for f in dpsFiles:
+#     print(f + "\n")
+# print("---")
 
 
 weights = weightsToPlot
-print(weights)
+# print(weights)
 
 # weights = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0]
 # dpsFiles = ['results.DYNAMIC_POTENTIAL_SEARCH.1.2.json.gz', 'results.DYNAMIC_POTENTIAL_SEARCH.1.3.json.gz',
@@ -82,8 +84,9 @@ algorithms = ['wA*', 'dps']
 begins = [0, 100]
 ends = [100, 200]
 
-def initDictionary(dataJson):
-    for key in dataJson[0].keys():
+def initDictionary():
+    print("Initing Dictionary")
+    for key in fields:
         print(key)
         data[key] = []
     data["weight"] = []
@@ -91,12 +94,13 @@ def initDictionary(dataJson):
     data_comp["weight"] = []
     data_comp["algorithm"] = []
     data_comp["success"] = []
+    print("Done Initing Dictionary")
 
 
 def makeComp(alg):
     success_list = []
-    print(alg)
-    print(args.to_plot)
+    # print(alg)
+    # print(args.to_plot)
     if alg == "wA*-comp" and args.to_plot == "heavy":
         success_list = heavyWAStarComp
     elif alg == "wA*-comp" and args.to_plot == "regular":
@@ -106,9 +110,9 @@ def makeComp(alg):
     elif alg == "dps-comp" and args.to_plot == "regular":
         success_list = regDpsComp
     index = 0
-    print(success_list)
-    print(weights)
-    print(str(len(success_list) == len(weights)))
+    # print(success_list)
+    # print(weights)
+    # print(str(len(success_list) == len(weights)))
     for weight in weights:
         data_comp["algorithm"].append(alg)
         data_comp["weight"].append(weight)
@@ -122,13 +126,15 @@ def makeJson(wFiles, datar):
         datar.append(json.loads(json_file.read().decode("ascii")))
         json_file.close()
 
-
 def addInstances(weightIndex, alg, begin, end, datar):
     for i in range(begin, end):
         data["weight"].append(weights[weightIndex])
         data["algorithm"].append(alg)
-        for key in datar[weightIndex][7].keys():
+        for key in fields:
             try:
+#                 if str(key) == "success" and str(datar[weightIndex][i]["errorMessage"]) != "null" and datar[weightIndex][i]["success"] == False:
+#                         data[key].append(False)
+#                 else:
                 data[key].append(datar[weightIndex][i][str(key)])
             except KeyError:
                 data[key].append(0)
@@ -139,7 +145,7 @@ overFiveMillion["dps"] = 0
 overFiveMillion["wA*"] = 0
 def filterOnNodesGenerated(dataFrame):
     for key in dataFrame.keys():
-        print(key)
+        # print(key)
         if key == "algorithm":
             index = 0
             for item in dataFrame[key]:
@@ -160,8 +166,8 @@ def filterOnNodesGenerated(dataFrame):
 
 makeJson(waFiles, data_wa)
 makeJson(dpsFiles, data_dps)
-initDictionary(data_wa[0])
-initDictionary(data_dps[7])
+initDictionary()
+initDictionary()
 
 for i in range(0,10):
     addInstances(i, "wA*", 0, 100, data_wa)
@@ -187,9 +193,9 @@ sns.set_style("dark", {"axes.facecolor": ".9"})
 success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
 # plt.figure()
 
-# sns.set_palette(sns.color_palette("husl", 8))
+sns.set_palette(sns.color_palette("husl", 8))
 
-# success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_comp)
+success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_comp)
 print(overFiveMillion)
 
 # expanded_plot = sns.boxplot(x="weight", y="generatedNodes", notch=True, hue="algorithm", data=df2)

@@ -72,7 +72,7 @@ fun main(args: Array<String>) {
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(15, MINUTES),
-            expansionLimit = 5000000,
+            expansionLimit = 1000000000,
             stepLimit = 5000000,
             plannerExtras = listOf(
 //                    Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
