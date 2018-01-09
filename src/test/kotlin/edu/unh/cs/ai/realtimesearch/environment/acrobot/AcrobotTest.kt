@@ -7,6 +7,8 @@ import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotSta
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.DynamicExpansionTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
@@ -88,7 +90,7 @@ class AcrobotTest {
         experimentConfiguration[Configurations.TIME_LIMIT.toString()] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 
         val aStarAgent = AStarPlanner(domain)
-        val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState)
+        val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState, terminationChecker = StaticExpansionTerminationChecker(1000))
 
         aStarExperiment.run()
     }

@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import org.junit.Test
 import java.io.File
@@ -64,7 +65,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/easy0")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        kotlin.test.assertTrue { dynamicPotentialSearchAgent.plan(initialState).isEmpty() }
+        kotlin.test.assertTrue { dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
     @Test
@@ -76,7 +77,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple1")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 3 }
@@ -91,7 +92,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple2")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 6 }
@@ -106,7 +107,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple3")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -121,7 +122,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple4")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -137,7 +138,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/test/simple4")
         val config = makeTestConfiguration(domainPair, 1.35).first()
         val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size * 1.35 >= 12 }
@@ -152,7 +153,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/12")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size <= 45 * 1.0 }
@@ -169,7 +170,7 @@ class DynamicPotentialSearchTest {
             val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/$i")
             val config = makeTestConfiguration(domainPair, 1.0).first()
             val dynamicPotentialSearch = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-            val plan = dynamicPotentialSearch.plan(initialState)
+            val plan = dynamicPotentialSearch.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -191,7 +192,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/1")
         val config = makeTestConfiguration(domainPair, weight).first()
         val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size <= 57 * weight }
@@ -210,7 +211,7 @@ class DynamicPotentialSearchTest {
             val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/$i")
             val config = makeTestConfiguration(domainPair, weight).first()
             val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-            val plan = dynamicPotentialSearchAgent.plan(initialState)
+            val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -231,7 +232,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/vacuum/cups.vw")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(gridWorld.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         var currentState = initialState
         plan.forEach { action ->
             currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
@@ -249,7 +250,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/vacuum/maze.vw")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val dynamicPotentialSearchAgent = DynamicPotentialSearch(gridWorld.domain, config)
-        val plan = dynamicPotentialSearchAgent.plan(initialState)
+        val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         var currentState = initialState
         plan.forEach { action ->
             currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state

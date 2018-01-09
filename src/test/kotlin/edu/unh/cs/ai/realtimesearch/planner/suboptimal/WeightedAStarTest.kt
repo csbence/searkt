@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuz
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -38,7 +39,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        kotlin.test.assertTrue { aStarAgent.plan(initialState).isEmpty() }
+        kotlin.test.assertTrue { aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
     @Test
@@ -48,7 +49,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 3 }
@@ -61,7 +62,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 6 }
@@ -74,7 +75,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -87,7 +88,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -101,7 +102,7 @@ class WeightedAStarTest {
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
             val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-            val plan = aStarAgent.plan(initialState)
+            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -118,7 +119,7 @@ class WeightedAStarTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println("plan length: ${plan.size}")
         println(plan)
         println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
@@ -136,7 +137,7 @@ class WeightedAStarTest {
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
             val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-            val plan = aStarAgent.plan(initialState)
+            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -163,7 +164,7 @@ class WeightedAStarTest {
             val initialState = slidingTilePuzzle.initialState
 
             val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-            val plan = aStarAgent.plan(initialState)
+            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -182,7 +183,7 @@ class WeightedAStarTest {
         val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
         val initialState = gridWorld.initialState
         val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         var currentState = initialState
         plan.forEach { action ->
             currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
@@ -198,7 +199,7 @@ class WeightedAStarTest {
         val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
         val initialState = gridWorld.initialState
         val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         var currentState = initialState
         plan.forEach { action ->
             currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
