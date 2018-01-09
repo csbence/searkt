@@ -2,27 +2,19 @@ package edu.unh.cs.ai.realtimesearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import edu.unh.cs.ai.realtimesearch.environment.Domains
-import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
-import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners
-import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.realtime.*
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.realtime.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import edu.unh.cs.ai.realtimesearch.planner.Planners.DYNAMIC_POTENTIAL_SEARCH
+import edu.unh.cs.ai.realtimesearch.planner.Planners.WEIGHTED_A_STAR
 import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
-
-class Input
 
 fun main(args: Array<String>) {
 //    val logger = LoggerFactory.getLogger("Real-time search")
