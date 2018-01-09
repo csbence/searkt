@@ -1,7 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.util
 
-import edu.unh.cs.ai.realtimesearch.MetronomeException
-
 interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
@@ -49,7 +47,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     data class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
                                       val nodes: ArrayList<T>) : Indexable {
 
-        private var free = 0
+//        private var free = 0
 
         override var index: Int = -1
 
@@ -64,27 +62,27 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         }
 
 
-        fun add(element: T) {
-            nodes.add(free, element)
-            element.updateIndex(free)
-            free++
-        }
-
-        fun remove(): T {
-            val nodeToRemove = nodes[free - 1]
-            return remove(nodeToRemove)
-       }
-
-        fun remove(element: T): T {
-            val i = element.getNodeIndex()
-            val removedNode = nodes.removeAt(i)
-            val lastNode = nodes.removeAt(free - 1)
-            nodes.add(i, lastNode)
-            lastNode.updateIndex(i)
-            removedNode.updateIndex(-1)
-            free--
-            return removedNode
-        }
+//        fun add(element: T) {
+//            nodes.add(free, element)
+//            element.updateIndex(free)
+//            free++
+//        }
+//
+//        fun remove(): T {
+//            val nodeToRemove = nodes[free - 1]
+//            return remove(nodeToRemove)
+//       }
+//
+//        fun remove(element: T): T {
+//            val i = element.getNodeIndex()
+//            val removedNode = nodes.removeAt(i)
+//            val lastNode = nodes.removeAt(free - 1)
+//            nodes.add(i, lastNode)
+//            lastNode.updateIndex(i)
+//            removedNode.updateIndex(-1)
+//            free--
+//            return removedNode
+//        }
     }
 
     fun getBucket(element: T): Bucket<T>? {

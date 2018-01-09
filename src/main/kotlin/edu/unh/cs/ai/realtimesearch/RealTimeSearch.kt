@@ -46,8 +46,6 @@ fun main(args: Array<String>) {
 
     println("$plannerToRun | $domainToRun | @$weight")
 
-    val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
-
     val korfInstances = {
         val korfPuzzles = mutableListOf<Pair<Domains, String>>()
         (1..100).forEach{
@@ -71,7 +69,7 @@ fun main(args: Array<String>) {
             actionDurations = listOf(1L),//50L, 100L, 150L, 200L, 400L),//, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(15, MINUTES),
+            timeLimit = NANOSECONDS.convert(100, MINUTES),
             expansionLimit = 1000000000,
             stepLimit = 5000000,
             plannerExtras = listOf(
