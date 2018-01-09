@@ -66,7 +66,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
         val successorState = successorBundle.state
         val tempSuccessorNode = nodes[successorState]
         return if (tempSuccessorNode == null) {
-            generatedNodeCount++
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
@@ -89,6 +88,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
         for (successor in successors) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
+            generatedNodeCount++
 //            if (successorNode.heuristic == Double.POSITIVE_INFINITY
 //                    && successorNode.iteration != iterationCounter) {
 //                continue

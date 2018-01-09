@@ -1,5 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
+
 interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
@@ -24,10 +26,21 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
                     var rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
                     if (leftBucket.h == 0.0) leftBucketPotential = Double.MAX_VALUE
                     if (rightBucket.h == 0.0) rightBucketPotential = Double.MAX_VALUE
-                    return Math.signum(rightBucketPotential - leftBucketPotential).toInt()
+
+                    return when {
+                        leftBucketPotential > rightBucketPotential -> -1
+                        leftBucketPotential < rightBucketPotential -> 1
+                        leftBucket.g < rightBucket.g -> -1
+                        leftBucket.g > rightBucket.g -> 1
+                        leftBucket.h < rightBucket.h -> -1
+                        leftBucket.h > rightBucket.h -> 1
+                        leftBucket.f < rightBucket.f -> -1
+                        leftBucket.f > rightBucket.f -> 1
+                        else -> 0
+                    }
                 }
             }
-            return -1
+            throw BucketOpenListException("Comparing $leftBucket and $rightBucket, can not be done.")
         }
     }
 
