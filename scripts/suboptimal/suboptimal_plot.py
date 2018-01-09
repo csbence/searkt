@@ -181,7 +181,7 @@ for key in data.keys():
 df = pd.DataFrame(data)
 df_comp = pd.DataFrame(data_comp)
 
-sns.set_context("poster")
+sns.set_context("paper")
 sns.set_style("dark", {"axes.facecolor": ".9"})
 
 # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)

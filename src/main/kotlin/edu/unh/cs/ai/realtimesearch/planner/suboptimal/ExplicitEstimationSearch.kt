@@ -307,8 +307,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         val startTime = initializeAStar()
         val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction, d = 0.0)
-        var currentNode: Node<StateType>
+//        var currentNode: Node<StateType>
         nodes[state] = node
+        cleanup.add(node)
         openList.add(node, node)
         generatedNodeCount++
 

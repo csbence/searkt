@@ -79,7 +79,11 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
 
     fun delete(key: K) {
         val node = lookUp(key)
-        deleteNode(node!!)
+        if(node == root && root?.left == null && root?.right == null) {
+            root = null
+        } else {
+            deleteNode(node!!)
+        }
         key.setNode(null)
     }
 
@@ -190,15 +194,16 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         }
     }
 
-    private fun visit(l: K?, u: K?, root: RedBlackTreeNode<K, V>, op: Int, visitor: RedBlackTreeVisitor<K>) {
-        if (vComparator.compare(root.key, l) > 0) {
-            visit(l, u, root.left!!, op, visitor)
-            if (vComparator.compare(root.key, u) <= 0) {
-                visitor.visit(root.key, op)
-                visit(l, u, root.left!!, op, visitor)
+    private fun visit(l: K?, u: K?, n: RedBlackTreeNode<K, V>?, op: Int, visitor: RedBlackTreeVisitor<K>) {
+        if (n == null) return
+        if (l == null || vComparator.compare(n.key, l) > 0) {
+            visit(l, u, n.left, op, visitor)
+            if (vComparator.compare(n.key, u) <= 0) {
+                visitor.visit(n.key, op)
+                visit(l, u, n.left, op, visitor)
             }
         } else {
-            visit(l, u, root.right!!, op, visitor)
+            visit(l, u, n.right, op, visitor)
         }
     }
 
@@ -224,36 +229,40 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         node.parent = leftNode
     }
 
-    private fun replaceNode(node: RedBlackTreeNode<K, V>, replacement: RedBlackTreeNode<K, V>) {
+    private fun replaceNode(node: RedBlackTreeNode<K, V>?, replacement: RedBlackTreeNode<K, V>) {
         when (node) {
-            node.parent -> root = replacement
-            node.parent.left -> node.parent.left = replacement
-            else -> node.parent.right = replacement
+            node?.parent -> root = replacement
+            node?.parent?.left -> node?.parent?.left = replacement
+            else -> node?.parent?.right = replacement
         }
-        replacement.parent = node.parent
+        replacement.parent = node!!.parent
     }
 
 
-    private fun deleteNode(node: RedBlackTreeNode<K, V>) {
+    private fun deleteNode(node: RedBlackTreeNode<K, V>?) {
+        if(node == null) return
         var predecessor: RedBlackTreeNode<K, V>? = null
-        if (node != node.parent) {
-            if (node.left != null && node.right != null) {
+        if (node.left != null && node.right != null) {
                 predecessor = maximumNode(node.left!!)
                 node.key = predecessor.key
                 node.value = predecessor.value
                 node.key.setNode(node)
-            }
         }
 
-        val child = when (predecessor!!.right) {
-            null -> predecessor.left
+        assert(node.left == null || node.right == null)
+
+        val child = when (predecessor?.right) {
+            null -> predecessor?.left
             else -> predecessor.right
         }
-        if (predecessor.color == NodeColor.BLACK) {
+
+        if (predecessor?.color == NodeColor.BLACK) {
             predecessor.color = child?.color ?: throw RedBlackTreeException("Unable to delete node predecessor has no child")
             deleteCase1(predecessor)
         }
+
         replaceNode(predecessor, child!!)
+
         if (root!!.color == NodeColor.RED) {
             root!!.color = NodeColor.BLACK
         }

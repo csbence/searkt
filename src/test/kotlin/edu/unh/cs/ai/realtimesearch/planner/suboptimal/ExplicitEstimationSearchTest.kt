@@ -38,4 +38,18 @@ class ExplicitEstimationSearchTest {
         kotlin.test.assertTrue { eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
+    @Test
+    fun testAStar2() {
+        val tiles = "1 2 3 0 4 5 6 7 8 9 10 11 12 13 14 15"
+        val instance = createInstanceFromString(tiles)
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = slidingTilePuzzle.initialState
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        println(plan)
+        kotlin.test.assertTrue { plan.isNotEmpty() }
+        kotlin.test.assertTrue { plan.size == 3 }
+    }
+
+
 }
