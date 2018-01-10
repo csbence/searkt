@@ -45,7 +45,7 @@ import kotlin.system.measureTimeMillis
  *
  */
 
-class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
+class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>() {
     private val safetyBackup = SimpleSafeSafetyBackup.valueOf(configuration[SimpleSafeConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
     private val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
 
@@ -69,9 +69,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(domain: Domain<StateType>,
 
         /** Parent pointer that points to the min cost predecessor */
         override var parent: Node<StateType> = parent ?: this
-
-        val f: Double
-            get() = cost + heuristic
 
         override fun hashCode(): Int = state.hashCode()
 

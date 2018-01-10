@@ -1,3 +1,4 @@
+/*
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
@@ -14,12 +15,14 @@ import javafx.scene.shape.Path
 import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
+*/
 /**
  * Visualizer for the point robot with inertia domain.
  *
  * @author Stephen Chambers, Mike Bogochow
  * @since 2/29/16
- */
+ *//*
+
 class PointInertiaVisualizer : PointVisualizer() {
     private var xDot = 0.0
     private var yDot = 0.0
@@ -84,7 +87,9 @@ class PointInertiaVisualizer : PointVisualizer() {
                 grid.children.add(path)
             }
 
-            /* Animate the robot */
+            */
+/* Animate the robot *//*
+
             val pathTransition = PathTransition()
             pathTransition.duration = Duration.millis(10.0)
             pathTransition.path = path
@@ -103,3 +108,4 @@ class PointInertiaVisualizer : PointVisualizer() {
         return retval
     }
 }
+*/

@@ -59,8 +59,4 @@ class AcrobotStateTest {
         assertTrue  { upperBound.inBounds(lowerBound, upperBound) }
     }
 
-    @Test
-    fun testJSON1() {
-        assertTrue { AcrobotState.defaultInitialState.equals(AcrobotState.fromJson(AcrobotState.defaultInitialState.toJson())) }
-    }
 }

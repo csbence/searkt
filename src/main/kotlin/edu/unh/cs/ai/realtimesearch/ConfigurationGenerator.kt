@@ -13,15 +13,8 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.MULTIPLE
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy.SINGLE
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import groovy.json.JsonOutput
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.web.client.RestClientException
-import org.springframework.web.client.RestTemplate
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.system.measureTimeMillis
 
 private val terminationType = "time"
 private val timeLimit = TimeUnit.NANOSECONDS.convert(150, TimeUnit.SECONDS)
@@ -103,7 +96,7 @@ fun main(args: Array<String>) {
     //    }
 
     println("${configurations.size} configurations were generated.")
-    uploadConfigurations(configurations)
+//    uploadConfigurations(configurations)
 }
 
 fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any?>> {
@@ -195,7 +188,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                         stateConfiguration = stateConfiguration
                 )
                 configurations.add(mutableMapOf(
-                        Configurations.RAW_DOMAIN.toString() to JsonOutput.toJson(acrobotConfiguration),
+                        Configurations.RAW_DOMAIN.toString() to acrobotConfiguration,
                         Configurations.DOMAIN_INSTANCE_NAME.toString() to "$bound-$bound"
                 ))
             }
@@ -327,37 +320,37 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
  *
  * @param configurations the configurations to upload
  */
-fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
-    val restTemplate = RestTemplate()
-    val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
-    //    var serverUrl = "http://localhost:3824/configurations"
-
-    println("${configurations.size} configurations has been generated.")
-
-    print("Upload configurations (y/n)? ")
-    val input = readLine()
-    when (input?.toLowerCase()) {
-        "y", "yes" -> {
-            var count = 1
-            val elapsed = measureTimeMillis {
-                for (configuration in configurations) {
-                    try {
-                        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
-                        if (responseEntity.statusCode == HttpStatus.OK) {
-                            println("Upload completed! ($count / ${configurations.size})")
-                        } else {
-                            println("Upload failed!")
-                        }
-                    } catch (e: RestClientException) {
-                        println("Upload failed!")
-                    }
-                    count += 1
-                }
-            }
-            println("Upload took $elapsed ms")
-        }
-        else -> {
-            println("Not uploading")
-        }
-    }
-}
+//fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
+//    val restTemplate = RestTemplate()
+//    val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
+//    //    var serverUrl = "http://localhost:3824/configurations"
+//
+//    println("${configurations.size} configurations has been generated.")
+//
+//    print("Upload configurations (y/n)? ")
+//    val input = readLine()
+//    when (input?.toLowerCase()) {
+//        "y", "yes" -> {
+//            var count = 1
+//            val elapsed = measureTimeMillis {
+//                for (configuration in configurations) {
+//                    try {
+//                        val responseEntity = restTemplate.exchange(serverUrl, HttpMethod.POST, HttpEntity(listOf(configuration)), Nothing::class.java)
+//                        if (responseEntity.statusCode == HttpStatus.OK) {
+//                            println("Upload completed! ($count / ${configurations.size})")
+//                        } else {
+//                            println("Upload failed!")
+//                        }
+//                    } catch (e: RestClientException) {
+//                        println("Upload failed!")
+//                    }
+//                    count += 1
+//                }
+//            }
+//            println("Upload took $elapsed ms")
+//        }
+//        else -> {
+//            println("Not uploading")
+//        }
+//    }
+//}

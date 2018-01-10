@@ -1,3 +1,4 @@
+/*
 package edu.unh.cs.ai.realtimesearch.visualizer.gridbased
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
@@ -17,12 +18,14 @@ import javafx.stage.Stage
 import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
+*/
 /**
  * Visualizer for the vacuum world and grid world domains.
  *
  * @author Stephen Chambers, Mike Bogochow
  * @since 2/11/16
- */
+ *//*
+
 class VacuumVisualizer : GridBasedVisualizer() {
     var isARAStar = false
     var moveRobot = true
@@ -33,19 +36,25 @@ class VacuumVisualizer : GridBasedVisualizer() {
     var anytimeCount = 0L
     var anytimeMaxCount = 3L
 
-    /**
+    */
+/**
      * The current x position of the agent in the animation that is being built.
-     */
+     *//*
+
     protected var animationX = 0.0
 
-    /**
+    */
+/**
      * The current y position of the agent in the animation that is being built.
-     */
+     *//*
+
     protected var animationY = 0.0
 
-    /**
+    */
+/**
      * The animation time for a single transition in the animation in milliseconds.
-     */
+     *//*
+
     private val animationStepDuration = 200.0
 
     override fun getOptions(): Options = super.getOptions()
@@ -75,7 +84,9 @@ class VacuumVisualizer : GridBasedVisualizer() {
 
         val path = buildAnimation()
 
-        /* Animate the robot */
+        */
+/* Animate the robot *//*
+
         val pathTransition = PathTransition()
         pathTransition.duration = Duration.millis(timeToRun)
         pathTransition.path = path
@@ -92,9 +103,11 @@ class VacuumVisualizer : GridBasedVisualizer() {
         }).start()
     }
 
-    /**
+    */
+/**
      * Build a path for the agent to follow from the action list.
-     */
+     *//*
+
     private fun buildAnimation(): Path {
         val paths: MutableList<Path> = arrayListOf()
         //if(isARAStar){
@@ -137,7 +150,9 @@ class VacuumVisualizer : GridBasedVisualizer() {
             }
         }
 
-        /* Display the path */
+        */
+/* Display the path *//*
+
         if (displayLine) {
             grid.children.add(paths[pIndex])
             paths[pIndex].stroke = ThemeColors.PATH.stroke
@@ -159,12 +174,14 @@ class VacuumVisualizer : GridBasedVisualizer() {
         return paths[pIndex]
     }
 
-    /**
+    */
+/**
      * Add the proper animations to the path for the given action.
      *
      * @param path the path to add to
      * @param action the action to animate
-     */
+     *//*
+
     private fun animate(action: String, path: Path) {
         val width = tileSize
         val height = tileSize
@@ -224,3 +241,4 @@ class VacuumVisualizer : GridBasedVisualizer() {
         }
     }
 }
+*/
