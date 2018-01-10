@@ -19,7 +19,7 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.0'
+    ext.kotlin_version = '1.2.10'
     ext.serialization_version = '0.3'
 
     repositories {
@@ -44,6 +44,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
 
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.3'
     compile 'commons-cli:commons-cli:1.3.1'
 
     compile 'org.slf4j:slf4j-api:1.7.25'

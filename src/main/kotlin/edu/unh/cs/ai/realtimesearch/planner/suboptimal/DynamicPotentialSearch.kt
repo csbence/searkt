@@ -7,10 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldExcepti
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.BucketNode
-import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
-import edu.unh.cs.ai.realtimesearch.util.Indexable
-import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.util.*
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -166,3 +163,5 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
         return actions
     }
 }
+
+enum class DPS_VERSION { REGULAR, SIMPLE }

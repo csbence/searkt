@@ -16,7 +16,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
     private class BucketOpenListException(message: String) : Exception(message)
 
-    private class PotentialComparator<T>(var bound: Double, var fMin: Double) : Comparator<T> {
+    class PotentialComparator<T>(var bound: Double, var fMin: Double) : Comparator<T> {
         override fun compare(leftBucket: T, rightBucket: T): Int {
             if (leftBucket != null && rightBucket != null) {
                 if (leftBucket is Bucket<*> && rightBucket is Bucket<*>) {
