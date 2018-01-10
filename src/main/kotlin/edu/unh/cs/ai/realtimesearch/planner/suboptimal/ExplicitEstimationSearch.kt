@@ -10,6 +10,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.*
+import java.util.*
+import kotlin.Comparator
 
 class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.getTypedValue(Configurations.WEIGHT.toString()) ?: throw InvalidFieldException("\"${Configurations.WEIGHT}\" is not found. Please add it to the experiment configuration")
@@ -56,19 +58,19 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val open = RedBlackTree(openNodeComparator, explicitNodeComparator)
-    private val focal = AdvancedPriorityQueue(1000000, focalNodeComparator)
+    private val rbTree = TreeMap<Node<StateType>, Node<StateType>>(openNodeComparator) //RedBlackTree(openNodeComparator, explicitNodeComparator)
+    private val focal = AdvancedPriorityQueue(100000000, focalNodeComparator)
 
     private val FOCAL_ID = 1
     private val CLEANUP_ID = 0
 
     private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private val openList = ExplicitQueue(open, focal, FOCAL_ID)
-    private val cleanup = AdvancedPriorityQueue(1000000, cleanupNodeComparator)
+    private val openList = ExplicitQueue(rbTree, focal, FOCAL_ID, explicitNodeComparator)
+    private val cleanup = AdvancedPriorityQueue(100000000, cleanupNodeComparator)
 
 
-    class ExplicitQueue<E>(val open: RedBlackTree<E, E>, val focal: AdvancedPriorityQueue<E>, private val id: Int) where E : RedBlackTreeElement<E, E>, E : Indexable {
-        private val explicitComparator = open.vComparator
+    class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val id: Int,
+                           private val explicitComparator: Comparator<E>) where E : RedBlackTreeElement<E, E>, E : Indexable {
 
         private class FocalVisitor<E>(val focal: AdvancedPriorityQueue<E>) : RedBlackTreeVisitor<E> where E : RedBlackTreeElement<E, E>, E : Indexable {
             private val ADD = 0
@@ -84,36 +86,37 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         private val focalVisitor = FocalVisitor(focal)
 
-        fun isEmpty(): Boolean = open.peek() == null
+        fun isEmpty(): Boolean = open.firstEntry().value == null
 
         fun isNotEmpty(): Boolean = !isEmpty()
 
         fun add(e: E, oldBest: E) {
-            open.insert(e, e)
+            open[e] = e
             if (explicitComparator.compare(e, oldBest) <= 0) {
                 focal.add(e)
             }
         }
 
         fun updateFocal(oldBest: E?, newBest: E?, fHatChange: Int) {
-            if (oldBest == null || fHatChange != 0) {
-                if (oldBest != null && fHatChange < 0) {
-                    open.visit(newBest, oldBest, 1, focalVisitor)
-                } else if (oldBest?.getNode() == null) {
-                    open.visit(oldBest, newBest, 0, focalVisitor)
-                }
-            }
+
+//            if (oldBest == null || fHatChange != 0) {
+//                if (oldBest != null && fHatChange < 0) {
+//                    open.visit(newBest, oldBest, 1, focalVisitor)
+//                } else if (oldBest?.getNode() == null) {
+//                    open.visit(oldBest, newBest, 0, focalVisitor)
+//                }
+//            }
         }
 
         fun remove(e: E) {
-            open.delete(e)
+            open.remove(e)
             if (e.index != -1) {
                 focal.remove(e)
             }
         }
 
         fun pollOpen(): E? {
-            val e = open.poll()
+            val e = open.pollFirstEntry().value
             if (e != null && e.index != -1) {
                 focal.remove(e)
             }
@@ -123,12 +126,12 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         fun pollFocal(): E? {
             val e = focal.pop()
             if (e != null) {
-                open.delete(e)
+                open.remove(e)
             }
             return e
         }
 
-        fun peekOpen(): E? = open.peek()
+        fun peekOpen(): E? = open.firstEntry().value
         fun peekFocal(): E? = focal.peek()
     }
 

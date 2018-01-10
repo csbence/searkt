@@ -64,7 +64,7 @@ class RedBlackTreeNode<K : RedBlackTreeElement<K, V>, V>(var key: K, var value: 
 
 }
 
-interface RedBlackTreeElement<K : RedBlackTreeElement<K, V>, V>: Indexable {
+interface RedBlackTreeElement<K : RedBlackTreeElement<K, V>, V> : Indexable {
     fun getNode(): RedBlackTreeNode<K, V>?
     fun setNode(node: RedBlackTreeNode<K, V>?)
 }
@@ -73,16 +73,18 @@ interface RedBlackTreeVisitor<in K> {
     fun visit(k: K, op: Int)
 }
 
-class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator<K>, val vComparator: Comparator<K>) {
+class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Comparator<K>, val vComparator: Comparator<K>) {
 
     private var root: RedBlackTreeNode<K, V>? = null
 
+    private val indentStep = 4
+
     fun delete(key: K) {
         val node = lookUp(key)
-        if(node == root && root?.left == null && root?.right == null) {
+        if (node == root && root?.left == null && root?.right == null) {
             root = null
         } else {
-            deleteNode(node!!)
+            deleteNode(node)
         }
         key.setNode(null)
     }
@@ -143,7 +145,30 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         return list
     }
 
-    private fun collectValues(node: RedBlackTreeNode<K,V>, list: MutableList<V>){
+    fun print() {
+        print(root, 0)
+    }
+
+    private fun print(node: RedBlackTreeNode<K, V>?, indent: Int) {
+        if (node == null) {
+            println("<empty tree>")
+            return
+        }
+        if (node.right != null) {
+            print(node.right, indent + indentStep)
+        }
+        (0..indent).forEach { print(" ") }
+        if (node.color == NodeColor.BLACK) {
+            println(node.key)
+        } else {
+            println("<${node.key}>")
+        }
+        if (node.left != null) {
+            print(node.left, indent + indentStep)
+        }
+    }
+
+    private fun collectValues(node: RedBlackTreeNode<K, V>, list: MutableList<V>) {
         if (node.left != null) collectValues(node.left!!, list)
         if (node.right != null) collectValues(node.right!!, list)
         list.add(node.value)
@@ -158,7 +183,9 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
     }
 
     private fun insertCase2(node: RedBlackTreeNode<K, V>) {
-        if (node.parent.color != NodeColor.BLACK) {
+        if (node.parent.color == NodeColor.BLACK) {
+            return
+        } else {
             insertCase3(node)
         }
     }
@@ -190,6 +217,7 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         if (node == node.parent.left && node.parent == node.grandParent().left) {
             rotateRight(node.grandParent())
         } else if (node == node.parent.right && node.parent == node.grandParent().right) {
+            assert(node == node.parent.right && node.parent == node.grandParent().right)
             rotateLeft(node.grandParent())
         }
     }
@@ -229,39 +257,49 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         node.parent = leftNode
     }
 
-    private fun replaceNode(node: RedBlackTreeNode<K, V>?, replacement: RedBlackTreeNode<K, V>) {
+    private fun replaceNode(node: RedBlackTreeNode<K, V>?, replacement: RedBlackTreeNode<K, V>?) {
         when (node) {
             node?.parent -> root = replacement
             node?.parent?.left -> node?.parent?.left = replacement
             else -> node?.parent?.right = replacement
         }
-        replacement.parent = node!!.parent
+        if (replacement != null) {
+            if (node!!.parent == node) {
+                replacement.parent = replacement
+            } else {
+                replacement.parent = node.parent
+            }
+        }
     }
 
 
     private fun deleteNode(node: RedBlackTreeNode<K, V>?) {
-        if(node == null) return
+        if (node == null) return
         var predecessor: RedBlackTreeNode<K, V>? = null
         if (node.left != null && node.right != null) {
-                predecessor = maximumNode(node.left!!)
-                node.key = predecessor.key
-                node.value = predecessor.value
-                node.key.setNode(node)
+            predecessor = maximumNode(node.left!!)
+            node.key = predecessor.key
+            node.value = predecessor.value
+            node.key.setNode(node)
         }
 
-        assert(node.left == null || node.right == null)
+        if (predecessor == null) {
+            predecessor = node
+        }
 
-        val child = when (predecessor?.right) {
-            null -> predecessor?.left
+        assert(predecessor.left == null || predecessor.right == null)
+
+        val child = when (predecessor.right) {
+            null -> predecessor.left
             else -> predecessor.right
         }
 
-        if (predecessor?.color == NodeColor.BLACK) {
-            predecessor.color = child?.color ?: throw RedBlackTreeException("Unable to delete node predecessor has no child")
+        if (predecessor.color == NodeColor.BLACK) {
+            predecessor.color = child?.color ?: NodeColor.BLACK
             deleteCase1(predecessor)
         }
 
-        replaceNode(predecessor, child!!)
+        replaceNode(predecessor, child)
 
         if (root!!.color == NodeColor.RED) {
             root!!.color = NodeColor.BLACK
@@ -275,7 +313,7 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
     }
 
     private fun deleteCase2(node: RedBlackTreeNode<K, V>) {
-        if (node.sibling()?.color == NodeColor.RED) {
+        if (node.sibling()?.color ?: NodeColor.BLACK == NodeColor.RED) {
             node.parent.color = NodeColor.RED
             val nodeSibling = node.sibling()
             nodeSibling?.color = NodeColor.BLACK
@@ -290,9 +328,9 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
 
     private fun deleteCase3(node: RedBlackTreeNode<K, V>) {
         if (node.parent.color == NodeColor.BLACK &&
-                node.sibling()?.color == NodeColor.BLACK &&
-                node.sibling()?.left?.color == NodeColor.BLACK &&
-                node.sibling()?.right?.color == NodeColor.BLACK){
+                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
             val nodeSibling = node.sibling()
             nodeSibling?.color = NodeColor.RED
             deleteCase1(node.parent)
@@ -302,31 +340,31 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
     }
 
     private fun deleteCase4(node: RedBlackTreeNode<K, V>) {
-         if (node.parent.color == NodeColor.RED &&
-                node.sibling()?.color == NodeColor.BLACK &&
-                node.sibling()?.left?.color == NodeColor.BLACK &&
-                node.sibling()?.right?.color == NodeColor.BLACK){
-             val nodeSibling = node.sibling()
-             nodeSibling?.color = NodeColor.RED
-             node.parent.color = NodeColor.BLACK
-         } else {
-             deleteCase5(node)
-         }
+        if (node.parent.color == NodeColor.RED &&
+                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
+            val nodeSibling = node.sibling()
+            nodeSibling?.color = NodeColor.RED
+            node.parent.color = NodeColor.BLACK
+        } else {
+            deleteCase5(node)
+        }
     }
 
     private fun deleteCase5(node: RedBlackTreeNode<K, V>) {
         if (node == node.parent.left &&
-                node.sibling()?.color == NodeColor.BLACK &&
-                node.sibling()?.left?.color == NodeColor.RED &&
-                node.sibling()?.right?.color == NodeColor.BLACK) {
+                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.RED &&
+                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
             val nodeSibling = node.sibling()
             nodeSibling?.color = NodeColor.RED
             nodeSibling?.left?.color = NodeColor.BLACK
             rotateRight(nodeSibling!!)
         } else if (node == node.parent.right &&
-                        node.sibling()?.color == NodeColor.BLACK &&
-                        node.sibling()?.right?.color == NodeColor.RED &&
-                        node.sibling()?.left?.color == NodeColor.BLACK) {
+                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.RED &&
+                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
             val nodeSibling = node.sibling()
             nodeSibling?.color = NodeColor.RED
             nodeSibling?.right?.color = NodeColor.BLACK
@@ -340,16 +378,15 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(val sComparator: Comparator
         nodeSibling?.color = node.parent.color
         node.parent.color = NodeColor.BLACK
         if (node == node.parent.left) {
-            assert(nodeSibling?.right?.color == NodeColor.RED)
+            // assert(nodeSibling?.right?.color ?: NodeColor.BLACK == NodeColor.RED)
             nodeSibling?.right?.color = NodeColor.BLACK
             rotateLeft(node.parent)
         } else {
-            assert(nodeSibling?.left?.color == NodeColor.RED)
+            // assert(nodeSibling?.left?.color ?: NodeColor.BLACK == NodeColor.RED)
             nodeSibling?.left?.color = NodeColor.BLACK
             rotateRight(node.parent)
         }
     }
-
 
     private fun maximumNode(node: RedBlackTreeNode<K, V>): RedBlackTreeNode<K, V> {
         var traverseMaximum: RedBlackTreeNode<K, V>? = node
