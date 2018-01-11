@@ -1,5 +1,3 @@
-sendSlackNotification.bash "#experiments" "experiment_bot" "William just started running experiments."
-
 java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 3.0 wa* stp
 java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 2.75 wa* stp
 java -Xmx7G -jar ./build/libs/real-time-search-1.0-SNAPSHOT.jar 2.67 wa* stp

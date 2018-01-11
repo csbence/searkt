@@ -153,7 +153,7 @@ class DynamicPotentialSearchTest {
         val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/12")
         val config = makeTestConfiguration(domainPair, 1.0).first()
         val aStarAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(100000000))
         println("" + plan + "\nlength ${plan.size}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size <= 45 * 1.0 }
