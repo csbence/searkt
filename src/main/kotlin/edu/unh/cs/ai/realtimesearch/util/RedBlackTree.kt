@@ -10,29 +10,29 @@ class RedBlackTreeNode<K : RedBlackTreeElement<K, V>, V>(var key: K, var value: 
                                                          var left: RedBlackTreeNode<K, V>? = null,
                                                          var right: RedBlackTreeNode<K, V>? = null) {
 
-    var parent: RedBlackTreeNode<K, V> = this
+    var parent: RedBlackTreeNode<K, V>? = null
 
-    fun grandParent(): RedBlackTreeNode<K, V> {
-        if (parent.parent != this) {
-            return parent.parent
+    fun grandParent(): RedBlackTreeNode<K, V>? {
+        if (parent?.parent != this) {
+            return parent?.parent
         }
         throw RedBlackTreeException("Tried to get the parent of the root.")
     }
 
     fun sibling(): RedBlackTreeNode<K, V>? {
         if (parent != this) {
-            return if (this == parent.left) {
-                parent.right
+            return if (this == parent?.left) {
+                parent?.right
             } else {
-                parent.left
+                parent?.left
             }
         }
         throw RedBlackTreeException("Tried to get the sibling of the root.")
     }
 
     fun uncle(): RedBlackTreeNode<K, V>? {
-        if (parent.parent != this) {
-            return parent.sibling()
+        if (parent?.parent != this) {
+            return parent?.sibling()
         }
         throw RedBlackTreeException("Tried to get the uncle of the root.")
     }
@@ -174,51 +174,52 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         list.add(node.value)
     }
 
-    private fun insertCase1(node: RedBlackTreeNode<K, V>) {
-        if (node.parent == node) {
-            node.color = NodeColor.BLACK
+    private fun insertCase1(node: RedBlackTreeNode<K, V>?) {
+        if (node?.parent == node) {
+            node?.color = NodeColor.BLACK
         } else {
             insertCase2(node)
         }
     }
 
-    private fun insertCase2(node: RedBlackTreeNode<K, V>) {
-        if (node.parent.color == NodeColor.BLACK) {
+    private fun insertCase2(node: RedBlackTreeNode<K, V>?) {
+        if (node?.parent?.color == NodeColor.BLACK) {
             return
         } else {
             insertCase3(node)
         }
     }
 
-    private fun insertCase3(node: RedBlackTreeNode<K, V>) {
-        if (node.uncle()?.color == NodeColor.RED) {
-            node.parent.color = NodeColor.BLACK
+    private fun insertCase3(node: RedBlackTreeNode<K, V>?) {
+        if (node?.uncle()?.color == NodeColor.RED) {
+            node.parent?.color = NodeColor.BLACK
             node.uncle()?.color = NodeColor.BLACK
-            node.grandParent().color = NodeColor.RED
-            insertCase1(node.grandParent())
+            node.grandParent()?.color = NodeColor.RED
+            val grandParent: RedBlackTreeNode<K, V>? = node.grandParent()
+            insertCase1(grandParent)
         } else {
             insertCase4(node)
         }
     }
 
-    private fun insertCase4(node: RedBlackTreeNode<K, V>) {
-        if (node == node.parent.right && node.parent == node.grandParent().left) {
-            rotateLeft(node.parent)
-            insertCase5(node.left!!)
-        } else if (node == node.parent && node.parent == node.grandParent().right) {
-            rotateRight(node.parent)
-            insertCase5(node.right!!)
+    private fun insertCase4(node: RedBlackTreeNode<K, V>?) {
+        if (node == node?.parent?.right && node?.parent == node?.grandParent()?.left) {
+            rotateLeft(node?.parent)
+            insertCase5(node?.left!!)
+        } else if (node == node?.parent && node?.parent == node?.grandParent()?.right) {
+            rotateRight(node?.parent)
+            insertCase5(node?.right!!)
         }
     }
 
-    private fun insertCase5(node: RedBlackTreeNode<K, V>) {
-        node.parent.color = NodeColor.BLACK
-        node.grandParent().color = NodeColor.RED
-        if (node == node.parent.left && node.parent == node.grandParent().left) {
-            rotateRight(node.grandParent())
-        } else if (node == node.parent.right && node.parent == node.grandParent().right) {
-            assert(node == node.parent.right && node.parent == node.grandParent().right)
-            rotateLeft(node.grandParent())
+    private fun insertCase5(node: RedBlackTreeNode<K, V>?) {
+        node?.parent?.color = NodeColor.BLACK
+        node?.grandParent()?.color = NodeColor.RED
+        if (node == node?.parent?.left && node?.parent == node?.grandParent()?.left) {
+            rotateRight(node?.grandParent())
+        } else if (node == node?.parent?.right && node?.parent == node?.grandParent()?.right) {
+            assert(node == node?.parent?.right && node?.parent == node?.grandParent()?.right)
+            rotateLeft(node?.grandParent())
         }
     }
 
@@ -235,8 +236,8 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         }
     }
 
-    private fun rotateLeft(node: RedBlackTreeNode<K, V>) {
-        val rightNode = node.right!!
+    private fun rotateLeft(node: RedBlackTreeNode<K, V>?) {
+        val rightNode = node?.right!!
         replaceNode(node, rightNode)
         node.right = rightNode.left
         if (rightNode.left != null) {
@@ -246,8 +247,8 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         node.parent = rightNode
     }
 
-    private fun rotateRight(node: RedBlackTreeNode<K, V>) {
-        val leftNode = node.left!!
+    private fun rotateRight(node: RedBlackTreeNode<K, V>?) {
+        val leftNode = node?.left!!
         replaceNode(node, leftNode)
         node.left = leftNode.right
         if (leftNode.right != null) {
@@ -258,17 +259,16 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
     }
 
     private fun replaceNode(node: RedBlackTreeNode<K, V>?, replacement: RedBlackTreeNode<K, V>?) {
-        when (node) {
-            node?.parent -> root = replacement
-            node?.parent?.left -> node?.parent?.left = replacement
-            else -> node?.parent?.right = replacement
+        if (node?.parent == null) {
+            root = replacement
+        } else {
+            when (node) {
+                node.parent?.left -> node.parent?.left = replacement
+                else -> node.parent?.right = replacement
+            }
         }
         if (replacement != null) {
-            if (node!!.parent == node) {
-                replacement.parent = replacement
-            } else {
-                replacement.parent = node.parent
-            }
+            replacement.parent = node?.parent
         }
     }
 
@@ -306,28 +306,28 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         }
     }
 
-    private fun deleteCase1(node: RedBlackTreeNode<K, V>) {
-        if (node.parent != node) {
+    private fun deleteCase1(node: RedBlackTreeNode<K, V>?) {
+        if (node?.parent != node) {
             deleteCase2(node)
         }
     }
 
-    private fun deleteCase2(node: RedBlackTreeNode<K, V>) {
-        if (node.sibling()?.color ?: NodeColor.BLACK == NodeColor.RED) {
-            node.parent.color = NodeColor.RED
-            val nodeSibling = node.sibling()
+    private fun deleteCase2(node: RedBlackTreeNode<K, V>?) {
+        if (node?.sibling()?.color ?: NodeColor.BLACK == NodeColor.RED) {
+            node?.parent?.color = NodeColor.RED
+            val nodeSibling = node?.sibling()
             nodeSibling?.color = NodeColor.BLACK
-            if (node == node.parent.left) {
-                rotateLeft(node.parent)
+            if (node == node?.parent?.left) {
+                rotateLeft(node?.parent)
             } else {
-                rotateRight(node.parent)
+                rotateRight(node?.parent)
             }
         }
         deleteCase3(node)
     }
 
-    private fun deleteCase3(node: RedBlackTreeNode<K, V>) {
-        if (node.parent.color == NodeColor.BLACK &&
+    private fun deleteCase3(node: RedBlackTreeNode<K, V>?) {
+        if (node?.parent?.color == NodeColor.BLACK &&
                 node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
                 node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
                 node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
@@ -339,33 +339,33 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         }
     }
 
-    private fun deleteCase4(node: RedBlackTreeNode<K, V>) {
-        if (node.parent.color == NodeColor.RED &&
+    private fun deleteCase4(node: RedBlackTreeNode<K, V>?) {
+        if (node?.parent?.color == NodeColor.RED &&
                 node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
                 node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
                 node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
             val nodeSibling = node.sibling()
             nodeSibling?.color = NodeColor.RED
-            node.parent.color = NodeColor.BLACK
+            node.parent?.color = NodeColor.BLACK
         } else {
             deleteCase5(node)
         }
     }
 
-    private fun deleteCase5(node: RedBlackTreeNode<K, V>) {
-        if (node == node.parent.left &&
-                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
-                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.RED &&
-                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
-            val nodeSibling = node.sibling()
+    private fun deleteCase5(node: RedBlackTreeNode<K, V>?) {
+        if (node == node?.parent?.left &&
+                node?.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node?.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.RED &&
+                node?.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
+            val nodeSibling = node?.sibling()
             nodeSibling?.color = NodeColor.RED
             nodeSibling?.left?.color = NodeColor.BLACK
             rotateRight(nodeSibling!!)
-        } else if (node == node.parent.right &&
-                node.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
-                node.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.RED &&
-                node.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
-            val nodeSibling = node.sibling()
+        } else if (node == node?.parent?.right &&
+                node?.sibling()?.color ?: NodeColor.BLACK == NodeColor.BLACK &&
+                node?.sibling()?.right?.color ?: NodeColor.BLACK == NodeColor.RED &&
+                node?.sibling()?.left?.color ?: NodeColor.BLACK == NodeColor.BLACK) {
+            val nodeSibling = node?.sibling()
             nodeSibling?.color = NodeColor.RED
             nodeSibling?.right?.color = NodeColor.BLACK
             rotateLeft(nodeSibling!!)
@@ -373,18 +373,18 @@ class RedBlackTree<K : RedBlackTreeElement<K, V>, V>(private val sComparator: Co
         deleteCase6(node)
     }
 
-    private fun deleteCase6(node: RedBlackTreeNode<K, V>) {
-        val nodeSibling = node.sibling()
-        nodeSibling?.color = node.parent.color
-        node.parent.color = NodeColor.BLACK
-        if (node == node.parent.left) {
-            // assert(nodeSibling?.right?.color ?: NodeColor.BLACK == NodeColor.RED)
+    private fun deleteCase6(node: RedBlackTreeNode<K, V>?) {
+        val nodeSibling = node?.sibling()
+        nodeSibling?.color = node?.parent?.color ?: NodeColor.BLACK
+        node?.parent?.color = NodeColor.BLACK
+        if (node == node?.parent?.left) {
+            assert(nodeSibling?.right?.color ?: NodeColor.BLACK == NodeColor.RED)
             nodeSibling?.right?.color = NodeColor.BLACK
-            rotateLeft(node.parent)
+            rotateLeft(node?.parent)
         } else {
-            // assert(nodeSibling?.left?.color ?: NodeColor.BLACK == NodeColor.RED)
+            assert(nodeSibling?.left?.color ?: NodeColor.BLACK == NodeColor.RED)
             nodeSibling?.left?.color = NodeColor.BLACK
-            rotateRight(node.parent)
+            rotateRight(node?.parent)
         }
     }
 

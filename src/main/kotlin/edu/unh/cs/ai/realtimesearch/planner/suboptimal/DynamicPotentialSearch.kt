@@ -8,10 +8,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.BucketNode
-import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
 import edu.unh.cs.ai.realtimesearch.util.Indexable
+import edu.unh.cs.ai.realtimesearch.util.SimpleBucketOpenList
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 
 class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : ClassicalPlanner<StateType>() {
@@ -55,10 +54,10 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
-    private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
+//    private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
     private val nodes: HashMap<StateType, DynamicPotentialSearch.Node<StateType>> = HashMap<StateType, DynamicPotentialSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = BucketOpenList<Node<StateType>>(weight)
+    private var openList = SimpleBucketOpenList<Node<StateType>>(weight) //BucketOpenList<Node<StateType>>(weight)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 

@@ -93,7 +93,7 @@ class RedBlackTreeTest {
         val tree = RedBlackTree<SimpleNode, Int>(SimpleNodeComparator(), SimpleNodeComparator())
         val nodes = ArrayList<SimpleNode>()
         val randomGenerator = Random(1L)
-        (1..5000).forEach {
+        (1..50).forEach {
             val key = randomGenerator.nextInt(10000)
             val value =  randomGenerator.nextInt(10000)
 
