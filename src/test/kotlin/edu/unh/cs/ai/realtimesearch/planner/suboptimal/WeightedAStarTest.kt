@@ -149,7 +149,7 @@ class WeightedAStarTest {
 
     @Test
     fun testAStarHardPuzzle() {
-        val weight = 1.7
+        val weight = 1.5
         val configuration = GeneralExperimentConfiguration(mutableMapOf(Configurations.WEIGHT.toString() to weight))
 
         val instanceNumbers = intArrayOf(1, 3)
@@ -170,7 +170,10 @@ class WeightedAStarTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...")
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
+            print("nodes expanded ${aStarAgent.expandedNodeCount}...")
+            print("nodes generated: ${aStarAgent.generatedNodeCount}...")
             println("total time: ${aStarAgent.executionNanoTime}")
+
         }
     }
 

@@ -24,8 +24,10 @@ data_comp = dict()
 
 domains = ['SLIDING_TILE_PUZZLE_4', 'SLIDING_TILE_PUZZLE_HEAVY']
 algorithms = ['WEIGHTED_A_STAR', 'DYNAMIC_POTENTIAL_SEARCH']
-regularTileWeights = [1.17, 1.20, 1.25, 1.33, 1.50, 1.78, 2.00, 2.33, 2.67, 2.75, 3.00]
-heavyTileWeights = [1.11, 1.13, 1.14, 1.17, 1.20, 1.25, 1.50, 2.00, 2.67, 3.00]
+takenOutRegular = [1.17, 1.20]
+regularTileWeights = [1.25, 1.33, 1.50, 1.78, 2.00, 2.33, 2.67, 2.75, 3.00]
+takenOutHeavy = [1.25]
+heavyTileWeights = [1.11, 1.13, 1.14, 1.17, 1.20, 1.50, 2.00, 2.67, 3.00]
 dpsFiles = []
 waFiles = []
 
@@ -65,6 +67,7 @@ for algorithm in algorithms:
 
 
 weights = weightsToPlot
+print(weights)
 # print(weights)
 
 # weights = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0]
@@ -132,9 +135,6 @@ def addInstances(weightIndex, alg, begin, end, datar):
         data["algorithm"].append(alg)
         for key in fields:
             try:
-#                 if str(key) == "success" and str(datar[weightIndex][i]["errorMessage"]) != "null" and datar[weightIndex][i]["success"] == False:
-#                         data[key].append(False)
-#                 else:
                 data[key].append(datar[weightIndex][i][str(key)])
             except KeyError:
                 data[key].append(0)
@@ -169,7 +169,7 @@ makeJson(dpsFiles, data_dps)
 initDictionary()
 initDictionary()
 
-for i in range(0,10):
+for i in range(0,8):
     addInstances(i, "wA*", 0, 100, data_wa)
     addInstances(i, "dps", 0, 100, data_dps)
     makeComp("dps-comp")

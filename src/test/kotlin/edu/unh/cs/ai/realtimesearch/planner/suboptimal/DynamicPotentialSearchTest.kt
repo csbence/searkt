@@ -200,7 +200,7 @@ class DynamicPotentialSearchTest {
 
     @Test
     fun testDynamicPotentialSearchPuzzle() {
-        val weight = 1.7
+        val weight = 1.5
         val instanceNumbers = intArrayOf(1, 3)
         val optimalSolutionLengths = intArrayOf(57, 59)
         for ((experimentNumber, i) in instanceNumbers.withIndex()) {
@@ -211,7 +211,7 @@ class DynamicPotentialSearchTest {
             val domainPair = Pair(Domains.SLIDING_TILE_PUZZLE_4, "input/tiles/korf/4/real/$i")
             val config = makeTestConfiguration(domainPair, weight).first()
             val dynamicPotentialSearchAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, config)
-            val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+            val plan = dynamicPotentialSearchAgent.plan(initialState, StaticExpansionTerminationChecker(1000000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -219,6 +219,8 @@ class DynamicPotentialSearchTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...")
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
+            print("nodes expanded ${dynamicPotentialSearchAgent.expandedNodeCount}...")
+            print("nodes generated: ${dynamicPotentialSearchAgent.generatedNodeCount}...")
             println("total time: ${dynamicPotentialSearchAgent.executionNanoTime}")
         }
     }
