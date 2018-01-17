@@ -19,8 +19,8 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.0'
-    ext.serialization_version = '0.3'
+    ext.kotlin_version = '1.2.20'
+    ext.serialization_version = '0.4'
 
     repositories {
         mavenCentral()
@@ -67,6 +67,7 @@ run {
     if (project.hasProperty("appArgs")) {
         args = Eval.me(appArgs)
     }
+    standardInput = System.in
 }
 
 jar {
