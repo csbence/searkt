@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import org.slf4j.LoggerFactory
 import java.lang.Math.*
 import java.util.*
@@ -268,7 +268,7 @@ class RaceTrack(val width: Int,
         return targetState
     }
 
-    override fun appendDomainSpecificResults(results: ExperimentData) {
-        results["averageVelocity"] = velocities.average()
+    override fun appendDomainSpecificResults(results: ExperimentResult) {
+        results.averageVelocity = velocities.average()
     }
 }

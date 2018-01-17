@@ -1,5 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
+import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
+import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
+import kotlinx.serialization.Optional
+import kotlinx.serialization.Serializable
+
 open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf()) : ExperimentData(values) {
     constructor(domainName: String,
                 rawDomain: String?,
@@ -30,3 +38,51 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
 
     override fun contains(key: String) = valueStore.containsKey(key)
 }
+
+@Serializable
+data class ExperimentConfiguration(
+        val domainName: String,
+        @Optional val rawDomain: String? = null,
+        val algorithmName: String,
+        val terminationType: TerminationType,
+        @Optional val domainPath: String? = null,
+        val actionDuration: Long,
+        val timeLimit: Long,
+        val expansionLimit: Long,
+
+        // Domain
+        @Optional
+        var domainSeed: Long = 0,
+
+        // AStar
+        @Optional
+        var weight: Double = 0.0,
+
+        // Real time experiment
+        @Optional
+        val lookaheadType: LookaheadType? = null,
+        @Optional
+        val commitmentStrategy: CommitmentStrategy? = null,
+        @Optional
+        val stepLimit: Long = 0,
+
+        // RTA*
+        @Optional
+        val lookaheadDepthLimit: Long = 0,
+
+        // Safe search general
+        @Optional
+        val targetSelection: SafeRealTimeSearchTargetSelection? = null,
+
+        // SRTS
+        @Optional
+        val safetyExplorationRatio: Double = 0.0,
+
+        // SZero
+        @Optional
+        val safetyBackup: SafetyBackup? = null,
+
+        // Anytime Experiment
+        @Optional
+        val anytimeMaxCount: Long = 0
+)

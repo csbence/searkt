@@ -1,39 +1,65 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.DataSerializer
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
+import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
+import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import kotlinx.io.PrintWriter
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
 import java.io.File
-import java.io.PrintWriter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun main(args: Array<String>) {
-//    val logger = LoggerFactory.getLogger("Real-time search")
 
+    val outputPath = if (args.isNotEmpty()) {
+        args[0]
+    } else {
+        File("output").mkdir()
+        "output/results.json"
+    }
+
+    val readLine: String? = readLine()
+    val rawConfiguration = if (readLine != null && readLine.isNotBlank()) readLine else generateConfigurations()
+    println(rawConfiguration)
+
+    val loader = ExperimentConfiguration.serializer().list
+    val parsedConfigurations = JSON.parse(loader, rawConfiguration)
+    println(parsedConfigurations)
+
+    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
+
+    val rawResults = JSON.Companion.stringify(SimpleSerializer.list, results)
+    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+    println("\n$results")
+    println("\nResult has been saved to 'output/results.json'.")
+
+    println(results.summary())
+
+    println('#') // Indicator for the parser
+    println(rawResults)
+
+//    runVisualizer(result = results.first())
+}
+
+private fun generateConfigurations(): String {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
     val configurations = generateConfigurations(
             domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track"
+                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    Domains.RACETRACK to "input/racetrack/barto-big.track"
 //                    Domains.RACETRACK to "input/racetrack/uniform.track",
 //                    Domains.RACETRACK to "input/racetrack/barto-small.track"
@@ -41,10 +67,10 @@ fun main(args: Array<String>) {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(SAFE_RTS),
-            actionDurations = listOf(1000000000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(1000),//50L, 100L, 150L, 200L, 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
-            timeLimit = NANOSECONDS.convert(1, MINUTES),
+            timeLimit = NANOSECONDS.convert(1999, MINUTES),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
@@ -57,7 +83,7 @@ fun main(args: Array<String>) {
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SimpleSafeSafetyBackup.PREDECESSOR.toString())),
+                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SafetyBackup.PREDECESSOR.toString())),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
                     Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
@@ -69,31 +95,8 @@ fun main(args: Array<String>) {
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
             )
     )
-
-
-    configurations.forEach(::println)
-
-//    configurations.forEach {
-//        println(it.toIndentedJson())
-//        val instanceFileName = it.domainPath
-//        val input = Input::class.java.classLoader.getResourceAsStream(instanceFileName) ?: throw RuntimeException("Resource not found")
-//        val rawDomain = Scanner(input).useDelimiter("\\Z").next()
-//        it["rawDomain"] = rawDomain
-//    }
-
     println("${configurations.size} configuration has been generated.")
-
-    val results = ConfigurationExecutor.executeConfigurations(configurations, dataRootPath = null, parallelCores = 1)
-    val resultsMaps = results.map { it.toJson() }
-
-    File("output").mkdir()
-    PrintWriter("output/results.json", "UTF-8").use { it.write(JSON.Companion.stringify(DataSerializer.list, resultsMaps)) }
-    println("\n$results")
-    println("\nResult has been saved to 'output/results.json'.")
-
-    println(results.summary())
-
-//    runVisualizer(result = results.first())
+    return JSON.indented.stringify(SimpleSerializer.list, configurations.toList())
 }
 
 

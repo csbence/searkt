@@ -1,14 +1,16 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
+import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PARENT
+import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PREDECESSOR
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
@@ -41,11 +43,12 @@ import kotlin.system.measureTimeMillis
  *
  */
 
-class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>() {
-    private val safetyBackup = SimpleSafeSafetyBackup.valueOf(configuration[SimpleSafeConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
-    private val targetSelection : SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
+    private val safetyBackup = configuration.safetyBackup  ?: throw MetronomeConfigurationException("Safety backup strategy is not specified.")
+    private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Safety bstrategy is not specified.")
+    private val depthBound: Int = configuration.lookaheadDepthLimit.toInt()
 
-    private val versionNumber = SimpleSafeVersion.valueOf(configuration[SimpleSafeConfiguration.VERSION] as? String ?: throw MetronomeException("Version number not found"))
+    private val versionNumber = SimpleSafeVersion.TWO
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -85,7 +88,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
 
     private val safeNodes = ArrayList<Node<StateType>>()
 
-    private val depthBound: Int = configuration[Configurations.LOOKAHEAD_DEPTH_LIMIT] as? Int ?: throw MetronomeException("Lookahead depth limit not found")
 
     private val fValueComparator = Comparator<Node<StateType>> {lhs, rhs ->
         when {
@@ -114,9 +116,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // first search iteration check
@@ -156,8 +156,8 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
             val targetNode = aStar(sourceState, terminationChecker)
 
             when (safetyBackup) {
-                SimpleSafeSafetyBackup.PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
-                SimpleSafeSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
+                PARENT -> throw MetronomeException("Invalid configuration. SimpleSafe does not implement the BEST_SAFE strategy")
+                PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
 
             val targetSafeNode = when (targetSelection) {
@@ -467,10 +467,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
 
 enum class SimpleSafeConfiguration {
     SAFETY_BACKUP, SAFETY, VERSION
-}
-
-enum class SimpleSafeSafetyBackup {
-    PARENT, PREDECESSOR
 }
 
 enum class SimpleSafeSafety {

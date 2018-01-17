@@ -4,10 +4,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
@@ -38,17 +35,17 @@ import java.util.concurrent.TimeUnit
  * @param domain is the environment
  * @param terminationChecker controls the constraint put upon the planner
  */
-class RealTimeExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
+class RealTimeExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
                                                        val planner: RealTimePlanner<StateType>,
                                                        val domain: Domain<StateType>,
                                                        val initialState: StateType,
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private val commitmentStrategy by lazyData<String>(configuration, COMMITMENT_STRATEGY.toString())
-    private val actionDuration by lazyData<Long>(configuration, ACTION_DURATION.toString())
-    private val expansionLimit by lazyData<Long>(configuration, EXPANSION_LIMIT.toString())
-    private val stepLimit by lazyData<Long>(configuration, STEP_LIMIT.toString())
+
+    private val actionDuration = configuration.actionDuration
+    private val expansionLimit = configuration.expansionLimit
+    private val stepLimit = configuration.stepLimit
 
     /**
      * Runs the experiment
@@ -60,7 +57,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
         var totalPlanningNanoTime = 0L
         var iterationCount = 0L
-        val singleStepLookahead = CommitmentStrategy.valueOf(commitmentStrategy) == CommitmentStrategy.SINGLE
+        val singleStepLookahead = configuration.commitmentStrategy == CommitmentStrategy.SINGLE
 
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
@@ -79,7 +76,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
             timeBound = 0
             actionList.forEach {
-                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
@@ -92,7 +89,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
             totalPlanningNanoTime += iterationNanoTime
 
             fun createSnapshotResult(): ExperimentResult {
-                val experimentResult = ExperimentResult(experimentConfiguration = configuration.valueStore)
+                val experimentResult = ExperimentResult(experimentConfiguration = configuration)
                 experimentResult.apply {
                     expandedNodes = planner.expandedNodeCount
                     generatedNodes = planner.generatedNodeCount
@@ -126,7 +123,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
 
         val pathLength: Long = actions.size.toLong()
         val totalExecutionNanoDuration = pathLength * actionDuration
-        val goalAchievementTime = when (TerminationType.valueOf(configuration.terminationType)) {
+        val goalAchievementTime = when (configuration.terminationType) {
             TIME -> actionDuration + totalExecutionNanoDuration // We only plan during execution plus the first iteration
             EXPANSION -> actionDuration + pathLength * actionDuration
             else -> throw MetronomeException("Unsupported termination checker")
@@ -139,7 +136,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Genera
         }
 
         val experimentResult = ExperimentResult(
-                configuration = configuration.valueStore,
+                configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningNanoTime,

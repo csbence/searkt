@@ -4,8 +4,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
@@ -26,7 +25,7 @@ import org.slf4j.LoggerFactory
  * @param domain is the domain of the planner. Used for random state generation
  * @param initialState is the start state of the planner.
  */
-class ClassicalExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
+class ClassicalExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
                                                         val planner: ClassicalPlanner<StateType>,
                                                         val domain: Domain<StateType>,
                                                         val initialState: StateType) : Experiment() {
@@ -43,7 +42,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
             actions = planner.plan(state)
         }
 
-        val planningTime: Long = when (TerminationType.valueOf(configuration.terminationType)) {
+        val planningTime: Long = when (configuration.terminationType) {
             TIME -> cpuNanoTime
             EXPANSION -> planner.expandedNodeCount.toLong()
             else -> throw MetronomeException("Unknown termination type")
@@ -56,11 +55,11 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
         var currentState = initialState
         // validate path
         actions.forEach {
-            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")
+            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with $it")
         }
 
         val experimentResult = ExperimentResult(
-                configuration = configuration.valueStore,
+                configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,

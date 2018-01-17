@@ -1,20 +1,17 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.MetronomeException
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.valueOf
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
@@ -26,10 +23,10 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
+class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
     // Configuration
-    private val targetSelection: SafeRealTimeSearchTargetSelection = valueOf(configuration[TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
-    private val safetyExplorationRatio: Double = (configuration[SAFETY_EXPLORATION_RATIO] as? Double ?: throw MetronomeException("Safety-exploration ratio not found"))
+    private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Target selection strategy is not specified.")
+    private val safetyExplorationRatio: Double = configuration.safetyExplorationRatio
 
     private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
     override var iterationCounter = 0L
