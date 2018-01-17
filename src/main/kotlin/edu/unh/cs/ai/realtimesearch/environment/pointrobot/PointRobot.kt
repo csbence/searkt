@@ -21,9 +21,9 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
         val actions = ArrayList<PointRobotAction>()
         for (x in 0..6) {
             for (y in 0..6) {
-                val xdot = ((x) - 3.0);
-                val ydot = ((y) - 3.0);
-                actions.add(PointRobotAction(xdot, ydot))
+                val xDot = ((x) - 3.0)
+                val yDot = ((y) - 3.0)
+                actions.add(PointRobotAction(xDot, yDot))
             }
         }
         return actions
@@ -38,8 +38,8 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
             var valid = true
 
             for (i in 1..nSteps) {
-                val x = state.x + (xdot * (dt * i));
-                val y = state.y + (ydot * (dt * i));
+                val x = state.x + (xdot * (dt * i))
+                val y = state.y + (ydot * (dt * i))
 
                 if (!isLegalLocation(x, y)) {
                     valid = false

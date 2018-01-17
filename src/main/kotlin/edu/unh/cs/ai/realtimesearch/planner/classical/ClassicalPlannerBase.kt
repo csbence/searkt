@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import org.slf4j.LoggerFactory
 import kotlin.system.measureNanoTime
 
@@ -55,7 +56,7 @@ abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val 
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    override fun plan(state: StateType): List<Action> {
+    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         // get ready / reset for plan
         reset()
 

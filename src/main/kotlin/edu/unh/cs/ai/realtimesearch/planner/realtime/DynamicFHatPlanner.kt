@@ -130,9 +130,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
 
     // Global error correction
     private var heuristicError = 0.0
@@ -252,7 +250,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         expandedNodeCount += 1
 
         // Select the best children to update the distance and heuristic error
-        var bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
+        val bestChildNode: Node<StateType>? = null // TODO This should be updated otherwise it does not make sense
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {

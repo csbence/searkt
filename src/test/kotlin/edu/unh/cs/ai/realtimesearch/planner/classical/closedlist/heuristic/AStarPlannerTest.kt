@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -55,7 +56,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        kotlin.test.assertTrue { aStarAgent.plan(initialState).isEmpty() }
+        kotlin.test.assertTrue { aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
     @Test
@@ -65,7 +66,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 3 }
@@ -78,7 +79,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 6 }
@@ -91,7 +92,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -104,7 +105,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -117,7 +118,7 @@ class AStarPlannerTest {
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
             val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-            val plan = aStarAgent.plan(initialState)
+            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -134,7 +135,7 @@ class AStarPlannerTest {
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = AStarPlanner(slidingTilePuzzle.domain)
-        val plan = aStarAgent.plan(initialState)
+        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println("plan length: ${plan.size}")
         println(plan)
         println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
