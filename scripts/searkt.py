@@ -3,7 +3,7 @@
 # Run searkt with the configs
 
 import copy
-
+import json
 
 def generate_configurations():
     configurations = [{}]
@@ -32,7 +32,7 @@ def cartesian_product(base, key, values):
 
 def main():
     configurations = generate_configurations()
-    print(configurations)
+    print(json.dumps(configurations))
     pass
 
 
