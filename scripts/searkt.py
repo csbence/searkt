@@ -5,6 +5,19 @@
 import copy
 import json
 
+algorithmsToRun = ['WEIGHTED_A_STAR']
+actionDurations = [1, 5, 10]
+
+def generate_racetrack():
+    configurations = [{}] 
+
+    
+    racetracks = ['uniform.track', 'long.track']
+
+    configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
+
+
+
 def generate_configurations():
     configurations = [{}]
 
