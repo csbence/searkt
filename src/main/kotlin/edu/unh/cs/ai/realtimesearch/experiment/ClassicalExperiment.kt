@@ -4,14 +4,10 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import org.slf4j.LoggerFactory
@@ -29,28 +25,24 @@ import org.slf4j.LoggerFactory
  * @param domain is the domain of the planner. Used for random state generation
  * @param initialState is the start state of the planner.
  */
-class ClassicalExperiment<StateType : State<StateType>>(val configuration: GeneralExperimentConfiguration,
+class ClassicalExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
                                                         val planner: ClassicalPlanner<StateType>,
                                                         val domain: Domain<StateType>,
-                                                        val initialState: StateType,
-                                                        val terminationChecker: TerminationChecker) : Experiment() {
+                                                        val initialState: StateType) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
-    private val expansionLimit by lazyData<Long>(configuration, Configurations.EXPANSION_LIMIT.toString())
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initialState
         //        logger.warn { "Starting experiment with state $state on planner $planner" }
 
-        terminationChecker.resetTo(expansionLimit)
-
         val cpuNanoTime = measureThreadCpuNanoTime {
-            actions = planner.plan(state, terminationChecker)
+            actions = planner.plan(state)
         }
 
-        val planningTime: Long = when (TerminationType.valueOf(configuration.terminationType)) {
+        val planningTime: Long = when (configuration.terminationType) {
             TIME -> cpuNanoTime
             EXPANSION -> planner.expandedNodeCount.toLong()
             else -> throw MetronomeException("Unknown termination type")
@@ -63,11 +55,11 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Gener
         var currentState = initialState
         // validate path
         actions.forEach {
-            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")
+            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with $it")
         }
 
         val experimentResult = ExperimentResult(
-                configuration = configuration.valueStore,
+                configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = cpuNanoTime,

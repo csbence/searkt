@@ -1,8 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration
 
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
-import java.io.InputStream
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
@@ -40,18 +37,6 @@ data class AcrobotStateConfiguration(
         val defaultActionDuration = TimeUnit.NANOSECONDS.convert(200, TimeUnit.MILLISECONDS) // Sutton and Boone
 
         /**
-         * Returns an AcrobotStateConfiguration from the given string contents.
-         * @param string a string in JSON format representing an AcrobotStateConfiguration
-         */
-        fun fromJson(string: String): AcrobotStateConfiguration = fromMap(JsonSlurper().parseText(string) as Map<*, *>)
-
-        /**
-         * Returns an AcrobotStateConfiguration from the given stream contents.
-         * @param stream a stream with JSON format content representing an AcrobotStateConfiguration
-         */
-        fun fromJsonStream(stream: InputStream): AcrobotStateConfiguration = fromMap(JsonSlurper().parse(stream) as Map<*, *>)
-
-        /**
          * Returns an AcrobotStateConfiguration from the given map.
          * @param map a map containing AcrobotStateConfiguration values
          */
@@ -77,6 +62,4 @@ data class AcrobotStateConfiguration(
             "velocityGranularity1" to velocityGranularity1,
             "velocityGranularity2" to velocityGranularity2
     )
-
-    fun toJson(): String = JsonOutput.toJson(this)
 }

@@ -25,7 +25,7 @@ import kotlin.system.measureTimeMillis
  *
  * This loop continue until the goal has been found
  */
-class LssLrtaStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>) : RealTimePlanner<StateType>(domain) {
+class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) : RealTimePlanner<StateType>() {
     data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,

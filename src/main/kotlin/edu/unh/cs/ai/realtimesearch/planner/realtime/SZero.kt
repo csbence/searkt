@@ -1,8 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.trace
@@ -28,9 +29,9 @@ import kotlin.system.measureTimeMillis
  *
  * This loop continue until the goal has been found
  */
-class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-    private val safetyBackup = SafeZeroSafetyBackup.valueOf(configuration[SafeZeroConfiguration.SAFETY_BACKUP] as? String ?: throw MetronomeException("Safety backup strategy not found"))
-    private val targetSelection: SafeRealTimeSearchTargetSelection = SafeRealTimeSearchTargetSelection.valueOf(configuration[SafeRealTimeSearchConfiguration.TARGET_SELECTION] as? String ?: throw MetronomeException("Target selection strategy not found"))
+class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
+    private val safetyBackup = configuration.safetyBackup ?: throw MetronomeConfigurationException("Safety backup strategy is not specified.")
+    private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Target selection strategy is not specified.")
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -49,9 +50,6 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         /** Parent pointer that points to the min cost predecessor. */
         override var parent: Node<StateType> = parent ?: this
 
-        val f: Double
-            get() = cost + heuristic
-
         override fun hashCode(): Int {
             return state.hashCode()
         }
@@ -64,7 +62,7 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
         }
 
         override fun toString(): String {
-            return "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
+            return "SafeRealTimeSearchNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
         }
     }
 
@@ -150,8 +148,8 @@ class SZeroPlanner<StateType : State<StateType>>(domain: Domain<StateType>, conf
             val targetNode = aStar(sourceState, terminationChecker)
 
             when (safetyBackup) {
-                SafeZeroSafetyBackup.PARENT -> backUpSafetyThroughParents()
-                SafeZeroSafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
+                SafetyBackup.PARENT -> backUpSafetyThroughParents()
+                SafetyBackup.PREDECESSOR -> predecessorSafetyPropagation(safeNodes)
             }
 
             val targetSafeNode = when (targetSelection) {

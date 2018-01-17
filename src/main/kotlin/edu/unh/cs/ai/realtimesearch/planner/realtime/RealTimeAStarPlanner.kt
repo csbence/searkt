@@ -3,9 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -14,8 +12,8 @@ import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class RealTimeAStarPlanner<StateType : State<StateType>>(domain: Domain<StateType>, var configuration: GeneralExperimentConfiguration) : RealTimePlanner<StateType>(domain) {
-    private val depthLimit: Long = configuration.getTypedValue(Configurations.LOOKAHEAD_DEPTH_LIMIT.toString()) ?: throw InvalidFieldException("\"${Configurations.LOOKAHEAD_DEPTH_LIMIT}\" is not found. Please add it to the experiment configuration.")
+class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, var configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
+    private val depthLimit: Long = configuration.lookaheadDepthLimit
 
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
     data class MiniminNode<StateType : State<StateType>>(val state: StateType, val cost: Double, val depth: Int)

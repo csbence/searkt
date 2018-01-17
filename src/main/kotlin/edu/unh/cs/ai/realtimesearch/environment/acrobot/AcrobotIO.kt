@@ -1,9 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
 import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
 import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
 import java.io.InputStream
 
@@ -14,8 +12,9 @@ import java.io.InputStream
  */
 object AcrobotIO {
     fun parseFromStream(input: InputStream, actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration): AcrobotInstance {
-        val configuration = AcrobotConfiguration.fromJsonStream(input)
-        return AcrobotInstance(DiscretizedDomain(Acrobot(configuration, actionDuration)), DiscretizedState(configuration.initialState))
+//        val configuration = AcrobotConfiguration.fromJsonStream(input)
+//        return AcrobotInstance(DiscretizedDomain(Acrobot(configuration, actionDuration)), DiscretizedState(configuration.initialState))
+        TODO()
     }
 }
 

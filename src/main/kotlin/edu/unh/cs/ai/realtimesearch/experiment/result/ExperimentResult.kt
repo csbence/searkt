@@ -1,30 +1,29 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentData
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import kotlinx.serialization.Optional
+import kotlinx.serialization.Serializable
 import java.lang.management.ManagementFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
-
 
 /**
  * ExperimentResult is a class to store experiment results.
  *
  * The systemProperties property is initialized at construction time.
  */
-@JsonSerialize(`as` = ExperimentData::class)
-class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?>()) : ExperimentData(values) {
-    constructor(experimentConfiguration: Map<String, Any?>,
-                errorMessage: String? = null) : this() {
+@Serializable
+class ExperimentResult {
+    constructor(experimentConfiguration: ExperimentConfiguration,
+                errorMessage: String? = null) {
         this.configuration = experimentConfiguration
         this.errorMessage = errorMessage
         this.success = false
     }
 
-    constructor(configuration: Map<String, Any?>,
+    constructor(configuration: ExperimentConfiguration,
                 expandedNodes: Int,
                 generatedNodes: Int,
                 planningTime: Long,
@@ -35,7 +34,7 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
                 pathLength: Long,
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
-                systemProperties: HashMap<String, Any> = HashMap()) : this() {
+                systemProperties: HashMap<String, Any> = HashMap()) {
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -56,20 +55,27 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         }
     }
 
-    var configuration: Map<String, Any?> by valueStore
-    var pathLength: Long by valueStore
-    var errorMessage: String? by valueStore
-    var expandedNodes: Int by valueStore
-    var generatedNodes: Int by valueStore
-    var planningTime: Long by valueStore
-    var iterationCount: Long by valueStore
-    var actionExecutionTime: Long by valueStore
-    var goalAchievementTime: Long by valueStore
-    var idlePlanningTime: Long by valueStore
-    var actions: List<String> by valueStore
-    var timestamp: Long by valueStore
-    var success: Boolean by valueStore
-    var systemProperties: MutableMap<String, Any> by valueStore
+    var configuration: ExperimentConfiguration
+    var pathLength: Long = 0
+    var errorMessage: String? = null
+    var expandedNodes: Int = 0
+    var generatedNodes: Int = 0
+    var planningTime: Long = 0
+    var iterationCount: Long = 0
+    var actionExecutionTime: Long = 0
+    var goalAchievementTime: Long = 0
+    var idlePlanningTime: Long = 0
+    var actions: List<String> = listOf()
+    var timestamp: Long = 0
+    var success: Boolean = false
+    var systemProperties: MutableMap<String, Any>
+
+    @Optional
+    var errorDetails: String = ""
+
+    // Racetrack domain
+    @Optional var averageVelocity: Double = 0.0
+
 
     init {
         // Initialize the system properties
@@ -91,20 +97,19 @@ class ExperimentResult(values: MutableMap<String, Any?> = hashMapOf<String, Any?
         if (errorMessage != null) {
             builder.appendln("Something went wrong: $errorMessage")
         } else {
-            val terminationType = TerminationType.valueOf(configuration[Configurations.TERMINATION_TYPE.toString()] as String)
             builder.appendln("Planning time: ${convertNanoUpDouble(planningTime, TimeUnit.MILLISECONDS)} ms")
             builder.appendln("Generated Nodes: $generatedNodes, Expanded Nodes $expandedNodes")
             builder.appendln("Path Length: $pathLength")
 
-            when (terminationType) {
+            when (configuration.terminationType) {
                 TerminationType.TIME -> {
-                    builder.appendln("Action duration: ${convertNanoUpDouble(configuration["actionDuration"] as Long, TimeUnit.MILLISECONDS)} ms")
+                    builder.appendln("Action duration: ${convertNanoUpDouble(configuration.actionDuration, TimeUnit.MILLISECONDS)} ms")
                     builder.appendln("Execution time: ${convertNanoUpDouble(actionExecutionTime, TimeUnit.MILLISECONDS)} ms")
                     builder.appendln("Idle planning time: ${convertNanoUpDouble(idlePlanningTime, TimeUnit.MILLISECONDS)} ms")
                     builder.appendln("GAT: ${convertNanoUpDouble(goalAchievementTime, TimeUnit.MILLISECONDS)} ms")
                 }
                 TerminationType.EXPANSION, TerminationType.UNLIMITED -> {
-                    builder.appendln("Action duration: ${configuration["actionDuration"] as Long} expansions")
+                    builder.appendln("Action duration: ${configuration.actionDuration} expansions")
                     builder.appendln("Execution time: ${actionExecutionTime} expansions")
                     builder.appendln("Idle planning time: ${idlePlanningTime} expansions")
                     builder.appendln("GAT: $goalAchievementTime expansions")
@@ -122,9 +127,9 @@ fun Collection<ExperimentResult>.summary(): String {
     builder.appendln("Successful: ${successfulExperiments.size} Failed: ${failedExperiments.size}")
 
     this.forEach {
-        val algorithm = it.configuration[Configurations.ALGORITHM_NAME.toString()] as String
-        val domain = it.configuration[Configurations.DOMAIN_PATH.toString()] as String
-        val GAT = it.valueStore["goalAchievementTime"]
+        val algorithm = it.configuration.algorithmName
+        val domain = it.configuration.domainPath
+        val GAT = it.goalAchievementTime
 
         builder.appendln("Algorithm: $algorithm domain: $domain GAT: $GAT error: ${it.errorMessage ?: "None"}")
     }

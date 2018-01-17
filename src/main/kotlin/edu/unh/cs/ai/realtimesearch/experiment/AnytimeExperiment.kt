@@ -3,9 +3,7 @@ package edu.unh.cs.ai.realtimesearch.experiment
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.InvalidFieldException
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -31,7 +29,7 @@ import java.util.concurrent.TimeUnit
  *
  */
 class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanner<StateType>,
-                                                      val configuration: GeneralExperimentConfiguration,
+                                                      val configuration: ExperimentConfiguration,
                                                       val domain: Domain<StateType>,
                                                       val initialState: StateType) : Experiment() {
 
@@ -46,7 +44,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         var actionList: MutableList<Action?> = arrayListOf()
         var currentState = initialState
         //        val maxCount = 6
-        val maxCount: Long = configuration.getTypedValue<Long>(Configurations.ANYTIME_MAX_COUNT.toString()) ?: throw InvalidFieldException("\"${Configurations.ANYTIME_MAX_COUNT}\" is not found. Please add it to the experiment configuration.")
+        val maxCount: Long = configuration.anytimeMaxCount
 
         logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
@@ -80,7 +78,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
             if (update < 1.0) {
                 actionList.forEach {
                     if (it != null) {
-                        currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
+                        currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                         actions.add(it.toString()) // Save the action
                     }
                 }
@@ -90,7 +88,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 for (it in actionList) {
                     if (it != null) {
                         if (count < maxCount) {
-                            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration.valueStore, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
+                            currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with $it")// Move the planner
                             actions.add(it.toString())
                         }// Save the action
                         actionsLists.add(it.toString())
@@ -120,7 +118,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         }
 
         val experimentResult = ExperimentResult(
-                configuration = configuration.valueStore,
+                configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
                 planningTime = totalPlanningTime,
