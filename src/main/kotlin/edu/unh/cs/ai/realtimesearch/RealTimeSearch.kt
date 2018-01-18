@@ -30,8 +30,8 @@ fun main(args: Array<String>) {
         "output/results.json"
     }
 
-    val readLine: String? = null
-    val rawConfiguration = if (readLine != null && readLine.isNotBlank()) readLine else generateConfigurations()
+    val rawConfigurations: String? = readLine()
+    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
     println(rawConfiguration)
 
     val loader = ExperimentConfiguration.serializer().list
