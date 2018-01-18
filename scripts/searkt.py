@@ -9,20 +9,21 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from os import path, makedirs
 
-algorithmsToRun = ['WEIGHTED_A_STAR', 'SAFE_REAL_TIME_SEARCH']
-weight = [3.0]
-actionDuration = [1000]
-expansionLimit = [1000000]
-lookaheadType = ['DYNAMIC']
-timeLimit = [120000000]
-actionDurations = [1, 5, 10]
+def generate_base_configuration():
+    # required configuration parameters
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'SAFE_REAL_TIME_SEARCH']
+    expansion_limit = [1000000]
+    lookahead_type = ['DYNAMIC']
+    time_limit = [120000000]
+    action_durations = [1, 5, 10]
 
-defaultConfiguration = dict()
-defaultConfiguration['algorithmName'] = algorithmsToRun
-defaultConfiguration['actionDuration'] = actionDuration
-defaultConfiguration['expansionLimit'] = expansionLimit
-defaultConfiguration['lookaheadType'] = lookaheadType
-defaultConfiguration['actionDuration'] = actionDurations
+    base_configuration = dict()
+    base_configuration['algorithmName'] = algorithms_to_run
+    base_configuration['expansionLimit'] = expansion_limit
+    base_configuration['lookaheadType'] = lookahead_type
+    base_configuration['actionDuration'] = action_durations
+    
+    return base_configuration
 
 
 def generate_racetrack():
@@ -32,10 +33,11 @@ def generate_racetrack():
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
     configurations = cartesian_product(configurations, 'domainPath', racetracks)
 
-    for key, value in defaultConfiguration.items():
+    for key, value in generate_base_configuration().items():
         configurations = cartesian_product(configurations, key, value)
 
     # Algorithm specific configurations
+    weight = [3.0]
     configurations = cartesian_product(configurations, 'weight', weight, 'algorithmName', 'WEIGHTED_A_STAR')
     return configurations
 
@@ -125,8 +127,9 @@ def build_searkt():
 def main():
     # build_searkt()
     configurations = generate_configurations()
-    # print(json.dumps(configurations))
-    execute_configurations("\n", 100)
+    configurations = generate_racetrack()
+    print(json.dumps(configurations))
+    # execute_configurations("\n", 100)
 
 
 if __name__ == '__main__':
