@@ -34,7 +34,7 @@ class ExperimentResult {
                 pathLength: Long,
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
-                systemProperties: HashMap<String, Any> = HashMap()) {
+                systemProperties: HashMap<String, String> = HashMap()) {
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -68,7 +68,7 @@ class ExperimentResult {
     var actions: List<String> = listOf()
     var timestamp: Long = 0
     var success: Boolean = false
-    var systemProperties: MutableMap<String, Any>
+    var systemProperties: MutableMap<String, String>
 
     @Optional
     var errorDetails: String = ""
@@ -79,7 +79,7 @@ class ExperimentResult {
 
     init {
         // Initialize the system properties
-        systemProperties = hashMapOf<String, Any>()
+        systemProperties = hashMapOf<String, String>()
 
         val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
         val arguments = runtimeMxBean.inputArguments
@@ -88,7 +88,7 @@ class ExperimentResult {
         systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
         systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
         systemProperties.put("java_version", System.getProperties()["java.version"].toString())
-        systemProperties.put("java_vm_input_args", arguments)
+        systemProperties.put("java_vm_input_args", arguments.toString())
     }
 
     override fun toString(): String {
