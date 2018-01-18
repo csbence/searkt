@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
@@ -29,7 +30,7 @@ fun main(args: Array<String>) {
         "output/results.json"
     }
 
-    val readLine: String? = readLine()
+    val readLine: String? = null
     val rawConfiguration = if (readLine != null && readLine.isNotBlank()) readLine else generateConfigurations()
     println(rawConfiguration)
 
@@ -39,7 +40,7 @@ fun main(args: Array<String>) {
 
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
 
-    val rawResults = JSON.Companion.stringify(SimpleSerializer.list, results)
+    val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
     PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
     println("\n$results")
     println("\nResult has been saved to 'output/results.json'.")
@@ -47,7 +48,7 @@ fun main(args: Array<String>) {
     println(results.summary())
 
     println('#') // Indicator for the parser
-    println(rawResults)
+    println(rawResults) // This should be the last printed line
 
 //    runVisualizer(result = results.first())
 }
