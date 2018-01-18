@@ -30,8 +30,12 @@ def generate_racetrack():
     configurations = [{}]
 
     racetracks = ['uniform.track', 'long.track']
+
+    racetrack_base_path = 'input/racetrack/'
+    full_racetrack_paths = [racetrack_base_path + racetrack for racetrack in racetracks]
+
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
-    configurations = cartesian_product(configurations, 'domainPath', racetracks)
+    configurations = cartesian_product(configurations, 'domainPath', full_racetrack_paths)
 
     for key, value in generate_base_configuration().items():
         configurations = cartesian_product(configurations, key, value)
@@ -95,6 +99,10 @@ def execute_configurations(configurations, timeout):
 
     raw_output = completed_process.stdout.decode('utf-8').splitlines()
 
+    print('\n')
+    print(raw_output)
+    print('\n')
+
     result_offset = raw_output.index('#') + 1
     results = json.loads(raw_output[result_offset])
 
@@ -129,7 +137,13 @@ def main():
     configurations = generate_configurations()
     configurations = generate_racetrack()
     print(json.dumps(configurations))
-    # execute_configurations("\n", 100)
+    results = execute_configurations(configurations, 100)
+
+    for result in results:
+        del result['actions']
+        del result['systemProperties']
+
+    print(results)
 
 
 if __name__ == '__main__':
