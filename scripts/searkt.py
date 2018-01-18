@@ -25,6 +25,7 @@ def generate_racetrack():
 
     racetracks = ['uniform.track', 'long.track']
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
+    configurations = cartesian_product(configurations, 'domainPath', racetracks)
 
     for key, value in defaultConfiguration.items():
         configurations = cartesian_product(configurations, key, value)
