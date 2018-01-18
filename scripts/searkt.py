@@ -29,9 +29,13 @@ def generate_base_configuration():
 def generate_racetrack():
     configurations = [{}]
 
+    prefix = 'input/racetrack/'
     racetracks = ['uniform.track', 'long.track']
+    racetrack_paths = []
+    for racetrack in racetracks:
+        racetrack_paths.append(str(prefix) + str(racetrack))
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
-    configurations = cartesian_product(configurations, 'domainPath', racetracks)
+    configurations = cartesian_product(configurations, 'domainPath', racetrack_paths)
 
     for key, value in generate_base_configuration().items():
         configurations = cartesian_product(configurations, key, value)
