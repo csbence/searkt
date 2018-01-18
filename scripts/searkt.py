@@ -46,6 +46,25 @@ def generate_racetrack():
     return configurations
 
 
+def generate_traffic():
+    configurations = [{}]
+
+    prefix = 'input/traffic/30/'
+    traffic_paths = []
+    for i in range(0, 100):
+        traffic_paths.append(str(prefix) + str('traffic') + str(i))
+    configurations = cartesian_product(configurations, 'domainName', ['TRAFFIC'])
+    configurations = cartesian_product(configurations, 'domainPath', traffic_paths)
+
+    for key, value in generate_base_configuration().items():
+        configurations = cartesian_product(configurations, key, value)
+
+    # Algorithm specific configurations
+    weight = [3.0]
+    configurations = cartesian_product(configurations, 'weight', weight, 'algorithmName', 'WEIGHTED_A_STAR')
+    return configurations
+
+
 def generate_configurations():
     configurations = [{}]
 
@@ -125,14 +144,15 @@ def parallel_execution(configurations, threads=1):
 
 
 def build_searkt():
-    run(['../gradlew', 'build -x test'])
+    run(['./gradlew', 'build -x test'])
 
 
 def main():
-    build_searkt()
+    # build_searkt()
     # configurations = generate_configurations()
     configurations = generate_racetrack()
-    # print(json.dumps(configurations))
+    configurations = generate_traffic()
+    print(json.dumps(configurations))
     execute_configurations("\n", 100)
 
 
