@@ -58,18 +58,18 @@ def generate_configurations():
 
 def cartesian_product(base, key, values, filter_key=None, filter_value=None):
     new_base = []
-    if filter_key is None and filter_value is None:
+    if filter_key is None or filter_value is None:
         for item in base:
             for value in values:
                 new_configuration = copy.deepcopy(item)
                 new_configuration[key] = value
                 new_base.append(new_configuration)
     else:
-        for configuration in base:
-            if filter_key in configuration and configuration[filter_key] == filter_value:
-                new_base.extend(cartesian_product([configuration], key, values))
+        for item in base:
+            if filter_key in item and item[filter_key] == filter_value:
+                new_base.extend(cartesian_product([item], key, values))
             else:
-                new_base.append(configuration)
+                new_base.append(item)
 
     return new_base
 
