@@ -129,12 +129,14 @@ def build_searkt():
 
 
 def main():
-    # build_searkt()
-    configurations = generate_configurations()
+    build_searkt()
+    # configurations = generate_configurations()
     configurations = generate_racetrack()
-    print(json.dumps(configurations))
-    # execute_configurations("\n", 100)
+    # print(json.dumps(configurations))
+    execute_configurations("\n", 100)
 
 
 if __name__ == '__main__':
     main()
+    
+
