@@ -34,6 +34,7 @@ def generate_racetrack():
     for key, value in defaultConfiguration.items():
         configurations = cartesian_product(configurations, key, value)
 
+    # Algorithm specific configurations
     configurations = cartesian_product(configurations, 'weight', weight, 'algorithmName', 'WEIGHTED_A_STAR')
     return configurations
 
@@ -61,12 +62,11 @@ def cartesian_product(base, key, values, filter_key=None, filter_value=None):
                 new_configuration[key] = value
                 new_base.append(new_configuration)
     else:
-        new_base = copy.deepcopy(base)
-        for item in new_base:
-            iterCopy = dict(item)
-            for a_key, value in iterCopy.items():
-                if str(a_key) == str(filter_key) and filter_value in item[str(a_key)]:
-                    item[str(key)] = values
+        for configuration in base:
+            if filter_key in configuration and configuration[filter_key] == filter_value:
+                new_base.extend(cartesian_product([configuration], key, values))
+            else:
+                new_base.append(configuration)
 
     return new_base
 
