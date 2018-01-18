@@ -9,7 +9,6 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from os import path, makedirs
 
-
 algorithmsToRun = ['WEIGHTED_A_STAR', 'SAFE_REAL_TIME_SEARCH']
 weight = [3.0]
 actionDuration = [1000]
@@ -25,6 +24,7 @@ defaultConfiguration['expansionLimit'] = expansionLimit
 defaultConfiguration['lookaheadType'] = lookaheadType
 defaultConfiguration['actionDuration'] = actionDurations
 
+
 def generate_racetrack():
     configurations = [{}]
 
@@ -36,7 +36,6 @@ def generate_racetrack():
 
     configurations = cartesian_product(configurations, 'weight', weight, 'algorithmName', 'WEIGHTED_A_STAR')
     return configurations
-
 
 
 def generate_configurations():
@@ -53,10 +52,10 @@ def generate_configurations():
     return configurations
 
 
-def cartesian_product(base, key, values, filter_key = '', filter_value = ''):
+def cartesian_product(base, key, values, filter_key=None, filter_value=None):
     new_base = []
-    if filter_key == '' and filter_value ==  '':
-       for item in base:
+    if filter_key is None and filter_value is None:
+        for item in base:
             for value in values:
                 new_configuration = copy.deepcopy(item)
                 new_configuration[key] = value
@@ -111,7 +110,7 @@ def parallel_execution(configurations, threads=1):
     futures = []
     with ThreadPoolExecutor(max_workers=threads) as executor:
         for configuration in configurations:
-            future = executor.submit(execute_configuration, configuration)
+            future = executor.submit(execute_configurations, configuration)
             future.add_done_callback(lambda _: progress_bar.update())
             futures.append(future)
 
