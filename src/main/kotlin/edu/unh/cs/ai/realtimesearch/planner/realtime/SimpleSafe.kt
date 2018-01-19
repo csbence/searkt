@@ -46,7 +46,7 @@ import kotlin.system.measureTimeMillis
 class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
     private val safetyBackup = configuration.safetyBackup  ?: throw MetronomeConfigurationException("Safety backup strategy is not specified.")
     private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Safety bstrategy is not specified.")
-    private val depthBound: Int = configuration.lookaheadDepthLimit.toInt()
+    private val depthBound: Int = configuration.lookaheadDepthLimit?.toInt() ?: throw MetronomeConfigurationException("Lookahead depth limit is not specified.")
 
     private val versionNumber = SimpleSafeVersion.TWO
 

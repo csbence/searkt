@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, var configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
-    private val depthLimit: Long = configuration.lookaheadDepthLimit
+    private val depthLimit: Long = configuration.lookaheadDepthLimit             ?: throw MetronomeConfigurationException("Lookahead depth limit is not specified.")
 
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
     data class MiniminNode<StateType : State<StateType>>(val state: StateType, val cost: Double, val depth: Int)

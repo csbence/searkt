@@ -28,6 +28,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private val targetSelection = configuration.targetSelection
             ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
     private val safetyExplorationRatio: Double = configuration.safetyExplorationRatio
+            ?: throw MetronomeConfigurationException("Safety/exploration ratio is not specified.")
     private val safetyProof = configuration.safetyProof
             ?: throw MetronomeConfigurationException("Safety proof is not specified.")
 

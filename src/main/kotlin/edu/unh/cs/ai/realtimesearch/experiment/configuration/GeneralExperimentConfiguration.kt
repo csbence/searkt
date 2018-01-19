@@ -65,11 +65,11 @@ data class ExperimentConfiguration(
         @Optional
         val commitmentStrategy: CommitmentStrategy? = null,
         @Optional
-        val stepLimit: Long = 0,
+        val stepLimit: Long? = null,
 
         // RTA*
         @Optional
-        val lookaheadDepthLimit: Long = 0,
+        val lookaheadDepthLimit: Long? = null,
 
         // Safe search general
         @Optional
@@ -77,7 +77,8 @@ data class ExperimentConfiguration(
 
         // SRTS
         @Optional
-        val safetyExplorationRatio: Double = 0.0,
+        val safetyExplorationRatio: Double? = null,
+        @Optional
         val safetyProof: SafetyProof? = null,
 
         // SZero

@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
         "output/results.json"
     }
 
-    val rawConfigurations: String? = null // readLine()
+    val rawConfigurations: String? = readLine()
     val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
     println(rawConfiguration)
 
@@ -49,7 +49,7 @@ fun main(args: Array<String>) {
     println(results.summary())
 
     println('#') // Indicator for the parser
-//    println(rawResults) // This should be the last printed line
+    println(rawResults) // This should be the last printed line
 
 //    runVisualizer(result = results.first())
 }

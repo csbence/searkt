@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
@@ -46,6 +47,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
     private val stepLimit = configuration.stepLimit
+            ?: throw MetronomeConfigurationException("Step limit is not specified.")
 
     /**
      * Runs the experiment
