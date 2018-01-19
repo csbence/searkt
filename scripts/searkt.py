@@ -16,12 +16,16 @@ def generate_base_configuration():
     lookahead_type = ['DYNAMIC']
     time_limit = [120000000]
     action_durations = [1, 5, 10]
+    termination_types = ['EXPANSION']
+    step_limits = [100000000]
 
     base_configuration = dict()
     base_configuration['algorithmName'] = algorithms_to_run
     base_configuration['expansionLimit'] = expansion_limit
     base_configuration['lookaheadType'] = lookahead_type
     base_configuration['actionDuration'] = action_durations
+    base_configuration['terminationType'] = termination_types
+    base_configuration['stepLimit'] = step_limits
     
     return base_configuration
 
