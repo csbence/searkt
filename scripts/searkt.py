@@ -4,18 +4,19 @@
 
 import copy
 import json
+import os
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from os import path, makedirs
+
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'SAFE_REAL_TIME_SEARCH']
-    expansion_limit = [1000000]
+    algorithms_to_run = ['SAFE_RTS']
+    expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [120000000]
-    action_durations = [1, 5, 10]
+    action_durations = [50, 100, 150]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
 
@@ -26,12 +27,36 @@ def generate_base_configuration():
     base_configuration['actionDuration'] = action_durations
     base_configuration['terminationType'] = termination_types
     base_configuration['stepLimit'] = step_limits
-    
-    return base_configuration
+    base_configuration['timeLimit'] = [100000000000]
+
+    compiled_configurations = [{}]
+
+    for key, value in base_configuration.items():
+        compiled_configurations = cartesian_product(compiled_configurations, key, value)
+
+    # Algorithm specific configurations
+    weight = [3.0]
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                'algorithmName', 'WEIGHTED_A_STAR')
+
+    # S-RTS specific attributes
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'targetSelection', ['SAFE_TO_BEST'],
+                                                'algorithmName', 'SAFE_RTS')
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
+                                                'algorithmName', 'SAFE_RTS')
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyExplorationRatio', [1],
+                                                'algorithmName', 'SAFE_RTS')
+
+    print(compiled_configurations)
+    return compiled_configurations
 
 
 def generate_racetrack():
-    configurations = [{}]
+    configurations = generate_base_configuration()
 
     racetracks = ['uniform.track', 'long.track']
 
@@ -40,26 +65,6 @@ def generate_racetrack():
 
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
     configurations = cartesian_product(configurations, 'domainPath', full_racetrack_paths)
-
-    for key, value in generate_base_configuration().items():
-        configurations = cartesian_product(configurations, key, value)
-
-    # Algorithm specific configurations
-    weight = [3.0]
-    configurations = cartesian_product(configurations, 'weight', weight, 'algorithmName', 'WEIGHTED_A_STAR')
-    return configurations
-
-
-def generate_configurations():
-    configurations = [{}]
-
-    configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
-    configurations = cartesian_product(configurations, 'domainPath', [''])
-    configurations = cartesian_product(configurations, 'algorithmName', ['a', 'b'])
-    configurations = cartesian_product(configurations, 'actionDuration', ['a', 'b'])
-    configurations = cartesian_product(configurations, 'lookaheadType', ['a', 'b'])
-    configurations = cartesian_product(configurations, 'timeLimit', ['a', 'b'])
-    configurations = cartesian_product(configurations, 'expansionLimit', ['1', '2'])
 
     return configurations
 
@@ -133,19 +138,23 @@ def parallel_execution(configurations, threads=1):
 
 
 def build_searkt():
-    run(['../gradlew', 'build -x test'])
+    os.chdir('..')
+    return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
+    os.chdir('scripts')
+    return return_code == 0
 
 
 def main():
-    # build_searkt()
-    configurations = generate_configurations()
+    if not build_searkt():
+        raise Exception('Build failed. Make sure the jar generation is functioning. ')
+
     configurations = generate_racetrack()
     print(json.dumps(configurations))
-    results = execute_configurations(configurations, 100)
+    results = execute_configurations(configurations, 1000)
 
     for result in results:
-        del result['actions']
-        del result['systemProperties']
+        result.pop('actions', None)
+        result.pop('systemProperties', None)
 
     print(results)
 
