@@ -25,8 +25,11 @@ import kotlin.system.measureTimeMillis
  */
 class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
     // Configuration
-    private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Target selection strategy is not specified.")
+    private val targetSelection = configuration.targetSelection
+            ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
     private val safetyExplorationRatio: Double = configuration.safetyExplorationRatio
+    private val safetyProof = configuration.safetyProof
+            ?: throw MetronomeConfigurationException("Safety proof is not specified.")
 
     private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
     override var iterationCounter = 0L
@@ -115,7 +118,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val (targetNode, lastSafeNode) = microIteration(sourceState, terminationChecker)
+            val (targetNode, lastSafeNode) = when (safetyProof) {
+                SafetyProof.LOW_D_WINDOW -> windowedMicroIteration(sourceState, terminationChecker)
+                SafetyProof.TOP_OF_OPEN -> microIteration(sourceState, terminationChecker)
+            }
 
             // Backup safety
             predecessorSafetyPropagation(safeNodes)
@@ -158,6 +164,62 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
+    private fun windowedMicroIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
+        logger.debug { "Starting A* from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        var totalExpansionDuration = 0L
+        var currentExpansionDuration = 0L
+        var totalSafetyDuration = 0L
+        var costBucket = 10
+        lastSafeNode = null
+
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty."))
+                }
+                .onEach {
+                    terminationChecker.notifyExpansion()
+                    currentExpansionDuration++
+                }
+                .windowed(size = 10, partialWindows = true)
+                .forEach { lastNodes ->
+                    if (currentExpansionDuration >= costBucket) {
+                        val nodeToProve = lastNodes.minBy { domain.safeDistance(it.state).first }
+                                ?: throw GoalNotReachableException("Goal is not reachable")
+
+                        // Switch to safety
+                        totalExpansionDuration += currentExpansionDuration
+                        currentExpansionDuration = 0L
+
+                        val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
+
+                        val safetyProofDuration = proveSafety(nodeToProve, safetyTerminationChecker)
+
+                        terminationChecker.notifyExpansion(safetyProofDuration)
+                        totalSafetyDuration += safetyProofDuration
+
+                        if (nodeToProve.safe) {
+                            // If proof was successful reset the bucket
+                            costBucket = 10
+                            safeNodes.add(nodeToProve)
+                            // TODO set last safe?
+                        } else {
+                            // Increase the
+                            costBucket *= 2
+                        }
+                    }
+                }
+
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+    }
+
+    /**
+     * Runs AStar until termination and returns the path to the head of openList
+     * Will just repeatedly expand according to A*.
+     */
     private fun microIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
         logger.debug { "Starting A* from sourceState: $sourceState" }
         initializeAStar(sourceState)
@@ -170,7 +232,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
         aStarSequence
                 .generateWhile {
-                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty."))
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty."))
                 }
                 .onEach {
                     terminationChecker.notifyExpansion()
@@ -201,10 +264,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                         }
                     }
                 }
-
-//        println("Micro Iteration Done")
-
-        logger.debug { "Last safe node: $lastSafeNode" }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }

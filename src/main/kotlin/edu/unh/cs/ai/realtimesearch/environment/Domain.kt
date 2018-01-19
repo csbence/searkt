@@ -80,6 +80,11 @@ interface Domain<State> {
      */
     fun isSafe(state: State): Boolean = TODO()
 
+    /**
+     * Estimate for the number of hops to the closest safe state.
+     *
+     * @return heuristic lower bound on distance and an extra value for tie breaking.
+     */
     fun safeDistance(state: State): Pair<Int, Int> = TODO()
 
     /**

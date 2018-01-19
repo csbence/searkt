@@ -175,9 +175,15 @@ enum class SafeRealTimeSearchTargetSelection {
     BEST_SAFE
 }
 
+enum class SafetyProof {
+    TOP_OF_OPEN,
+    LOW_D_WINDOW
+}
+
 enum class SafeRealTimeSearchConfiguration(val key: String) {
     TARGET_SELECTION("targetSelection"),
-    SAFETY_EXPLORATION_RATIO("safetyExplorationRatio");
+    SAFETY_EXPLORATION_RATIO("safetyExplorationRatio"),
+    SAFETY_PROOF("safetyProof");
 
     override fun toString() = key
 }

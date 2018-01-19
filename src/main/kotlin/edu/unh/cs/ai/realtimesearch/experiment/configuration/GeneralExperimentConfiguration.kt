@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
+import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 
@@ -77,6 +78,7 @@ data class ExperimentConfiguration(
         // SRTS
         @Optional
         val safetyExplorationRatio: Double = 0.0,
+        val safetyProof: SafetyProof? = null,
 
         // SZero
         @Optional
