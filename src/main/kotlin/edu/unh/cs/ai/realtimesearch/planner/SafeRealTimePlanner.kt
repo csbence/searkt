@@ -177,7 +177,8 @@ enum class SafeRealTimeSearchTargetSelection {
 
 enum class SafetyProof {
     TOP_OF_OPEN,
-    LOW_D_WINDOW
+    LOW_D_WINDOW,
+    LOW_D_TOP_PREDECESSOR
 }
 
 enum class SafeRealTimeSearchConfiguration(val key: String) {

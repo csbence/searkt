@@ -1,6 +1,5 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
@@ -19,20 +18,27 @@ import kotlinx.io.PrintWriter
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun main(args: Array<String>) {
 
-    val outputPath = if (args.isNotEmpty()) {
-        args[0]
-    } else {
-        File("output").mkdir()
-        "output/results.json"
-    }
+//    val outputPath = if (args.isNotEmpty()) {
+//        args[0]
+//    } else {
+//        File("output").mkdir()
+//        "output/results_${LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}.json"
+//    }
+//    val outputFile = File(outputPath)
+//    outputFile.createNewFile()
+//    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
 
-    val rawConfigurations: String? = readLine()
-    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
+    println("Please provide a JSON list of configurations to execute:")
+    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+//    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
     println(rawConfiguration)
 
     val loader = ExperimentConfiguration.serializer().list
@@ -42,14 +48,15 @@ fun main(args: Array<String>) {
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
 
     val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
-    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
-    println("\n$results")
-    println("\nResult has been saved to 'output/results.json'.")
-
-    println(results.summary())
+//    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+//    System.err.println("\nResult has been saved to $outputPath")
+//    System.err.println(results.summary())
 
     println('#') // Indicator for the parser
     println(rawResults) // This should be the last printed line
+
+//    System.err.println("Searkt is done!")
+//    System.err.flush()
 
 //    runVisualizer(result = results.first())
 }

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
@@ -12,7 +13,7 @@ import java.util.HashMap
 import kotlin.Comparator
 
 class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
-    private val weight: Double = configuration.weight
+    private val weight: Double = configuration.weight ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,

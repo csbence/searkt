@@ -61,13 +61,15 @@ object ConfigurationExecutor {
                 val minutes = MILLISECONDS.toMinutes(expectedCompletionMillis) % 60
                 val hours = MILLISECONDS.toHours(expectedCompletionMillis) % 60
 
-                val builder = StringBuilder("\r|                            | $currentProgress/$maxProgress | ${Math.round(ratio * 100)}% | avg: $millisecondPerExperiment ms/exp | rem: ${hours}h ${minutes}m ${seconds}s |")
+                val builder = StringBuilder()
                 builder.append("\r|")
                 (1..28).forEach {
                     builder.append(if (it / 28.0 > ratio) "" else "\u2588")
                 }
-                println(builder.toString())
-                System.out.flush()
+                builder.append("\r|                            | $currentProgress/$maxProgress | ${Math.round(ratio * 100)}% | avg: $millisecondPerExperiment ms/exp | rem: ${hours}h ${minutes}m ${seconds}s |")
+//                println(builder.toString())
+                System.err.println(builder.toString())
+                System.err.flush()
             }
         }
 
@@ -142,7 +144,7 @@ object ConfigurationExecutor {
         val domainName: String = configuration.domainName
 
         val domainStream: InputStream = when {
-            configuration.rawDomain != null -> configuration.rawDomain!!.byteInputStream()
+            configuration.rawDomain != null -> configuration.rawDomain.byteInputStream()
             dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
             else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }

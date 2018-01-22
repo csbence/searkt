@@ -53,11 +53,11 @@ data class ExperimentConfiguration(
 
         // Domain
         @Optional
-        var domainSeed: Long = 0,
+        var domainSeed: Long? = null,
 
         // AStar
         @Optional
-        var weight: Double = 0.0,
+        var weight: Double? = null,
 
         // Real time experiment
         @Optional
@@ -80,6 +80,8 @@ data class ExperimentConfiguration(
         val safetyExplorationRatio: Double? = null,
         @Optional
         val safetyProof: SafetyProof? = null,
+        @Optional
+        val safetyWindowSize: Long? = null,
 
         // SZero
         @Optional
@@ -87,5 +89,5 @@ data class ExperimentConfiguration(
 
         // Anytime Experiment
         @Optional
-        val anytimeMaxCount: Long = 0
+        val anytimeMaxCount: Long? = null
 )

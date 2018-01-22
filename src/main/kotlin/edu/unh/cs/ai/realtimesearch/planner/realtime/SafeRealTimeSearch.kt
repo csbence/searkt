@@ -31,6 +31,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             ?: throw MetronomeConfigurationException("Safety/exploration ratio is not specified.")
     private val safetyProof = configuration.safetyProof
             ?: throw MetronomeConfigurationException("Safety proof is not specified.")
+    private val safetyWindowSize: Int = configuration.safetyWindowSize?.toInt()
+            ?: throw MetronomeConfigurationException("Safety window size is not specified.")
 
     private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
     override var iterationCounter = 0L
@@ -122,6 +124,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             val (targetNode, lastSafeNode) = when (safetyProof) {
                 SafetyProof.LOW_D_WINDOW -> windowedMicroIteration(sourceState, terminationChecker)
                 SafetyProof.TOP_OF_OPEN -> microIteration(sourceState, terminationChecker)
+                SafetyProof.LOW_D_TOP_PREDECESSOR -> TODO()
             }
 
             // Backup safety
@@ -184,7 +187,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
                 }
-                .windowed(size = 10, partialWindows = true)
+                .windowed(size = safetyWindowSize, partialWindows = true)
                 .forEach { lastNodes ->
                     if (currentExpansionDuration >= costBucket) {
                         val nodeToProve = lastNodes.minBy { domain.safeDistance(it.state).first }

@@ -56,6 +56,7 @@ object PolymorphicClassDesc : SerialClassDescImpl("kotlin.Any") {
 object SimpleSerializer: KSerializer<Any> {
     override val serialClassDesc: KSerialClassDesc = SerialClassDescImpl("Simple")
 
+    @SuppressWarnings
     override fun save(output: KOutput, obj: Any) {
         when (obj) {
             is Long -> output.writeLongValue(obj)
@@ -74,10 +75,7 @@ object SimpleSerializer: KSerializer<Any> {
     }
 
     override fun load(input: KInput): ExperimentData {
-        val rawString = input.readStringValue()
-        TODO()
-//        input.readSerializableValue()
-//        return df.parse(input.readStringValue())
+        throw NotImplementedError()
     }
 }
 

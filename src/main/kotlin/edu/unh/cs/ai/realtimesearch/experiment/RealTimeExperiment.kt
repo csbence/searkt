@@ -59,7 +59,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
         var totalPlanningNanoTime = 0L
         var iterationCount = 0L
-        val singleStepLookahead = configuration.commitmentStrategy == CommitmentStrategy.SINGLE
+        val commitmentStrategy = configuration.commitmentStrategy
+                ?: throw MetronomeConfigurationException("Lookahead strategy is not specified.")
 
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
@@ -71,7 +72,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 iterationCount++
                 actionList = planner.selectAction(currentState, terminationChecker)
 
-                if (actionList.size > 1 && singleStepLookahead) {
+                if (actionList.size > 1 && commitmentStrategy == CommitmentStrategy.SINGLE) {
                     actionList = listOf(actionList.first()) // Trim the action list to one item
                 }
             }

@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.experiment
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
@@ -44,7 +45,7 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         var actionList: MutableList<Action?> = arrayListOf()
         var currentState = initialState
         //        val maxCount = 6
-        val maxCount: Long = configuration.anytimeMaxCount
+        val maxCount: Long = configuration.anytimeMaxCount ?: throw MetronomeConfigurationException("Anytime max count is not specified.")
 
         logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
