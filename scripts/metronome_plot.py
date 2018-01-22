@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 
-import numpy as np
+import json
+import gzip
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import seaborn as sns
-from pandas import DataFrame
-import statsmodels.stats.api as sms
-from statsmodels.stats.proportion import proportion_confint
+import numpy as np
 import pandas as pd
-import json
 import re
+import seaborn as sns
 import statistics
+import statsmodels.stats.api as sms
+from pandas import DataFrame
+from statsmodels.stats.proportion import proportion_confint
 
 __author__ = 'Bence Cserna'
-
-small_durations = [10, 20, 50, 100]
-algorithms = ["A_STAR", "LSS_LRTA_STAR", "MO_RTS"]
-wall_path = '/input/vacuum/variants/wall-2/wall_'
-cups_path = '/input/vacuum/variants/cups-2/cups_'
-tiles_path = '/input/tiles/korf/4/all/'
 
 
 def flatten(experiment):
@@ -59,15 +54,20 @@ def plot_data_frame(experiments):
 
 
 def read_data(file_name):
+    if file_name.endswith('.gz'):
+        with gzip.open("input.json.gz", "rb") as file:
+            return json.loads(file.read().decode("utf-8"))
+
     with open(file_name) as file:
-        content = json.load(file)
-    return content
+        return json.load(file)
+
 
 def plot_errors(plot, xvalues, yvalues, yerr, lolims, uplims):
     (_, caps, _) = plot.errorbar(xvalues, yvalues, yerr=yerr, lolims=lolims, uplims=uplims)
     for cap in caps:
         cap.set_markeredgewidth(2)
         cap.set_marker("_")
+
 
 def add_data(frame, group, key, algs, opt_gat, domain_path):
     new_frame = DataFrame()
@@ -94,8 +94,10 @@ def add_data(frame, group, key, algs, opt_gat, domain_path):
     algs.append(key)
     return pd.concat([frame, new_frame], axis=1)
 
+
 def add_row(df, values):
     return df.append(dict(zip(df.columns.values, values)), ignore_index=True)
+
 
 def print_survival_rate(df):
     for domain_path, domain_group in df.groupby(["domainPath"]):
@@ -113,8 +115,7 @@ def print_survival_rate(df):
             survival_confint = proportion_confint(successes, total_trials, 0.05)
             survival_rate = (successes / (successes + deaths))
             survival_results = add_row(survival_results,
-                                      [fields[1], fields[0], survival_rate, survival_confint[0], survival_confint[1]])
-
+                                       [fields[1], fields[0], survival_rate, survival_confint[0], survival_confint[1]])
 
         fig, ax = plt.subplots()
         errors = []
@@ -126,12 +127,11 @@ def print_survival_rate(df):
         survival = survival_results.pivot(index='actionDuration', columns='algorithmName', values='survival')
 
         survival.plot(ax=ax, yerr=errors,
-                      xlim=[0, 7000], ylim=[0, 1.0],
+                      # xlim=[0, 7000],
+                      ylim=[0, 1.0],
                       capsize=4, capthick=1, ecolor='black', cmap=plt.get_cmap("rainbow"), elinewidth=1)
 
         plt.savefig('test.png', format='png')
-
-
 
 
 def format_plot(plot):
@@ -144,7 +144,6 @@ def format_plot(plot):
     # plt.xticks([2 * 10**3, 4 * 10**3, 6 * 10**3], [])
 
 
-
 def set_rc():
     # sns.axes_style({'xtic.major.size' : 10})
     mpl.rcParams['axes.labelsize'] = 10
@@ -153,11 +152,16 @@ def set_rc():
     # pylab.rcParams['font.family'] = 'Serif'
 
 
-
 def main():
-    data = construct_data_frame(read_data("../output/results.json"))
-    set_rc()
 
+    results = read_data("../output/results.json")
+    baseline_results = read_data('../baseline/racetrack/fixed_A_STAR_single.json')
+
+    results += baseline_results
+
+    data = construct_data_frame(results)
+
+    set_rc()
 
     data.drop(['commitmentType', "success", "timeLimit",
                "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
@@ -167,13 +171,10 @@ def main():
               inplace=True,
               errors='ignore')
 
-
     # this is a fix for the traffic domain which does not have domainSeed values, so I have to fake it
     if 'domainSeed' not in data:
         data['domainSeed'] = data['domainPath']
         data['domainPath'] = 'vehicle'
-
-
 
     # get min and max ranges for actionDuration for plotting later
     min_range = data.min()['actionDuration']
@@ -196,7 +197,6 @@ def main():
         domain_name = re.search("[^/]+$", domain_path).group(0).rstrip(".track")
 
         for fields, action_group in domain_group.groupby(['algorithmName', 'actionDuration']):
-
             bound = sms.DescrStatsW(action_group["withinOpt"]).tconfint_mean()
             mean = action_group["withinOpt"].mean()
             results = add_row(results, [fields[1], fields[0], mean, abs(mean - bound[0]), abs(mean - bound[1])])
@@ -208,14 +208,11 @@ def main():
 
         pivot = results.pivot(index='actionDuration', columns='algorithmName', values='withinOpt')
         plot = pivot.plot(ax=ax, yerr=errors,
-                      capsize=4, capthick=1, ecolor='black', cmap=plt.get_cmap("rainbow"), elinewidth=1)
+                          capsize=4, capthick=1, ecolor='black', cmap=plt.get_cmap("rainbow"), elinewidth=1)
         plot.legend(title="Planners", shadow=True, frameon=True, framealpha=1.0, facecolor='lightgrey')
-
 
         format_plot(plot)
         plt.savefig(domain_name + ".png", format='png')
-
-
 
 
 if __name__ == "__main__":
