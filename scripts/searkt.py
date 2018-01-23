@@ -51,12 +51,15 @@ def generate_base_configuration():
                                                 'targetSelection', ['SAFE_TO_BEST'],
                                                 [['algorithmName', 'SAFE_RTS']])
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyProof', ['TOP_OF_OPEN'],
+                                                'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
                                                 # 'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
                                                 [['algorithmName', 'SAFE_RTS']])
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [1, 2, 5, 10, 15, 100],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_WINDOW']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [0],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'TOP_OF_OPEN']])
