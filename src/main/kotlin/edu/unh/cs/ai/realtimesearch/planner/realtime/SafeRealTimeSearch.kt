@@ -124,7 +124,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             val (targetNode, lastSafeNode) = when (safetyProof) {
                 SafetyProof.LOW_D_WINDOW -> windowedMicroIteration(sourceState, terminationChecker)
                 SafetyProof.TOP_OF_OPEN -> microIteration(sourceState, terminationChecker)
-                SafetyProof.LOW_D_TOP_PREDECESSOR -> TODO()
+                SafetyProof.LOW_D_TOP_PREDECESSOR -> predecessorMicroIteration(sourceState, terminationChecker)
             }
 
             // Backup safety
@@ -162,6 +162,73 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         }
 
         return null
+    }
+
+    /**
+     * Runs AStar until termination and returns the path to the head of openList
+     * Will just repeatedly expand according to A*.
+     */
+    private fun predecessorMicroIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
+        logger.debug { "Starting A* from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        var totalExpansionDuration = 0L
+        var currentExpansionDuration = 0L
+        var totalSafetyDuration = 0L
+        var costBucket = 10
+        lastSafeNode = null
+
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty."))
+                }
+                .onEach {
+                    terminationChecker.notifyExpansion()
+                    currentExpansionDuration++
+                }
+                .forEach {
+                    if (currentExpansionDuration >= costBucket) {
+                        val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
+
+                        val predecessorWindow = mutableListOf<SafeRealTimeSearchNode<StateType>>()
+
+                        var currentNode = nextTopNode
+                        var predecessorDepth = safetyWindowSize
+
+                        do {
+                            predecessorWindow.add(currentNode)
+                            predecessorDepth--
+                            currentNode = currentNode.parent
+                        } while (currentNode.state != sourceState || predecessorDepth == 0)
+
+                        val nodeToProve = predecessorWindow.minBy { domain.safeDistance(it.state).first }!!
+
+                        // Switch to safety
+                        totalExpansionDuration += currentExpansionDuration
+                        currentExpansionDuration = 0L
+
+                        val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
+
+                        val safetyProofDuration = proveSafety(nodeToProve, safetyTerminationChecker)
+
+                        terminationChecker.notifyExpansion(safetyProofDuration)
+                        totalSafetyDuration += safetyProofDuration
+
+                        if (nodeToProve.safe) {
+                            // If proof was successful reset the bucket
+                            costBucket = 10
+                            safeNodes.add(nodeToProve)
+                            // TODO set last safe?
+                        } else {
+                            // Increase the
+                            costBucket *= 2
+                        }
+                    }
+                }
+
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
 
     /**
