@@ -110,7 +110,8 @@ def format_plot(plot, y_label='Goal Achievement Time (factor of optimal)'):
     # plot.legend(title="Planners", shadow=True, frameon=True, framealpha=1.0, facecolor='lightgrey')
     plot.legend(title="")
 
-    # If I recall correctly, there's an annoying bug in matplotlib which forced me to reside the legend using the method below instead of with an rc_parameter
+    # If I recall correctly, there's an annoying bug in matplotlib which forced me
+    # to reside the legend using the method below instead of with an rc_parameter
     for i in plot.legend().get_texts():
         i.set_text(alg_map[i.get_text()])
         # i.set_fontsize(16)
@@ -194,6 +195,7 @@ def plot_gat(data):
     # mpl.rcParams.update({'font.size': 60})
     plot = pivot.plot(ax=ax, yerr=errors, figsize=(4.5, 4),
                       capsize=4, capthick=1,# ecolor='black',
+                      # ylim=(0,60),
                       # color=["red", "blue", "green", "orange", "cyan"],
                       elinewidth=1)
     # format_plot(plot) TODO

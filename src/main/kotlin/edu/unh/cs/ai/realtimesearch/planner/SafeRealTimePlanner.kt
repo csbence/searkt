@@ -130,6 +130,15 @@ fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domai
             ?.state
 }
 
+fun <StateType: State<StateType>, NodeType> parentLabelBackPropagation(openList: List<NodeType>)
+        where NodeType: SearchNode<StateType, NodeType>, NodeType : Safe{
+    openList.forEach { nodeOnOpen ->
+        val label = nodeOnOpen
+
+    }
+
+}
+
 fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNodes: List<NodeType>)
         where NodeType : SearchNode<StateType, NodeType>, NodeType : Safe {
     val backedUpNodes: HashSet<NodeType> = safeNodes.toHashSet()
@@ -178,7 +187,9 @@ enum class SafeRealTimeSearchTargetSelection {
 enum class SafetyProof {
     TOP_OF_OPEN,
     LOW_D_WINDOW,
-    LOW_D_TOP_PREDECESSOR
+    LOW_D_TOP_PREDECESSOR,
+    LOW_D_LOW_H,
+    LOW_D_LOW_H_OPEN
 }
 
 enum class SafeRealTimeSearchConfiguration(val key: String) {

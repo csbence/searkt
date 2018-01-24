@@ -20,8 +20,8 @@ def generate_base_configuration():
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [120000000]
-    # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
-    action_durations = [50, 100, 150, 200, 250]
+    action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
+    # action_durations = [50, 100, 150, 200, 250]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
 
@@ -51,7 +51,10 @@ def generate_base_configuration():
                                                 'targetSelection', ['SAFE_TO_BEST'],
                                                 [['algorithmName', 'SAFE_RTS']])
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
+                                                'safetyProof', ['LOW_D_LOW_H_OPEN'],
+                                                # 'safetyProof', ['TOP_OF_OPEN'],
+                                                # 'safetyProof', ['LOW_D_LOW_H'],
+                                                # 'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
                                                 # 'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
                                                 [['algorithmName', 'SAFE_RTS']])
     compiled_configurations = cartesian_product(compiled_configurations,
@@ -60,6 +63,14 @@ def generate_base_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [1, 2, 5, 10, 15, 100],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [0],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H_OPEN']])
+
+
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [0],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'TOP_OF_OPEN']])
@@ -176,7 +187,7 @@ def main():
     configurations = generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
-    results = parallel_execution(configurations, 2)
+    results = parallel_execution(configurations, 7)
 
     for result in results:
         result.pop('actions', None)

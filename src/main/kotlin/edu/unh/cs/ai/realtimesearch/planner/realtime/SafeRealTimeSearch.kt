@@ -125,6 +125,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 SafetyProof.LOW_D_WINDOW -> windowedMicroIteration(sourceState, terminationChecker)
                 SafetyProof.TOP_OF_OPEN -> microIteration(sourceState, terminationChecker)
                 SafetyProof.LOW_D_TOP_PREDECESSOR -> predecessorMicroIteration(sourceState, terminationChecker)
+                SafetyProof.LOW_D_LOW_H -> lowestHeuristicNodesMicroIteration(sourceState, terminationChecker)
+                SafetyProof.LOW_D_LOW_H_OPEN -> lowestHeuristicNodesAmongOpenMicroIteration(sourceState, terminationChecker)
             }
 
             // Backup safety
@@ -289,6 +291,125 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
+     * Chooses the path which has the lowest distance to safety from the openlist
+     */
+    private fun lowestHeuristicNodesAmongOpenMicroIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
+        logger.debug { "Starting A* from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        var totalExpansionDuration = 0L
+        var currentExpansionDuration = 0L
+        var totalSafetyDuration = 0L
+        var costBucket = 10
+        lastSafeNode = null
+
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty."))
+                }
+                .onEach{
+                    terminationChecker.notifyExpansion()
+                    currentExpansionDuration++
+                }
+                .forEach {
+                    if (currentExpansionDuration >= costBucket) {
+
+                        var curLowestHeuristicValue = openList.peek()!!.heuristic
+
+                        openList.forEach { if (it.heuristic < curLowestHeuristicValue) curLowestHeuristicValue = it.heuristic }
+
+                        val lowestHeuristicNodes = ArrayList<SafeRealTimeSearchNode<StateType>>()
+
+                        openList.forEach { if (it.heuristic == curLowestHeuristicValue) lowestHeuristicNodes.add(it) }
+
+                        val nodeToProve = lowestHeuristicNodes.minBy { domain.safeDistance(it.state).first }!!
+
+                        totalExpansionDuration += currentExpansionDuration
+                        currentExpansionDuration = 0L
+
+                        val exponentialExpansioinLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansioinLimit)
+
+                        val safetyProofDuration = proveSafety(nodeToProve, safetyTerminationChecker)
+
+                        terminationChecker.notifyExpansion(safetyProofDuration)
+                        totalSafetyDuration += safetyProofDuration
+
+                        if (nodeToProve.safe) {
+                            // If proof was successful reset the bucket
+                            costBucket = 10
+                            safeNodes.add(nodeToProve)
+                            // TODO set last safe?
+                        } else {
+                            // Increase the limit
+                            costBucket *= 2
+                        }
+                    }
+                }
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+    }
+
+    /**
+     * Runs AStar until termination and returns the path to the head of openList
+     * Chooses the path which has the lowest distance to safety
+     */
+    private fun lowestHeuristicNodesMicroIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
+        logger.debug { "Starting A* from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        var totalExpansionDuration = 0L
+        var currentExpansionDuration = 0L
+        var totalSafetyDuration = 0L
+        var costBucket = 10
+        lastSafeNode = null
+
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                    ?: throw GoalNotReachableException("Open list is empty."))
+                }
+                .onEach{
+                    terminationChecker.notifyExpansion()
+                    currentExpansionDuration++
+                }
+                .windowed(size = safetyWindowSize, partialWindows = true)
+                .forEach { lastNodes ->
+                    if (currentExpansionDuration >= costBucket) {
+
+                        val currentLowestHeuristicValue = lastNodes.minBy { it.heuristic }!!.heuristic
+
+                        val listOfLowestHeuristicNodes = lastNodes.filter { it.heuristic == currentLowestHeuristicValue }
+
+                        val nodeToProve = listOfLowestHeuristicNodes.minBy { domain.safeDistance(it.state).first }!!
+
+                        totalExpansionDuration += currentExpansionDuration
+                        currentExpansionDuration = 0L
+
+                        val exponentialExpansioinLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansioinLimit)
+
+                        val safetyProofDuration = proveSafety(nodeToProve, safetyTerminationChecker)
+
+                        terminationChecker.notifyExpansion(safetyProofDuration)
+                        totalSafetyDuration += safetyProofDuration
+
+                        if (nodeToProve.safe) {
+                            // If proof was successful reset the bucket
+                            costBucket = 10
+                            safeNodes.add(nodeToProve)
+                            // TODO set last safe?
+                        } else {
+                            // Increase the limit
+                            costBucket *= 2
+                        }
+                    }
+                }
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+    }
+
+    /**
+     * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
     private fun microIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
@@ -347,8 +468,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private fun proveSafety(sourceNode: SafeRealTimeSearchNode<StateType>, terminationChecker: TerminationChecker): Long {
         return measureLong(terminationChecker::elapsed) {
             when {
-                sourceNode.safe -> {
-                }
+                sourceNode.safe -> { }
                 domain.isSafe(sourceNode.state) -> sourceNode.safe = true
                 else -> {
                     val safetyProof = isComfortable(
