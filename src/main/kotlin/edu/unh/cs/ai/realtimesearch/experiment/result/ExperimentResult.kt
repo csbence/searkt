@@ -76,6 +76,13 @@ class ExperimentResult {
     // Racetrack domain
     @Optional var averageVelocity: Double = 0.0
 
+    // Safety stats tracking
+    @Serializable data class DepthRankPair(val depth: Int, val rankOnOpen: Int)
+    @Optional var proofSuccessful: Int = 0
+    @Optional var towardTopNode: Int = 0
+    @Optional var numberOfProofs: Int = 0
+    @Optional var depthRankOfOpen: List<DepthRankPair>? = null
+
 
     init {
         // Initialize the system properties

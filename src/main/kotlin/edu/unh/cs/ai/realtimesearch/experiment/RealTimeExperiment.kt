@@ -151,6 +151,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 actions = actions.map(Action::toString))
 
         domain.appendDomainSpecificResults(experimentResult)
+        planner.appendPlannerSpecificResults(experimentResult)
         return experimentResult
     }
 

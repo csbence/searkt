@@ -91,7 +91,7 @@ def generate_racetrack():
 
     configurations = cartesian_product(configurations, 'domainName', ['RACETRACK'])
     configurations = cartesian_product(configurations, 'domainPath', full_racetrack_paths)
-    configurations = cartesian_product(configurations, 'domainSeed', range(20))
+    configurations = cartesian_product(configurations, 'domainSeed', range(10))
 
     return configurations
 

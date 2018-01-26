@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
+import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
@@ -24,6 +25,7 @@ import kotlin.system.measureTimeMillis
  * @author Bence Cserna (bence@cserna.net)
  */
 class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
+
     // Configuration
     private val targetSelection = configuration.targetSelection
             ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
@@ -48,6 +50,19 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var rootState: StateType? = null
 
     private var continueSearch = false
+
+    // Statistic variables
+    private var proofSuccessful: Int = 0
+    private var towardTopNode: Int = 0
+    private var numberOfProofs: Int = 0
+    private var depthRankOfOpen = ArrayList<ExperimentResult.DepthRankPair>()
+
+    override fun appendPlannerSpecificResults(results: ExperimentResult) {
+        results.proofSuccessful = this.proofSuccessful
+        results.towardTopNode = this.towardTopNode
+        results.numberOfProofs = this.numberOfProofs
+        results.depthRankOfOpen = this.depthRankOfOpen
+    }
 
     // Performance measurement
     private var aStarPopCounter = 0
@@ -144,6 +159,21 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     ?: bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false })?.let { nodes[it] }
                     ?: targetNode
 
+            if (targetSafeNode == openList.peek()) towardTopNode++
+            val targetDepth = targetSafeNode.cost
+            var targetRank = 1
+            var rankNotSet  = true
+            val nodes = MutableList(openList.size, { openList.backingArray[it]!! })
+            nodes.sortBy { it.cost + it.heuristic }
+            nodes.forEach{ node ->
+                if (node == targetSafeNode && rankNotSet) {
+                    rankNotSet = false
+                } else if (node != targetSafeNode && rankNotSet) {
+                    targetRank++
+                }
+            }
+           depthRankOfOpen.add(ExperimentResult.DepthRankPair(targetDepth.toInt(), targetRank))
+
             plan = extractPath(targetSafeNode, sourceState)
             rootState = targetSafeNode.state
         }
@@ -220,6 +250,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nodeToProve.safe) {
                             // If proof was successful reset the bucket
+                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nodeToProve)
                             // TODO set last safe?
@@ -276,6 +307,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nodeToProve.safe) {
                             // If proof was successful reset the bucket
+                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nodeToProve)
                             // TODO set last safe?
@@ -338,6 +370,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nodeToProve.safe) {
                             // If proof was successful reset the bucket
+                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nodeToProve)
                             // TODO set last safe?
@@ -396,6 +429,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nodeToProve.safe) {
                             // If proof was successful reset the bucket
+                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nodeToProve)
                             // TODO set last safe?
@@ -448,6 +482,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nextTopNode.safe) {
                             // If proof was successful reset the bucket
+                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nextTopNode)
                         } else {
@@ -466,6 +501,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * If the termination checker expires then the safety flag is not set.
      */
     private fun proveSafety(sourceNode: SafeRealTimeSearchNode<StateType>, terminationChecker: TerminationChecker): Long {
+        numberOfProofs++
         return measureLong(terminationChecker::elapsed) {
             when {
                 sourceNode.safe -> { }
