@@ -147,10 +147,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             // Backup safety
             predecessorSafetyPropagation(safeNodes)
             safeNodes.clear()
+            var nodeRankTarget = 0
 
             val currentSafeTarget = when (targetSelection) {
             // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
-                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank -> nodeRankTarget = rank })
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
             }
 
@@ -159,20 +160,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     ?: bestSafeChild(sourceState, domain, { state -> nodes[state]?.safe ?: false })?.let { nodes[it] }
                     ?: targetNode
 
-            if (targetSafeNode == openList.peek()) towardTopNode++
+            if (targetSafeNode == targetNode) towardTopNode++
             val targetDepth = targetSafeNode.cost
-            var targetRank = 1
-            var rankNotSet  = true
-            val nodes = MutableList(openList.size, { openList.backingArray[it]!! })
-            nodes.sortBy { it.cost + it.heuristic }
-            nodes.forEach{ node ->
-                if (node == targetSafeNode && rankNotSet) {
-                    rankNotSet = false
-                } else if (node != targetSafeNode && rankNotSet) {
-                    targetRank++
-                }
-            }
-           depthRankOfOpen.add(ExperimentResult.DepthRankPair(targetDepth.toInt(), targetRank))
+            val targetRank = nodeRankTarget
+
+            depthRankOfOpen.add(ExperimentResult.DepthRankPair(targetDepth.toInt(), targetRank))
 
             plan = extractPath(targetSafeNode, sourceState)
             rootState = targetSafeNode.state
@@ -340,7 +332,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
                             ?: throw GoalNotReachableException("Open list is empty."))
                 }
-                .onEach{
+                .onEach {
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
                 }
@@ -400,9 +392,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         aStarSequence
                 .generateWhile {
                     !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
-                    ?: throw GoalNotReachableException("Open list is empty."))
+                            ?: throw GoalNotReachableException("Open list is empty."))
                 }
-                .onEach{
+                .onEach {
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
                 }
@@ -504,7 +496,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         numberOfProofs++
         return measureLong(terminationChecker::elapsed) {
             when {
-                sourceNode.safe -> { }
+                sourceNode.safe -> {
+                }
                 domain.isSafe(sourceNode.state) -> sourceNode.safe = true
                 else -> {
                     val safetyProof = isComfortable(

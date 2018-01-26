@@ -155,15 +155,18 @@ fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNo
     }
 }
 
-fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>): Node?
+fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int) -> (Unit)): Node?
         where Node : SearchNode<StateType, Node>, Node : Indexable, Node : Safe {
     val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
     nodes.sortBy { it.cost + it.heuristic }
 
+    var rank = 0
     nodes.forEach {
+        rank++
         var currentNode = it
         while (currentNode.parent != currentNode) {
             if (currentNode.safe) {
+                recordRank(rank)
                 return currentNode
             }
             currentNode = currentNode.parent
