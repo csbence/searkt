@@ -4,10 +4,13 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import org.slf4j.LoggerFactory
@@ -28,18 +31,22 @@ import org.slf4j.LoggerFactory
 class ClassicalExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
                                                         val planner: ClassicalPlanner<StateType>,
                                                         val domain: Domain<StateType>,
-                                                        val initialState: StateType) : Experiment() {
+                                                        val initialState: StateType,
+                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
+    private var expansionLimit = configuration.expansionLimit
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initialState
         //        logger.warn { "Starting experiment with state $state on planner $planner" }
 
+        terminationChecker.resetTo(expansionLimit)
+
         val cpuNanoTime = measureThreadCpuNanoTime {
-            actions = planner.plan(state)
+            actions = planner.plan(state, terminationChecker)
         }
 
         val planningTime: Long = when (configuration.terminationType) {

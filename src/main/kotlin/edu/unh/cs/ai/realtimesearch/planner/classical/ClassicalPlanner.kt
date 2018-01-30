@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.Planner
 
 abstract class ClassicalPlanner<StateType : State<StateType>> : Planner<StateType>() {
@@ -16,5 +17,5 @@ abstract class ClassicalPlanner<StateType : State<StateType>> : Planner<StateTyp
      * @param state is the initial state
      * @return a list of action compromising the plan
      */
-    abstract fun plan(state: StateType): List<Action>
+    abstract fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action>
 }

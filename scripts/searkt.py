@@ -14,12 +14,49 @@ import pandas as pd
 import itertools
 
 
+def generate_base_suboptimal_configuration():
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
+    expansion_limit = [100000000]
+    lookahead_type = ['DYNAMIC']
+    time_limit = [100000000000]
+    action_durations = [1]
+    termination_types = ['EXPANSION']
+    step_limits = [100000000]
+
+    base_configuration = dict()
+    base_configuration['algorithmName'] = algorithms_to_run
+    base_configuration['expansionLimit'] = expansion_limit
+    base_configuration['lookaheadType'] = lookahead_type
+    base_configuration['actionDuration'] = action_durations
+    base_configuration['terminationType'] = termination_types
+    base_configuration['stepLimit'] = step_limits
+    base_configuration['timeLimit'] = time_limit
+    base_configuration['commitmentStrategy'] = ['SINGLE']
+
+    compiled_configurations = [{}]
+
+    for key, value in base_configuration.items():
+        compiled_configurations = cartesian_product(compiled_configurations, key, value)
+
+    # Algorithm specific configurations
+    weight = [3.0]
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'WEIGHTED_A_STAR']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'DPS']])
+
+    return compiled_configurations
+
+
 def generate_base_configuration():
     # required configuration parameters
     algorithms_to_run = ['SAFE_RTS']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [120000000]
+    time_limit = [100000000000]
     action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     # action_durations = [50, 100, 150, 200, 250]
     termination_types = ['EXPANSION']
@@ -32,7 +69,7 @@ def generate_base_configuration():
     base_configuration['actionDuration'] = action_durations
     base_configuration['terminationType'] = termination_types
     base_configuration['stepLimit'] = step_limits
-    base_configuration['timeLimit'] = [100000000000]
+    base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
 
     compiled_configurations = [{}]
@@ -43,7 +80,7 @@ def generate_base_configuration():
     # Algorithm specific configurations
     weight = [3.0]
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', [weight],
+                                                'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
     # S-RTS specific attributes
@@ -63,14 +100,14 @@ def generate_base_configuration():
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_WINDOW']])
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
+                                                [['algorithmName', 'SAFE_RTS'],
+                                                 ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [1, 2, 5, 10, 15, 100],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H']])
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [0],
                                                 [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H_OPEN']])
-
 
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'safetyWindowSize', [0],
@@ -97,6 +134,22 @@ def generate_racetrack():
     return configurations
 
 
+def generate_tile_puzzle():
+    configurations = generate_base_suboptimal_configuration()
+
+    puzzles = []
+    for puzzle in range(1,101):
+        puzzles.append(str(puzzle))
+
+    puzzle_base_path = 'input/tiles/korf/4/real/'
+    full_puzzle_paths = [puzzle_base_path + puzzle for puzzle in puzzles]
+
+    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
+    configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
+
+    return configurations
+
+
 def cartesian_product(base, key, values, filters=None):
     new_base = []
     if filters is None:
@@ -116,7 +169,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    command = ['java', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -185,10 +238,10 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_racetrack()
+    configurations = generate_tile_puzzle() # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
-    results = parallel_execution(configurations, 7)
+    results = parallel_execution(configurations, 1)
 
     for result in results:
         result.pop('actions', None)

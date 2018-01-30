@@ -30,6 +30,7 @@ import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
@@ -230,6 +231,7 @@ object ConfigurationExecutor {
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
+            DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 
@@ -241,7 +243,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeOfflineSearch(planner: ClassicalPlanner<StateType>, configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        return ClassicalExperiment(configuration, planner, domain, initialState).run()
+        return ClassicalExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
     }
 
     private fun getTerminationChecker(configuration: ExperimentConfiguration): TerminationChecker {

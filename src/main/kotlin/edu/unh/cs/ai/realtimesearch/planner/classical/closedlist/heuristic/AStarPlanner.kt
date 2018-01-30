@@ -3,6 +3,7 @@ package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -37,7 +38,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
         override fun equals(other: Any?) = other != null && other is Node<*> && state.equals(other.state)
     }
 
-    override fun plan(state: StateType): List<Action> {
+    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         val startTime = System.nanoTime()
         openList.clear()
         nodes.clear()
