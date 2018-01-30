@@ -37,7 +37,7 @@ def process_data():
                 data_dict["algorithm"].append(str(alg) + str(window_size))
                 data_dict["instance"].append(i)
                 i = i + 1
-                for key in fields:
+                fo key in fields:
                     if key == "success" and instance[str(key)] is False:
                         print("Failed Experiment!")
                         display(instance)
