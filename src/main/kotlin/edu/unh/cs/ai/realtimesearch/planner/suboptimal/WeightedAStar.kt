@@ -51,8 +51,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(1000000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(1000000000, fValueComparator)
+    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
@@ -84,6 +84,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
 
+            // skip if we have our parent as a successor
             if (successorState == sourceNode.parent?.state) {
                 continue
             }
@@ -115,7 +116,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         openList.add(node)
         generatedNodeCount++
 
-        while (openList.isNotEmpty()) {
+        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             logger.debug("Top node is $topNode.")
             if (domain.isGoal(topNode.state)) {

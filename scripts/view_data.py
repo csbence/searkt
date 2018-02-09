@@ -22,7 +22,10 @@ def process_data():
         data_dict[field] = []
         data_dict["algorithm"] = []
         data_dict["instance"] = []
+        data_dict["weight"] = []
     print("Done Initing Dictionary!")
+
+    failed_experiments = 0
 
     for f in sys.argv[1:]:
         fi = open(f)
@@ -32,14 +35,17 @@ def process_data():
         for experiment in data:
             i = 0
             for instance in experiment:
+                weight = instance["configuration"]["weight"]
                 alg = instance["configuration"]["algorithmName"]
                 window_size = instance["configuration"]["safetyWindowSize"]
-                data_dict["algorithm"].append(str(alg) + str(window_size))
+                data_dict["algorithm"].append(str(alg))
                 data_dict["instance"].append(i)
+                data_dict["weight"].append(weight)
                 i = i + 1
-                fo key in fields:
+                for key in fields:
                     if key == "success" and instance[str(key)] is False:
                         print("Failed Experiment!")
+                        failed_experiments = failed_experiments + 1
                         display(instance)
                     try:
                         data_dict[key].append(instance[str(key)])
@@ -47,6 +53,7 @@ def process_data():
                         data_dict[key].append(0)
 
 
+    print('Failed experiments {}'.format(failed_experiments))
     return data_dict
 
 
@@ -54,13 +61,13 @@ def plot(data_dict):
     df = pd.DataFrame(data_dict)
     sns.set_context("paper")
     sns.set_style("dark", {"axes.facecolor": ".9"})
-    # success_plot = sns.pointplot(x="instance", y="success", hue="algorithm", data=df, capsize=.2)
-    # plt.figure()
-    # success_plot = sns.pointplot(x="instance", y="numberOfProofs", hue="algorithm", data=df, capsize=.2)
-    # plt.figure()
-    # success_plot = sns.pointplot(x="instance", y="towardTopNode", hue="algorithm", data=df, capsize=.2)
-    # plt.figure()
-    success_plot = sns.pointplot(x="instance", y="proofSuccessful", hue="algorithm", data=df, capsize=.2)
+    success_plot = sns.pointplot(x="instance", y="success", hue="algorithm", data=df, capsize=.2)
+    plt.figure()
+    success_plot = sns.pointplot(x="instance", y="numberOfProofs", hue="algorithm", data=df, capsize=.2)
+    plt.figure()
+    success_plot = sns.pointplot(x="instance", y="towardTopNode", hue="algorithm", data=df, capsize=.2)
+    plt.figure()
+    # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=.2)
     axes = success_plot.axes
     axes.set(xlim=(0, 330))
     plt.figure()
@@ -73,3 +80,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+

@@ -138,7 +138,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1,101):
+    for puzzle in range(1, 11):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -238,7 +238,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_tile_puzzle() # generate_racetrack()
+    configurations = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
     results = parallel_execution(configurations, 1)
