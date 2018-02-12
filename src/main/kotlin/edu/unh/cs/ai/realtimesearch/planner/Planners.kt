@@ -10,5 +10,6 @@ enum class Planners {
     SAFE_RTS,
     S_ZERO,
     SIMPLE_SAFE,
-    DPS
+    DPS,
+    EES
 }

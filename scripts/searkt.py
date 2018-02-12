@@ -39,7 +39,9 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    # weight = [3.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Weights for Unit Tiles
+    weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # weights for Heavy Tiles
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -138,13 +140,13 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 11):
+    for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
     full_puzzle_paths = [puzzle_base_path + puzzle for puzzle in puzzles]
 
-    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
+    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4_HEAVY'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
     return configurations

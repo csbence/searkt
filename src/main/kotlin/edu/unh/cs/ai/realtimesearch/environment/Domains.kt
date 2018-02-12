@@ -9,5 +9,6 @@ enum class Domains {
     RACETRACK,
     SLIDING_TILE_PUZZLE_4,
     VACUUM_WORLD,
-    TRAFFIC
+    TRAFFIC,
+    SLIDING_TILE_PUZZLE_4_HEAVY
 }

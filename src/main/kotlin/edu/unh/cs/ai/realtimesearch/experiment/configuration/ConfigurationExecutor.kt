@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
@@ -31,6 +32,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.ExplicitEstimationSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
@@ -153,6 +155,7 @@ object ConfigurationExecutor {
         val domain = Domains.valueOf(domainName)
         return when (domain) {
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
+            SLIDING_TILE_PUZZLE_4_HEAVY -> executeHeavySlidingTilePuzzle(configuration, domainStream)
             VACUUM_WORLD -> executeVacuumWorld(configuration, domainStream)
             GRID_WORLD -> executeGridWorld(configuration, domainStream)
             ACROBOT -> executeAcrobot(configuration, domainStream)
@@ -211,6 +214,12 @@ object ConfigurationExecutor {
         return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
+    private fun executeHeavySlidingTilePuzzle(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = HeavyTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    }
+
+
     private fun executeAcrobot(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val acrobotInstance = AcrobotIO.parseFromStream(domainStream, configuration.actionDuration)
         return executeDomain(configuration, acrobotInstance.domain, acrobotInstance.initialState)
@@ -232,6 +241,7 @@ object ConfigurationExecutor {
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
+            EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 
