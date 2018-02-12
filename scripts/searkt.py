@@ -227,7 +227,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json):
-    with open('output/results_.json', 'w') as outfile:
+    with open('output/results_srts.json', 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -238,7 +238,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_tile_puzzle()  # generate_racetrack()
+    configurations = generate_racetrack()  # generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
     results = parallel_execution(configurations, 1)

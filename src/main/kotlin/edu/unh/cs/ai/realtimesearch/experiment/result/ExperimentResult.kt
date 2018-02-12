@@ -77,12 +77,11 @@ class ExperimentResult {
     @Optional var averageVelocity: Double = 0.0
 
     // Safety stats tracking
-    @Serializable data class DepthRankPair(val depth: Int, val rankOnOpen: Int)
+    @Serializable data class TargetDepthRankTriple(val targetDepth: Int, val rankOnOpen: Int, val frontierDepth: Int)
     @Optional var proofSuccessful: Int = 0
     @Optional var towardTopNode: Int = 0
     @Optional var numberOfProofs: Int = 0
-    @Optional var depthRankOfOpen: List<DepthRankPair>? = null
-    @Optional var frontierNodeDepth: List<Int>? = null
+    @Optional var depthRankOfOpen: List<TargetDepthRankTriple>? = null
 
 
     init {
