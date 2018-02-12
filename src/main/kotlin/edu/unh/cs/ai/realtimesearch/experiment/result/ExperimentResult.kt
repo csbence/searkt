@@ -82,6 +82,7 @@ class ExperimentResult {
     @Optional var towardTopNode: Int = 0
     @Optional var numberOfProofs: Int = 0
     @Optional var depthRankOfOpen: List<DepthRankPair>? = null
+    @Optional var frontierNodeDepth: List<Int>? = null
 
 
     init {
