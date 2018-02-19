@@ -7,7 +7,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.HashMap
@@ -19,9 +18,12 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
-                                             var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
+                                             var parent: WeightedAStar.Node<StateType>? = null) {
 
-        override var index: Int = -1
+        var index: Int = -1
+
+        val open: Boolean
+            get() = index >= 0
 
         val f: Double
             get() = cost + heuristic
@@ -52,7 +54,11 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
-    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
+
+    private val setIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.index = index }
+    private val getIndex: (node: Node<StateType>) -> (Int) = { node -> node.index }
+
+    private var openList = AdvancedPriorityQueue(100000000, fValueComparator, setIndex, getIndex)
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 

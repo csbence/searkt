@@ -9,7 +9,9 @@ interface BucketNode {
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val openList = AdvancedPriorityQueue<Bucket<T>>(1000000000, PotentialComparator(bound, fMin))
+    private val setIndex: (bucket: Bucket<T>, index: Int) -> (Unit) = { bucket, index -> bucket.index = index }
+    private val getIndex: (bucket: Bucket<T>) -> (Int) = { bucket -> bucket.index }
+    private val openList = AdvancedPriorityQueue(1000000000, PotentialComparator(bound, fMin), setIndex, getIndex)
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(10000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
@@ -41,10 +43,11 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
     private data class GHPair(val g: Double, val h: Double)
 
-    data class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
-                                      val nodes: ArrayList<T>) : Indexable {
 
-        override var index: Int = -1
+    data class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
+                                      val nodes: ArrayList<T>) {
+
+        var index: Int = -1
 
         override fun toString(): String {
             val stringBuilder = StringBuilder()

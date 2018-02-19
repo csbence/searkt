@@ -65,6 +65,7 @@ def filter_nodes_generated(df):
     over_five_million = dict()
     over_five_million["DPS"] = 0
     over_five_million["WEIGHTED_A_STAR"] = 0
+    over_five_million["EES"] = 0
     for key in df.keys():
         # print(key)
         if key == "algorithm":
@@ -99,7 +100,8 @@ def plot(data_dict):
     success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1)
     # axes = success_plot.axes
     # axes.set(xlim=(0, 330))
-    # plt.figure()
+    plt.figure()
+    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df, capsize=0.1)
     plt.show()
 
 

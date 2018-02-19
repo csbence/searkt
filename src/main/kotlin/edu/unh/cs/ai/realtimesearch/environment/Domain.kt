@@ -40,6 +40,7 @@ interface Domain<State> {
      */
     fun getGoals(): List<State> = TODO()
 
+
     /**
      * @param sourceState is the start state of the transition.
      * @param action is an action to be applied on the sourceState.

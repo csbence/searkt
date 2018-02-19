@@ -13,7 +13,6 @@ import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PARENT
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PREDECESSOR
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -59,9 +58,18 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                                              parent: Node<StateType>? = null,
                                              override var safe: Boolean = false,
                                              override var depth: Int)
-        : Indexable, Safe, SearchNode<StateType, Node<StateType>>, Depth {
+        : Safe, SearchNode<StateType, Node<StateType>>, Depth {
         /** Item index in the open list */
         override var index: Int = -1
+
+        override val open: Boolean
+            get() = index >= 0
+
+
+        override val getIndex: (node: SearchNode<StateType, Node<StateType>>) -> Int = { node -> node.index }
+        override val setIndex: (node: SearchNode<StateType, Node<StateType>>, index: Int) -> Unit = { node, index ->
+            node.index = index
+        }
 
         /** Nodes that generated this Node as a successor in the current exploration phase */
         override var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
@@ -109,7 +117,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>> (100000000, 1.toFloat()).resize()
 
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator)
+    private val setIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.index = index }
+    private val getIndex: (node: Node<StateType>) -> (Int) = { node -> node.index }
+
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator, setIndex, getIndex)
 
     private var rootState: StateType? = null
 

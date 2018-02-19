@@ -16,7 +16,7 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
+    algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
@@ -40,7 +40,9 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    # weight = [3.0]
+    weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -48,6 +50,10 @@ def generate_base_suboptimal_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'DPS']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EES']])
 
     return compiled_configurations
 
@@ -139,7 +145,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 11):
+    for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -252,7 +258,7 @@ def main():
     save_results(results)
     print_summary(results)
 
-    print('{} results has been received.'.format(len(results)))
+    print('{} results have been received.'.format(len(results)))
     n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)), "notification-message-email")
     n.show()
 

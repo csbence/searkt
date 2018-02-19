@@ -42,9 +42,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     private val nodes: HashMap<StateType, SafeRealTimeSearchNode<StateType>> = HashMap<StateType, SafeRealTimeSearchNode<StateType>>(100000000).resize()
 
+    private val setIndex: (node: SafeRealTimeSearchNode<StateType>, index: Int) -> (Unit) = { node, index ->
+        node.index = index
+    }
+    private val getIndex: (node: SafeRealTimeSearchNode<StateType>) -> (Int) = { node -> node.index }
+
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    override var openList = AdvancedPriorityQueue<SafeRealTimeSearchNode<StateType>>(10000000, fValueComparator)
+    override var openList = AdvancedPriorityQueue<SafeRealTimeSearchNode<StateType>>(10000000, fValueComparator, setIndex, getIndex)
 
     private var safeNodes = mutableListOf<SafeRealTimeSearchNode<StateType>>()
 

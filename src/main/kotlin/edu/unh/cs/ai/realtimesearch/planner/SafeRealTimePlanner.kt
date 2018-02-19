@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import java.util.*
 
 /**
@@ -27,10 +26,22 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
         override var actionCost: Long,
         override var action: Action,
         override var iteration: Long,
-        parent: SafeRealTimeSearchNode<StateType>? = null) : RealTimeSearchNode<StateType, SafeRealTimeSearchNode<StateType>>, Indexable, Safe {
+        parent: SafeRealTimeSearchNode<StateType>? = null) : RealTimeSearchNode<StateType, SafeRealTimeSearchNode<StateType>>, Safe {
 
     /** Item index in the open list. */
     override var index: Int = -1
+
+    override val open: Boolean
+        get() = index >= 0
+
+    override val setIndex: (node: SearchNode<StateType, SafeRealTimeSearchNode<StateType>>, index: Int) -> Unit = { node, index ->
+        node.index = index
+    }
+
+    override val getIndex: (node: SearchNode<StateType, SafeRealTimeSearchNode<StateType>>) -> Int = { node ->
+        node.index
+    }
+
     override var safe = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
@@ -130,14 +141,14 @@ fun <StateType : State<StateType>> bestSafeChild(state: StateType, domain: Domai
             ?.state
 }
 
-fun <StateType: State<StateType>, NodeType> parentLabelBackPropagation(openList: List<NodeType>)
-        where NodeType: SearchNode<StateType, NodeType>, NodeType : Safe{
-    openList.forEach { nodeOnOpen ->
-        val label = nodeOnOpen
-
-    }
-
-}
+//fun <StateType: State<StateType>, NodeType> parentLabelBackPropagation(openList: List<NodeType>)
+//        where NodeType: SearchNode<StateType, NodeType>, NodeType : Safe{
+//    openList.forEach { nodeOnOpen ->
+//        val label = nodeOnOpen
+//
+//    }
+//
+//}
 
 fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNodes: List<NodeType>)
         where NodeType : SearchNode<StateType, NodeType>, NodeType : Safe {
@@ -156,7 +167,7 @@ fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNo
 }
 
 fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int, Int) -> (Unit) = { _: Int, _: Int -> } ): Node?
-        where Node : SearchNode<StateType, Node>, Node : Indexable, Node : Safe {
+        where Node : SearchNode<StateType, Node>, Node : Safe {
     val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
     nodes.sortBy { it.cost + it.heuristic }
 

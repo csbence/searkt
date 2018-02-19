@@ -8,7 +8,6 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.BucketNode
 import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -20,9 +19,9 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
-                                             var parent: DynamicPotentialSearch.Node<StateType>? = null) : Indexable, BucketNode {
+                                             var parent: DynamicPotentialSearch.Node<StateType>? = null) : BucketNode {
 
-        override val open: Boolean
+        val open: Boolean
             get() = index != -1
 
         override fun getFValue(): Double = f
@@ -31,7 +30,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
         override fun getHValue(): Double = heuristic
 
-        override var index: Int = -1
+        var index: Int = -1
 
         val f: Double
             get() = cost + heuristic
