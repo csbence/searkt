@@ -27,6 +27,7 @@ import kotlin.system.measureTimeMillis
 class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
 
     // Configuration
+    private val actionDuration = configuration.actionDuration
     private val targetSelection = configuration.targetSelection
             ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
     private val safetyExplorationRatio: Double = configuration.safetyExplorationRatio
@@ -56,12 +57,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var towardTopNode: Int = 0
     private var numberOfProofs: Int = 0
     private var depthRankOfOpen = ArrayList<ExperimentResult.DepthRankPair>()
+    private var frontierNodeDepth = ArrayList<Int>()
 
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.proofSuccessful = this.proofSuccessful
         results.towardTopNode = this.towardTopNode
         results.numberOfProofs = this.numberOfProofs
         results.depthRankOfOpen = this.depthRankOfOpen
+        results.frontierNodeDepth = this.frontierNodeDepth
     }
 
     // Performance measurement
@@ -148,10 +151,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             predecessorSafetyPropagation(safeNodes)
             safeNodes.clear()
             var nodeRankTarget = 0
+            var costToFrontier = 0
 
             val currentSafeTarget = when (targetSelection) {
             // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
-                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank -> nodeRankTarget = rank })
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank: Int, cost: Int -> nodeRankTarget = rank; costToFrontier= cost })
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
             }
 
@@ -161,10 +165,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     ?: targetNode
 
             if (targetSafeNode == targetNode) towardTopNode++
-            val targetDepth = targetSafeNode.cost
+            val targetDepth = targetSafeNode.cost / actionDuration
             val targetRank = nodeRankTarget
+            val frontierDepth = costToFrontier / actionDuration
 
             depthRankOfOpen.add(ExperimentResult.DepthRankPair(targetDepth.toInt(), targetRank))
+            frontierNodeDepth.add(frontierDepth.toInt())
 
             plan = extractPath(targetSafeNode, sourceState)
             rootState = targetSafeNode.state
