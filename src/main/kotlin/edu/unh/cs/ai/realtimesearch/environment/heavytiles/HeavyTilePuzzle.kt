@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.environment.heavytiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzle
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
@@ -98,7 +99,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
         return manhattanSum
     }
 
-    override fun distance(state: HeavyTilePuzzle4State) = state.heuristic
+    override fun distance(state: HeavyTilePuzzle4State) = TODO() // state.heuristic
 
     override fun isGoal(state: HeavyTilePuzzle4State) = state.heuristic == 0.0 && state == goalState
 

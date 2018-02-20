@@ -97,6 +97,11 @@ class WeightedAStarTest {
 
     @Test
     fun testAStar6() {
+        val weight = 1.0
+        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
+            null, null, null, null, null, null)
+
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
@@ -113,46 +118,41 @@ class WeightedAStarTest {
         }
     }
 
-    @Test
-    fun testAStar7() {
-        val tiles = "1 10 4 12 5 3 8 9 6 11 7 2 14 0 13 15"
-        val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
-        val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
-        println("plan length: ${plan.size}")
-        println(plan)
-        println("expandedNodeCount: ${aStarAgent.expandedNodeCount}")
-        kotlin.test.assertTrue { plan.isNotEmpty() }
-    }
-
-    @Test
-    fun testAStar8() {
-        var experimentNumber = 0
-        val instanceNumbers = intArrayOf(42, 47, 55)
-        val optimalSolutionLengths = intArrayOf(42, 47, 41)
-        for (i in instanceNumbers) {
-            print("Executing $i...")
-            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
-            val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
-            val initialState = slidingTilePuzzle.initialState
-            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
-            var currentState = initialState
-            plan.forEach { action ->
-                currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
-            }
-            assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
-            assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
-            println("total time: ${aStarAgent.executionNanoTime}")
-            experimentNumber++
-        }
-    }
+//    @Test
+//    fun testAStar7() {
+//        val weight = 1.0
+//        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHED_A_STAR", TerminationType.EXPANSION,
+//            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
+//            null, null, null, null, null, null)
+//
+//        var experimentNumber = 0
+//        val instanceNumbers = intArrayOf(42, 47, 55)
+//        val optimalSolutionLengths = intArrayOf(42, 47, 41)
+//        for (i in instanceNumbers) {
+//            print("Executing $i...")
+//            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+//            val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
+//            val initialState = slidingTilePuzzle.initialState
+//            val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
+//            val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
+//            var currentState = initialState
+//            plan.forEach { action ->
+//                currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
+//            }
+//            assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+//            assertEquals(optimalSolutionLengths[experimentNumber], plan.size, "instance $i")
+//            println("total time: ${aStarAgent.executionNanoTime}")
+//            experimentNumber++
+//        }
+//    }
 
     @Test
     fun testAStarHardPuzzle() {
-        val weight = 1.1
+        val weight = 1.5
+        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHED_A_STAR", TerminationType.EXPANSION,
+            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
+            null, null, null, null, null, null)
+
         //val configuration = GeneralExperimentConfiguration(mutableMapOf(Configurations.WEIGHT.toString() to weight))
 
         val instanceNumbers = intArrayOf(1, 3)
@@ -178,35 +178,35 @@ class WeightedAStarTest {
     }
 
 
-    @Test
-    fun testWeightedAStarGridWorld1() {
-        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/cups.vw")
-        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
-        val initialState = gridWorld.initialState
-        val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
-        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
-        var currentState = initialState
-        plan.forEach { action ->
-            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
-        }
-        println(plan)
-        println(plan.size)
-    }
-
-
-    @Test
-    fun testWeightedAStarGridWorld2() {
-        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")
-        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
-        val initialState = gridWorld.initialState
-        val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
-        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
-        var currentState = initialState
-        plan.forEach { action ->
-            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
-        }
-        println(plan)
-        println(plan.size)
-    }
+//    @Test
+//    fun testWeightedAStarGridWorld1() {
+//        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/cups.vw")
+//        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
+//        val initialState = gridWorld.initialState
+//        val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
+//        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
+//        var currentState = initialState
+//        plan.forEach { action ->
+//            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
+//        }
+//        println(plan)
+//        println(plan.size)
+//    }
+//
+//
+//    @Test
+//    fun testWeightedAStarGridWorld2() {
+//        val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/vacuum/maze.vw")
+//        val gridWorld = GridWorldIO.parseFromStream(stream, 1L)
+//        val initialState = gridWorld.initialState
+//        val aStarAgent = WeightedAStar(gridWorld.domain, configuration)
+//        val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
+//        var currentState = initialState
+//        plan.forEach { action ->
+//            currentState = gridWorld.domain.successors(currentState).first { it.action == action }.state
+//        }
+//        println(plan)
+//        println(plan.size)
+//    }
 
 }

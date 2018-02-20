@@ -13,9 +13,9 @@ import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ExplicitEstimationSearchTest {
+class DynamicPotentialSearchTest {
 
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
             null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
             null, null, null, null, null, null)
 
@@ -36,49 +36,49 @@ class ExplicitEstimationSearchTest {
 
 
     @Test
-    fun testEEES1() {
+    fun testDPS1() {
         val tiles = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-        kotlin.test.assertTrue { eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
+        val dpsAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+        kotlin.test.assertTrue { dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
     @Test
-    fun testEES2() {
+    fun testDPS2() {
         val tiles = "1 2 3 0 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val dpsAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+        val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 3 }
     }
 
     @Test
-    fun testEES3() {
+    fun testDPS3() {
         val tiles = "4 1 2 3 8 5 6 7 12 9 10 11 13 14 15 0"
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent= ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val dpsAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+        val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 6 }
     }
 
     @Test
-    fun testEES4() {
+    fun testDPS4() {
         val tiles = "0 4 1 2 8 5 6 3 12 9 10 7 13 14 15 11"
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val dpsAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+        val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
@@ -86,27 +86,27 @@ class ExplicitEstimationSearchTest {
 
 
     @Test
-    fun testEES5() {
+    fun testDPS5() {
         val tiles = "4 1 2 3 8 0 10 6 12 5 9 7 13 14 15 11"
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val dpsAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+        val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
     }
 
     @Test
-    fun testEES6() {
+    fun testDPS6() {
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val eesAgent= ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-            val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000000000))
+            val dpsAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+            val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000000000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -117,9 +117,9 @@ class ExplicitEstimationSearchTest {
     }
 
     @Test
-    fun testEESHardPuzzle() {
+    fun testDPSHardPuzzle() {
         val weight = 1.5
-        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
             null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
             null, null, null, null, null, null)
 
@@ -132,8 +132,8 @@ class ExplicitEstimationSearchTest {
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
 
-            val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
-            val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000000000))
+            val dpsAgent = DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
+            val plan = dpsAgent.plan(initialState, StaticExpansionTerminationChecker(1000000000))
             var currentState = initialState
             plan.forEach { action ->
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
@@ -141,9 +141,9 @@ class ExplicitEstimationSearchTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...")
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
-            print("nodes expanded: ${eesAgent.expandedNodeCount}...")
-            print("nodes generated: ${eesAgent.generatedNodeCount}...")
-            println("total time: ${eesAgent.executionNanoTime}")
+            print("nodes expanded: ${dpsAgent.expandedNodeCount}...")
+            print("nodes generated: ${dpsAgent.generatedNodeCount}...")
+            println("total time: ${dpsAgent.executionNanoTime}")
         }
     }
 }

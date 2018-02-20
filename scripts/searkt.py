@@ -19,7 +19,7 @@ def generate_base_suboptimal_configuration():
     algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
+    time_limit = [1000000000000]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]

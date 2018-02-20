@@ -11,43 +11,45 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
     private val setIndex: (bucket: Bucket<T>, index: Int) -> (Unit) = { bucket, index -> bucket.index = index }
     private val getIndex: (bucket: Bucket<T>) -> (Int) = { bucket -> bucket.index }
-    private val openList = AdvancedPriorityQueue(1000000000, PotentialComparator(bound, fMin), setIndex, getIndex)
-    private val lookUpTable = HashMap<GHPair, Bucket<T>>(10000000, 1.toFloat())
+    private val openList = AdvancedPriorityQueue(100000000, PotentialComparator(), setIndex, getIndex)
+    private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 
-    private class PotentialComparator<T>(var bound: Double, var fMin: Double) : Comparator<T> {
-        override fun compare(leftBucket: T, rightBucket: T): Int {
-            if (leftBucket != null && rightBucket != null) {
-                if (leftBucket is Bucket<*> && rightBucket is Bucket<*>) {
-                    var leftBucketPotential = ((bound * fMin) - leftBucket.g) / (leftBucket.h)
-                    var rightBucketPotential = ((bound * fMin) - rightBucket.g) / (rightBucket.h)
-                    if (leftBucket.h == 0.0) leftBucketPotential = Double.MAX_VALUE
-                    if (rightBucket.h == 0.0) rightBucketPotential = Double.MAX_VALUE
-                    return when {
-                        leftBucketPotential > rightBucketPotential -> -1
-                        leftBucketPotential < rightBucketPotential -> 1
-                        leftBucket.g < rightBucket.g -> -1
-                        leftBucket.g > rightBucket.g -> 1
-                        leftBucket.h < rightBucket.h -> -1
-                        leftBucket.h > rightBucket.h -> 1
-                        leftBucket.f < rightBucket.f -> -1
-                        leftBucket.f > rightBucket.f -> 1
-                        else -> 0
-                    }
+    private inner class PotentialComparator<T : BucketNode> : Comparator<Bucket<T>> {
+        override fun compare(a: Bucket<T>?, b: Bucket<T>?): Int {
+            return if (a == null || b == null) {
+                0
+            } else {
+                when {
+                    a.potential > b.potential -> -1
+                    a.potential < b.potential -> 1
+
+                    a.f < b.f -> -1
+                    a.f > b.f -> 1
+
+                    a.h < b.h -> -1
+                    a.h > b.h -> 1
+
+                    a.g < b.g -> -1
+                    a.g > b.g -> 1
+
+                    else -> 0
                 }
             }
-            throw BucketOpenListException("Comparing $leftBucket and $rightBucket, can not be done.")
         }
     }
 
     private data class GHPair(val g: Double, val h: Double)
 
 
-    data class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
-                                      val nodes: ArrayList<T>) {
+    inner class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
+                                       val nodes: ArrayList<T>) {
 
         var index: Int = -1
+
+        val potential: Double
+            get() = calculatePotential()
 
         override fun toString(): String {
             val stringBuilder = StringBuilder()
@@ -57,6 +59,30 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             nodes.forEach { stringBuilder.appendln(it.toString()) }
             stringBuilder.appendln("---")
             return stringBuilder.toString()
+        }
+
+        private fun calculatePotential(): Double {
+            return (bound * fMin - g) / h
+        }
+
+        override fun hashCode(): Int {
+            return g.toInt() xor h.toInt()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+
+            if (other?.javaClass != javaClass) return false
+
+            if (other is BucketOpenList<*>.Bucket<*>) {
+
+                if (this.f == other.f && this.g == other.g && this.h == other.h) {
+                    this.nodes.forEachIndexed { index, t -> if (t != other.nodes[index]) return false }
+                    return true
+                }
+            }
+
+            return false
         }
     }
 
@@ -110,7 +136,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
     fun replace(element: T, replacement: T) {
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
-        val bucketLookUp = lookUpTable[elementGHPair] ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
+        val bucketLookUp = lookUpTable[elementGHPair]
+                ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
 
         bucketLookUp.nodes.remove(element)
 
@@ -120,7 +147,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
         if (element.getFValue() == minFValue) {
             recomputeMinFValue() // recompute the new minimum f value on open
-            openList.reorder(PotentialComparator(bound, fMin)) // resort open list with new minimum f
         }
 
         insert(replacement)
@@ -129,7 +155,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     private fun insert(element: T) {
         if (element.getFValue() < this.fMin) {
             fMin = element.getFValue()
-            openList.reorder(PotentialComparator(bound, fMin))
         }
 
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
@@ -168,7 +193,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
         if (firstElementInTopBucket.getFValue() == minFValue) {
             recomputeMinFValue() // recompute the new minimum f value on open
-            openList.reorder(PotentialComparator(bound, fMin)) // resort open list with new minimum f
         }
 
         return firstElementInTopBucket

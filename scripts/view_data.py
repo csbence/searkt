@@ -47,10 +47,11 @@ def process_data():
                     if key == "success" and instance[str(key)] is False:
                         print("Failed Experiment!")
                         failed_experiments = failed_experiments + 1
-                        display(instance)
+                        if instance["configuration"]["algorithmName"] == "DPS":
+                            display(instance)
                     try:
                         if key == "success" and instance[str(key)] is True:
-                            print('{} -> {}'.format(str(key), str(instance[str(key)])))
+                            # print('{} -> {}'.format(str(key), str(instance[str(key)])))
                             successful_experiments = successful_experiments + 1
                         data_dict[key].append(instance[str(key)])
                     except KeyError:
@@ -87,8 +88,8 @@ def filter_nodes_generated(df):
 def plot(data_dict):
     df = pd.DataFrame(data_dict)
     # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
-    over_five_million = filter_nodes_generated(df)
-    display(over_five_million)
+    # over_five_million = filter_nodes_generated(df)
+    # display(over_five_million)
     sns.set_context("paper")
     sns.set_style("dark", {"axes.facecolor": ".9"})
     # success_plot = sns.pointplot(x="instance", y="success", hue="algorithm", data=df, capsize=.2)
