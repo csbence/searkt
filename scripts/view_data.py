@@ -61,7 +61,6 @@ def process_data():
     print('Failed experiments {}'.format(failed_experiments))
     return data_dict
 
-
 def filter_nodes_generated(df):
     over_five_million = dict()
     over_five_million["DPS"] = 0
@@ -87,22 +86,30 @@ def filter_nodes_generated(df):
 
 def plot(data_dict):
     df = pd.DataFrame(data_dict)
-    # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
-    # over_five_million = filter_nodes_generated(df)
-    # display(over_five_million)
-    sns.set_context("paper")
-    sns.set_style("dark", {"axes.facecolor": ".9"})
+    df_gen = df[df.success == True]
+    display(df_gen)
+    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
+    plt.title('Success')
+    plt.figure()
+    over_five_million = filter_nodes_generated(df)
+    display(over_five_million)
+    # sns.set_context("paper")
+    # sns.set_style("dark", {"axes.facecolor": ".9"})
     # success_plot = sns.pointplot(x="instance", y="success", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
     # success_plot = sns.pointplot(x="instance", y="numberOfProofs", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
     # success_plot = sns.pointplot(x="instance", y="towardTopNode", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
-    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1)
+    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
+    plt.title('Success with Filter')
     # axes = success_plot.axes
-    # axes.set(xlim=(0, 330))
+    # axes.set(ylim=(0, 1.01))
     plt.figure()
-    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df, capsize=0.1)
+    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1, palette="Set2")
+    plt.title('Nodes Expanded')
+    # axes = expand_plot.axes
+    # axes.set(ylim=(0,2000000))
     plt.show()
 
 

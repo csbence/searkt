@@ -117,10 +117,7 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>> (100000000, 1.toFloat()).resize()
 
-    private val setIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.index = index }
-    private val getIndex: (node: Node<StateType>) -> (Int) = { node -> node.index }
-
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator, setIndex, getIndex)
+    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
 
     private var rootState: StateType? = null
 

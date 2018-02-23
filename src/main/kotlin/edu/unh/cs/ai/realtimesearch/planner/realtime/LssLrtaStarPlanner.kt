@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import kotlin.Long.Companion.MAX_VALUE
@@ -30,14 +31,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
                                              var iteration: Long,
-                                             parent: Node<StateType>? = null) {
+                                             parent: Node<StateType>? = null): Indexable {
 
 
         /** Item index in the open list. */
-        var index: Int = -1
-
-        val open: Boolean
-            get() = index >= 0
+        override var index: Int = -1
 
         /** Nodes that generated this Node as a successor in the current exploration phase. */
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
@@ -84,12 +82,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
 
-    private val setIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.index = index }
-    private val getIndex: (node: Node<StateType>) -> (Int) = { node -> node.index }
-
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue(10000000, fValueComparator, setIndex, getIndex)
+    private var openList = AdvancedPriorityQueue(10000000, fValueComparator)
 
     private var rootState: StateType? = null
 

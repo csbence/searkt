@@ -15,8 +15,10 @@ open class AdvancedPriorityQueue<T>(private var queue: Array<T?>, private var co
         get() = queue
 
     companion object {
-        inline operator fun <reified T> invoke(capacity: Int, comparator: Comparator<in T>, noinline setIndex: (T, Int) -> (Unit), noinline getIndex: (T) -> (Int)): AdvancedPriorityQueue<T> =
-                AdvancedPriorityQueue(arrayOfNulls(capacity), comparator, setIndex, getIndex)
+        inline operator fun <reified T: Indexable> invoke(capacity: Int, comparator: Comparator<in T>,
+                                                          noinline setIndex: (T, Int) -> Unit = { item, index -> item.index = index},
+                                                          noinline getIndex: (T) -> Int = { item -> item.index}): AdvancedPriorityQueue<T> =
+            AdvancedPriorityQueue(arrayOfNulls(capacity), comparator, setIndex, getIndex)
     }
 
     private fun grow(minCapacity: Int) {
@@ -225,6 +227,12 @@ open class AdvancedPriorityQueue<T>(private var queue: Array<T?>, private var co
         }
         size = 0
     }
+}
+
+interface Indexable {
+    var index: Int
+    val open: Boolean
+        get() = index >= 0
 }
 
 

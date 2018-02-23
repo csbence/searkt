@@ -65,11 +65,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val getCleanupIndex: (node: Node<StateType>) -> (Int) = { node -> node.cleanupIndex }
 
     private val rbTree = TreeMap<Node<StateType>, Node<StateType>>(openNodeComparator) //RedBlackTree(openNodeComparator, explicitNodeComparator)
-    private val focal = AdvancedPriorityQueue(100000000, focalNodeComparator, setFocalIndex, getFocalIndex)
+    private val focal = AdvancedPriorityQueue(arrayOfNulls(100000000), focalNodeComparator, setFocalIndex, getFocalIndex)
 
     private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
     private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator, getFocalIndex)
-    private val cleanup = AdvancedPriorityQueue(100000000, cleanupNodeComparator, setCleanupIndex, getCleanupIndex)
+    private val cleanup = AdvancedPriorityQueue(arrayOfNulls(100000000), cleanupNodeComparator, setCleanupIndex, getCleanupIndex)
 
 
     class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,

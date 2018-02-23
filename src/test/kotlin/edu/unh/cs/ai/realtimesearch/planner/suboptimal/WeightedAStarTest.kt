@@ -15,8 +15,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WeightedAStarTest {
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4",null, "WEIGHTED_A_STAR", TerminationType.EXPANSION,null,1L,1000L,1000000L,
-            null, 3.0, null, null,null, null, null, null, null, null, null, null)
+    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, null, 1L, 1000L, 1000000L,
+            null, 3.0, null, null, null, null, null, null, null, null, null, null)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -99,8 +99,8 @@ class WeightedAStarTest {
     fun testAStar6() {
         val weight = 1.0
         val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
-            null, null, null, null, null, null)
+                null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
+                null, null, null, null, null, null)
 
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
@@ -150,8 +150,8 @@ class WeightedAStarTest {
     fun testAStarHardPuzzle() {
         val weight = 1.5
         val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHED_A_STAR", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
-            null, null, null, null, null, null)
+                null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
+                null, null, null, null, null, null)
 
         //val configuration = GeneralExperimentConfiguration(mutableMapOf(Configurations.WEIGHT.toString() to weight))
 
@@ -173,6 +173,8 @@ class WeightedAStarTest {
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...")
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
+            print("nodes expanded: ${aStarAgent.expandedNodeCount}...")
+            print("nodes generated: ${aStarAgent.generatedNodeCount}...")
             println("total time: ${aStarAgent.executionNanoTime}")
         }
     }

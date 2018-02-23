@@ -11,6 +11,7 @@ import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -42,9 +43,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                                              override var safe: Boolean = false) : Safe, SearchNode<StateType, Node<StateType>> {
         /** Item index in the open list. */
         override var index: Int = -1
-
-        override val open: Boolean
-            get() = index >= 0
 
         override val getIndex: (node: SearchNode<StateType, Node<StateType>>) -> Int = { node -> node.index }
         override val setIndex: (node: SearchNode<StateType, Node<StateType>>, index: Int) -> Unit = { node, index ->
@@ -99,12 +97,9 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
 
 
-    private val setIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.index = index }
-    private val getIndex: (node: Node<StateType>) -> (Int) = { node -> node.index }
-
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator, setIndex, getIndex)
+    private var openList = AdvancedPriorityQueue<Node<StateType>>(100000000, fValueComparator)
 
     private var rootState: StateType? = null
 

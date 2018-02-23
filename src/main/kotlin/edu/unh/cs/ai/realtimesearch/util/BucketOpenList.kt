@@ -9,18 +9,15 @@ interface BucketNode {
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val setIndex: (bucket: Bucket<T>, index: Int) -> (Unit) = { bucket, index -> bucket.index = index }
-    private val getIndex: (bucket: Bucket<T>) -> (Int) = { bucket -> bucket.index }
-    private val openList = AdvancedPriorityQueue(100000000, PotentialComparator(), setIndex, getIndex)
+    private val openList = AdvancedPriorityQueue(100000000, PotentialComparator<Bucket<T>>())
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 
-    private inner class PotentialComparator<T : BucketNode> : Comparator<Bucket<T>> {
-        override fun compare(a: Bucket<T>?, b: Bucket<T>?): Int {
-            return if (a == null || b == null) {
-                0
-            } else {
+    private inner class PotentialComparator<T> : Comparator<T> {
+        override fun compare(a: T, b: T): Int {
+            return if (a is BucketOpenList<*>.Bucket<*> &&
+                    b is BucketOpenList<*>.Bucket<*>) {
                 when {
                     a.potential > b.potential -> -1
                     a.potential < b.potential -> 1
@@ -36,6 +33,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
                     else -> 0
                 }
+            } else {
+                throw BucketOpenListException("$a or $b is not a Bucket, can not compare!")
             }
         }
     }
@@ -44,9 +43,9 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
 
     inner class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
-                                       val nodes: ArrayList<T>) {
+                                       val nodes: ArrayList<T>) : Indexable {
 
-        var index: Int = -1
+        override var index: Int = -1
 
         val potential: Double
             get() = calculatePotential()

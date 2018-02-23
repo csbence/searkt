@@ -8,6 +8,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
+import edu.unh.cs.ai.realtimesearch.util.Indexable
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -46,7 +47,7 @@ abstract class RealTimePlanner<StateType : State<StateType>> : Planner<StateType
 
 data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long)
 
-interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> {
+interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>>: Indexable {
     val state: StateType
     var heuristic: Double
     var cost: Long
@@ -54,8 +55,6 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
     var action: Action
     var parent: NodeType
     val predecessors: MutableList<SearchEdge<NodeType>>
-    val open: Boolean
-    var index: Int
 
     val setIndex: (node: SearchNode<StateType, NodeType>, index: Int) -> (Unit)
     val getIndex: (node: SearchNode<StateType, NodeType>) -> (Int)
