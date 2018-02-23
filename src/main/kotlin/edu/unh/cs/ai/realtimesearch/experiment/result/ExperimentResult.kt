@@ -34,7 +34,8 @@ class ExperimentResult {
                 pathLength: Long,
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
-                systemProperties: HashMap<String, String> = HashMap()) {
+                systemProperties: HashMap<String, String> = HashMap(),
+                experimentRunTime: Long){
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -49,6 +50,7 @@ class ExperimentResult {
         this.timestamp = timestamp
         this.success = true
         this.errorMessage = null
+        this.experimentRunTime = experimentRunTime
 
         if (systemProperties.isNotEmpty()) {
             this.systemProperties = systemProperties
@@ -69,6 +71,7 @@ class ExperimentResult {
     var timestamp: Long = 0
     var success: Boolean = false
     var systemProperties: MutableMap<String, String>
+    var experimentRunTime: Long = 0
 
     @Optional
     var errorDetails: String = ""

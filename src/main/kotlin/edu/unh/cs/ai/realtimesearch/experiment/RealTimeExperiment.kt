@@ -148,7 +148,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
-                actions = actions.map(Action::toString))
+                actions = actions.map(Action::toString),
+                experimentRunTime = totalPlanningNanoTime
+        )
 
         domain.appendDomainSpecificResults(experimentResult)
         planner.appendPlannerSpecificResults(experimentResult)

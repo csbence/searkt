@@ -1,22 +1,28 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor.executeConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.system.measureNanoTime
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WeightedAStarTest {
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, null, 1L, 1000L, 1000000L,
-            null, 3.0, null, null, null, null, null, null, null, null, null, null)
+    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, "input/tiles/korf/4/real/12", 1000000L, 1000L, 1000000L,
+            null, 3.0, LookaheadType.STATIC, CommitmentStrategy.SINGLE, null, null, null, null, null, null, null, null)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -31,6 +37,27 @@ class WeightedAStarTest {
         }
         fileWriter.close()
         return temp.inputStream()
+    }
+
+    @Test
+    fun testRunTime() {
+        var plan: List<*> = emptyList<Action>()
+        val tiles = "14 1 9 6 4 8 12 5 7 2 3 0 10 11 13 15"
+        val instance = createInstanceFromString(tiles)
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = slidingTilePuzzle.initialState
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
+        val runTime = measureNanoTime {
+            plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
+        }
+        val result = executeConfiguration(configuration)
+        println("$runTime >= ${result.experimentRunTime}")
+        kotlin.test.assertTrue { runTime <= result.experimentRunTime }
+        println("diff ${result.experimentRunTime - runTime}")
+        println(plan)
+        kotlin.test.assertTrue { plan.isNotEmpty() }
+        // kotlin.test.assertTrue { plan.size == 12 }
+
     }
 
     @Test

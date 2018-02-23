@@ -128,7 +128,8 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 goalAchievementTime = goalAchievementTime,
                 idlePlanningTime = idlePlanningTime,
                 pathLength = pathLength,
-                actions = actions.map(String::toString)
+                actions = actions.map(String::toString),
+                experimentRunTime = totalPlanningTime
         )
 
         domain.appendDomainSpecificResults(experimentResult)

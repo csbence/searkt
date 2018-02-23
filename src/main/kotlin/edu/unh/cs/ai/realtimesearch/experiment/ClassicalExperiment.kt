@@ -33,6 +33,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                                                         val domain: Domain<StateType>,
                                                         val initialState: StateType,
                                                         val terminationChecker: TerminationChecker) : Experiment() {
+    private var experimentRunTime: Long = 0
 
     private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
@@ -48,6 +49,8 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
         val cpuNanoTime = measureThreadCpuNanoTime {
             actions = planner.plan(state, terminationChecker)
         }
+
+        experimentRunTime = cpuNanoTime
 
         val planningTime: Long = when (configuration.terminationType) {
             TIME -> cpuNanoTime
@@ -75,7 +78,8 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                 goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
                 idlePlanningTime = planningTime,
                 pathLength = pathLength,
-                actions = actions.map(Action::toString))
+                actions = actions.map(Action::toString),
+                experimentRunTime = experimentRunTime)
 
         domain.appendDomainSpecificResults(experimentResult)
         return experimentResult

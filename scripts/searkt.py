@@ -7,6 +7,7 @@
 import copy
 import json
 import os
+import sys
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
@@ -19,7 +20,7 @@ def generate_base_suboptimal_configuration():
     algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
+    time_limit = [sys.maxsize]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
