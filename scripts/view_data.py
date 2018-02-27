@@ -14,8 +14,7 @@ def process_data():
     data_dict = dict()
     data = []
 
-    fields = ["errorMessage", "success", "expandedNodes", "generatedNodes", "numberOfProofs",
-              "proofSuccessful", "towardTopNode"]
+    fields = ["success", "expandedNodes", "generatedNodes"]
 
     print("Initing Dictionary...")
     for field in fields:
@@ -23,6 +22,7 @@ def process_data():
         data_dict["algorithm"] = []
         data_dict["instance"] = []
         data_dict["weight"] = []
+        data_dict["domainPath"] = []
     print("Done Initing Dictionary!")
 
     failed_experiments = 0
@@ -36,19 +36,24 @@ def process_data():
         for experiment in data:
             i = 0
             for instance in experiment:
+                config = instance["configuration"]["domainPath"]
                 weight = instance["configuration"]["weight"]
                 alg = instance["configuration"]["algorithmName"]
-                window_size = instance["configuration"]["safetyWindowSize"]
+                if alg == "DPS" and f == sys.argv[1]:
+                    alg = "DPS_old"
+                domain_path = instance["configuration"]["domainPath"]
                 data_dict["algorithm"].append(str(alg))
                 data_dict["instance"].append(i)
                 data_dict["weight"].append(weight)
+                data_dict["domainPath"].append(config)
                 i = i + 1
                 for key in fields:
                     if key == "success" and instance[str(key)] is False:
-                        print("Failed Experiment!")
+                        print("Failed Experiment! Algorithm: " + alg + " Weight: " + 
+                                str(weight) + " Path: " + domain_path)
                         failed_experiments = failed_experiments + 1
-                        if instance["configuration"]["algorithmName"] == "DPS":
-                            display(instance)
+                        print(instance["errorMessage"])
+                        # print(instance["errorDetails"])
                     try:
                         if key == "success" and instance[str(key)] is True:
                             # print('{} -> {}'.format(str(key), str(instance[str(key)])))
@@ -61,11 +66,13 @@ def process_data():
     print('Failed experiments {}'.format(failed_experiments))
     return data_dict
 
+
 def filter_nodes_generated(df):
     over_five_million = dict()
     over_five_million["DPS"] = 0
     over_five_million["WEIGHTED_A_STAR"] = 0
     over_five_million["EES"] = 0
+    over_five_million["DPS_old"] = 0 
     for key in df.keys():
         # print(key)
         if key == "algorithm":
@@ -87,11 +94,13 @@ def filter_nodes_generated(df):
 def plot(data_dict):
     df = pd.DataFrame(data_dict)
     df_gen = df[df.success == True]
-    display(df_gen)
+    # display(df_gen)
     success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     plt.title('Success')
     plt.figure()
+    display(df[(df.generatedNodes > 5000000) & (df.success == True) & (df.algorithm == "DPS")]['generatedNodes'])
     over_five_million = filter_nodes_generated(df)
+    display(df[(df.generatedNodes > 5000000) & (df.success == True)])
     display(over_five_million)
     # sns.set_context("paper")
     # sns.set_style("dark", {"axes.facecolor": ".9"})
@@ -106,7 +115,8 @@ def plot(data_dict):
     # axes = success_plot.axes
     # axes.set(ylim=(0, 1.01))
     plt.figure()
-    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1, palette="Set2")
+    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
+                                palette="Set2")
     plt.title('Nodes Expanded')
     # axes = expand_plot.axes
     # axes.set(ylim=(0,2000000))
@@ -119,5 +129,27 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

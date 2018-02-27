@@ -12,6 +12,10 @@ class BucketOpenListTest {
         override fun getFValue(): Double = f
         override fun getGValue(): Double = g
         override fun getHValue(): Double = h
+        override fun setOpenLocation(i: Int) {
+            index = i
+        }
+        private var index = -1
     }
 
     @Test
@@ -122,40 +126,39 @@ class BucketOpenListTest {
         }
         assertTrue { bop.minFValue == 3.0 }
         (1 until 10).forEach {
-            assertTrue { bop.minFValue == 3.0 }
+            assertEquals(bop.minFValue, 3.0)
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 3.0 }
             assertTrue { removedElement!!.getGValue() == 1.0 }
             assertTrue { removedElement!!.getHValue() == 2.0 }
         }
-
-        assertTrue { bop.minFValue == 4.0 }
+        assertEquals(4.0, bop.minFValue)
         (1 until 10).forEach {
-            assertTrue { bop.minFValue == 4.0 }
+            assertEquals(bop.minFValue, 4.0)
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 4.0 }
             assertTrue { removedElement!!.getGValue() == 2.0 }
             assertTrue { removedElement!!.getHValue() == 2.0 }
         }
-        assertTrue { bop.minFValue == 4.0 }
+        assertEquals(bop.minFValue, 4.0)
         (1 until 10).forEach {
-            assertTrue { bop.minFValue == 4.0 }
+            assertEquals(bop.minFValue, 4.0)
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 4.0 }
             assertTrue { removedElement!!.getGValue() == 3.0 }
             assertTrue { removedElement!!.getHValue() == 1.0 }
         }
-        assertTrue { bop.minFValue == 5.0 }
+        assertEquals(bop.minFValue, 5.0)
         (1 until 10).forEach {
-            assertTrue { bop.minFValue == 5.0 }
+            assertEquals(bop.minFValue, 5.0)
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 5.0 }
             assertTrue { removedElement!!.getGValue() == 3.0 }
             assertTrue { removedElement!!.getHValue() == 2.0 }
         }
-        assertTrue { bop.minFValue == 5.0 }
+        assertEquals(bop.minFValue, 5.0)
         (1 until 10).forEach {
-            assertTrue { bop.minFValue == 5.0 }
+            assertEquals(bop.minFValue, 5.0)
             val removedElement = bop.chooseNode()
             assertTrue { removedElement!!.getFValue() == 5.0 }
             assertTrue { removedElement!!.getGValue() == 4.0 }

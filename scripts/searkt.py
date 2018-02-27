@@ -17,7 +17,7 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['DPS']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]

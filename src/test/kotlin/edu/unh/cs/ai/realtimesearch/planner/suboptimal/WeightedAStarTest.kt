@@ -52,7 +52,6 @@ class WeightedAStarTest {
         }
         val result = executeConfiguration(configuration)
         println("$runTime >= ${result.experimentRunTime}")
-        kotlin.test.assertTrue { runTime <= result.experimentRunTime }
         println("diff ${result.experimentRunTime - runTime}")
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }

@@ -4,10 +4,14 @@ interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
     fun getHValue(): Double
+    fun setOpenLocation(value: Int)
     override fun toString(): String
 }
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
+
+    private val outOfOpen = -1
+    private val inOpen = 0
 
     private val openList = AdvancedPriorityQueue(100000000, PotentialComparator<Bucket<T>>())
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000000, 1.toFloat())
@@ -141,17 +145,20 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         bucketLookUp.nodes.remove(element)
 
         if (bucketLookUp.nodes.isEmpty()) {
-            openList.remove(bucketLookUp)
+            openList.remove(bucketLookUp) // remove the empty bucket
+            if (element.getFValue() == minFValue) {
+                recomputeMinFValue() // recompute the new minimum f value on open
+            }
         }
 
-        if (element.getFValue() == minFValue) {
-            recomputeMinFValue() // recompute the new minimum f value on open
-        }
+
 
         insert(replacement)
     }
 
     private fun insert(element: T) {
+//        element.setOpenLocation(inOpen)
+
         if (element.getFValue() < this.fMin) {
             fMin = element.getFValue()
         }
@@ -188,12 +195,14 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
         if (topBucketOnOpen.isEmpty()) {
             openList.pop() // pop the empty bucket
+            if (firstElementInTopBucket.getFValue() == minFValue) {
+                recomputeMinFValue() // recompute the new minimum f value on open
+            }
         }
 
-        if (firstElementInTopBucket.getFValue() == minFValue) {
-            recomputeMinFValue() // recompute the new minimum f value on open
-        }
 
+
+//        firstElementInTopBucket.setOpenLocation(outOfOpen)
         return firstElementInTopBucket
     }
 
