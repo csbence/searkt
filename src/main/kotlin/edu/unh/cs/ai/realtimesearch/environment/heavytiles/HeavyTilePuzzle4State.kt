@@ -1,7 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.environment.heavytiles
 
 import edu.unh.cs.ai.realtimesearch.environment.State
-import java.util.*
 
 /**
  * State of a sliding tile puzzle.
@@ -18,11 +17,11 @@ import java.util.*
  * (0, 1) == 3
  *
  */
-data class HeavyTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double) : State<HeavyTilePuzzle4State> {
+data class HeavyTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double, val distance: Double) : State<HeavyTilePuzzle4State> {
 
 
 
-    override fun copy(): HeavyTilePuzzle4State = HeavyTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic)
+    override fun copy(): HeavyTilePuzzle4State = HeavyTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic, distance)
 
     fun getIndex(x: Int, y: Int): Int = 4 * y + x
 

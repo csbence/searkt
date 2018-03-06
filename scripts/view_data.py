@@ -39,8 +39,6 @@ def process_data():
                 config = instance["configuration"]["domainPath"]
                 weight = instance["configuration"]["weight"]
                 alg = instance["configuration"]["algorithmName"]
-                if alg == "DPS" and f == sys.argv[1]:
-                    alg = "DPS_old"
                 domain_path = instance["configuration"]["domainPath"]
                 data_dict["algorithm"].append(str(alg))
                 data_dict["instance"].append(i)
@@ -72,7 +70,7 @@ def filter_nodes_generated(df):
     over_five_million["DPS"] = 0
     over_five_million["WEIGHTED_A_STAR"] = 0
     over_five_million["EES"] = 0
-    over_five_million["DPS_old"] = 0 
+    over_five_million["EETS"] = 0
     for key in df.keys():
         # print(key)
         if key == "algorithm":
@@ -115,6 +113,7 @@ def plot(data_dict):
     # axes = success_plot.axes
     # axes.set(ylim=(0, 1.01))
     plt.figure()
+    # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
     expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
                                 palette="Set2")
     plt.title('Nodes Expanded')
@@ -129,8 +128,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
 
 
 

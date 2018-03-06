@@ -33,6 +33,7 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStar
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.ExplicitEstimationSearch
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.ExplicitEstimationTildeSearch
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
@@ -119,7 +120,7 @@ object ConfigurationExecutor {
 
             logger.info("Experiment failed. ${executionException!!.message}")
             val failedExperimentResult = ExperimentResult(configuration, "${executionException!!.message}")
-            failedExperimentResult.errorDetails = executionException!!.stackTrace.contentToString()
+            failedExperimentResult.errorDetails = executionException!!.stackTrace!!.contentToString()
             return failedExperimentResult
         }
 
@@ -242,14 +243,14 @@ object ConfigurationExecutor {
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
+            EETS -> executeOfflineSearch(ExplicitEstimationTildeSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 
     private fun <StateType : State<StateType>> executeRealTimeSearch(planner: RealTimePlanner<StateType>, configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val realTimeExperiment = RealTimeExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration))
-        val experimentResult = realTimeExperiment.run()
 
-        return experimentResult
+        return realTimeExperiment.run()
     }
 
     private fun <StateType : State<StateType>> executeOfflineSearch(planner: ClassicalPlanner<StateType>, configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {

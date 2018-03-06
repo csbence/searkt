@@ -2,7 +2,6 @@ package edu.unh.cs.ai.realtimesearch.environment.heavytiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzle
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
@@ -11,7 +10,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
 
     private val goalState: HeavyTilePuzzle4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })
-        val state = HeavyTilePuzzle4State(0, tiles, 0.0)
+        val state = HeavyTilePuzzle4State(0, tiles, 0.0, 0.0)
         assert(initialHeuristic(state) == 0.0)
         state
     }
@@ -47,13 +46,30 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
 
             val modifiedTiles = ByteArray(16, { state.tiles[it] })
             val heuristic = initialHeuristic(state)
+            val distance = initialDistance(state)
 
             state.tiles = savedTiles
 
-            return HeavyTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic)
+            return HeavyTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic, distance)
         }
 
         return null
+    }
+
+    fun initialDistance(state: HeavyTilePuzzle4State): Double {
+        var manhattanSum = 0.0
+        val zero: Byte = 0
+
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                val value = state[state.getIndex(x, y)]
+                if (value == zero) continue
+
+                manhattanSum += abs(value / size - y) + abs(value % size - x)
+            }
+        }
+
+        return manhattanSum
     }
 
     override fun heuristic(state: HeavyTilePuzzle4State): Double = state.heuristic * actionDuration
@@ -99,7 +115,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
         return manhattanSum
     }
 
-    override fun distance(state: HeavyTilePuzzle4State) = TODO() // state.heuristic
+    override fun distance(state: HeavyTilePuzzle4State) = state.distance // state.heuristic
 
     override fun isGoal(state: HeavyTilePuzzle4State) = state.heuristic == 0.0 && state == goalState
 

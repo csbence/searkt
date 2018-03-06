@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
 import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
@@ -16,6 +17,8 @@ import kotlin.Comparator
 class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
+
+    var terminationChecker: TerminationChecker? = null
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
@@ -62,6 +65,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         val tempSuccessorNode = nodes[successorState]
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
+            terminationChecker!!.notifyExpansion()
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = weight * domain.heuristic(successorState),
@@ -110,6 +114,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
+        this.terminationChecker = terminationChecker
         val startTime = initializeAStar()
         val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
@@ -126,7 +131,10 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
-            terminationChecker.notifyExpansion()
+        }
+        if (terminationChecker.reachedTermination()) {
+            throw MetronomeException("Reached termination condition, " +
+                    "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }
         throw GoalNotReachableException()
     }

@@ -17,8 +17,8 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['DPS']
-    expansion_limit = [100000000]
+    algorithms_to_run = ['EES', 'EETS']
+    expansion_limit = [5000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
     action_durations = [1]
@@ -55,6 +55,11 @@ def generate_base_suboptimal_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'EES']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EETS']])
+
 
     return compiled_configurations
 
@@ -146,7 +151,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 101):
+    for puzzle in range(1, 26):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'

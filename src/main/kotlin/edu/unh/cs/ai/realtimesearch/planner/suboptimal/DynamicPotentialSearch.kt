@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
 import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
@@ -16,6 +17,8 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     private val weight: Double = configuration.weight ?:
             throw MetronomeConfigurationException("Weight for Dynamic Potential Search is not specified.")
+
+    var terminationChecker: TerminationChecker? = null
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
@@ -64,6 +67,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
         val tempSuccessorNode = nodes[successorState]
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
+            terminationChecker!!.notifyExpansion()
             val undiscoveredNode = Node(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
@@ -121,6 +125,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
+        this.terminationChecker = terminationChecker
         val startTime = initializeAStar()
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
@@ -137,7 +142,10 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             }
             currentNode = topNode
             expandFromNode(currentNode)
-            terminationChecker.notifyExpansion()
+        }
+        if (terminationChecker.reachedTermination()) {
+            throw MetronomeException("Reached termination condition, " +
+                    "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }
         throw GoalNotReachableException()
     }

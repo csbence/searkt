@@ -7,20 +7,18 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.RedBlackTreeElement
-import edu.unh.cs.ai.realtimesearch.util.RedBlackTreeNode
-import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.util.*
 import java.util.*
 import kotlin.Comparator
+import kotlin.math.sqrt
 
-class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
+class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
 
     var terminationChecker: TerminationChecker? = null
 
-    private val cleanupNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val cleanupNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -30,22 +28,22 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val focalNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val focalNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.dHat < rhs.dHat -> -1
             lhs.dHat > rhs.dHat -> 1
-            lhs.fHat < rhs.fHat -> -1
-            lhs.fHat > rhs.fHat -> 1
+            lhs.fTilde < rhs.fTilde -> -1
+            lhs.fTilde > rhs.fTilde -> 1
             lhs.cost > rhs.cost -> -1
             lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
 
-    private val openNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val openNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fHat < rhs.fHat -> -1
-            lhs.fHat > rhs.fHat -> 1
+            lhs.fTilde < rhs.fTilde -> -1
+            lhs.fTilde > rhs.fTilde -> 1
             lhs.d < rhs.d -> -1
             lhs.d > rhs.d -> 1
             lhs.cost > rhs.cost -> -1
@@ -54,7 +52,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val explicitNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val explicitNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.fHat < weight * rhs.fHat -> -1
             lhs.fHat > weight * rhs.fHat -> 1
@@ -72,7 +70,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val rbTree = TreeMap<Node<StateType>, Node<StateType>>(openNodeComparator) //RedBlackTree(openNodeComparator, explicitNodeComparator)
     private val focal = AdvancedPriorityQueue(arrayOfNulls(100000000), focalNodeComparator, setFocalIndex, getFocalIndex)
 
-    private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
     private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator, getFocalIndex)
     private val cleanup = AdvancedPriorityQueue(arrayOfNulls(100000000), cleanupNodeComparator, setCleanupIndex, getCleanupIndex)
 
@@ -132,9 +130,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action, var d: Double,
-                                             var parent: ExplicitEstimationSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+                                             var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
         val open: Boolean
-            get() =  focalIndex >= 0
+            get() = focalIndex >= 0
 
         var focalIndex: Int = -1
 
@@ -153,6 +151,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         val fHat: Double
             get() = cost + hHat
+
+        val fTilde: Double
+            get() = fHat + (1.96 * sqrt(dHat * dHatVariance))
 
         private var hHat = 0.0
 

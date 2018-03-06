@@ -48,7 +48,7 @@ class WeightedAStarTest {
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
         val runTime = measureNanoTime {
-            plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
+            plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(10L))
         }
         val result = executeConfiguration(configuration)
         println("$runTime >= ${result.experimentRunTime}")
