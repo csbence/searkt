@@ -45,18 +45,14 @@ fun generateConfigurations(
     configurations = configurations.cartesianProduct(EXPANSION_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
     configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(stepLimit)).toMutableList()
 
-    // Apply planner and domain specific extras
-    fun <T> applyExtras(extras: Iterable<Triple<T, Any, Iterable<Any>>>?, matchKey: Any) {
-        extras?.forEach { (matchValue, key, values) ->
-            val irrelevantConfigurations = configurations.filter { it[matchKey.toString()] != matchValue.toString() }
-            val relevantConfigurations = configurations.filter { it[matchKey.toString()] == matchValue.toString() }
+    val extraConfigurations = listOf(Pair(plannerExtras, ALGORITHM_NAME), Pair(domainExtras, DOMAIN_NAME))
 
+    extraConfigurations.forEach { (extras, matchKey) ->
+        extras?.forEach { (matchValue, key, values) ->
+            val (relevantConfigurations, irrelevantConfigurations) = configurations.partition { it[matchKey.toString()] == matchValue.toString() }
             configurations = irrelevantConfigurations + relevantConfigurations.cartesianProduct(key.toString(), values).toMutableList()
         }
     }
 
-    applyExtras(plannerExtras, ALGORITHM_NAME)
-    applyExtras(domainExtras, DOMAIN_NAME)
-
-    return  configurations
+    return configurations
 }
