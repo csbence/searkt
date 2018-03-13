@@ -143,6 +143,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 SafetyProof.LOW_D_TOP_PREDECESSOR -> predecessorMicroIteration(sourceState, terminationChecker)
                 SafetyProof.LOW_D_LOW_H -> lowestHeuristicNodesMicroIteration(sourceState, terminationChecker)
                 SafetyProof.LOW_D_LOW_H_OPEN -> lowestHeuristicNodesAmongOpenMicroIteration(sourceState, terminationChecker)
+                SafetyProof.COVERAGE -> safetyCoverageSearch(sourceState, terminationChecker)
             }
 
             // Backup safety
@@ -489,6 +490,39 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+
+    }
+
+    private fun safetyCoverageSearch(
+            sourceState: StateType,
+            terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>,
+            SafeRealTimeSearchNode<StateType>?> 
+    {
+
+        logger.debug { "Starting safetyCoverageSearch from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        // our statistic for safety coverage of the graph
+        var avgSafeStateDist = 0 // TODO: make sure this is a double
+
+        aStarSequence.generateWhile {
+            !terminationChecker.reachedTermination() && 
+            !domain.isGoal(
+                    openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty.")
+            )
+        }.onEach {
+            terminationChecker.notifyExpansion()
+        }.forEach {
+
+            // maintain average coverage statistic
+
+
+            // increase coverage when necessary
+
+        }
+
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+
     }
 
     /**

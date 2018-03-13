@@ -192,7 +192,8 @@ enum class SafetyProof {
     LOW_D_WINDOW,
     LOW_D_TOP_PREDECESSOR,
     LOW_D_LOW_H,
-    LOW_D_LOW_H_OPEN
+    LOW_D_LOW_H_OPEN,
+    COVERAGE
 }
 
 enum class SafeRealTimeSearchConfiguration(val key: String) {
