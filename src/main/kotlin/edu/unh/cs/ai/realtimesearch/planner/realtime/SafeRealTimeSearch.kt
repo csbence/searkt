@@ -71,9 +71,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
 
     var lastSafeNode: SafeRealTimeSearchNode<StateType>? = null
 
@@ -524,6 +522,24 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 }
             }
         }
+    }
+
+
+    private fun calculateAverageSafeFrontierDistance(): Double {
+
+        var totalSafeFrontierDistance = 0
+        openList.forEach {
+            var currentNode = it
+            var depth = 0
+            while (currentNode.parent != currentNode) {
+                if (currentNode.safe) break
+                depth++
+                currentNode = currentNode.parent
+            }
+            totalSafeFrontierDistance += depth
+        }
+
+        return totalSafeFrontierDistance.toDouble() / openList.size
     }
 
     private fun initializeAStar(state: StateType) {
