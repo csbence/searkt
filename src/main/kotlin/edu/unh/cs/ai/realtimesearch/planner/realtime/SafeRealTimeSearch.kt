@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
@@ -499,11 +500,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             SafeRealTimeSearchNode<StateType>?> 
     {
 
+        val maxAvgSafeStateDist = 5; // TODO: make parameter
+
         logger.debug { "Starting safetyCoverageSearch from sourceState: $sourceState" }
         initializeAStar(sourceState)
 
-        // our statistic for safety coverage of the graph
-        var avgSafeStateDist = 0 // TODO: make sure this is a double
+        var avgSafeStateDist = .0 
 
         aStarSequence.generateWhile {
             !terminationChecker.reachedTermination() && 
@@ -514,10 +516,21 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             terminationChecker.notifyExpansion()
         }.forEach {
 
-            // maintain average coverage statistic
+            // TODO: we can probably give it a name in a more kotlin-way
+            var expandedNode = it
 
+            // maybe we're lucky...
+            expandedNode.safe = domain.isSafe(expandedNode.state);
 
-            // increase coverage when necessary
+            // attempt to prove safety if we are below our desired safety coverage
+            if ( (! expandedNode.safe) && avgSafeStateDist > maxAvgSafeStateDist) 
+                proveSafety(expandedNode, FakeTerminationChecker)
+
+            /* update our coverage */
+            if (expandedNode.safe)
+                predecessorSafetyPropagation(listOf(expandedNode))
+
+            avgSafeStateDist = calculateAverageSafeFrontierDistance()
 
         }
 
