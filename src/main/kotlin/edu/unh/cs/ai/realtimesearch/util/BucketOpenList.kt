@@ -1,10 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import org.slf4j.LoggerFactory
+
 interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
     fun getHValue(): Double
     fun setOpenLocation(value: Int)
+    fun isOpen(): Boolean
     override fun toString(): String
 }
 
@@ -14,6 +17,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
+
+    private val logger = LoggerFactory.getLogger(BucketOpenList::class.java)
 
     private inner class PotentialComparator<T> : Comparator<T> {
         override fun compare(a: T, b: T): Int {
@@ -135,6 +140,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     }
 
     fun replace(element: T, replacement: T) {
+        assert(element.isOpen() && !replacement.isOpen())
+        assert(element.getGValue() > replacement.getGValue())
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
         val bucketLookUp = lookUpTable[elementGHPair]
                 ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
@@ -154,7 +161,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     }
 
     private fun insert(element: T) {
-//        element.setOpenLocation(inOpen)
 
         if (element.getFValue() < this.fMin) {
             fMin = element.getFValue()
@@ -166,9 +172,13 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         if (targetBucket == null) {
             // make new bucket
             val bucketNodes = arrayListOf(element)
-            val newBucket = Bucket(element.getFValue(), element.getGValue(), element.getHValue(), bucketNodes)
+            val newBucket = Bucket(element.getFValue(),
+                    element.getGValue(), element.getHValue(), bucketNodes)
 
+            assert(newBucket.g == element.getGValue() && newBucket.h == element.getHValue())
             openList.add(newBucket)
+            assert(newBucket.index >= 0)
+            element.setOpenLocation(newBucket.index)
             lookUpTable[elementGHPair] = newBucket
 
         } else {
@@ -176,14 +186,17 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = targetBucket.nodes
 
             bucketNodes.add(element)
+            assert(targetBucket.g == element.getGValue() && targetBucket.h == element.getHValue())
             if (bucketNodes.size == 1) openList.add(targetBucket)
+            assert(targetBucket.index >= 0)
+            element.setOpenLocation(targetBucket.index)
+
         }
     }
 
     private fun pop(): T? {
-        if (size == 0) {
-            throw BucketOpenListException("Nothing left to pop!")
-        }
+
+        if (size == 0) throw BucketOpenListException("Nothing left to pop!")
 
         val topBucketOnOpen = openList.peek()?.nodes ?: throw BucketOpenListException("No array in bucket!")
         val firstElementInTopBucket = topBucketOnOpen.first()
@@ -192,14 +205,14 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
 
         if (topBucketOnOpen.isEmpty()) {
             openList.pop() // pop the empty bucket
-            if (firstElementInTopBucket.getFValue() == minFValue) {
+            val nextBucketFValue = openList.peek()?.f ?: Double.MAX_VALUE
+            if (firstElementInTopBucket.getFValue() == minFValue && nextBucketFValue > minFValue) {
                 recomputeMinFValue() // recompute the new minimum f value on open
             }
         }
 
 
-
-//        firstElementInTopBucket.setOpenLocation(outOfOpen)
+        firstElementInTopBucket.setOpenLocation(-1) // mark the node as not in the open list
         return firstElementInTopBucket
     }
 

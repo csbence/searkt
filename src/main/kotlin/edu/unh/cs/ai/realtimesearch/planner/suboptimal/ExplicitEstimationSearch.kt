@@ -134,7 +134,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                                              var actionCost: Long, var action: Action, var d: Double,
                                              var parent: ExplicitEstimationSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
         val open: Boolean
-            get() =  focalIndex >= 0
+            get() =  index >= 0
 
         var focalIndex: Int = -1
 
@@ -314,7 +314,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                 if (!successorNode.open) {
                     insertNode(successorNode, successorNode)
                 } else {
+                    cleanup.update(successorNode)
                     openList.focal.update(successorNode)
+                    openList.open[successorNode] = successorNode
                 }
             }
         }

@@ -18,7 +18,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     var terminationChecker: TerminationChecker? = null
 
-    private val cleanupNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val cleanupNodeComparator= Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -32,8 +32,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         when {
             lhs.dHat < rhs.dHat -> -1
             lhs.dHat > rhs.dHat -> 1
-            lhs.fTilde < rhs.fTilde -> -1
-            lhs.fTilde > rhs.fTilde -> 1
+            lhs.fHat < rhs.fHat -> -1
+            lhs.fHat > rhs.fHat -> 1
             lhs.cost > rhs.cost -> -1
             lhs.cost < rhs.cost -> 1
             else -> 0
@@ -54,8 +54,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private val explicitNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fHat < weight * rhs.fHat -> -1
-            lhs.fHat > weight * rhs.fHat -> 1
+            lhs.f < weight * rhs.fHat -> -1
+            lhs.f > weight * rhs.fHat -> 1
             else -> 0
         }
     }
@@ -132,7 +132,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                                              var actionCost: Long, var action: Action, var d: Double,
                                              var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
         val open: Boolean
-            get() = focalIndex >= 0
+            get() = index >= 0
 
         var focalIndex: Int = -1
 

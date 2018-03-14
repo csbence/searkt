@@ -17,8 +17,8 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'EETS']
-    expansion_limit = [5000000]
+    algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
+    expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
     action_durations = [1]
@@ -151,7 +151,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 26):
+    for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -265,7 +265,8 @@ def main():
     print_summary(results)
 
     print('{} results have been received.'.format(len(results)))
-    n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)), "notification-message-email")
+    n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)),
+                                 "notification-message-email")
     n.show()
 
 

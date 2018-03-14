@@ -12,8 +12,11 @@ class BucketOpenListTest {
         override fun getFValue(): Double = f
         override fun getGValue(): Double = g
         override fun getHValue(): Double = h
-        override fun setOpenLocation(i: Int) {
-            index = i
+        override fun isOpen(): Boolean {
+            return index != -1
+        }
+        override fun setOpenLocation(value: Int) {
+            index = value
         }
         private var index = -1
     }

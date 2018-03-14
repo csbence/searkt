@@ -27,6 +27,10 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
         val open: Boolean
             get() = index != -1
 
+        override fun isOpen(): Boolean {
+            return this.open
+        }
+
         override fun getFValue(): Double = f
 
         override fun getGValue(): Double = cost.toDouble()
@@ -122,7 +126,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             }
         }
     }
-
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker

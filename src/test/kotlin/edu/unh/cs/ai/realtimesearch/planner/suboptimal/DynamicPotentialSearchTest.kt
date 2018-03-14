@@ -15,6 +15,7 @@ import kotlin.test.assertTrue
 
 class DynamicPotentialSearchTest {
 
+
     private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
             null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
             null, null, null, null, null, null)

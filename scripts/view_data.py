@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys
+import math
 import pandas as pd
 import simplejson as json
 import seaborn as sns
@@ -14,7 +15,7 @@ def process_data():
     data_dict = dict()
     data = []
 
-    fields = ["success", "expandedNodes", "generatedNodes"]
+    fields = ["success", "expandedNodes", "generatedNodes", "experimentRunTime"]
 
     print("Initing Dictionary...")
     for field in fields:
@@ -23,6 +24,7 @@ def process_data():
         data_dict["instance"] = []
         data_dict["weight"] = []
         data_dict["domainPath"] = []
+        data_dict["logWeight"] = []
     print("Done Initing Dictionary!")
 
     failed_experiments = 0
@@ -43,6 +45,7 @@ def process_data():
                 data_dict["algorithm"].append(str(alg))
                 data_dict["instance"].append(i)
                 data_dict["weight"].append(weight)
+                data_dict["logWeight"].append(round(math.log10(weight), 2))
                 data_dict["domainPath"].append(config)
                 i = i + 1
                 for key in fields:
@@ -86,39 +89,56 @@ def filter_nodes_generated(df):
                 if int(item) >= 5000000:
                     df.iloc[index, df.columns.get_loc("success")] = False
                 index = index + 1
+        if key == "experimentRunTime":
+            index = 0
+            for item in df[key]:
+                nano_seconds = df.iloc[index, df.columns.get_loc("experimentRunTime")]
+                seconds = nano_seconds/1000000000.0
+                if seconds >10:
+                    print(seconds)
+                if seconds != 0:
+                    df.iloc[index, df.columns.get_loc("experimentRunTime")] = math.log10(seconds)
+                index = index + 1
     return over_five_million
 
 
 def plot(data_dict):
     df = pd.DataFrame(data_dict)
-    df_gen = df[df.success == True]
     # display(df_gen)
-    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
-    plt.title('Success')
-    plt.figure()
+    # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
+    # plt.title('Success')
+    # plt.figure()
     display(df[(df.generatedNodes > 5000000) & (df.success == True) & (df.algorithm == "DPS")]['generatedNodes'])
     over_five_million = filter_nodes_generated(df)
     display(df[(df.generatedNodes > 5000000) & (df.success == True)])
     display(over_five_million)
+
+    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
+    plt.title('Success with Filter')
+    # axes = success_plot.axes
+    # axes.set(ylim=(0, 1.01))
+    plt.figure()
+
+    df_gen = df[df.success == True]
+    # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
+    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
+                                palette="Set2")
+
+    plt.title('Nodes Expanded')
+    plt.figure()
+ 
     # sns.set_context("paper")
     # sns.set_style("dark", {"axes.facecolor": ".9"})
     # success_plot = sns.pointplot(x="instance", y="success", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
     # success_plot = sns.pointplot(x="instance", y="numberOfProofs", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
-    # success_plot = sns.pointplot(x="instance", y="towardTopNode", hue="algorithm", data=df, capsize=.2)
-    # plt.figure()
-    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
-    plt.title('Success with Filter')
-    # axes = success_plot.axes
-    # axes.set(ylim=(0, 1.01))
-    plt.figure()
-    # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
-    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
-                                palette="Set2")
-    plt.title('Nodes Expanded')
-    # axes = expand_plot.axes
+
+   # axes = expand_plot.axes
     # axes.set(ylim=(0,2000000))
+    success_plot = sns.pointplot(x="logWeight", y="experimentRunTime", hue="algorithm", data=df, capsize=.1, palette="Set2")
+
+
     plt.show()
 
 

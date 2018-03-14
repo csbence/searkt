@@ -223,6 +223,11 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
                     .map { "$slidingTile4MapRoot$it" }
                     .mapTo(configurations) { getDomainConfigurationMap(it) }
         }
+        Domains.SLIDING_TILE_PUZZLE_4_HEAVY -> {
+            slidingTileSolvableMaps
+                    .map {"$slidingTile4MapRoot$it" }
+                    .mapTo(configurations) { getDomainConfigurationMap(it) }
+        }
     }
 
     return configurations
@@ -305,11 +310,11 @@ fun getPlannerConfigurations(planner: Planners): MutableList<MutableMap<String, 
     return configurations
 }
 
-/**
- * Upload the configurations to the DB.
- *
- * @param configurations the configurations to upload
- */
+///**
+// * Upload the configurations to the DB.
+// *
+// * @param configurations the configurations to upload
+// */
 //fun uploadConfigurations(configurations: MutableList<MutableMap<String, Any?>>) {
 //    val restTemplate = RestTemplate()
 //    val serverUrl = "http://aerials.cs.unh.edu:3824/configurations"
