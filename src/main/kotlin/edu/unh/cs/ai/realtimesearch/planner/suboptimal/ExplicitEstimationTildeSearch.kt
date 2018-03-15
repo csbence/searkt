@@ -112,7 +112,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     class ExplicitQueue<E>(private val open: TreeMap<E, E>, private val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
                            private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E> {
 
-        fun isEmpty(): Boolean = open.firstEntry().value == null
+        fun isEmpty(): Boolean = open.firstEntry() == null || open.firstEntry().value == null
 
         fun isNotEmpty(): Boolean = !isEmpty()
 
@@ -159,7 +159,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             return e
         }
 
-        fun peekOpen(): E? = open.firstEntry()?.value
+        fun peekOpen(): E? = open.firstEntry().value
         fun peekFocal(): E? = focal.peek()
     }
 
@@ -280,14 +280,14 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         val fMin = qualifiedNodes.peekOpen() ?: throw MetronomeException("F rb-tree empty!")
 
         when {
-            dHatMin.f <= weight * fMin.f && dHatMin.fHat <= weight * fHatMin.fHat -> {
+            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat <= weight * fHatMin.fHat -> {
                 val chosenNode = promisingNodes.pollFocal()!!
                 qualifiedNodes.remove(chosenNode)
                 fHatHeap.remove(chosenNode)
                 return chosenNode
                // return dHatMin
             }
-            dHatMin.f <= weight * fMin.f && dHatMin.fHat > weight * fHatMin.fHat-> {
+            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat > weight * fHatMin.fHat-> {
                 val chosenNode = fHatHeap.pop()!!
                 promisingNodes.remove(chosenNode)
                 qualifiedNodes.remove(chosenNode)
@@ -373,10 +373,10 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private fun insertNode(node: Node<StateType>) {
         nodes[node.state] = node
         fHatHeap.add(node)
-        val fMinNode = qualifiedNodes.peekOpen() ?: node
+        val fMinNode = if (qualifiedNodes.isNotEmpty()) { qualifiedNodes.peekOpen() } else node
         val fHatMinNode = fHatHeap.peek() ?: node
         // only add nodes which are qualified and promising
-        qualifiedNodes.add(node, fMinNode)
+        qualifiedNodes.add(node, fMinNode!!)
         promisingNodes.add(node, fHatMinNode)
     }
 
