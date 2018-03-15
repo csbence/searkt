@@ -140,8 +140,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     }
 
     fun replace(element: T, replacement: T) {
-        assert(element.isOpen() && !replacement.isOpen())
-        assert(element.getGValue() > replacement.getGValue())
         val elementGHPair = GHPair(element.getGValue(), element.getHValue())
         val bucketLookUp = lookUpTable[elementGHPair]
                 ?: throw BucketOpenListException("Can't replace element. Element [$element] not found! ")
@@ -154,8 +152,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
                 recomputeMinFValue() // recompute the new minimum f value on open
             }
         }
-
-
 
         insert(replacement)
     }
@@ -175,10 +171,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val newBucket = Bucket(element.getFValue(),
                     element.getGValue(), element.getHValue(), bucketNodes)
 
-            assert(newBucket.g == element.getGValue() && newBucket.h == element.getHValue())
             openList.add(newBucket)
-            assert(newBucket.index >= 0)
-            element.setOpenLocation(newBucket.index)
+            //element.setOpenLocation(newBucket.index)
             lookUpTable[elementGHPair] = newBucket
 
         } else {
@@ -186,10 +180,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             val bucketNodes = targetBucket.nodes
 
             bucketNodes.add(element)
-            assert(targetBucket.g == element.getGValue() && targetBucket.h == element.getHValue())
             if (bucketNodes.size == 1) openList.add(targetBucket)
-            assert(targetBucket.index >= 0)
-            element.setOpenLocation(targetBucket.index)
+            //element.setOpenLocation(targetBucket.index)
 
         }
     }
@@ -212,7 +204,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         }
 
 
-        firstElementInTopBucket.setOpenLocation(-1) // mark the node as not in the open list
+        //firstElementInTopBucket.setOpenLocation(-1) // mark the node as not in the open list
         return firstElementInTopBucket
     }
 

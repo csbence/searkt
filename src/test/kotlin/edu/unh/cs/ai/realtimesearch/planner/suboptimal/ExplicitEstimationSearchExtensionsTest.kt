@@ -13,7 +13,7 @@ import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ExplicitEstimationTildeSearchTest {
+class ExplicitEstimationSearchExtensionsTest {
 
     private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
             null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
@@ -42,7 +42,7 @@ class ExplicitEstimationTildeSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
         kotlin.test.assertTrue { eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
@@ -52,7 +52,7 @@ class ExplicitEstimationTildeSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -65,7 +65,7 @@ class ExplicitEstimationTildeSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent= ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent= ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -78,7 +78,7 @@ class ExplicitEstimationTildeSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -92,7 +92,7 @@ class ExplicitEstimationTildeSearchTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -106,7 +106,7 @@ class ExplicitEstimationTildeSearchTest {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
-            val eesAgent= ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+            val eesAgent= ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
             val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000000000))
             var currentState = initialState
             plan.forEach { action ->
