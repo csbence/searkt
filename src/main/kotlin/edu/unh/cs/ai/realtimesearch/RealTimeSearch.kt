@@ -1,6 +1,6 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
+import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
@@ -36,9 +36,10 @@ fun main(args: Array<String>) {
 //    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
 
     println("Please provide a JSON list of configurations to execute:")
-    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
-    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+//    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+//    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
+    val rawConfiguration = generateConfigurations()
     println(rawConfiguration)
 
     val loader = ExperimentConfiguration.serializer().list
@@ -67,15 +68,15 @@ private fun generateConfigurations(): String {
     val configurations = generateConfigurations(
             domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-//                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                    RACETRACK to "input/racetrack/barto-big.track",
-                    RACETRACK to "input/racetrack/uniform.track",
-                    RACETRACK to "input/racetrack/barto-small.track"
+                    GRID_WORLD to "input/vacuum/empty.vw"
+//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+//                    RACETRACK to "input/racetrack/barto-big.track",
+//                    RACETRACK to "input/racetrack/uniform.track",
+//                    RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SAFE_RTS),
+            planners = listOf(RTC),
             actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
@@ -98,6 +99,7 @@ private fun generateConfigurations(): String {
                     Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(RTC, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(

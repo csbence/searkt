@@ -19,8 +19,8 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.21'
-    ext.serialization_version = '0.4'
+    ext.kotlin_version = '1.2.10'
+    ext.serialization_version = '0.4.1'
 
     repositories {
         mavenCentral()
