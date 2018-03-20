@@ -131,16 +131,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             return false
         }
 
-        fun updateFocal(oldBest: E?, newBest: E?, fHatChange: Int) {
-            if (oldBest == null || fHatChange != 0) {
-                if (oldBest != null && fHatChange < 0) {
-                    open.replace(newBest!!, oldBest)
-                } else if (oldBest?.getNode() == null) {
-                    open.replace(oldBest!!, newBest!!)
-                }
-            }
-        }
-
         fun remove(e: E) {
             open.remove(e)
             if (getFocalIndex(e) != -1) {
@@ -165,7 +155,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
 
         fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
-        fun peekFocal(): E? = focal.peek()
     }
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
@@ -281,10 +270,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
 
     private fun selectNode(): Node<StateType> {
-//        val dHatMin = promisingNodes.peekFocal()
-//        val fHatMin = fHatHeap.peek() ?: throw MetronomeException("F-Hat heap empty!")
-//        val fMin = qualifiedNodes.peekOpen() ?: throw MetronomeException("F rb-tree empty!")
-
         when {
             qualifiedNodes.focal.isEmpty() -> {
                 val chosenNode = qualifiedNodes.pollOpen()!!
@@ -314,30 +299,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 // return dHatMin which is from promising
             }
         }
-
-//        when {
-//            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat <= weight * fHatMin.fHat -> {
-//                val chosenNode = promisingNodes.pollFocal()!!
-//                qualifiedNodes.remove(chosenNode)
-//                fHatHeap.remove(chosenNode)
-//                return chosenNode
-//                 return dHatMin
-//            }
-//            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat > weight * fHatMin.fHat -> {
-//                val chosenNode = fHatHeap.pop()!!
-//                promisingNodes.remove(chosenNode)
-//                qualifiedNodes.remove(chosenNode)
-//                return chosenNode
-//                 return fHatMin
-//            }
-//            else -> {
-//                val chosenNode = qualifiedNodes.pollOpen()!!
-//                promisingNodes.remove(chosenNode)
-//                fHatHeap.remove(chosenNode)
-//                return chosenNode
-//                 return fMin
-//            }
-//        }
     }
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
