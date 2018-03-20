@@ -68,15 +68,19 @@ private fun generateConfigurations(): String {
     val configurations = generateConfigurations(
             domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-                    GRID_WORLD to "input/vacuum/empty.vw"
-//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+//                    GRID_WORLD to "input/vacuum/empty.vw",
+//                    GRID_WORLD to "input/vacuum/h_400.vw",
+                    GRID_WORLD to "input/vacuum/slalom_02.vw",
+                    GRID_WORLD to "input/vacuum/wall.vw",
+                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw"
+//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    RACETRACK to "input/racetrack/barto-big.track",
 //                    RACETRACK to "input/racetrack/uniform.track",
 //                    RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(RTC),
+            planners = listOf(RTC, LSS_LRTA_STAR),
             actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
