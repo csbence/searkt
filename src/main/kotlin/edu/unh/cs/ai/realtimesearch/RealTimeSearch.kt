@@ -70,9 +70,12 @@ private fun generateConfigurations(): String {
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    GRID_WORLD to "input/vacuum/empty.vw",
 //                    GRID_WORLD to "input/vacuum/h_400.vw",
-                    GRID_WORLD to "input/vacuum/slalom_02.vw",
+                    GRID_WORLD to "input/vacuum/slalom_04.vw",
                     GRID_WORLD to "input/vacuum/wall.vw",
-                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw"
+                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
+                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
+                    //GRID_WORLD to "input/vacuum/openBox_400.vw",
+                    GRID_WORLD to "input/vacuum/maze.vw"
 //                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    RACETRACK to "input/racetrack/barto-big.track",
 //                    RACETRACK to "input/racetrack/uniform.track",

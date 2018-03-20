@@ -111,7 +111,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
-        println(sourceState)
+        //println(sourceState)
 
         if (rootState == null) {
             rootState = sourceState

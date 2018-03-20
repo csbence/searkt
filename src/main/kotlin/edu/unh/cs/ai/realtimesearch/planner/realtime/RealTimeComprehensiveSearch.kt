@@ -301,34 +301,45 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
         } else frontier.pop()
 
         while (!terminationChecker.reachedTermination()) {
-            if (nextNode === null ) {
+            if (nextNode === null) {
                 if (foundGoal) {
                     lastExpansionCount = max(lastExpansionCount, tempLastExpansionCount)
                     return true
                 } else {
                     throw GoalNotReachableException("No reachable path to goal")
                 }
+            } else {
+                val expandedGoal = expandFrontierNode(nextNode)
+                foundGoal = foundGoal || expandedGoal
+
+                terminationChecker.notifyExpansion()
+                nextNode.expanded = true
             }
 
-            if (domain.isGoal(nextNode.state)) {
-                //we still need to cap learning phase in configurations where timing is bounded by node expansions,
-                //so we use the previous iteration's expansion count as our limit going forward if larger than our count
-                //so far in this iteration
-                foundGoal = true
-                backlogQueue.add(nextNode)
-                nextNode.onGoalPath = true
+            lastExpansionCount++
+            nextNode = if (!terminationChecker.reachedTermination()) frontier.pop() else null
+        }
 
-                nextNode = frontier.pop()
-                continue
-            }
+        return foundGoal
+    }
 
-            val successors = domain.successors(nextNode.state)
+    private fun expandFrontierNode(frontierNode : Node<StateType>) : Boolean {
+        val isGoal = domain.isGoal(frontierNode.state)
+        if (isGoal) {
+            frontierNode.onGoalPath = true
 
+            //reorder frontier on fuzzy f. Now that we've found the goal, we want to expand nodes around the agent first
+            frontier.reorder(backlogComparator)
+        } else {
+            val successors = domain.successors(frontierNode.state)
+
+            var bestNode : Node<StateType> = frontierNode
+            var bestH : Double = Double.POSITIVE_INFINITY
             successors.forEach {
-                val successorNode : Node<StateType>?
+                val successorNode: Node<StateType>?
                 if (!closed.containsKey(it.state)) {
                     successorNode = Node(it.state, domain.heuristic(it.state))
-                    closed.put(it.state, successorNode)
+                    closed[it.state] = successorNode
 
                     frontier.add(successorNode)
                     generatedNodeCount++
@@ -339,21 +350,26 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
                 //null check
                 successorNode ?: throw NullPointerException("Closed list has State Key which points to Null")
 
-                //Assert null !! b/c nextNode was null checked at top of loop
-                Node.createEdge(nextNode!!, successorNode, it.actionCost, it.action)
+                Node.createEdge(frontierNode, successorNode, it.actionCost, it.action)
+
+                val tempH = successorNode.heuristic + it.actionCost
+                if (tempH < bestH) {
+                    bestH = tempH
+                    bestNode = successorNode
+                }
             }
-            nextNode.expanded = true
-            backlogQueue.add(nextNode)
+            if (bestH > frontierNode.heuristic) {
+                frontierNode.heuristic = bestH
 
-            nextNode = frontier.pop()
-
-            expandedNodeCount++
-            lastExpansionCount++
-            terminationChecker.notifyExpansion()
-
+                if (bestNode.onGoalPath) {
+                    frontierNode.onGoalPath = true
+                    addAncestorsToBacklog(frontierNode)
+                }
+            }
         }
 
-        return foundGoal
+        expandedNodeCount++
+        return isGoal
     }
 
     //Agent moves to the next state with the lowest cost (action cost + h), breaking ties on h
