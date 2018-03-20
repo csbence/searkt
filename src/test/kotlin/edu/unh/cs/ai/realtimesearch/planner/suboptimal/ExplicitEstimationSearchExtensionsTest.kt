@@ -114,6 +114,7 @@ class ExplicitEstimationSearchExtensionsTest {
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
+            println("Plan size ${plan.size}")
         }
     }
 
@@ -129,6 +130,7 @@ class ExplicitEstimationSearchExtensionsTest {
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size <= 3.0 * 12 }
+        println("Plan size: ${plan.size}")
     }
 
     @Test
@@ -154,7 +156,7 @@ class ExplicitEstimationSearchExtensionsTest {
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
-            print("...plan size: ${plan.size}...")
+            print("...plan size: ${plan.size}...weight ${configuration.weight}...")
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
             print("nodes expanded: ${eesAgent.expandedNodeCount}...")
             print("nodes generated: ${eesAgent.generatedNodeCount}...")

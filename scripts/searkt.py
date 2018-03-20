@@ -17,7 +17,7 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'DPS', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['EES', 'EETS']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -151,7 +151,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 101):
+    for puzzle in range(1, 11):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'

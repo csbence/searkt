@@ -18,6 +18,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     var terminationChecker: TerminationChecker? = null
 
+
     private val fNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
@@ -68,7 +69,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private val promisingComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde < weight * rhs.f -> -1
-            lhs.fTilde > weight * lhs.f -> 1
+            lhs.fTilde > weight * rhs.f -> 1
             else -> 0
         }
     }
@@ -109,7 +110,11 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private val fHatHeap = AdvancedPriorityQueue(arrayOfNulls(100000000), fHatComparator, fHatSetIndex, fHatGetIndex)
 
-    class ExplicitQueue<E>(private val open: TreeMap<E, E>, private val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
+    private var fMinExpansion = 0
+    private var fHatMinExpansion = 0
+    private var dHatMinExpansion = 0
+
+    class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
                            private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E> {
 
         fun isEmpty(): Boolean = open.firstEntry() == null || open.firstEntry().value == null
@@ -159,7 +164,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             return e
         }
 
-        fun peekOpen(): E? = open.firstEntry().value
+        fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
         fun peekFocal(): E? = focal.peek()
     }
 
@@ -274,35 +279,66 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     }
 
+
     private fun selectNode(): Node<StateType> {
-        val dHatMin = promisingNodes.peekFocal()
-        val fHatMin = fHatHeap.peek() ?: throw MetronomeException("F-Hat heap empty!")
-        val fMin = qualifiedNodes.peekOpen() ?: throw MetronomeException("F rb-tree empty!")
+//        val dHatMin = promisingNodes.peekFocal()
+//        val fHatMin = fHatHeap.peek() ?: throw MetronomeException("F-Hat heap empty!")
+//        val fMin = qualifiedNodes.peekOpen() ?: throw MetronomeException("F rb-tree empty!")
 
         when {
-            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat <= weight * fHatMin.fHat -> {
-                val chosenNode = promisingNodes.pollFocal()!!
-                qualifiedNodes.remove(chosenNode)
-                fHatHeap.remove(chosenNode)
-                return chosenNode
-               // return dHatMin
-            }
-            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat > weight * fHatMin.fHat-> {
-                val chosenNode = fHatHeap.pop()!!
-                promisingNodes.remove(chosenNode)
-                qualifiedNodes.remove(chosenNode)
-                // return fHatMin
-            }
-            else -> {
+            qualifiedNodes.focal.isEmpty() -> {
                 val chosenNode = qualifiedNodes.pollOpen()!!
                 promisingNodes.remove(chosenNode)
                 fHatHeap.remove(chosenNode)
+                ++fMinExpansion
                 return chosenNode
-               // return fMin
+                // nothing qualifies [f <= w*fMin]
+                // return fMin
+            }
+            promisingNodes.focal.isEmpty() -> {
+                val chosenNode = fHatHeap.pop()!!
+                promisingNodes.remove(chosenNode)
+                qualifiedNodes.remove(chosenNode)
+                ++fHatMinExpansion
+                return chosenNode
+                // nothing promising [f~ <= w*fHatMin]
+                // return fHatMin
+            }
+            else -> {
+                val chosenNode = promisingNodes.pollFocal()!!
+                qualifiedNodes.remove(chosenNode)
+                fHatHeap.remove(chosenNode)
+                ++dHatMinExpansion
+                return chosenNode
+                // something is in qualified AND promising
+                // return dHatMin which is from promising
             }
         }
-        throw MetronomeException("Select node is broken.")
-   }
+
+//        when {
+//            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat <= weight * fHatMin.fHat -> {
+//                val chosenNode = promisingNodes.pollFocal()!!
+//                qualifiedNodes.remove(chosenNode)
+//                fHatHeap.remove(chosenNode)
+//                return chosenNode
+//                 return dHatMin
+//            }
+//            dHatMin != null && dHatMin.f <= weight * fMin.f && dHatMin.fHat > weight * fHatMin.fHat -> {
+//                val chosenNode = fHatHeap.pop()!!
+//                promisingNodes.remove(chosenNode)
+//                qualifiedNodes.remove(chosenNode)
+//                return chosenNode
+//                 return fHatMin
+//            }
+//            else -> {
+//                val chosenNode = qualifiedNodes.pollOpen()!!
+//                promisingNodes.remove(chosenNode)
+//                fHatHeap.remove(chosenNode)
+//                return chosenNode
+//                 return fMin
+//            }
+//        }
+    }
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
 
@@ -353,6 +389,10 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                     insertNode(successorNode)
                 } else {
                     fHatHeap.update(successorNode)
+                    qualifiedNodes.focal.update(successorNode)
+                    qualifiedNodes.open[successorNode] = successorNode
+                    promisingNodes.focal.update(successorNode)
+                    promisingNodes.open[successorNode] = successorNode
                 }
             }
         }
@@ -373,10 +413,12 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private fun insertNode(node: Node<StateType>) {
         nodes[node.state] = node
         fHatHeap.add(node)
-        val fMinNode = if (qualifiedNodes.isNotEmpty()) { qualifiedNodes.peekOpen() } else node
+        val fMinNode = (if (qualifiedNodes.isNotEmpty()) {
+            qualifiedNodes.peekOpen()
+        } else node)!!
         val fHatMinNode = fHatHeap.peek() ?: node
         // only add nodes which are qualified and promising
-        qualifiedNodes.add(node, fMinNode!!)
+        qualifiedNodes.add(node, fMinNode)
         promisingNodes.add(node, fHatMinNode)
     }
 
@@ -391,9 +433,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         generatedNodeCount++
 
         while (fHatHeap.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            println("Expansion #$expandedNodeCount")
-            val oldBestQualified = qualifiedNodes.peekOpen()
-            val oldBestPromising = promisingNodes.peekOpen()
+//            val oldBestQualified = qualifiedNodes.peekOpen()
+//            val oldBestPromising = promisingNodes.peekOpen()
 
             val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
@@ -402,17 +443,17 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             }
             expandFromNode(topNode)
 
-            val newBestQualified = qualifiedNodes.peekOpen()
-            val newBestPromising = promisingNodes.peekOpen()
-
-            if (newBestQualified != null) {
-                val fChange = fNodeComparator.compare(newBestQualified, oldBestQualified)
-                qualifiedNodes.updateFocal(oldBestQualified, newBestQualified, fChange)
-            }
-            if (newBestPromising != null) {
-                val fTildeChange = fTildeComparator.compare(newBestPromising, oldBestPromising)
-                promisingNodes.updateFocal(oldBestPromising, newBestPromising, fTildeChange)
-            }
+//            val newBestQualified = qualifiedNodes.peekOpen()
+//            val newBestPromising = promisingNodes.peekOpen()
+//
+//            if (newBestQualified != null) {
+//                val fChange = fNodeComparator.compare(newBestQualified, oldBestQualified)
+//                qualifiedNodes.updateFocal(oldBestQualified, newBestQualified, fChange)
+//            }
+//            if (newBestPromising != null) {
+//                val fTildeChange = fTildeComparator.compare(newBestPromising, oldBestPromising)
+//                promisingNodes.updateFocal(oldBestPromising, newBestPromising, fTildeChange)
+//            }
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +
