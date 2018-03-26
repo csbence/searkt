@@ -20,6 +20,10 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     var terminationChecker: TerminationChecker? = null
 
+    var aStarExpansion = 0
+    var dHatExpansion = 0
+    var fHatExpansion = 0
+
     private val cleanupNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
@@ -88,18 +92,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             open[e] = e
             if (explicitComparator.compare(e, oldBest) <= 0) {
                 focal.add(e)
-            }
-        }
-
-        fun updateFocal(oldBest: E?, newBest: E?, fHatChange: Int) {
-            if (oldBest == null || fHatChange != 0) {
-                if (oldBest != null && fHatChange < 0) {
-                    open.replace(newBest!!, oldBest)
-//                    open.visit(newBest, oldBest, 1, focalVisitor)
-                } else if (oldBest?.getNode() == null) {
-                    open.replace(oldBest!!, newBest!!)
-//                    open.visit(oldBest, newBest, 0, focalVisitor)
-                }
             }
         }
 
@@ -251,16 +243,19 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             bestDHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollFocal() ?: throw MetronomeException("Focal is Empty!")
                 cleanup.remove(chosenNode)
+                ++dHatExpansion
                 return chosenNode
             }
             bestFHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollOpen() ?: throw MetronomeException("Open is Empty!")
                 cleanup.remove(chosenNode)
+                ++fHatExpansion
                 return chosenNode
             }
             else -> {
                 val chosenNode = cleanup.pop() ?: throw MetronomeException("Cleanup is Empty!")
                 openList.remove(chosenNode)
+                ++aStarExpansion
                 return chosenNode
             }
         }
@@ -331,6 +326,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
         assert(startState == iterationNode.state )
         actions.reverse()
+        println("aStarExpansions: $aStarExpansion | fHatExpansions: $fHatExpansion | dHatExpansions: $dHatExpansion")
         return actions
     }
 
@@ -345,17 +341,12 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         generatedNodeCount++
 
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            val oldBest = openList.peekOpen()
-
             val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)
-            val newBest = openList.peekOpen()
-            val fHatChange = openNodeComparator.compare(newBest, oldBest)
-            openList.updateFocal(oldBest, newBest, fHatChange)
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +

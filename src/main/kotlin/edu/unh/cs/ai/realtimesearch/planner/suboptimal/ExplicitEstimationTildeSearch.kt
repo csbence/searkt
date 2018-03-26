@@ -391,7 +391,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         generatedNodeCount++
 
         while (fHatHeap.isNotEmpty() && !terminationChecker.reachedTermination()) {
-
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.currentTimeMillis() - startTime
