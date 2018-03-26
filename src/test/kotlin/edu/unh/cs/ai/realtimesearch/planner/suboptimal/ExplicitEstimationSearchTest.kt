@@ -116,7 +116,7 @@ class ExplicitEstimationSearchTest {
                 val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
                 val initialState = slidingTilePuzzle.initialState
-                val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+                val eesAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)
                 val plan: List<Action>
                 try {
                     plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(5000000))
