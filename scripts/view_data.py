@@ -94,8 +94,8 @@ def filter_nodes_generated(df):
             for item in df[key]:
                 nano_seconds = df.iloc[index, df.columns.get_loc("experimentRunTime")]
                 seconds = nano_seconds/1000000000.0
-                if seconds >10:
-                    print(seconds)
+                # if seconds >10:
+                    # print(seconds)
                 if seconds != 0:
                     df.iloc[index, df.columns.get_loc("experimentRunTime")] = math.log10(seconds)
                 index = index + 1
@@ -108,24 +108,25 @@ def plot(data_dict):
     # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     # plt.title('Success')
     # plt.figure()
+    sns.set_context("talk")
     display(df[(df.generatedNodes > 5000000) & (df.success == True) & (df.algorithm == "DPS")]['generatedNodes'])
     over_five_million = filter_nodes_generated(df)
     display(df[(df.generatedNodes > 5000000) & (df.success == True)])
     display(over_five_million)
 
     success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
-    plt.title('Success with Filter')
+    plt.title('Success')
     # axes = success_plot.axes
     # axes.set(ylim=(0, 1.01))
     plt.figure()
 
     df_gen = df[df.success == True]
     # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
-    expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
-                                palette="Set2")
+    # expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
+    #                             palette="Set2")
 
-    plt.title('Nodes Expanded')
-    plt.figure()
+    # plt.title('Nodes Expanded')
+    # plt.figure()
  
     # sns.set_context("paper")
     # sns.set_style("dark", {"axes.facecolor": ".9"})
@@ -134,11 +135,14 @@ def plot(data_dict):
     # success_plot = sns.pointplot(x="instance", y="numberOfProofs", hue="algorithm", data=df, capsize=.2)
     # plt.figure()
 
-   # axes = expand_plot.axes
+    # axes = expand_plot.axes
     # axes.set(ylim=(0,2000000))
-    success_plot = sns.pointplot(x="logWeight", y="experimentRunTime", hue="algorithm", data=df, capsize=.1, palette="Set2")
+    success_plot = sns.pointplot(x="logWeight", y="experimentRunTime", hue="algorithm", data=df_gen, capsize=.1, palette="Set2")
+    plt.title('CPU time')
+    plt.figure()
 
-
+    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_gen, capsize=0.1, palette="Set2")
+    plt.title('Success test')
     plt.show()
 
 

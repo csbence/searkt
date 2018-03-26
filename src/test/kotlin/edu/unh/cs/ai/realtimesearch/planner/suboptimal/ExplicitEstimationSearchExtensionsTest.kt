@@ -10,6 +10,7 @@ import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
+import kotlin.math.roundToInt
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -102,7 +103,9 @@ class ExplicitEstimationSearchExtensionsTest {
     @Test
     fun testEETS6() {
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
-        for (i in 12 until 13) {
+        val weight = 1.33
+        configuration.weight = weight
+        for (i in 1 until 13) {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
@@ -113,8 +116,10 @@ class ExplicitEstimationSearchExtensionsTest {
                 currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
-            assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
-            println("Plan size ${plan.size}")
+            // assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
+            println("${(optimalSolutionLengths[i - 1] * weight).roundToInt()} >= ${plan.size}")
+            assertTrue { (optimalSolutionLengths[i - 1] * weight).roundToInt() >= plan.size }
+            println("Plan size ${plan.size} for instance $i")
         }
     }
 
@@ -135,7 +140,7 @@ class ExplicitEstimationSearchExtensionsTest {
 
     @Test
     fun testEETSHardPuzzle() {
-        val weight = 1.5
+        val weight = 1.25
         val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
                 null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
                 null, null, null, null, null, null)
@@ -157,7 +162,7 @@ class ExplicitEstimationSearchExtensionsTest {
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             print("...plan size: ${plan.size}...weight ${configuration.weight}...")
-            assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
+            assertTrue { (optimalSolutionLengths[experimentNumber] * weight).roundToInt() >= plan.size }
             print("nodes expanded: ${eesAgent.expandedNodeCount}...")
             print("nodes generated: ${eesAgent.generatedNodeCount}...")
             println("total time: ${eesAgent.executionNanoTime}")

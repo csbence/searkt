@@ -1,10 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor.executeConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
@@ -15,8 +13,7 @@ import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.system.measureNanoTime
+import kotlin.math.roundToInt
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -39,25 +36,25 @@ class WeightedAStarTest {
         return temp.inputStream()
     }
 
-    @Test
-    fun testRunTime() {
-        var plan: List<*> = emptyList<Action>()
-        val tiles = "14 1 9 6 4 8 12 5 7 2 3 0 10 11 13 15"
-        val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
-        val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
-        val runTime = measureNanoTime {
-            plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(10L))
-        }
-        val result = executeConfiguration(configuration)
-        println("$runTime >= ${result.experimentRunTime}")
-        println("diff ${result.experimentRunTime - runTime}")
-        println(plan)
-        kotlin.test.assertTrue { plan.isNotEmpty() }
-        // kotlin.test.assertTrue { plan.size == 12 }
-
-    }
+//    @Test
+//    fun testRunTime() {
+//        var plan: List<*> = emptyList<Action>()
+//        val tiles = "14 1 9 6 4 8 12 5 7 2 3 0 10 11 13 15"
+//        val instance = createInstanceFromString(tiles)
+//        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+//        val initialState = slidingTilePuzzle.initialState
+//        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
+//        val runTime = measureNanoTime {
+//            plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(10L))
+//        }
+//        val result = executeConfiguration(configuration)
+//        println("$runTime >= ${result.experimentRunTime}")
+//        println("diff ${result.experimentRunTime - runTime}")
+//        println(plan)
+//        kotlin.test.assertTrue { plan.isNotEmpty() }
+//         kotlin.test.assertTrue { plan.size == 12 }
+//
+//    }
 
     @Test
     fun testAStar1() {
@@ -141,6 +138,48 @@ class WeightedAStarTest {
             }
             assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
             assertEquals(optimalSolutionLengths[i - 1], plan.size, "instance $i")
+        }
+    }
+
+    @Test
+    fun testAStar7() {
+        val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45,
+                46, 59, 62, 42, 66, 55, 46, 52, 54, 59, 49, 54, 52, 58, 53, 52, 54, 47, 50, 59, 60, 52, 55, 52, 58, 53, 49, 54, 54,
+                42, 64, 50, 51, 49, 47, 49, 59, 53, 56, 56, 64, 56, 41, 55, 50, 51, 57, 66, 45, 57, 56, 51, 47, 61, 50, 51, 53, 52,
+                44, 56, 49, 56, 48, 57, 54, 53, 42, 57, 53, 62, 49, 55, 44, 45, 52, 65, 54, 50, 57, 57, 46, 53, 50, 49, 44, 54, 57, 54)
+        val startingWeight = 1.25
+        val stepSize = 0.21
+        for (w in 2..2) {
+            val currentWeight = startingWeight + (stepSize * w)
+            println("running sub-optimality validation on weight: $currentWeight")
+            configuration.weight = currentWeight
+            for (i in 1..100) {
+                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+                val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
+                val initialState = slidingTilePuzzle.initialState
+                val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
+                val plan: List<Action>
+                try {
+                    plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(5000000))
+                    val pathLength  = plan.size.toLong()
+                    var currentState = initialState
+                    // valid plan check
+                    plan.forEach { action ->
+                        currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
+                    }
+                    assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
+                    // sub-optimality bound check
+                    if (((optimalSolutionLengths[i - 1] * currentWeight).roundToInt()) < pathLength) {
+                        System.err.println("weight: $currentWeight breaks sub-optimality bound on instance $i")
+                        System.err.println("${(optimalSolutionLengths[i - 1] * currentWeight).roundToInt()} >= $pathLength")
+                    }
+                } catch (e: Exception) {
+                    System.err.println(e.message + " on instance $i with weight $currentWeight")
+                }
+
+                // assertTrue { (optimalSolutionLengths[i - 1] * currentWeight).roundToInt() >= plan.size }
+                // assertEquals((optimalSolutionLengths[i - 1 ] * 1.25).roundToInt(), plan.size, "instance $i")
+            }
         }
     }
 

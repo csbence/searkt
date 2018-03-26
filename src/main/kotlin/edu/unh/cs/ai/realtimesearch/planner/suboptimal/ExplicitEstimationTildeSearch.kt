@@ -18,7 +18,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     var terminationChecker: TerminationChecker? = null
 
-
     private val fNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
@@ -265,9 +264,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         override fun setNode(node: RedBlackTreeNode<Node<StateType>, Node<StateType>>?) {
             this.redBlackNode = node
         }
-
     }
-
 
     private fun selectNode(): Node<StateType> {
         when {
@@ -311,7 +308,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             terminationChecker!!.notifyExpansion()
             val undiscoveredNode = Node(
                     state = successorState,
-                    heuristic = weight * domain.heuristic(successorState),
+                    heuristic = domain.heuristic(successorState),
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
@@ -386,7 +383,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val startTime = initializeAStar()
-        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
         nodes[state] = node
         fHatHeap.add(node)
         qualifiedNodes.add(node, node)
@@ -394,27 +391,14 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         generatedNodeCount++
 
         while (fHatHeap.isNotEmpty() && !terminationChecker.reachedTermination()) {
-//            val oldBestQualified = qualifiedNodes.peekOpen()
-//            val oldBestPromising = promisingNodes.peekOpen()
 
-            val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
+            val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)
 
-//            val newBestQualified = qualifiedNodes.peekOpen()
-//            val newBestPromising = promisingNodes.peekOpen()
-//
-//            if (newBestQualified != null) {
-//                val fChange = fNodeComparator.compare(newBestQualified, oldBestQualified)
-//                qualifiedNodes.updateFocal(oldBestQualified, newBestQualified, fChange)
-//            }
-//            if (newBestPromising != null) {
-//                val fTildeChange = fTildeComparator.compare(newBestPromising, oldBestPromising)
-//                promisingNodes.updateFocal(oldBestPromising, newBestPromising, fTildeChange)
-//            }
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +

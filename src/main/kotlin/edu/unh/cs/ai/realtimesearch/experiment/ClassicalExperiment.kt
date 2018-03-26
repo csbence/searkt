@@ -59,7 +59,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
         }
 
         // log results
-        val pathLength = actions.size.toLong()
+        val pathLength = actions.size.toLong() - 1
         logger.info { "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes" }
 
         var currentState = initialState

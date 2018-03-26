@@ -276,7 +276,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             terminationChecker!!.notifyExpansion()
             val undiscoveredNode = Node(
                     state = successorState,
-                    heuristic = weight * domain.heuristic(successorState),
+                    heuristic = domain.heuristic(successorState),
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
@@ -337,7 +337,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val startTime = initializeAStar()
-        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
+        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
 //        var currentNode: Node<StateType>
         nodes[state] = node
         cleanup.add(node)
