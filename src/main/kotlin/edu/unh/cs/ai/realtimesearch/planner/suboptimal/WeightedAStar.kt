@@ -148,7 +148,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
         assert(startState == iterationNode.state)
         actions.reverse()
-        println("numberOfNodesExpanded: $expandedNodeCount")
         return actions
     }
 }

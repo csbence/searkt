@@ -326,7 +326,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
         assert(startState == iterationNode.state )
         actions.reverse()
-        println("aStarExpansions: $aStarExpansion | fHatExpansions: $fHatExpansion | dHatExpansions: $dHatExpansion")
         return actions
     }
 
