@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
@@ -19,10 +20,11 @@ import kotlin.system.measureTimeMillis
  * @author Kevin C. Gall
  * @date 3/17/18
  */
-class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domain<StateType>) : RealTimePlanner<StateType>(){
+class RealTimeComprehensiveSearch<StateType: State<StateType>>(
+        val domain: Domain<StateType>,
+        val configuration : ExperimentConfiguration) : RealTimePlanner<StateType>(){
     //Configuration parameters
-    private val expansionRatio : Double = 25.0 //HARD CODED FOR TESTING
-    private val goalPathToBacklogRatio : Double = 0.2 //HARD CODED FOR TESTING
+    private val expansionRatio : Double = configuration.backlogRatio ?: 1.0
     //Logger and timekeeping
     private val logger = LoggerFactory.getLogger(RealTimeComprehensiveSearch::class.java)
     var dijkstraTimer = 0L
@@ -103,8 +105,8 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
             lhsFuzzyF > rhsFuzzyF -> 1
             lhs.heuristic < rhs.heuristic -> -1
             lhs.heuristic > rhs.heuristic -> 1
-            lhs.onGoalPath -> 1
-            rhs.onGoalPath -> -1
+            lhs.onGoalPath -> -1
+            rhs.onGoalPath -> 1
             else -> 0
         }
     }
@@ -179,39 +181,10 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
     //Learning Phase
     private fun dijkstra(terminationChecker: TerminationChecker) {
         val limit = (expansionRatio * lastExpansionCount).toLong()
-//        var goalPathLimit = 0L
-//        var backlogLimit = limit
-//
-//        if (foundGoal) {
-//            goalPathLimit = (limit * goalPathToBacklogRatio).toLong()
-//            backlogLimit = limit - goalPathLimit
-//
-//            if (backlogLimit < backlogQueue.size) {
-//                backlogLimit = backlogQueue.size.toLong()
-//                goalPathLimit = limit - backlogLimit
-//            }
-//        }
 
         logger.debug("Learning Phase: Limit $limit")
         //resort min queues
         backlogQueue.reorder(backlogComparator)
-        //goalPathQueue.reorder(backlogComparator)
-
-//        for (i in 1..goalPathLimit) {
-//            if (terminationChecker.reachedTermination()) {
-//                logger.debug("Learning phase could not complete before termination")
-//                break
-//            }
-//
-//            if (goalPathQueue.isEmpty()) {
-//                logger.debug("Reached end of goal path queue")
-//                backlogLimit += (goalPathLimit - i) //give backlog the stolen time
-//                break
-//            }
-//
-//            val goalNode = goalPathQueue.pop()!!
-//            updateGoalPathAncestors(goalNode)
-//        }
 
         for (i in 1..limit) {
             //break checks
@@ -234,21 +207,6 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
             }
         }
     }
-
-//    private fun updateGoalPathAncestors(goalPathNode : Node<StateType>) {
-//        if (goalPathNode.ancestors.size == 0) return
-//
-//        goalPathNode.ancestors.forEach {
-//            if (!it.source.onGoalPath) {
-//                val source = it.source
-//                source.heuristic = goalPathNode.heuristic + it.actionCost
-//                source.onGoalPath = true
-//                if (backlogQueue.contains(source)) backlogQueue.remove(source)
-//
-//                goalPathQueue.add(source) //creating a backward frontier
-//            }
-//        }
-//    }
 
     private fun updateNodeHeuristic(node : Node<StateType>) {
         var bestH = Double.POSITIVE_INFINITY
@@ -327,6 +285,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
         val isGoal = domain.isGoal(frontierNode.state)
         if (isGoal) {
             frontierNode.onGoalPath = true
+            backlogQueue.add(frontierNode)
 
             //reorder frontier on fuzzy f. Now that we've found the goal, we want to expand nodes around the agent first
             frontier.reorder(backlogComparator)
@@ -363,8 +322,8 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
 
                 if (bestNode.onGoalPath) {
                     frontierNode.onGoalPath = true
-                    addAncestorsToBacklog(frontierNode)
                 }
+                addAncestorsToBacklog(frontierNode)
             }
         }
 
@@ -401,8 +360,8 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
                     lhsCost > rhsCost -> next
                     minSoFar.destination.heuristic < next.destination.heuristic -> minSoFar
                     minSoFar.destination.heuristic > next.destination.heuristic -> next
-                    minSoFar.destination.visitCount < next.destination.visitCount -> minSoFar
-                    minSoFar.destination.visitCount > next.destination.visitCount -> next
+//                    minSoFar.destination.visitCount < next.destination.visitCount -> minSoFar
+//                    minSoFar.destination.visitCount > next.destination.visitCount -> next
                     else -> minSoFar
                 }
             }
@@ -420,5 +379,11 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(val domain: Domai
         }
 
         return actionList
+    }
+
+    enum class ComprehensiveConfigurations(val configurationName: String) {
+        BACKLOG_RATIO ("backlogRatio");
+
+        override fun toString() = configurationName
     }
 }

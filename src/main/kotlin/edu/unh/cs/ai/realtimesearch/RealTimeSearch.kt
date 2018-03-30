@@ -70,12 +70,14 @@ private fun generateConfigurations(): String {
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    GRID_WORLD to "input/vacuum/empty.vw",
 //                    GRID_WORLD to "input/vacuum/h_400.vw",
-                    GRID_WORLD to "input/vacuum/slalom_04.vw",
-                    GRID_WORLD to "input/vacuum/wall.vw",
-                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
-                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
-                    //GRID_WORLD to "input/vacuum/openBox_400.vw",
-                    GRID_WORLD to "input/vacuum/maze.vw"
+//                    GRID_WORLD to "input/vacuum/slalom_04.vw",
+                    GRID_WORLD to "input/vacuum/big_minimum.vw"
+//                    GRID_WORLD to "input/vacuum/wall.vw",
+//                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
+//                    GRID_WORLD to "input/vacuum/cups.vw",
+//                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
+//                    GRID_WORLD to "input/vacuum/openBox_400.vw"
+//                    GRID_WORLD to "input/vacuum/maze.vw"
 //                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    RACETRACK to "input/racetrack/barto-big.track",
 //                    RACETRACK to "input/racetrack/uniform.track",
@@ -84,29 +86,16 @@ private fun generateConfigurations(): String {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(RTC, LSS_LRTA_STAR),
-            actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(50L, 100L, 150L, 200L, 250L),//, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
-                    Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(S_ZERO, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SafetyBackup.PREDECESSOR.toString())),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
-                    Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(RTC, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(RTC, RealTimeComprehensiveSearch.ComprehensiveConfigurations.BACKLOG_RATIO, listOf(2.0, 10.0, 25.0)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
