@@ -119,6 +119,10 @@ def plot(data_dict):
     # axes = success_plot.axes
     # axes.set(ylim=(0, 1.01))
     plt.figure()
+    success_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df, capsize=0.1, palette="Set2")
+    plt.title('Expanded Nodes')
+    plt.figure()
+
 
     df_gen = df[df.success == True]
     # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
@@ -143,6 +147,7 @@ def plot(data_dict):
 
     success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_gen, capsize=0.1, palette="Set2")
     plt.title('Success test')
+
     plt.show()
 
 

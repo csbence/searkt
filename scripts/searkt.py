@@ -17,7 +17,7 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'EETS', 'DPS', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['EETS', 'EES', 'DPS', 'WEIGHTED_A_STAR']
     expansion_limit = [5000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -41,8 +41,8 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    # weight = [3.0]
-    weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    weight = [3.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,

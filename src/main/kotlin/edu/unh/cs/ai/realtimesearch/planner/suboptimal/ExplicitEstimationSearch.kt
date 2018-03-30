@@ -20,9 +20,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     var terminationChecker: TerminationChecker? = null
 
-    var aStarExpansion = 0
-    var dHatExpansion = 0
-    var fHatExpansion = 0
+    var aStarExpansions = 0
+    var dHatExpansions = 0
+    var fHatExpansions = 0
 
     private val cleanupNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
         when {
@@ -66,7 +66,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-
     private val setFocalIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.focalIndex = index }
     private val getFocalIndex: (node: Node<StateType>) -> (Int) = { node -> node.focalIndex }
 
@@ -79,7 +78,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
     private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator, getFocalIndex)
     private val cleanup = AdvancedPriorityQueue(arrayOfNulls(100000000), cleanupNodeComparator, setCleanupIndex, getCleanupIndex)
-
 
     class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
                            private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E> {
@@ -118,7 +116,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return e
         }
 
-        fun peekOpen(): E? = open.firstEntry().value
+        fun peekOpen(): E? = if(open.firstEntry() != null) open.firstEntry().value else null
         fun peekFocal(): E? = focal.peek()
     }
 
@@ -228,8 +226,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     }
 
-    private fun insertNode(node: Node<StateType>, oldBestNode: Node<StateType>) {
-        openList.add(node, oldBestNode)
+    private fun insertNode(node: Node<StateType>) {
+        val bestFHat = openList.peekOpen() ?: node
+        openList.add(node, bestFHat)
         cleanup.add(node)
         nodes[node.state] = node
     }
@@ -243,19 +242,19 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             bestDHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollFocal() ?: throw MetronomeException("Focal is Empty!")
                 cleanup.remove(chosenNode)
-                ++dHatExpansion
+                ++dHatExpansions
                 return chosenNode
             }
             bestFHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollOpen() ?: throw MetronomeException("Open is Empty!")
                 cleanup.remove(chosenNode)
-                ++fHatExpansion
+                ++fHatExpansions
                 return chosenNode
             }
             else -> {
                 val chosenNode = cleanup.pop() ?: throw MetronomeException("Cleanup is Empty!")
                 openList.remove(chosenNode)
-                ++aStarExpansion
+                ++aStarExpansions
                 return chosenNode
             }
         }
@@ -307,7 +306,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                     actionCost = successor.actionCost
                 }
                 if (!successorNode.open) {
-                    insertNode(successorNode, successorNode)
+                    insertNode(successorNode)
                 } else {
                     cleanup.update(successorNode)
                     openList.focal.update(successorNode)
@@ -326,6 +325,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
         assert(startState == iterationNode.state )
         actions.reverse()
+        println("fMinNodesExpanded: $aStarExpansions | fHatNodesExpanded: $fHatExpansions | dHatNodesExpanded $dHatExpansions")
         return actions
     }
 
@@ -333,7 +333,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         this.terminationChecker = terminationChecker
         val startTime = initializeAStar()
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
-//        var currentNode: Node<StateType>
         nodes[state] = node
         cleanup.add(node)
         openList.add(node, node)

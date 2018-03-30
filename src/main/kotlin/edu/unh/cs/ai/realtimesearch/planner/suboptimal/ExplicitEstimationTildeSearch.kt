@@ -52,7 +52,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-
     private val fTildeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde < rhs.fTilde -> -1
@@ -67,16 +66,16 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private val promisingComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fTilde < weight * rhs.f -> -1
-            lhs.fTilde > weight * rhs.f -> 1
+            lhs.fTilde <= weight * rhs.fHat -> -1
+            lhs.fTilde > weight * rhs.fHat-> 1
             else -> 0
         }
     }
 
     private val qualifiedComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
-            lhs.f < weight * rhs.fHat -> -1
-            lhs.f > weight * rhs.fHat -> 1
+            lhs.f <= weight * rhs.f -> -1
+            lhs.f > weight * rhs.f -> 1
             else -> 0
         }
     }
@@ -154,6 +153,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
 
         fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
+        fun peekFocal(): E? = focal.peek()
     }
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
@@ -295,7 +295,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 // something is in qualified AND promising
                 // return dHatMin which is from promising
             }
-        }
+       }
     }
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
@@ -365,18 +365,19 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
         assert(startState == iterationNode.state)
         actions.reverse()
+        println("fMinNodesExpanded: $fMinExpansion | fHatNodesExpanded: $fHatMinExpansion | dHatNodesExpanded $dHatMinExpansion")
         return actions
     }
 
     private fun insertNode(node: Node<StateType>) {
-        nodes[node.state] = node
-        fHatHeap.add(node)
         val fMinNode = (if (qualifiedNodes.isNotEmpty()) {
             qualifiedNodes.peekOpen()
         } else node)!!
         val fHatMinNode = fHatHeap.peek() ?: node
         // only add nodes which are qualified and promising
         qualifiedNodes.add(node, fMinNode)
+        nodes[node.state] = node
+        fHatHeap.add(node)
         promisingNodes.add(node, fHatMinNode)
     }
 
@@ -401,7 +402,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +
-                    "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
+                    "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!\n\t" +
+                    "fMinNodesExpanded: $fMinExpansion | fHatNodesExpanded: $fHatMinExpansion | dHatNodesExpanded $dHatMinExpansion")
         }
         throw GoalNotReachableException()
     }

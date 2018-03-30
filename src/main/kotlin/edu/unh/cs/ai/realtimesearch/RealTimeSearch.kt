@@ -35,15 +35,16 @@ fun main(args: Array<String>) {
 //    outputFile.createNewFile()
 //    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
 
-    println("Please provide a JSON list of configurations to execute:")
-    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+//    println("Please provide a JSON list of configurations to execute:")
+//    args.forEach(::println)
+    val rawConfiguration: String = readLine() ?: throw MetronomeException("Missing configuration on stdin.")
     if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
-    println(rawConfiguration)
+//    println(rawConfiguration)
 
     val loader = ExperimentConfiguration.serializer().list
     val parsedConfigurations = JSON.parse(loader, rawConfiguration)
-    println(parsedConfigurations)
+//    println(parsedConfigurations)
 
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
 

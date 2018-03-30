@@ -5,15 +5,74 @@
 # Run searkt with the configs
 
 import copy
+import datetime
+import getpass
+import itertools
 import json
 import os
 import sys
+from os import path
 from subprocess import run, TimeoutExpired, PIPE
-from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
-import itertools
+from threading import Thread
+
 import notify2
+import pandas as pd
+import paramiko
+from concurrent.futures import ThreadPoolExecutor
+from queue import Queue, Empty
+from tqdm import tqdm
+
+import slack_notification
+
+HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1]]
+
+
+class Experiment:
+    def __init__(self, configuration, command):
+        self.configuration = configuration
+        self.command = command
+        self.raw_result = None
+        self.result = None
+        self.error = None
+
+
+class Worker(Thread):
+    def __init__(self, hostname, job_queue, result_queue, progress_bar, password):
+        super(Worker, self).__init__()
+        self.progress_bar = progress_bar
+        self.processed_experiment_queue = result_queue
+        self.experiment_queue = job_queue
+        self.hostname = hostname
+        self.password = password
+
+    def run(self):
+        client = spawn_ssh_client(self.hostname, self.password)
+        while True:
+            try:
+                experiment = self.experiment_queue.get(block=False)
+                command_to_run = experiment.command
+                print("RUNNING: {}".format(command_to_run))
+                stdin, stdout, stderr = client.exec_command(command_to_run)
+                r = json.dumps(experiment.configuration)
+                stdin.write('[' + r + ']' + '\n')
+                stdin.flush()
+                result = {'stdout': stdout.readlines(), 'stderr': stderr.readlines()}
+                experiment.raw_result = result
+                experiment.error = result['stderr']
+                experiment.result = result['stdout']
+                self.processed_experiment_queue.put(experiment)
+                self.progress_bar.update()
+                self.experiment_queue.task_done()
+            except Empty:
+                break
+
+
+def spawn_ssh_client(hostname, password):
+    key = paramiko.RSAKey.from_private_key_file(path.expanduser("~/.ssh/id_rsa"))
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(hostname=hostname, pkey=key, port=22, password=password)
+    return client
 
 
 def generate_base_suboptimal_configuration():
@@ -41,8 +100,8 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    # weight = [3.0]
-    weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    weight = [3.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
@@ -59,7 +118,6 @@ def generate_base_suboptimal_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'EETS']])
-
 
     return compiled_configurations
 
@@ -132,6 +190,11 @@ def generate_base_configuration():
     return compiled_configurations
 
 
+def create_experiments(configurations):
+    command = "cd IdeaProjects/real-time-search && java -Xms7G -Xmx7G -jar build/libs/real-time-search-1.0-SNAPSHOT.jar"
+    return [Experiment(configuration, command) for configuration in configurations]
+
+
 def generate_racetrack():
     configurations = generate_base_configuration()
 
@@ -151,7 +214,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 101):
+    for puzzle in range(1, 2):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -181,24 +244,24 @@ def cartesian_product(base, key, values, filters=None):
     return new_base
 
 
-def execute_configurations(configurations, timeout=100000):
+def execute_configuration(configuration, timeout=100000):
     command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
-    json_configurations = json.dumps(configurations)
+    json_configuration = json.dumps(configuration)
 
     try:
-        completed_process = run(command, input=json_configurations.encode('utf-8'), stdout=PIPE, timeout=timeout)
+        completed_process = run(command, input=json_configuration.encode('utf-8'), stdout=PIPE, timeout=timeout)
     except TimeoutExpired:
         return [{'configuration': configuration, 'success': False, 'errorMessage': 'timeout'}
-                for configuration in configurations]
+                for configuration in configuration]
     except Exception as e:
         return [{'configuration': configuration, 'success': False, 'errorMessage': 'unknown error ::' + str(e)}
-                for configuration in configurations]
+                for configuration in configuration]
 
     # Create error configurations if the execution failed
     if completed_process.returncode != 0:
         message = completed_process.stdout.decode('utf-8')
         return [{'configuration': configuration, 'success': False, 'errorMessage': 'execution failed ::' + message}
-                for configuration in configurations]
+                for configuration in configuration]
 
     raw_output = completed_process.stdout.decode('utf-8').splitlines()
 
@@ -206,6 +269,11 @@ def execute_configurations(configurations, timeout=100000):
     results = json.loads(raw_output[result_offset])
 
     return results
+
+
+def create_workers_for_hosts(hosts, command_queue, result_queue, progress_bar, password):
+    return [Worker(hostname=host, job_queue=command_queue, result_queue=result_queue,
+                   progress_bar=progress_bar, password=password) for host in hosts]
 
 
 def parallel_execution(configurations, threads=1):
@@ -239,39 +307,60 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/results_srts.json', 'w') as outfile:
-        json.dump(results_json, outfile)
+def save_results(results):
+    f = open("output/data-{:%H-%M-%d-%m-%y}".format(datetime.datetime.now()), 'w')
+    for result in results:
+        # f.write(result.result)
+        print(result.raw_result)
+
+    # with open('output/results_srts.json', 'w') as outfile:
+    #     json.dump(results_json, outfile)
 
 
 def main():
     notify2.init('searKt')
     os.chdir('..')
 
+    command_queue = Queue()
+    result_queue = Queue()
+
+    configurations = generate_tile_puzzle()  # generate_racetrack()
+
+    experiments = create_experiments(configurations)
+    for experiment in experiments:
+        command_queue.put(experiment)
+
+    progress_bar = tqdm(total=command_queue.qsize())
+
     if not build_searkt():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
-
-    configurations = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
-    results = parallel_execution(configurations, 1)
+    slack_notification.start_experiment_notification(len(configurations))
+    password = getpass.getpass("SSH Authentication Password to start experiments [ai.cs.unh.edu]:")
+    workers = create_workers_for_hosts(HOSTS, command_queue, result_queue, progress_bar, password)
+    # Start workers
+    for worker in workers:
+        worker.start()
 
-    for result in results:
-        result.pop('actions', None)
-        result.pop('systemProperties', None)
+    # Wait for workers
+    for worker in workers:
+        worker.join()
+
+    command_queue.join()
+
+    results = [result_queue.get() for i in range(result_queue.qsize())]
 
     save_results(results)
-    print_summary(results)
+    # print_summary(results)
 
     print('{} results have been received.'.format(len(results)))
     n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)),
-                                 "notification-message-email")
+                             "notification-message-email")
     n.show()
+    slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':
     main()
-
-
-
