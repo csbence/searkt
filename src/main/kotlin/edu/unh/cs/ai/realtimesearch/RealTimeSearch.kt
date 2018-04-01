@@ -5,21 +5,12 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.planner.realtime.RealTimeComprehensiveSearch.ComprehensiveConfigurations.BACKLOG_RATIO
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
-import edu.unh.cs.ai.realtimesearch.planner.realtime.*
-import kotlinx.io.PrintWriter
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -71,8 +62,12 @@ private fun generateConfigurations(): String {
 //                    GRID_WORLD to "input/vacuum/empty.vw",
 //                    GRID_WORLD to "input/vacuum/h_400.vw",
 //                    GRID_WORLD to "input/vacuum/slalom_04.vw",
-                    GRID_WORLD to "input/vacuum/big_minimum.vw"
-//                    GRID_WORLD to "input/vacuum/wall.vw",
+//                    GRID_WORLD to "input/vacuum/big_minimum.vw"
+                    GRID_WORLD to "input/vacuum/minima/minima0.vw",
+                    GRID_WORLD to "input/vacuum/minima/minima1.vw",
+                    GRID_WORLD to "input/vacuum/minima/minima2.vw",
+                    GRID_WORLD to "input/vacuum/minima/minima3.vw"
+//                    GRID_WORLD to "input/vacuum/wall.vw"
 //                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
 //                    GRID_WORLD to "input/vacuum/cups.vw",
 //                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
@@ -85,8 +80,9 @@ private fun generateConfigurations(): String {
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(RTC, LSS_LRTA_STAR),
-            actionDurations = listOf(50L, 100L, 150L, 200L, 250L),//, 3200L, 6400L, 12800L),
+            planners = listOf(CES, LSS_LRTA_STAR),
+//            planners = listOf(WEIGHTED_A_STAR),
+            actionDurations = listOf(50L, 100L),//150L, 200L, 250L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
@@ -95,7 +91,9 @@ private fun generateConfigurations(): String {
             plannerExtras = listOf(
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(RTC, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(RTC, RealTimeComprehensiveSearch.ComprehensiveConfigurations.BACKLOG_RATIO, listOf(2.0, 10.0, 25.0)),
+                    Triple(RTC, BACKLOG_RATIO, listOf(10.0, Double.POSITIVE_INFINITY)),
+                    Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(CES, BACKLOG_RATIO, listOf(Double.POSITIVE_INFINITY)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(

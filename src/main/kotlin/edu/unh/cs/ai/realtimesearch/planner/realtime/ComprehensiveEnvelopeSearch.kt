@@ -11,36 +11,35 @@ import org.slf4j.LoggerFactory
 import java.lang.Double.min
 import java.lang.Long.max
 import java.util.*
-import kotlin.math.ceil
 import kotlin.system.measureTimeMillis
 
 /**
- * Examines the full state space as time allows, propagating back learned heuristic values to all predecessors,
- * generating them if necessary. Maintains the frontier of to-be-examined nodes between iterations
- * Action Plan is single-action only picking the node with the best h-value of immediate neighbors
+ * Examines the full state space as time allows, propagating back learned heuristic throughout all generated state
+ * values through the closed list. Maintains the frontier of to-be-examined nodes between iterations
+ * Action Plan is composed of simply the nodes with the best heuristic value adjacent to the current agent state
  * @author Kevin C. Gall
- * @date 3/30/18
+ * @date 3/17/18
  */
-class RealTimeComprehensiveSearch<StateType: State<StateType>>(
+class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         val domain: Domain<StateType>,
         val configuration : ExperimentConfiguration) : RealTimePlanner<StateType>(){
     //Configuration parameters
     private val expansionRatio : Double = configuration.backlogRatio ?: 1.0
     //Logger and timekeeping
-    private val logger = LoggerFactory.getLogger(RealTimeComprehensiveSearch::class.java)
-    var explorationTimer = 0L
+    private val logger = LoggerFactory.getLogger(ComprehensiveEnvelopeSearch::class.java)
+    var dijkstraTimer = 0L
+    var expansionTimer = 0L
 
 
     class Node<StateType: State<StateType>> (val state: StateType, var heuristic: Double) : Indexable {
         override var index: Int = -1
 
         //add to ancestors
-        val ancestors = HashMap<StateType, DiEdge<StateType>>()
+        val ancestors = ArrayList<DiEdge<StateType>>()
         //will add to successors when node is expanded
-        val successors = HashMap<StateType, DiEdge<StateType>>()
+        val successors = ArrayList<DiEdge<StateType>>()
 
         var onGoalPath = false
-        var onFrontier = false
         var expanded = false
         var visitCount = 0
 
@@ -58,15 +57,15 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
             fun <StateType : State<StateType>> createEdge(source : Node<StateType>, destination : Node<StateType>, actionCost : Long, action : Action) {
                 val edge = DiEdge(source, destination, actionCost, action)
 
-                source.successors[destination.state] = edge
-                destination.ancestors[source.state] = edge
+                source.successors.add(edge)
+                destination.ancestors.add(edge)
             }
         }
     }
 
     //Directed edge class - describes relationship from node to node
     data class DiEdge<StateType : State<StateType>> (val source : Node<StateType>, val destination : Node<StateType>,
-                                                     val actionCost : Long, val action: Action) {
+                                                val actionCost : Long, val action: Action) {
         fun getCost() : Double {
             return destination.heuristic + actionCost
         }
@@ -102,12 +101,12 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
         val lhsFuzzyF = lhs.heuristic + lhsFuzzyG
         val rhsFuzzyF = rhs.heuristic + rhsFuzzyG
 
-        //break ties on lower estimate of G -> closer to agent!
+        //break ties on lower H -> this is better info!
         when {
             lhsFuzzyF < rhsFuzzyF -> -1
             lhsFuzzyF > rhsFuzzyF -> 1
-            lhsFuzzyG < rhsFuzzyG -> -1
-            rhsFuzzyG > lhsFuzzyG -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            rhs.heuristic > lhs.heuristic -> 1
             lhs.onGoalPath -> -1
             rhs.onGoalPath -> 1
             else -> 0
@@ -118,7 +117,8 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
     private val goalPathQueue = AdvancedPriorityQueue(1000000, backlogComparator)
 
     override fun init() {
-        explorationTimer = 0
+        dijkstraTimer = 0
+        expansionTimer = 0
         foundGoal = false
         iterationCount = 0
         lastExpansionCount = 0
@@ -151,9 +151,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
             """.trimMargin())
         if (iterationCount == 0) {
             frontier.add(Node(sourceState, domain.heuristic(sourceState)))
-            val firstNode = frontier.peek()
-            firstNode!!.onFrontier = true
-            closed[sourceState] = frontier.peek()!!
+            closed.put(sourceState, frontier.peek()!!)
         }
 
         currentAgentState = sourceState
@@ -164,14 +162,17 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
             throw GoalNotReachableException("Current state unexamined. The planner is confused!")
         }
 
-        explorationTimer += measureTimeMillis { exploreStateSpace(terminationChecker, thisNode) }
+        dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
+
+        expansionTimer += measureTimeMillis { foundGoal = expandFrontier(terminationChecker, thisNode) }
 
         iterationCount++
 
         logger.debug("""
             |*****Status after Iteration $iterationCount*****
             |Timers:
-            |   Exploration - $explorationTimer
+            |   Dijkstra - $dijkstraTimer
+            |   Expansion - $expansionTimer
             |
             |Frontier Size: ${frontier.size}
             |Backlog Queue Size: ${backlogQueue.size}
@@ -179,66 +180,40 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
         return moveAgent(sourceState)
     }
 
-    //Learning / Exploration facets, interleaved
-    private fun exploreStateSpace(terminationChecker: TerminationChecker, sourceNode : Node<StateType>) {
-        logger.debug("Exploration")
+    //Learning Phase
+    private fun dijkstra(terminationChecker: TerminationChecker) {
+        val limit = (expansionRatio * lastExpansionCount).toLong()
 
+        logger.debug("Learning Phase: Limit $limit")
+        //resort min queues
         backlogQueue.reorder(backlogComparator)
 
-        var nextNode : Node<StateType>? = if (!sourceNode.expanded) {
-            if (sourceNode.onFrontier) {
-                frontier.remove(sourceNode)
-                sourceNode.index = -1
-            }
-            sourceNode
-        } else frontier.pop()
-
-        val limit : Int = ceil(expansionRatio).toInt()
-        term@ while (!terminationChecker.reachedTermination()) {
-            if (nextNode === null && !foundGoal) {
-                throw GoalNotReachableException("No reachable path to goal")
-            } else if (nextNode !== null) {
-                val expandedGoal = expandFrontierNode(nextNode)
-                foundGoal = foundGoal || expandedGoal
-
-                terminationChecker.notifyExpansion()
-                nextNode.expanded = true
-                nextNode.onFrontier = false
-            } else if (backlogQueue.isEmpty()) {
+        for (i in 1..limit) {
+            //break checks
+            if (terminationChecker.reachedTermination()) {
+                logger.debug("Learning phase could not complete before termination")
                 break
             }
 
-            for (i in 1..limit) {
-                if (terminationChecker.reachedTermination()) break
-
-                if (backlogQueue.isEmpty()) {
-                    logger.debug("Reached the end of the backlog queue")
-                    break
-                }
-
-                val learnNode = backlogQueue.pop()!!
-
-                var expanded = false
-                if (domain.isGoal(learnNode.state)
-                        || updateNodeHeuristic(learnNode)) {
-                    expanded = addAncestorsToBacklog(learnNode, !foundGoal)
-                }
-
-                if (expanded) {
-                    terminationChecker.notifyExpansion()
-                    expandedNodeCount++
-                }
+            if (backlogQueue.isEmpty()) {
+                logger.debug("Reached the end of the backlog queue")
+                break
             }
 
-            nextNode = if (!terminationChecker.reachedTermination()) frontier.pop() else null
+            val nextNode = backlogQueue.pop()!! //assert not null: we already checked for empty queue
+
+            if (domain.isGoal(nextNode.state)) {
+                addAncestorsToBacklog(nextNode)
+            } else {
+                updateNodeHeuristic(nextNode)
+            }
         }
     }
 
-    private fun updateNodeHeuristic(node : Node<StateType>) : Boolean {
+    private fun updateNodeHeuristic(node : Node<StateType>) {
         var bestH = Double.POSITIVE_INFINITY
         var bestNode : Node<StateType>? = null
-        for (successor in node.successors) {
-            val successorEdge = successor.value
+        for (successorEdge in node.successors) {
             val successorNode = successorEdge.destination
 
             //checking successor node h + the cost to get to that successor
@@ -252,54 +227,61 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
         if (node.heuristic < bestH && bestNode != null) {
             node.heuristic = bestH
 
-            //add ancestors to backlog for examination
-            return true
+            //if node is not on goal, add ancestors to backlog for examination
+            addAncestorsToBacklog(node)
         }
-
-        return false
     }
 
-    private fun addAncestorsToBacklog(node : Node<StateType>, noExpansion : Boolean = false) : Boolean {
-        val ancestorStates = domain.predecessors(node.state)
+    private fun addAncestorsToBacklog(node : Node<StateType>) {
+        node.ancestors.forEach {
+            if (node.onGoalPath) it.source.onGoalPath = true
 
-        var expandedNewNodes = false
-
-        ancestorStates.forEach {
-            var ancestorNode : Node<StateType>?
-            if (!closed.containsKey(it.state)) {
-                if (noExpansion) {
-                    return@forEach
-                }
-
-                expandedNewNodes = true
-
-                ancestorNode = Node(it.state, domain.heuristic(it.state))
-                closed[it.state] = ancestorNode
-
-                if (!foundGoal) {
-                    frontier.add(ancestorNode)
-                    ancestorNode.onFrontier = true
-                }
-                generatedNodeCount++
-            } else {
-                ancestorNode = closed[it.state]
-            }
-
-            ancestorNode ?: throw NullPointerException("Closed list has State Key which points to Null")
-
-            //only adding edge if ancestor has not been registered in the ancestor map yet
-            if (!node.ancestors.containsKey(ancestorNode.state)) {
-                Node.createEdge(ancestorNode, node, it.actionCost, it.action)
-            }
-
-            if (node.onGoalPath) ancestorNode.onGoalPath = true
-
-            if (!ancestorNode.onFrontier && !backlogQueue.contains(ancestorNode)) {
-                backlogQueue.add(ancestorNode)
+            if (!backlogQueue.contains(it.source)) {
+                backlogQueue.add(it.source)
             }
         }
+    }
 
-        return expandedNewNodes
+    /**
+     * Expansion Phase<br/>
+     * Similar to A* except taking only h into account, not g (or f)
+     * If the goal is found, it is added to the backlog queue, and expansion ends immediately
+     * @return whether or not the goal was found
+     */
+    private fun expandFrontier(terminationChecker: TerminationChecker, sourceNode : Node<StateType>) : Boolean {
+        logger.debug("Expansion Phase")
+
+        //reset in prep for next learning phase
+        val tempLastExpansionCount = lastExpansionCount
+        lastExpansionCount = 0
+
+        var nextNode : Node<StateType>? = if (!sourceNode.expanded) {
+            frontier.remove(sourceNode)
+            sourceNode.index = -1
+            sourceNode
+        } else frontier.pop()
+
+        while (!terminationChecker.reachedTermination()) {
+            if (nextNode === null) {
+                if (foundGoal) {
+                    lastExpansionCount = max(lastExpansionCount, tempLastExpansionCount)
+                    return true
+                } else {
+                    throw GoalNotReachableException("No reachable path to goal")
+                }
+            } else {
+                val expandedGoal = expandFrontierNode(nextNode)
+                foundGoal = foundGoal || expandedGoal
+
+                terminationChecker.notifyExpansion()
+                nextNode.expanded = true
+            }
+
+            lastExpansionCount++
+            nextNode = if (!terminationChecker.reachedTermination()) frontier.pop() else null
+        }
+
+        return foundGoal
     }
 
     private fun expandFrontierNode(frontierNode : Node<StateType>) : Boolean {
@@ -308,8 +290,9 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
             frontierNode.onGoalPath = true
             backlogQueue.add(frontierNode)
 
-            //eliminate frontier. We've reached a new phase of the algorithm
-            frontier.clear()
+            //reorder frontier on fuzzy f. Now that we've found the goal, we want to expand nodes around the agent first
+            frontier.reorder(backlogComparator)
+            println("found goal")
         } else {
             val successors = domain.successors(frontierNode.state)
 
@@ -321,10 +304,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
                     successorNode = Node(it.state, domain.heuristic(it.state))
                     closed[it.state] = successorNode
 
-                    if (!foundGoal) {
-                        frontier.add(successorNode)
-                        successorNode.onFrontier = true
-                    }
+                    frontier.add(successorNode)
                     generatedNodeCount++
                 } else {
                     successorNode = closed[it.state]
@@ -333,9 +313,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
                 //null check
                 successorNode ?: throw NullPointerException("Closed list has State Key which points to Null")
 
-                if (!frontierNode.successors.containsKey(successorNode.state)) {
-                    Node.createEdge(frontierNode, successorNode, it.actionCost, it.action)
-                }
+                Node.createEdge(frontierNode, successorNode, it.actionCost, it.action)
 
                 val tempH = successorNode.heuristic + it.actionCost
                 if (tempH < bestH) {
@@ -365,7 +343,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
         val actionList = ArrayList<ActionBundle>()
 
         var currentNode = closed[sourceState] ?:
-        throw NullPointerException("Closed list has State Key which points to Null")
+            throw NullPointerException("Closed list has State Key which points to Null")
 
         //hard coding limit of 1 for now. May change later, so keeping it in loop
         val actionPlanLimit = 1
@@ -375,7 +353,7 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
             //break when currentNode is on the frontier - we haven't examined past it yet!
             if (currentNode.successors.size == 0) break
 
-            val pathEdge= currentNode.successors.values.reduce { minSoFar, next ->
+            val pathEdge= currentNode.successors.reduce { minSoFar, next ->
                 val lhsCost = minSoFar.getCost()
                 val rhsCost = next.getCost()
 
@@ -386,16 +364,14 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
                     lhsCost > rhsCost -> next
                     minSoFar.destination.heuristic < next.destination.heuristic -> minSoFar
                     minSoFar.destination.heuristic > next.destination.heuristic -> next
-                    minSoFar.destination.onFrontier -> next
                     else -> minSoFar
                 }
             }
 
             actionList.add(ActionBundle(pathEdge.action, pathEdge.actionCost))
 
-            //update the heuristic of the node we just left right now. This is so we don't get caught in local minima.
-            //Additionally, prevent expansion when adding ancestors so we don't go over our expansion limit
-            if (updateNodeHeuristic(currentNode)) addAncestorsToBacklog(currentNode, true)
+            //update the heuristic of the node we just left right now. This is so we don't get caught in local minima
+            updateNodeHeuristic(currentNode)
 
             currentNode = pathEdge.destination
         }
@@ -407,9 +383,5 @@ class RealTimeComprehensiveSearch<StateType: State<StateType>>(
         return actionList
     }
 
-    enum class ComprehensiveConfigurations(val configurationName: String) {
-        BACKLOG_RATIO ("backlogRatio");
 
-        override fun toString() = configurationName
-    }
 }
