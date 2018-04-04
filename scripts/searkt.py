@@ -17,8 +17,8 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EETS', 'EES', 'DPS', 'WEIGHTED_A_STAR']
-    expansion_limit = [5000000]
+    algorithms_to_run = ['EES', 'EETS', 'WEIGHTED_A_STAR']
+    expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
     action_durations = [1]
@@ -34,32 +34,35 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
     for key, value in base_configuration.items():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
+    print(len(compiled_configurations))
+
     # Algorithm specific configurations
-    weight = [3.0]
+    weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    # weight = [3.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', weight,
-                                                [['algorithmName', 'DPS']])
+    # compiled_configurations = cartesian_product(compiled_configurations,
+    #                                             'weight', weight,
+    #                                             [['algorithmName', 'DPS']])
 
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'EES']])
 
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', weight,
+                                                 'weight', weight,
                                                 [['algorithmName', 'EETS']])
-
 
     return compiled_configurations
 
@@ -182,7 +185,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -240,7 +243,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json):
-    with open('output/results_srts.json', 'w') as outfile:
+    with open('output/results.json', 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -261,17 +264,15 @@ def main():
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
+    print(results)
     save_results(results)
     print_summary(results)
 
     print('{} results have been received.'.format(len(results)))
     n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)),
-                                 "notification-message-email")
+                             "notification-message-email")
     n.show()
 
 
 if __name__ == '__main__':
     main()
-
-
-

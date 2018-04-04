@@ -89,5 +89,9 @@ data class ExperimentConfiguration(
 
         // Anytime Experiment
         @Optional
-        val anytimeMaxCount: Long? = null
+        val anytimeMaxCount: Long? = null,
+
+        // Error Models
+        @Optional val errorModel: String? = null
+
 )

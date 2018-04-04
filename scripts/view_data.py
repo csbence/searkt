@@ -42,7 +42,7 @@ def process_data():
                 weight = instance["configuration"]["weight"]
                 alg = instance["configuration"]["algorithmName"]
                 domain_path = instance["configuration"]["domainPath"]
-                data_dict["algorithm"].append(str(alg))
+                data_dict["algorithm"].append(str(alg) + '')
                 data_dict["instance"].append(i)
                 data_dict["weight"].append(weight)
                 data_dict["logWeight"].append(round(math.log10(weight), 2))
@@ -54,7 +54,7 @@ def process_data():
                                 str(weight) + " Path: " + domain_path)
                         failed_experiments = failed_experiments + 1
                         print(instance["errorMessage"])
-                        # print(instance["errorDetails"])
+                        print(instance["errorDetails"])
                     try:
                         if key == "success" and instance[str(key)] is True:
                             # print('{} -> {}'.format(str(key), str(instance[str(key)])))
@@ -73,7 +73,10 @@ def filter_nodes_generated(df):
     over_five_million["DPS"] = 0
     over_five_million["WEIGHTED_A_STAR"] = 0
     over_five_million["EES"] = 0
+    over_five_million["EESglobal"] = 0
+    over_five_million["WEIGHTED_A_STARglobal"] = 0
     over_five_million["EETS"] = 0
+    over_five_million["EETSglobal"] = 0
     for key in df.keys():
         # print(key)
         if key == "algorithm":
@@ -83,12 +86,12 @@ def filter_nodes_generated(df):
                 if generated_nodes >= 5000000:
                     over_five_million[item] = over_five_million[item] + 1
                 index = index + 1
-        if key == "generatedNodes":
-            index = 0
-            for item in df[key]:
-                if int(item) >= 5000000:
-                    df.iloc[index, df.columns.get_loc("success")] = False
-                index = index + 1
+        # if key == "generatedNodes":
+        #     index = 0
+        #     for item in df[key]:
+        #         if int(item) >= 5000000:
+        #             df.iloc[index, df.columns.get_loc("success")] = False
+        #         index = index + 1
         if key == "experimentRunTime":
             index = 0
             for item in df[key]:

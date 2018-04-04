@@ -5,7 +5,7 @@ import java.util.*
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-open class AdvancedPriorityQueue<T>(private var queue: Array<T?>, private var comparator: Comparator<in T>, private val setIndex: (T, Int) -> Unit, private val getIndex: (T) -> Int) {
+open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, private var comparator: Comparator<in T>, private val setIndex: (T, Int) -> Unit, private val getIndex: (T) -> Int) {
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
     private var resizable = false
@@ -15,10 +15,8 @@ open class AdvancedPriorityQueue<T>(private var queue: Array<T?>, private var co
         get() = queue
 
     companion object {
-        inline operator fun <reified T: Indexable> invoke(capacity: Int, comparator: Comparator<in T>,
-                                                          noinline setIndex: (T, Int) -> Unit = { item, index -> item.index = index},
-                                                          noinline getIndex: (T) -> Int = { item -> item.index}): AdvancedPriorityQueue<T> =
-            AdvancedPriorityQueue(arrayOfNulls(capacity), comparator, setIndex, getIndex)
+        inline operator fun <reified T: Indexable> invoke(capacity: Int, comparator: Comparator<in T>) =
+            AdvancedPriorityQueue(arrayOfNulls(capacity), comparator, {item, index -> item.index = index } , {item -> item.index })
     }
 
     private fun grow(minCapacity: Int) {

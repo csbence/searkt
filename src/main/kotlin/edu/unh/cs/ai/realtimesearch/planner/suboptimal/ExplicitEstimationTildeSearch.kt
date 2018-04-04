@@ -88,9 +88,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private val promisingSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.promisingIndex = index }
     private val promisingGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.promisingIndex }
 
-    private val fHatSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.fHatIndex = index }
-    private val fHatGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.fHatIndex }
-
     // set up for the containers to store the nodes
 
     private val qualifiedRBTree = TreeMap<Node<StateType>, Node<StateType>>(fNodeComparator)
@@ -106,14 +103,14 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private val qualifiedNodes = ExplicitQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, qualifiedGetIndex)
     private val promisingNodes = ExplicitQueue(promisingRBTree, promisingFocal, promisingComparator, promisingGetIndex)
 
-    private val fHatHeap = AdvancedPriorityQueue(arrayOfNulls(100000000), fHatComparator, fHatSetIndex, fHatGetIndex)
+    private val fHatHeap = AdvancedPriorityQueue(100000000, fHatComparator)
 
     private var fMinExpansion = 0
     private var fHatMinExpansion = 0
     private var dHatMinExpansion = 0
 
     class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
-                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E> {
+                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E>, E : Indexable {
 
         fun isEmpty(): Boolean = open.firstEntry() == null || open.firstEntry().value == null
 
@@ -158,15 +155,13 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action, var d: Double,
-                                             var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
-        val open: Boolean
+                                             var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) : Indexable, RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+        override val open: Boolean
             get() = index >= 0
 
         var qualifiedIndex: Int = -1
 
         var promisingIndex: Int = -1
-
-        var fHatIndex: Int = -1
 
         private var redBlackNode: RedBlackTreeNode<Node<StateType>, Node<StateType>>? = null
 
@@ -192,7 +187,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         private var dHatMean: Double = 0.0
         private var dHatVariance: Double = 0.0
 
-        var index: Int = -1
+        override var index: Int = -1
 
         init {
             computePathHats(parent, actionCost.toDouble())
@@ -346,11 +341,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 if (!successorNode.open) {
                     insertNode(successorNode)
                 } else {
-                    fHatHeap.update(successorNode)
-                    qualifiedNodes.focal.update(successorNode)
-                    qualifiedNodes.open[successorNode] = successorNode
-                    promisingNodes.focal.update(successorNode)
-                    promisingNodes.open[successorNode] = successorNode
+                    nodes[successorState] = successorNode
                 }
             }
         }
@@ -365,7 +356,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
         assert(startState == iterationNode.state)
         actions.reverse()
-        println("fMinNodesExpanded: $fMinExpansion | fHatNodesExpanded: $fHatMinExpansion | dHatNodesExpanded $dHatMinExpansion")
+//        println("fMinNodesExpanded: $fMinExpansion | fHatNodesExpanded: $fHatMinExpansion | dHatNodesExpanded $dHatMinExpansion")
         return actions
     }
 

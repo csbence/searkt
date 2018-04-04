@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 import slack_notification
 
-HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1]]
+HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 
 
 class Experiment:
@@ -51,7 +51,7 @@ class Worker(Thread):
             try:
                 experiment = self.experiment_queue.get(block=False)
                 command_to_run = experiment.command
-                print("RUNNING: {}".format(command_to_run))
+                # print("RUNNING: {}".format(command_to_run))
                 stdin, stdout, stderr = client.exec_command(command_to_run)
                 r = json.dumps(experiment.configuration)
                 stdin.write('[' + r + ']' + '\n')
@@ -76,8 +76,8 @@ def spawn_ssh_client(hostname, password):
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'EETS', 'DPS', 'WEIGHTED_A_STAR']
-    expansion_limit = [5000000]
+    algorithms_to_run = ['EES', 'EETS', 'WEIGHTED_A_STAR']
+    expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
     action_durations = [1]
@@ -93,6 +93,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
@@ -100,7 +101,7 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    weight = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
@@ -149,7 +150,7 @@ def generate_base_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    weight = [1.5, 2.0, 2.5, 3.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -214,7 +215,7 @@ def generate_tile_puzzle():
     configurations = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 2):
+    for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -308,13 +309,17 @@ def print_summary(results_json):
 
 
 def save_results(results):
-    f = open("output/data-{:%H-%M-%d-%m-%y}".format(datetime.datetime.now()), 'w')
+    l_results = []
+    o_results = []
+    f = open("output/data-{:%H-%M-%d-%m-%y}.json".format(datetime.datetime.now()), 'w')
     for result in results:
-        # f.write(result.result)
-        print(result.raw_result)
-
-    # with open('output/results_srts.json', 'w') as outfile:
-    #     json.dump(results_json, outfile)
+        parse_result = [result.result[0].strip(), result.result[1].strip()]
+        result_offset = parse_result.index('#') + 1
+        l_results.append((parse_result[result_offset]))
+    for l in l_results:
+        o_results.append((json.loads(l)[0]))
+    f.write(json.dumps(o_results))
+    f.close()
 
 
 def main():

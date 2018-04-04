@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.heavytiles
+package edu.unh.cs.ai.realtimesearch.environment.inversetiles
 
 import edu.unh.cs.ai.realtimesearch.environment.State
 
@@ -17,9 +17,9 @@ import edu.unh.cs.ai.realtimesearch.environment.State
  * (0, 1) == 3
  *
  */
-data class HeavyTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double, val distance: Double) : State<HeavyTilePuzzle4State> {
+data class InverseTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double, val distance: Double) : State<InverseTilePuzzle4State> {
 
-    override fun copy(): HeavyTilePuzzle4State = HeavyTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic, distance)
+    override fun copy(): InverseTilePuzzle4State = InverseTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic, distance)
 
     fun getIndex(x: Int, y: Int): Int = 4 * y + x
 
@@ -38,7 +38,7 @@ data class HeavyTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val h
     override fun equals(other: Any?): Boolean = when {
         other == null -> false
         other === this -> true
-        other !is HeavyTilePuzzle4State -> false
+        other !is InverseTilePuzzle4State -> false
         else -> tiles contentEquals other.tiles
     }
 }

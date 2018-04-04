@@ -40,4 +40,18 @@ class HeavyTilePuzzleTest {
         assertTrue { initialState.distance != initialState.heuristic }
 
     }
+
+    @Test
+    fun testSuccessorActionCost() {
+        val tiles = "0 4 1 2 8 5 6 3 12 9 10 7 13 14 15 11"
+        val instance = createInstanceFromString(tiles)
+        val heavyTilePuzzle = HeavyTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = heavyTilePuzzle.initialState
+        println(initialState)
+        val successorsLevel1 = heavyTilePuzzle.domain.successors(initialState)
+        successorsLevel1.forEach(::println)
+
+
+
+    }
 }

@@ -7,24 +7,27 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.RedBlackTreeElement
-import edu.unh.cs.ai.realtimesearch.util.RedBlackTreeNode
-import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.util.*
 import java.util.*
 import kotlin.Comparator
 
 class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
+    private val errorModel: String = configuration.errorModel
+            ?: throw MetronomeException("Error model for Explicit Estimation Search is not specified.")
 
     var terminationChecker: TerminationChecker? = null
 
-    var aStarExpansions = 0
-    var dHatExpansions = 0
-    var fHatExpansions = 0
+    private var heuristicErrorGlobalSum: Double = 0.0
+    private var globalSamples: Double = 17.0 // start as if we have already seen some (perfect) samples
+    private var distanceErrorGlobalSum: Double = 0.0
 
-    private val cleanupNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private var aStarExpansions = 0
+    private var dHatExpansions = 0
+    private var fHatExpansions = 0
+
+    private val cleanupNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -34,7 +37,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val focalNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val focalNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.dHat < rhs.dHat -> -1
             lhs.dHat > rhs.dHat -> 1
@@ -46,7 +49,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val openNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val openNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fHat < rhs.fHat -> -1
             lhs.fHat > rhs.fHat -> 1
@@ -58,7 +61,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val explicitNodeComparator = Comparator<ExplicitEstimationSearch.Node<StateType>> { lhs, rhs ->
+    private val explicitNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fHat < weight * rhs.fHat -> -1
             lhs.fHat > weight * rhs.fHat -> 1
@@ -66,21 +69,18 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val setFocalIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.focalIndex = index }
+    private val setFocalIndex: (node: Node<StateType>, i: Int) -> (Unit) = { node, i -> node.focalIndex = i }
     private val getFocalIndex: (node: Node<StateType>) -> (Int) = { node -> node.focalIndex }
-
-    private val setCleanupIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.cleanupIndex = index }
-    private val getCleanupIndex: (node: Node<StateType>) -> (Int) = { node -> node.cleanupIndex }
 
     private val rbTree = TreeMap<Node<StateType>, Node<StateType>>(openNodeComparator) //RedBlackTree(openNodeComparator, explicitNodeComparator)
     private val focal = AdvancedPriorityQueue(arrayOfNulls(100000000), focalNodeComparator, setFocalIndex, getFocalIndex)
 
-    private val nodes: HashMap<StateType, ExplicitEstimationSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
     private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator, getFocalIndex)
-    private val cleanup = AdvancedPriorityQueue(arrayOfNulls(100000000), cleanupNodeComparator, setCleanupIndex, getCleanupIndex)
+    private val cleanup = AdvancedPriorityQueue(100000000, cleanupNodeComparator)
 
     class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
-                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E> {
+                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E>, E : Indexable {
 
         fun isEmpty(): Boolean = open.firstEntry().value == null
 
@@ -116,26 +116,29 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return e
         }
 
-        fun peekOpen(): E? = if(open.firstEntry() != null) open.firstEntry().value else null
+        fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
         fun peekFocal(): E? = focal.peek()
     }
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action, var d: Double,
-                                             var parent: ExplicitEstimationSearch.Node<StateType>? = null) : RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
-        val open: Boolean
-            get() =  index >= 0
+    inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
+                                                       var actionCost: Long, var action: Action, var d: Double,
+                                                       var parent: Node<StateType>? = null) : Indexable, RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+        override fun toString(): String {
+            return "EES.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
+                    "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
+        }
+        override val open: Boolean
+            get() = index >= 0
 
         var focalIndex: Int = -1
-
-        var cleanupIndex: Int = -1
 
         private var redBlackNode: RedBlackTreeNode<Node<StateType>, Node<StateType>>? = null
 
         val f: Double
             get() = cost + heuristic
 
-        private val depth: Int = parent?.depth?.plus(1) ?: 17
+        private val artificialDepth: Int = parent?.artificialDepth?.plus(1) ?: 17
+        val depth: Int = parent?.depth?.plus(1) ?: 0
 
         private var sseH = 0.0
 
@@ -151,30 +154,15 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         private var dHatMean: Double = 0.0
         private var dHatVariance: Double = 0.0
 
-        var index: Int = -1
+        override var index: Int = -1
 
         init {
-            computePathHats(parent, actionCost.toDouble())
-        }
-
-        private fun calculateDHatMean(): Double {
-            return parent!!.dHatMean + ((dHat - parent!!.dHatMean) / depth)
-        }
-
-        private fun calculateDHatVariance(): Double {
-            val sampleVariance = parent!!.dHatVariance + ((dHat - parent!!.dHatMean)*(dHat - dHatMean))
-            return sampleVariance / (depth - 1)
-        }
-
-        private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
-            if (parent != null) {
-                this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
-                this.sseD = parent.sseD + ((1 + d) - parent.d)
+            when (errorModel) {
+                "path" -> computePathHats(parent, actionCost.toDouble())
+                "global" -> computeGlobalHats()
+                else -> throw MetronomeException("Unknown and unsupported error model $errorModel, supported models" +
+                        ": \"path\" or \"global\"")
             }
-
-            this.hHat = computeHHat()
-            this.dHat = computeDHat()
-
             dHatMean = if (parent == null) {
                 dHat
             } else {
@@ -186,15 +174,41 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             } else {
                 calculateDHatVariance()
             }
+        }
 
+        private fun calculateDHatMean(): Double {
+            return parent!!.dHatMean + ((dHat - parent!!.dHatMean) / artificialDepth)
+        }
+
+        private fun calculateDHatVariance(): Double {
+            val sampleVariance = parent!!.dHatVariance + ((dHat - parent!!.dHatMean) * (dHat - dHatMean))
+            return sampleVariance / (artificialDepth - 1)
+        }
+
+        private fun computeGlobalHats() {
+            val currentGlobalHeuristicError = heuristicErrorGlobalSum / globalSamples
+            val currentGlobalDistanceError = distanceErrorGlobalSum / globalSamples
+            this.hHat = heuristic + ((this.d / (1 - currentGlobalHeuristicError)) * currentGlobalHeuristicError)
+            this.dHat = this.d / (1 - currentGlobalDistanceError)
+            assert(fHat >= f)
+            assert(dHat >= 0)
+        }
+
+        private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
+            if (parent != null) {
+                this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
+                this.sseD = parent.sseD + ((1 + d) - parent.d)
+            }
+            this.hHat = computeHHat()
+            this.dHat = computeDHat()
             assert(fHat >= f)
             assert(dHat >= 0)
         }
 
         private fun computeHHat(): Double {
             var hHat = Double.MAX_VALUE
-            val sseMean = if (cost == 0L) sseH else sseH / depth
-            val dMean = if (cost == 0L) sseD else sseD / depth
+            val sseMean = if (cost == 0L) sseH else sseH / artificialDepth
+            val dMean = if (cost == 0L) sseD else sseD / artificialDepth
             if (dMean < 1) {
                 hHat = heuristic + ((d / (1 - dMean)) * sseMean)
             }
@@ -203,7 +217,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         private fun computeDHat(): Double {
             var dHat = Double.MAX_VALUE
-            val dMean = if (cost == 0L) sseD else sseD / depth
+            val dMean = if (cost == 0L) sseD else sseD / artificialDepth
             if (dMean < 1) {
                 dHat = d / (1 - dMean)
             }
@@ -252,7 +266,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                 return chosenNode
             }
             else -> {
-                val chosenNode = cleanup.pop() ?: throw MetronomeException("Cleanup is Empty!")
+                val chosenNode = cleanup.pop() ?: throw MetronomeException("Clean up is Empty!")
                 openList.remove(chosenNode)
                 ++aStarExpansions
                 return chosenNode
@@ -284,10 +298,41 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
+    private fun calculateGlobalErrors(sourceNode: Node<StateType>) {
+        val currentGValue = sourceNode.cost
+        val successors = domain.successors(sourceNode.state)
+        val currentDepthValue = sourceNode.depth
+        // calculate global heuristic error based off of the best child
+        var bestChild = successors.first()
+        successors.forEach { successor ->
+            val successorF = currentGValue + successor.actionCost + domain.heuristic(successor.state)
+            val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
+            // if the successor has a better f value make it the new best child
+            if (successorF < bestChildF) {
+                bestChild = successor
+            }
+            // if the successor has the same f and lower d make it the new best child
+            if (successorF == bestChildF && domain.distance(successor.state) < domain.distance(bestChild.state)) {
+                bestChild = successor
+            }
+        }
+        // bestChild will be the successor of the source with the lowest f (ties broken on d)
+        // calculate the global errors
+        val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
+        val parentF = sourceNode.f // currentGValue + domain.heuristic(sourceNode.state)
+        heuristicErrorGlobalSum +=  - bestChildF - parentF // should be equal if not record the error
+        val bestChildL = currentDepthValue + 1 + domain.distance(bestChild.state)
+        val parentL = currentDepthValue + domain.distance(sourceNode.state)
+        distanceErrorGlobalSum += bestChildL - parentL // should be equal if not record the error
+        globalSamples += 1 // tally how many samples we have seen
+    }
+
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+        calculateGlobalErrors(sourceNode)
+        for (successor in successors) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
             // skip if we have our parent as a successor
@@ -308,9 +353,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                 if (!successorNode.open) {
                     insertNode(successorNode)
                 } else {
-                    cleanup.update(successorNode)
-                    openList.focal.update(successorNode)
-                    openList.open[successorNode] = successorNode
+                    nodes[successorState] = successorNode
                 }
             }
         }
@@ -323,9 +366,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             actions.add(iterationNode.action)
             iterationNode = iterationNode.parent!!
         }
-        assert(startState == iterationNode.state )
+        assert(startState == iterationNode.state)
         actions.reverse()
-        println("fMinNodesExpanded: $aStarExpansions | fHatNodesExpanded: $fHatExpansions | dHatNodesExpanded $dHatExpansions")
+//        println("fMinNodesExpanded: $aStarExpansions | fHatNodesExpanded: $fHatExpansions | dHatNodesExpanded $dHatExpansions")
         return actions
     }
 
