@@ -76,7 +76,7 @@ def spawn_ssh_client(hostname, password):
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'EETS', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['EES']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -93,7 +93,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['errorModel'] = ['path']
+    base_configuration['errorModel'] = ['global']
 
     compiled_configurations = [{}]
 
@@ -101,7 +101,7 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,

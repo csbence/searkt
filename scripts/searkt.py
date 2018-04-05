@@ -17,7 +17,7 @@ import notify2
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'EETS', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['EES']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -34,7 +34,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['errorModel'] = ['path']
+    base_configuration['errorModel'] = ['global']
 
     compiled_configurations = [{}]
 

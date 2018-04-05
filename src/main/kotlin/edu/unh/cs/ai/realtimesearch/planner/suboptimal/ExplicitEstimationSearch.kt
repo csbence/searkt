@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.*
 import java.util.*
 import kotlin.Comparator
+import kotlin.math.abs
 
 class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
@@ -127,6 +128,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return "EES.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
         }
+
         override val open: Boolean
             get() = index >= 0
 
@@ -156,7 +158,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         override var index: Int = -1
 
-        init {
+        fun computeHats() {
             when (errorModel) {
                 "path" -> computePathHats(parent, actionCost.toDouble())
                 "global" -> computeGlobalHats()
@@ -190,6 +192,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             val currentGlobalDistanceError = distanceErrorGlobalSum / globalSamples
             this.hHat = heuristic + ((this.d / (1 - currentGlobalHeuristicError)) * currentGlobalHeuristicError)
             this.dHat = this.d / (1 - currentGlobalDistanceError)
+            println("cost: $cost")
+            println("heuristicErrorGlobalSum: $heuristicErrorGlobalSum | distanceErrorGlobalSum: $distanceErrorGlobalSum")
+            println("$fHat >= $f")
             assert(fHat >= f)
             assert(dHat >= 0)
         }
@@ -320,10 +325,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         // calculate the global errors
         val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
         val parentF = sourceNode.f // currentGValue + domain.heuristic(sourceNode.state)
-        heuristicErrorGlobalSum +=  - bestChildF - parentF // should be equal if not record the error
+        System.err.println("bestChildF: $bestChildF - parentF: $parentF")
+        heuristicErrorGlobalSum += abs(bestChildF - parentF) // should be equal if not record the error
         val bestChildL = currentDepthValue + 1 + domain.distance(bestChild.state)
         val parentL = currentDepthValue + domain.distance(sourceNode.state)
-        distanceErrorGlobalSum += bestChildL - parentL // should be equal if not record the error
+        distanceErrorGlobalSum += abs(bestChildL - parentL) // should be equal if not record the error
         globalSamples += 1 // tally how many samples we have seen
     }
 
@@ -342,6 +348,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
+            System.err.println("successorNode.cost: ${successorNode.cost} > successorGValueFromCurrent: $successorGValueFromCurrent")
             if (successorNode.cost > successorGValueFromCurrent) {
                 assert(successorNode.state == successor.state)
                 successorNode.apply {
@@ -350,6 +357,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                     action = successor.action
                     actionCost = successor.actionCost
                 }
+                successorNode.computeHats() // set the inadmissible estimates after setting the cost
                 if (!successorNode.open) {
                     insertNode(successorNode)
                 } else {

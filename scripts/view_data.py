@@ -144,7 +144,7 @@ def plot(data_dict):
 
     # axes = expand_plot.axes
     # axes.set(ylim=(0,2000000))
-    success_plot = sns.pointplot(x="logWeight", y="experimentRunTime", hue="algorithm", data=df_gen, capsize=.1, palette="Set2")
+    success_plot = sns.pointplot(x="weight", y="experimentRunTime", hue="algorithm", data=df_gen, capsize=.1, palette="Set2")
     plt.title('CPU time')
     plt.figure()
 
