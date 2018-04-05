@@ -192,13 +192,15 @@ enum class SafetyProof {
     LOW_D_WINDOW,
     LOW_D_TOP_PREDECESSOR,
     LOW_D_LOW_H,
-    LOW_D_LOW_H_OPEN
+    LOW_D_LOW_H_OPEN,
+    COVERAGE
 }
 
 enum class SafeRealTimeSearchConfiguration(val key: String) {
     TARGET_SELECTION("targetSelection"),
     SAFETY_EXPLORATION_RATIO("safetyExplorationRatio"),
-    SAFETY_PROOF("safetyProof");
+    SAFETY_PROOF("safetyProof"),
+    SAFETY_WINDOW_SIZE("safetyWindowSize");
 
     override fun toString() = key
 }

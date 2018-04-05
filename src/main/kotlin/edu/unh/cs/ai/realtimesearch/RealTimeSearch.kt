@@ -9,8 +9,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
+import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
+import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.*
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun main(args: Array<String>) {
-    generateConfigurations()
 
 //    val outputPath = if (args.isNotEmpty()) {
 //        args[0]
@@ -88,6 +87,8 @@ private fun generateConfigurations(): String {
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
                     Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(SAFE_RTS, SAFETY_PROOF, listOf(SafetyProof.COVERAGE)),
+                    Triple(SAFE_RTS, SAFETY_WINDOW_SIZE, listOf(10)),
                     Triple(S_ZERO, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
                     Triple(S_ZERO, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),

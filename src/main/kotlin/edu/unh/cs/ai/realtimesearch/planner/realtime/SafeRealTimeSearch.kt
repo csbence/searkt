@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
@@ -143,6 +144,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 SafetyProof.LOW_D_TOP_PREDECESSOR -> predecessorMicroIteration(sourceState, terminationChecker)
                 SafetyProof.LOW_D_LOW_H -> lowestHeuristicNodesMicroIteration(sourceState, terminationChecker)
                 SafetyProof.LOW_D_LOW_H_OPEN -> lowestHeuristicNodesAmongOpenMicroIteration(sourceState, terminationChecker)
+                SafetyProof.COVERAGE -> safetyCoverageSearch(sourceState, terminationChecker)
             }
 
             // Backup safety
@@ -489,6 +491,51 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+
+    }
+
+    private fun safetyCoverageSearch(
+            sourceState: StateType,
+            terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>,
+            SafeRealTimeSearchNode<StateType>?> 
+    {
+
+        val maxAvgSafeStateDist = 5; // TODO: make parameter
+
+        logger.debug { "Starting safetyCoverageSearch from sourceState: $sourceState" }
+        initializeAStar(sourceState)
+
+        var avgSafeStateDist = .0 
+
+        aStarSequence.generateWhile {
+            !terminationChecker.reachedTermination() && 
+            !domain.isGoal(
+                    openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty.")
+            )
+        }.onEach {
+            terminationChecker.notifyExpansion()
+        }.forEach {
+
+            // TODO: we can probably give it a name in a more kotlin-way
+            var expandedNode = it
+
+            // maybe we're lucky...
+            expandedNode.safe = domain.isSafe(expandedNode.state);
+
+            // attempt to prove safety if we are below our desired safety coverage
+            if ( (! expandedNode.safe) && avgSafeStateDist > maxAvgSafeStateDist) 
+                proveSafety(expandedNode, FakeTerminationChecker)
+
+            /* update our coverage */
+            if (expandedNode.safe)
+                predecessorSafetyPropagation(listOf(expandedNode))
+
+            avgSafeStateDist = calculateAverageSafeFrontierDistance()
+
+        }
+
+        return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
+
     }
 
     /**
