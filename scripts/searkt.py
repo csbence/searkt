@@ -34,7 +34,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['errorModel'] = ['global']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 

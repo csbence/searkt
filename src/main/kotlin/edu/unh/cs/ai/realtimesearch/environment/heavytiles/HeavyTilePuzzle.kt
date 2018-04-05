@@ -23,7 +23,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
 
             if (successorState != null) {
                 val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
-                successorBundles.add(SuccessorBundle(successorState, action, (actionDuration * tileToBeMoved)))
+                successorBundles.add(SuccessorBundle(successorState, action, tileToBeMoved.toLong()))
             }
         }
 
@@ -72,7 +72,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
         return manhattanSum
     }
 
-    override fun heuristic(state: HeavyTilePuzzle4State): Double = state.heuristic * actionDuration
+    override fun heuristic(state: HeavyTilePuzzle4State): Double = state.heuristic
 
     override fun heuristic(startState: HeavyTilePuzzle4State, endState: HeavyTilePuzzle4State): Double {
         var manhattanSum = 0.0

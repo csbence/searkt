@@ -17,6 +17,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
     private val errorModel: String = configuration.errorModel
             ?: throw MetronomeException("Error model for Explicit Estimation Search is not specified.")
+    private val actionDuration: Long = configuration.actionDuration
 
     var terminationChecker: TerminationChecker? = null
 
@@ -190,11 +191,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         private fun computeGlobalHats() {
             val currentGlobalHeuristicError = heuristicErrorGlobalSum / globalSamples
             val currentGlobalDistanceError = distanceErrorGlobalSum / globalSamples
-            this.hHat = heuristic + ((this.d / (1 - currentGlobalHeuristicError)) * currentGlobalHeuristicError)
+            this.hHat = heuristic + ((this.d / (actionDuration - currentGlobalHeuristicError)) * currentGlobalHeuristicError)
             this.dHat = this.d / (1 - currentGlobalDistanceError)
-            println("cost: $cost")
-            println("heuristicErrorGlobalSum: $heuristicErrorGlobalSum | distanceErrorGlobalSum: $distanceErrorGlobalSum")
-            println("$fHat >= $f")
             assert(fHat >= f)
             assert(dHat >= 0)
         }
@@ -325,7 +323,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         // calculate the global errors
         val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
         val parentF = sourceNode.f // currentGValue + domain.heuristic(sourceNode.state)
-        System.err.println("bestChildF: $bestChildF - parentF: $parentF")
         heuristicErrorGlobalSum += abs(bestChildF - parentF) // should be equal if not record the error
         val bestChildL = currentDepthValue + 1 + domain.distance(bestChild.state)
         val parentL = currentDepthValue + domain.distance(sourceNode.state)
@@ -348,7 +345,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
-            System.err.println("successorNode.cost: ${successorNode.cost} > successorGValueFromCurrent: $successorGValueFromCurrent")
             if (successorNode.cost > successorGValueFromCurrent) {
                 assert(successorNode.state == successor.state)
                 successorNode.apply {
@@ -376,7 +372,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
         assert(startState == iterationNode.state)
         actions.reverse()
-//        println("fMinNodesExpanded: $aStarExpansions | fHatNodesExpanded: $fHatExpansions | dHatNodesExpanded $dHatExpansions")
         return actions
     }
 

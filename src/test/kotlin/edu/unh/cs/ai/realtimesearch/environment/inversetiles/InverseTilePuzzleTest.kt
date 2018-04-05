@@ -18,8 +18,8 @@ import kotlin.test.assertTrue
 
 class InverseTilePuzzleTest {
 
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
+    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4_INVERSE", null, "EES", TerminationType.EXPANSION,
+            null, 100000L, 1000L, 1000000L, null, 1.0, null, null, null, null,
             null, null, null, null, null, null, errorModel = "global")
 
 
