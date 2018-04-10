@@ -84,6 +84,9 @@ class ExperimentResult {
     @Optional var depthRankOfOpen: List<DepthRankPair>? = null
     @Optional var frontierNodeDepth: List<Int>? = null
 
+    //Comprehensive Envelope stats
+    @Optional var backupCount: Int = 0
+
 
     init {
         // Initialize the system properties
