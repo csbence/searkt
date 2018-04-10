@@ -118,7 +118,7 @@ class RBTree<K : RBTreeElement<K, V>, V>(private val sComp: Comparator<K>, priva
         }
     }
 
-    fun visit(l: K, u: K, op: Int, visitor: RBTreeVisitor<K>) {
+    fun visit(l: K?, u: K, op: Int, visitor: RBTreeVisitor<K>) {
         visit(l, u, root, op, visitor)
     }
 
@@ -232,8 +232,8 @@ class RBTree<K : RBTreeElement<K, V>, V>(private val sComp: Comparator<K>, priva
         verifyProperties()
     }
 
-    private fun delete(n: RBTreeNode<K, V>?) {
-        var n: RBTreeNode<K, V>? = n ?: return
+    private fun delete(node: RBTreeNode<K, V>?) {
+        var n: RBTreeNode<K, V>? = node ?: return
         // Key not found, do nothing
         if (n!!.left != null && n.right != null) {
             // Copy key/value from predecessor and then delete it instead
@@ -398,9 +398,9 @@ class RBTree<K : RBTreeElement<K, V>, V>(private val sComp: Comparator<K>, priva
             verifyProperty5Helper(root, 0, -1)
         }
 
-        private fun verifyProperty5Helper(n: RBTreeNode<*, *>?, blackCount: Int, pathBlackCount: Int): Int {
-            var blackCount = blackCount
-            var pathBlackCount = pathBlackCount
+        private fun verifyProperty5Helper(n: RBTreeNode<*, *>?, numberOfBlackNodes: Int, numberBlackPaths: Int): Int {
+            var blackCount = numberOfBlackNodes
+            var pathBlackCount = numberBlackPaths
             if (nodeColor(n) === Color.BLACK) {
                 blackCount++
             }

@@ -76,7 +76,7 @@ def spawn_ssh_client(hostname, password):
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES']
+    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -120,6 +120,11 @@ def generate_base_suboptimal_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'EETS']])
 
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EESD']])
+
+
     return compiled_configurations
 
 
@@ -150,7 +155,7 @@ def generate_base_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [1.5, 2.0, 2.5, 3.0]
+    weight = [1.5, 2.0, 2.5, 3.0, 3.5, 4.5, 5.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -192,7 +197,7 @@ def generate_base_configuration():
 
 
 def create_experiments(configurations):
-    command = "cd IdeaProjects/real-time-search && java -Xms7G -Xmx7G -jar build/libs/real-time-search-1.0-SNAPSHOT.jar"
+    command = "cd IdeaProjects/real-time-search && java -jar build/libs/real-time-search-1.0-SNAPSHOT.jar"
     return [Experiment(configuration, command) for configuration in configurations]
 
 
@@ -277,27 +282,6 @@ def create_workers_for_hosts(hosts, command_queue, result_queue, progress_bar, p
                    progress_bar=progress_bar, password=password) for host in hosts]
 
 
-def parallel_execution(configurations, threads=1):
-    progress_bar = tqdm(total=len(configurations))
-    if threads == 1:
-        results = []
-        for configuration in configurations:
-            results.extend(execute_configurations([configuration]))
-            progress_bar.update()
-
-        return results
-
-    futures = []
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        for configuration in configurations:
-            future = executor.submit(execute_configurations, [configuration])
-            future.add_done_callback(lambda _: progress_bar.update())
-            futures.append(future)
-
-    result_lists = [future.result() for future in futures]
-    return list(itertools.chain.from_iterable(result_lists))
-
-
 def build_searkt():
     return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
     return return_code == 0
@@ -357,6 +341,7 @@ def main():
 
     results = [result_queue.get() for i in range(result_queue.qsize())]
 
+    slack_notification.end_experiment_notification()
     save_results(results)
     # print_summary(results)
 
@@ -364,7 +349,6 @@ def main():
     n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)),
                              "notification-message-email")
     n.show()
-    slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':

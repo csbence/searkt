@@ -18,9 +18,11 @@ import java.util.*
  * (0, 1) == 3
  *
  */
-data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double) : State<SlidingTilePuzzle4State> {
+data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val heuristic: Double) :
+        State<SlidingTilePuzzle4State> {
 
-    override fun copy(): SlidingTilePuzzle4State = SlidingTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic)
+    override fun copy(): SlidingTilePuzzle4State =
+            SlidingTilePuzzle4State(zeroIndex, ByteArray(16, {tiles[it]}), heuristic)
 
     fun getIndex(x: Int, y: Int): Int = 4 * y + x
 
@@ -42,6 +44,7 @@ data class SlidingTilePuzzle4State(val zeroIndex: Int, var tiles: ByteArray, val
         other !is SlidingTilePuzzle4State -> false
         else -> tiles contentEquals other.tiles
     }
+
 }
 
 

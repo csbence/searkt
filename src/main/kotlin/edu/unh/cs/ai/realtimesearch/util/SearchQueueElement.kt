@@ -21,7 +21,7 @@ package edu.unh.cs.ai.realtimesearch.util
  *
  * @author Matthew Hatem
  */
-interface SearchQueueElement {
+interface SearchQueueElement<T> {
 
     /**
      *
@@ -57,19 +57,19 @@ interface SearchQueueElement {
      *
      * @return Elements Hhat value;
      */
-    val hhat: Double
+    val hHat: Double
 
     /**
      *
      * @return Elements Dhat value;
      */
-    val dhat: Double
+    val dHat: Double
 
     /**
      *
      * @return Elements parent;
      */
-    val parent: SearchQueueElement
+    var parent: T?
 
     /**
      * Sets the indexes of this object in the data structure.

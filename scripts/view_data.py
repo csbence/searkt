@@ -77,6 +77,7 @@ def filter_nodes_generated(df):
     over_five_million["WEIGHTED_A_STARglobal"] = 0
     over_five_million["EETS"] = 0
     over_five_million["EETSglobal"] = 0
+    over_five_million["EESD"] = 0
     for key in df.keys():
         # print(key)
         if key == "algorithm":
@@ -92,6 +93,13 @@ def filter_nodes_generated(df):
         #         if int(item) >= 5000000:
         #             df.iloc[index, df.columns.get_loc("success")] = False
         #         index = index + 1
+        if key == "expandedNodes":
+            index = 0
+            for item in df[key]:
+                expanded_nodes = df.iloc[index, df.columns.get_loc("expandedNodes")]
+                if expanded_nodes != 0:
+                    df.iloc[index, df.columns.get_loc("expandedNodes")] = math.log10(expanded_nodes)
+                index = index + 1
         if key == "experimentRunTime":
             index = 0
             for item in df[key]:
@@ -124,6 +132,7 @@ def plot(data_dict):
     plt.figure()
     success_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     plt.title('Expanded Nodes')
+    plt.ylabel('log10(expandedNodes')
     plt.figure()
 
 
@@ -146,6 +155,7 @@ def plot(data_dict):
     # axes.set(ylim=(0,2000000))
     success_plot = sns.pointplot(x="weight", y="experimentRunTime", hue="algorithm", data=df_gen, capsize=.1, palette="Set2")
     plt.title('CPU time')
+    plt.ylabel('log10(experimentRunTime)')
     plt.figure()
 
     success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df_gen, capsize=0.1, palette="Set2")

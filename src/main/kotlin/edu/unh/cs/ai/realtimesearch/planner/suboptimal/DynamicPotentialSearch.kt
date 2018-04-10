@@ -64,8 +64,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
     private var openList = BucketOpenList<Node<StateType>>(weight) //BucketOpenList<Node<StateType>>(weight)
 
-    private fun initializeAStar(): Long = System.currentTimeMillis()
-
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
         val tempSuccessorNode = nodes[successorState]
@@ -129,7 +127,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val startTime = initializeAStar()
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
@@ -140,7 +137,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             val topNode = openList.chooseNode() ?: throw GoalNotReachableException("Open list is empty")
             logger.debug("Top node is $topNode.")
             if (domain.isGoal(topNode.state)) {
-                executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
             currentNode = topNode

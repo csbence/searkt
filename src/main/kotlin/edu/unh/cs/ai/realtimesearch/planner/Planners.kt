@@ -12,5 +12,6 @@ enum class Planners {
     SIMPLE_SAFE,
     DPS,
     EES,
-    EETS
+    EETS,
+    EESD
 }

@@ -9,13 +9,15 @@ def read_url():
         return url.readline()
 
 
-def start_experiment_notification(experiment_count=None):
+def start_experiment_notification(experiment_count=None, machine=None):
     user = getpass.getuser().capitalize()
-
     if experiment_count is None:
         message = user + ' just started running experiments.'
     else:
-        message = '{user} just started running {experiment_count} experiments.'.format(user=user, experiment_count=experiment_count)
+        if machine is None:
+            message = '{user} just started running {experiment_count} experiments.'.format(user=user, experiment_count=experiment_count)
+        else:
+            message = '{user} just started running {experiment_count} experiments on {machine}'.format(user=user, experiment_count=experiment_count, machine=machine)
 
     send_notification(message)
 

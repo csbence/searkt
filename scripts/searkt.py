@@ -8,6 +8,7 @@ import copy
 import json
 import os
 import sys
+import datetime
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
@@ -15,9 +16,10 @@ import pandas as pd
 import itertools
 import notify2
 
+import slack_notification
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES']
+    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -243,7 +245,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json):
-    with open('output/results.json', 'w') as outfile:
+    with open('output/data-{:%H-%M-%d-%m-%y}.json'.format(datetime.datetime.now()), 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -258,7 +260,10 @@ def main():
     configurations = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
+    slack_notification.start_experiment_notification(len(configurations), 'byodoin')
     results = parallel_execution(configurations, 1)
+
+    slack_notification.end_experiment_notification()
 
     for result in results:
         result.pop('actions', None)

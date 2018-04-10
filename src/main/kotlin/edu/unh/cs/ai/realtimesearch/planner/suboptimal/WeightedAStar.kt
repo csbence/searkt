@@ -7,9 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
-import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.util.*
 import org.slf4j.LoggerFactory
 import java.util.HashMap
 import kotlin.Comparator
@@ -22,11 +20,33 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                              var actionCost: Long, var action: Action,
-                                             var parent: WeightedAStar.Node<StateType>? = null): Indexable {
+                                             override var parent: WeightedAStar.Node<StateType>? = null):
+            Indexable, SearchQueueElement<Node<StateType>> {
+        private val indexMap = Array(1, {-1})
+        override val g: Double
+            get() = cost.toDouble()
+        override val depth: Double
+            get() = cost.toDouble()
+        override val h: Double
+            get() = heuristic
+        override val d: Double
+            get() = cost.toDouble()
+        override val hHat: Double
+            get() = heuristic
+        override val dHat: Double
+            get() = heuristic
+
+        override fun setIndex(key: Int, index: Int) {
+           indexMap[key] = index
+        }
+
+        override fun getIndex(key: Int): Int {
+            return indexMap[key]
+        }
 
         override var index: Int = -1
 
-        val f: Double
+        override val f: Double
             get() = cost + heuristic
 
         override fun equals(other: Any?): Boolean {
@@ -48,7 +68,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
-            lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
+            lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
         }
@@ -56,9 +76,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
 
-    private var openList = AdvancedPriorityQueue(100000000, fValueComparator)
-
-    private fun initializeAStar(): Long = System.currentTimeMillis()
+    private var openList = BinHeap(fValueComparator, 0) //(100000000, fValueComparator)
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -115,21 +133,19 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val startTime = initializeAStar()
         val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
 
-        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+        while (!openList.isEmpty && !terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             logger.debug("Top node is $topNode.")
             if (domain.isGoal(topNode.state)) {
-                executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
-            currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
+            currentNode = openList.poll() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
         }
         if (terminationChecker.reachedTermination()) {

@@ -74,36 +74,39 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val setFocalIndex: (node: Node<StateType>, i: Int) -> (Unit) = { node, i -> node.focalIndex = i }
     private val getFocalIndex: (node: Node<StateType>) -> (Int) = { node -> node.focalIndex }
 
-    private val rbTree = TreeMap<Node<StateType>, Node<StateType>>(openNodeComparator) //RedBlackTree(openNodeComparator, explicitNodeComparator)
+    private val rbTree = RBTree(openNodeComparator, explicitNodeComparator)
     private val focal = AdvancedPriorityQueue(arrayOfNulls(100000000), focalNodeComparator, setFocalIndex, getFocalIndex)
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
     private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator, getFocalIndex)
     private val cleanup = AdvancedPriorityQueue(100000000, cleanupNodeComparator)
 
-    class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
-                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E>, E : Indexable {
+    class ExplicitQueue<E>(private val open: RBTree<E, E>, private val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
+                           private val getFocalIndex: (E) -> (Int)) where E : RBTreeElement<E, E>, E : Indexable {
 
-        fun isEmpty(): Boolean = open.firstEntry().value == null
+        fun isEmpty(): Boolean = focal.isEmpty()
 
         fun isNotEmpty(): Boolean = !isEmpty()
 
         fun add(e: E, oldBest: E) {
-            open[e] = e
+//            open[e] = e
+            open.insert(e, e)
             if (explicitComparator.compare(e, oldBest) <= 0) {
                 focal.add(e)
             }
         }
 
         fun remove(e: E) {
-            open.remove(e)
+//            open.remove(e)
+            open.delete(e)
             if (getFocalIndex(e) != -1) {
                 focal.remove(e)
             }
         }
 
         fun pollOpen(): E? {
-            val e = open.pollFirstEntry().value
+//            val e = open.pollFirstEntry().value
+            val e = open.poll()
             if (e != null && getFocalIndex(e) != -1) {
                 focal.remove(e)
             }
@@ -113,18 +116,24 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         fun pollFocal(): E? {
             val e = focal.pop()
             if (e != null) {
-                open.remove(e)
+//                open.remove(e)
+                open.delete(e)
             }
             return e
         }
 
-        fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
+        fun peekOpen(): E? =  open.peek() //if (open.firstEntry() != null) open.firstEntry().value else null
         fun peekFocal(): E? = focal.peek()
     }
 
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
                                                        var actionCost: Long, var action: Action, var d: Double,
-                                                       var parent: Node<StateType>? = null) : Indexable, RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+                                                       var parent: Node<StateType>? = null) :
+            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+        override var node: RBTreeNode<Node<StateType>, Node<StateType>>?
+            get() = redBlackNode
+            set(value) { redBlackNode = value}
+
         override fun toString(): String {
             return "EES.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
@@ -135,7 +144,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         var focalIndex: Int = -1
 
-        private var redBlackNode: RedBlackTreeNode<Node<StateType>, Node<StateType>>? = null
+        private var redBlackNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 
         val f: Double
             get() = cost + heuristic
@@ -233,13 +242,13 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return diff
         }
 
-        override fun getNode(): RedBlackTreeNode<Node<StateType>, Node<StateType>>? {
-            return redBlackNode
-        }
-
-        override fun setNode(node: RedBlackTreeNode<Node<StateType>, Node<StateType>>?) {
-            this.redBlackNode = node
-        }
+//        override fun getNode(): RedBlackTreeNode<Node<StateType>, Node<StateType>>? {
+//            return redBlackNode
+//        }
+//
+//        override fun setNode(node: RedBlackTreeNode<Node<StateType>, Node<StateType>>?) {
+//            this.redBlackNode = node
+//        }
 
     }
 
@@ -276,8 +285,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             }
         }
     }
-
-    private fun initializeAStar(): Long = System.currentTimeMillis()
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -377,7 +384,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val startTime = initializeAStar()
         val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
         nodes[state] = node
         cleanup.add(node)
@@ -387,7 +393,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
-                executionNanoTime = System.currentTimeMillis() - startTime
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)

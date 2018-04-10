@@ -90,7 +90,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
                     val endX = endIndex / size
                     val endY = endIndex % size
 
-                    manhattanSum += (((abs(endX - yStart) + abs(endY - xStart) ) * (1.0/value) * actionDuration)).toLong()
+                    manhattanSum += (((abs(endX - yStart) + abs(endY - xStart) ) * (1.0/value)))
                     break
                 }
             }
@@ -108,7 +108,7 @@ class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Invers
                 val value = state[state.getIndex(x, y)]
                 if (value == zero) continue
 
-                manhattanSum += (((abs(value / size - y) + abs(value % size - x)) * (1.0/value)) * actionDuration).toLong()
+                manhattanSum += (((abs(value / size - y) + abs(value % size - x)) * (1.0/value)))
             }
         }
 
