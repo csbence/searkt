@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
     var searchTreePath = "/Users/bencecserna/Downloads/testingstatic/searchtree.json"
     var targetTreePath = "/Users/bencecserna/Downloads/testingstatic/processed_tree.json"
 
-    if (args.size != 2) {
+    if (args.size == 2) {
         searchTreePath = args[0]
         targetTreePath = args[1]
     }
@@ -39,14 +39,11 @@ fun main(args: Array<String>) {
 
     opticNodes
             .parallelStream()
-            .peek {
+            .forEach {
                 aStar(opticNodes, it)
-                print('.')
                 System.out.flush()
                 it.minGoalDistance = it.expansionsToGoals?.min()
             }
-            .filter { it.expansionsToGoals?.isNotEmpty() ?: throw MetronomeException("Unprocessed node") }
-            .forEach { println(it) }
 
     println("\nNode count: ${jsonOpticNodes.size}")
 
