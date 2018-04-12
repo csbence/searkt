@@ -35,8 +35,7 @@ fun main(args: Array<String>) {
 
     val jsonTree = File(searchTreePath).readText()
 
-    val loader = JsonOpticNode.serializer().list
-    val jsonOpticNodes = JSON.parse(loader, jsonTree)
+    val jsonOpticNodes = JSON.parse<OpticDump>(jsonTree).nodes
     println("Json node parsing was successful.")
 
     val opticNodes = jsonOpticNodes.map(JsonOpticNode::toOpticNode)
@@ -54,6 +53,13 @@ fun main(args: Array<String>) {
     val processedTree = JSON.plain.stringify(OpticNode.serializer().list, opticNodes)
     File(targetTreePath).writeText(processedTree)
 }
+
+@Serializable
+class OpticDump(
+        val initialState: String,
+        val expansionsPerSecond: Double,
+        val nodes: List<JsonOpticNode>
+)
 
 @Serializable
 data class JsonOpticNode(
