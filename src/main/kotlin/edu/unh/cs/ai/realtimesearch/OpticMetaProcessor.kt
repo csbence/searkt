@@ -29,7 +29,9 @@ fun main(args: Array<String>) {
         throw MetronomeException("Can't read source tree.")
     }
 
-    if (!File(targetTreePath).createNewFile()) {
+    val outputTreePath = File(targetTreePath)
+
+    if (!outputTreePath.canWrite() && !outputTreePath.createNewFile()) {
         throw MetronomeException("Can't write target tree.")
     }
 
@@ -51,7 +53,7 @@ fun main(args: Array<String>) {
     println("\nNode count: ${jsonOpticNodes.size}")
 
     val processedTree = JSON.plain.stringify(OpticNode.serializer().list, opticNodes)
-    File(targetTreePath).writeText(processedTree)
+    outputTreePath.writeText(processedTree)
 }
 
 @Serializable
