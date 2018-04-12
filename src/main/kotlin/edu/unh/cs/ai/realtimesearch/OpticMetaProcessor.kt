@@ -25,8 +25,12 @@ fun main(args: Array<String>) {
         targetTreePath = args[1]
     }
 
-    if (!File(searchTreePath).canRead() || !File(targetTreePath).canWrite()) {
-        throw MetronomeException("Can't read/write source.")
+    if (!File(searchTreePath).canRead()) {
+        throw MetronomeException("Can't read source tree.")
+    }
+
+    if (!File(targetTreePath).createNewFile()) {
+        throw MetronomeException("Can't write target tree.")
     }
 
     val jsonTree = File(searchTreePath).readText()
