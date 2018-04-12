@@ -50,9 +50,12 @@ fun main(args: Array<String>) {
                 it.minGoalDistance = it.expansionsToGoals?.min()
             }
 
-    println("\nNode count: ${jsonOpticNodes.size}")
+    val successfulNodes = opticNodes.filter { it.expansionsToGoals != null }
 
-    val processedTree = JSON.plain.stringify(OpticNode.serializer().list, opticNodes)
+    println("\nNode count: ${jsonOpticNodes.size}")
+    println("\nSuccess count: ${successfulNodes.size}")
+
+    val processedTree = JSON.plain.stringify(OpticNode.serializer().list, successfulNodes)
     outputTreePath.writeText(processedTree)
 }
 
