@@ -113,9 +113,21 @@ excelsiorJet {
     mainClass = mainClassName
 }
 
-task opticParser(type: JavaExec) {
+task opticProcessor(type: JavaExec) {
     main = "edu.unh.cs.ai.realtimesearch.OpticMetaProcessorKt"
     classpath = sourceSets.main.runtimeClasspath
+}
+
+task opticProcessorJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'edu.unh.cs.ai.realtimesearch.OpticMetaProcessorKt'
+    }
+    baseName = project.name + '-optic-processor'
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
 }
 
 task clientJar(type: Jar) {
