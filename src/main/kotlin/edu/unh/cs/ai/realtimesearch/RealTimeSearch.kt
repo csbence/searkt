@@ -48,28 +48,28 @@ fun main(args: Array<String>) {
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
     val baselineConfig = generateConfigurations(true)
 
-    val experimentConfig = generateConfigurations(false)
-    println("Experiment Configuration")
-    println(experimentConfig)
+//    val experimentConfig = generateConfigurations(false)
+//    println("Experiment Configuration")
+//    println(experimentConfig)
 
     val baselineLoader = ExperimentConfiguration.serializer().list
     val parsedBaseConfigurations = JSON.parse(baselineLoader, baselineConfig)
 
-    val experimentLoader = ExperimentConfiguration.serializer().list
-    val parsedExperimentConfigurations = JSON.parse(experimentLoader, experimentConfig)
-    println(parsedExperimentConfigurations)
+//    val experimentLoader = ExperimentConfiguration.serializer().list
+//    val parsedExperimentConfigurations = JSON.parse(experimentLoader, experimentConfig)
+//    println(parsedExperimentConfigurations)
 
     val baseResults = ConfigurationExecutor.executeConfigurations(parsedBaseConfigurations, dataRootPath = null, parallelCores = 1)
     val rawBaseResults = JSON.Companion.stringify(ExperimentResult.serializer().list, baseResults)
     PrintWriter(basePath, "UTF-8").use { it.write(rawBaseResults) }
 
 
-    val experimentResults = ConfigurationExecutor.executeConfigurations(parsedExperimentConfigurations, dataRootPath = null, parallelCores = 1)
-    val rawExperimentResults = JSON.Companion.stringify(ExperimentResult.serializer().list, experimentResults)
-    PrintWriter(outputPath, "UTF-8").use { it.write(rawExperimentResults) }
-
-    println('#') // Indicator for the parser
-    println(rawExperimentResults) // This should be the last printed line
+//    val experimentResults = ConfigurationExecutor.executeConfigurations(parsedExperimentConfigurations, dataRootPath = null, parallelCores = 1)
+//    val rawExperimentResults = JSON.Companion.stringify(ExperimentResult.serializer().list, experimentResults)
+//    PrintWriter(outputPath, "UTF-8").use { it.write(rawExperimentResults) }
+//
+//    println('#') // Indicator for the parser
+//    println(rawExperimentResults) // This should be the last printed line
 
 //    runVisualizer(result = results.first())
 }
@@ -81,7 +81,7 @@ private fun generateConfigurations(baseline: Boolean): String {
         else listOf(CES, LSS_LRTA_STAR)
 
     val configurations = generateConfigurations(
-            domains = listOf(
+//            domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    GRID_WORLD to "input/vacuum/empty.vw"
 //                    GRID_WORLD to "input/vacuum/h_400.vw",
@@ -92,20 +92,20 @@ private fun generateConfigurations(baseline: Boolean): String {
 //                    GRID_WORLD to "input/vacuum/minima/minima2.vw",
 //                    GRID_WORLD to "input/vacuum/minima/minima3.vw"
 //                    GRID_WORLD to "input/vacuum/wall.vw"
-                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
+//                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
 //                    GRID_WORLD to "input/vacuum/cups.vw",
-                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
-                    GRID_WORLD to "input/vacuum/openBox_400.vw"
+//                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
+//                    GRID_WORLD to "input/vacuum/openBox_400.vw"
 //                    GRID_WORLD to "input/vacuum/maze.vw"
 //                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
 //                    RACETRACK to "input/racetrack/barto-big.track",
 //                    RACETRACK to "input/racetrack/uniform.track",
 //                    RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
-//            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
+//            ),
+            domains = (0..199).map { GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" },
             planners = planners,
-            actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(50L),// 100L, 150L, 200L),// 250L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),

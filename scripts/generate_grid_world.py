@@ -7,6 +7,9 @@ import random
 #4/1/18 NOTE Configurations with good size of minima and distributions:
 # 1500 1500 -n 10 -o .00015 -m
 
+__author__ = "Kevin C. Gall"
+
+
 #minimum tracker is set: (int,int) members indicate the cell is an obstacle
 def generateMinimum(obstacleTracker, start, sizeBound):
     firstWallSize = random.randint(1, sizeBound)
@@ -50,6 +53,7 @@ def generateMinimum(obstacleTracker, start, sizeBound):
             obstacleTracker.add(current)
             current = (current[0] + wall[0]['x'], current[1] + wall[0]['y'])
 
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("height", help="the height of the Vehicle world")
@@ -62,8 +66,8 @@ parser.add_argument("-o", "--obstacles",
 parser.add_argument("-m", "--minima", help="obstacles organized as local minima", action="store_true")
 
 args = parser.parse_args()
-height = int(args.height) + 1
-width = int(args.width) + 1
+height = int(args.height)
+width = int(args.width)
 number = int(args.number)
 
 
@@ -81,19 +85,19 @@ endY = height
 
 path = args.path
 
-#hard code size bound for now
+# hard code size bound for now
 sizeBound = int(endY / 10)
 
 if type(path) == type(None):
-    path = "..//input/vacuum/minima"
+    path = "../input/vacuum/minima"
 
 configType = "uniform"
-if (minima):
+if minima:
     configType = "minima"
 
 for iteration in range(0, number):
 
-    newDomain = configType+str(iteration)
+    newDomain = configType + str(height) + "_" + str(width) + "-" + str(iteration)
 
     completeFile = os.path.join(path, newDomain+".vw")
 
@@ -103,19 +107,19 @@ for iteration in range(0, number):
     world = ""
 
     obstacleLocations = set()
-    for y in range(1, height):
-        for x in range(1, width):
+    for y in range(0, height):
+        for x in range(0, width):
             if random.random() < obstaclePercentage:
                 if minima:
                     generateMinimum(obstacleLocations, (x, y), sizeBound)
                 else:
                     obstacleLocations.add((x, y))
 
-    for y in range(1, height):
-        for x in range(1, width):
-            if ((x == startX) and (y == startY)):
+    for y in range(0, height):
+        for x in range(0, width):
+            if (x == startX) and (y == startY):
                 world += "@"
-            elif (y == height-1 and x == width-1):
+            elif y == height-1 and x == width-1:
                 world += "*"
             elif (x, y) in obstacleLocations:
                 world += "#"
