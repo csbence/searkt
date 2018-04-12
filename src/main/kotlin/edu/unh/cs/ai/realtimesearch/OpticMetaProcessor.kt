@@ -50,7 +50,7 @@ fun main(args: Array<String>) {
                 it.minGoalDistance = it.expansionsToGoals?.min()
             }
 
-    val successfulNodes = opticNodes.filter { it.expansionsToGoals != null }
+    val successfulNodes = opticNodes.filter { it.expansionsToGoals?.isNotEmpty() ?: false }
 
     println("\nNode count: ${jsonOpticNodes.size}")
     println("\nSuccess count: ${successfulNodes.size}")
