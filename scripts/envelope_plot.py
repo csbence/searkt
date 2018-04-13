@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import re
 import seaborn as sns
-import statistics
+import argparse
 import statsmodels.stats.api as sms
 from pandas import DataFrame
 from statsmodels.stats.proportion import proportion_confint
@@ -49,7 +49,6 @@ def add_row(df, values):
 def plot_domain_instances(data):
     #Each domain configuration
     for domain_path, domain_group in data.groupby(["domainPath"]):
-        results = DataFrame(columns="actionDuration algorithmName withinOpt".split())
         domain_name = re.search("[^/]+$", domain_path).group(0).rstrip(".vw")
 
         plt.title(domain_name)
@@ -66,10 +65,6 @@ def plot_domain_instances(data):
             if fields[0] == "CES":
                 alg_name += " Backup Ratio: " + str(fields[1])
 
-            #Plot each action duration
-            # for duration, action_group in alg_group.groupby('actionDuration'):
-            #     results = add_row(results, [duration, alg_name, action_group["withinOpt"]])
-
             plt.plot(expansion_series, alg_group["withinOpt"], color=palette[count], label=alg_name)
 
             count += 1
@@ -80,10 +75,42 @@ def plot_domain_instances(data):
         plt.figure()
 
 
+def plot_all_experiments(data, plot_title):
+    plt.title(plot_title)
+    plt.ylabel('Goal Achievement Time (Factor of Optimal)')
+    plt.xlabel('Expansion Limit (Per Iteration)')
 
-def main():
-    results = read_data("../output/results.json")
-    baseline_results = read_data("../output/base_results.json")
+    expansion_series = data["actionDuration"].unique()
+
+    results = DataFrame(columns= "algorithmName actionDuration withinOpt".split())
+
+    # Change data structure such that goal achievement time is averaged,
+    # grouped by action duration and algorithm
+    for fields, duration_group in data.groupby(['algorithmName', 'backlogRatio', 'actionDuration']):
+        alg_name = fields[0]
+        if fields[0] == "CES":
+            alg_name += " Backup Ratio: " + str(fields[1])
+        # START HERE: Find a way to get mean of values, add row to new dataframe
+
+    palette = sns.color_palette(n_colors=10)
+
+    for fields, alg_group in data.groupby(['algorithmName', 'backlogRatio']):
+        alg_name = fields[0]
+        if fields[0] == "CES":
+            alg_name += " Backup Ratio: " + str(fields[1])
+
+        plt.plot(expansion_series, alg_group["withinOpt"], color=palette[count], label=alg_name)
+
+        count += 1
+
+    plt.legend()
+
+    plt.savefig("../output/" + domain_name + ".png", format="png")
+
+
+def main(individual_plots, path_to_base, path):
+    results = read_data(path)
+    baseline_results = read_data(path_to_base)
 
     results += baseline_results
 
@@ -115,33 +142,25 @@ def main():
     data = pd.merge(data, astar, how='inner', on=["domainPath", 'actionDuration'])
     data["withinOpt"] = data["goalAchievementTime"] / data["opt"]
 
-    plot_domain_instances(data)
+    if individual_plots:
+        plot_domain_instances(data)
 
 
-#Will be deleted when no longer needed for reference
-def main_test():
+#define command line usage
+parser = argparse.ArgumentParser()
 
-    expansions = [50, 100, 400, 600, 900, 1000, 1200, 1500]
+parser.add_argument("path_to_base", nargs="?", help="Path to base results JSON", default="../output/base_results.json")
+parser.add_argument("path", nargs="?", help="Path to experiment results JSON", default="../output/results.json")
+parser.add_argument("-i", "--individual",
+                    help="Should plots be generated for each domain individually? (Primarily for debugging)",
+                    action="store_true")
 
-    plt.title('Local Minima Domains')
-    plt.plot(expansions, [10, 8.7, 9.0, 6.6, 5.6, 3.4, 2.87, 1.2], 'ro-', label='RT-Comprehensive')
-    plt.plot(expansions, [14, 12.11, 11.5, 10.8, 6.1, 7.2, 6.0, 5.2], 'bo-', label='LSS-LRTA*')
-    plt.legend()
+args = parser.parse_args()
+individual_plots = args.individual
+path_to_base = args.path_to_base
+path = args.path
 
-    plt.ylabel('Goal Achievement Time (Factor of Optimal)')
-    plt.xlabel('Expansion Limit (Per Iteration)')
-
-    plt.figure()
-    plt.title('Uniform Obstacles')
-    plt.plot(expansions, [12, 11.2, 10.1, 8.8, 9.3, 7.4, 5.97, 4.2], 'ro-', label='RT-Comprehensive')
-    plt.plot(expansions, [11, 8.3, 7.2, 6.9, 6.1, 3.4, 2.2, 2.0], 'bo-', label='LSS-LRTA*')
-    plt.legend()
-
-    plt.ylabel('Goal Achievement Time (Factor of Optimal)')
-    plt.xlabel('Expansion Limit (Per Iteration)')
-
-    plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    main(individual_plots, path_to_base, path)
