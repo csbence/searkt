@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -55,6 +54,7 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
     var action: Action
     var parent: NodeType
     val predecessors: MutableList<SearchEdge<NodeType>>
+    val id: Int
 
     val f: Double
         get() = cost + heuristic

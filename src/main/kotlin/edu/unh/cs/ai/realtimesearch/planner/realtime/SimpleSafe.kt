@@ -60,6 +60,10 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                                              override var safe: Boolean = false,
                                              override var depth: Int)
         : Indexable, Safe, SearchNode<StateType, Node<StateType>>, Depth {
+
+        override val id: Int
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
         /** Item index in the open list */
         override var index: Int = -1
 

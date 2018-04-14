@@ -29,6 +29,8 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
         override var iteration: Long,
         parent: SafeRealTimeSearchNode<StateType>? = null) : RealTimeSearchNode<StateType, SafeRealTimeSearchNode<StateType>>, Indexable, Safe {
 
+    override val id: Int = getNodeCount()
+
     /** Item index in the open list. */
     override var index: Int = -1
     override var safe = false
@@ -50,6 +52,11 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
 
     override fun toString(): String =
             "SafeRealTimeSearchNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
+
+    companion object {
+        var nodeCounter: Int = 0
+        fun getNodeCount() = nodeCounter++
+    }
 }
 
 /**

@@ -8,9 +8,9 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
@@ -18,6 +18,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.visualizer.GraphiVisualizer
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -59,6 +60,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var numberOfProofs: Int = 0
     private var depthRankOfOpen = ArrayList<ExperimentResult.DepthRankPair>()
     private var frontierNodeDepth = ArrayList<Int>()
+
+    // Visualizer
+    private val visualizer = GraphiVisualizer<StateType, SafeRealTimeSearchNode<StateType>>()
 
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.proofSuccessful = this.proofSuccessful
@@ -155,7 +159,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
             val currentSafeTarget = when (targetSelection) {
             // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
-                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank: Int, cost: Int -> nodeRankTarget = rank; costToFrontier= cost })
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank: Int, cost: Int -> nodeRankTarget = rank; costToFrontier = cost })
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
             }
 
@@ -178,6 +182,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+
+        visualizer.visualizeNodes(nodes.entries.map { it.value })
 
         return plan!!
     }
@@ -497,21 +503,20 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private fun safetyCoverageSearch(
             sourceState: StateType,
             terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>,
-            SafeRealTimeSearchNode<StateType>?> 
-    {
+            SafeRealTimeSearchNode<StateType>?> {
 
         val maxAvgSafeStateDist = 5; // TODO: make parameter
 
         logger.debug { "Starting safetyCoverageSearch from sourceState: $sourceState" }
         initializeAStar(sourceState)
 
-        var avgSafeStateDist = .0 
+        var avgSafeStateDist = .0
 
         aStarSequence.generateWhile {
-            !terminationChecker.reachedTermination() && 
-            !domain.isGoal(
-                    openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty.")
-            )
+            !terminationChecker.reachedTermination() &&
+                    !domain.isGoal(
+                            openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty.")
+                    )
         }.onEach {
             terminationChecker.notifyExpansion()
         }.forEach {
@@ -523,7 +528,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             expandedNode.safe = domain.isSafe(expandedNode.state);
 
             // attempt to prove safety if we are below our desired safety coverage
-            if ( (! expandedNode.safe) && avgSafeStateDist > maxAvgSafeStateDist) 
+            if ((!expandedNode.safe) && avgSafeStateDist > maxAvgSafeStateDist)
                 proveSafety(expandedNode, FakeTerminationChecker)
 
             /* update our coverage */

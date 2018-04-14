@@ -41,6 +41,9 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                                              var iteration: Long,
                                              parent: Node<StateType>? = null,
                                              override var safe: Boolean = false) : Indexable, Safe, SearchNode<StateType, Node<StateType>> {
+        override val id: Int
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
         /** Item index in the open list. */
         override var index: Int = -1
 

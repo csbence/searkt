@@ -1,87 +1,59 @@
 package edu.unh.cs.ai.realtimesearch.visualizer
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.request.accept
-import io.ktor.client.request.post
-import io.ktor.client.request.url
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import kotlinx.coroutines.experimental.runBlocking
-import java.net.URL
-
+import com.github.kittinunf.fuel.Fuel
+import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.planner.RealTimeSearchNode
+import edu.unh.cs.ai.realtimesearch.planner.SearchNode
+import java.nio.charset.Charset
 
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
 
-fun main(args: Array<String>) {
+class GraphiVisualizer<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> {
+    val visualizedNodes: MutableSet<SearchNode<StateType, NodeType>> = mutableSetOf()
+    val visualizedEdges: MutableSet<Pair<SearchNode<StateType, NodeType>, SearchNode<StateType, NodeType>>> = mutableSetOf()
 
-    val client = HttpClient(CIO)
-//    val post = khttp.post(
-//            url = "http://localhost:8080/workspace?operation=updateGraph",
-//            params = mapOf("operation" to "updateGraph"),
-//            data = "{\"an\":{\"X2\":{\"label\":\"Streaming Node X2\"}}}"
-//    )
-//    println(post.content)
-//    println(post.text)
-
-//    val (request, response, result1) = Fuel
-//            .post("http://localhost:8081/workspace1", parameters = listOf("operation" to "updateGraph"))
-//            .body(body = "{\"an\":{\"X2\":{\"label\":\"Streaming Node X2\"}}}", charset = Charset.forName("UTF-8"))
-//            .response()
-//
-//    println("request $request")
-//    println("response $response")
-//    println("error $result1")
-
-//    return
-    runBlocking {
-        //                client.post<String>(
-////                port = 9000,
-////                host = "127.0.0.1",
-////                path = "workspace1?operation=updateGraph",
-////                body = "{\"an\":{\"X\":{\"label\":\"Streaming Node X\"}}}",
-////
-////        )
-//
-//        val parameters = ParametersBuilder()
-//        parameters.append("operation", "updateGraph")
-//
-//        val urlBuilder = URLBuilder(port = 8081, encodedPath = "workspace1", parameters = parameters)
-//
-//        val request = HttpRequestData(
-//                url = urlBuilder.build(),
-//                method = HttpMethod.Post,
-//                headers = HeadersBuilder().build(),
-//                body = "{\"an\":{\"X\":{\"label\":\"Streaming Node X\"}}}",
-//                executionContext = CompletableDeferred<Unit>()
-//        )
-//
-//
-//        HttpClientCall.create()
-//
-//
-        val result = client.post<String> {
-            url(URL("http://localhost:8080/workspace1?operation=updateGraph"))
-
-            accept(ContentType.Any)
-//            contentType(ContentType.Text.Plain)
-            contentType(ContentType.Application.FormUrlEncoded)
-//            body = URLEncoder.encode("{\"an\":{\"X11\":{\"label\":\"Streaming Node X11\"}}}", Charsets.UTF_8.toString())
-            body = "{\"an\":{\"X12\":{\"label\":\"Streaming Node X12\"}}}"
-//
-////            body = "{\"ae\":{\"BC\":{\"source\":\"B\",\"target\":\"C\",\"directed\":false}}}"
-////            body = "{\"an\":{\"A\":{\"label\":\"Streaming Node A\"}}}\\r\n" +
-////                    "{\"an\":{\"B\":{\"label\":\"Streaming Node B\"}}}\\r\n" +
-////                    "{\"an\":{\"C\":{\"label\":\"Streaming Node C\"}}}\\r\n" +
-////                    "{\"ae\":{\"AB\":{\"source\":\"A\",\"target\":\"B\",\"directed\":false}}}\\r\n" +
-////                    "{\"ae\":{\"BC\":{\"source\":\"B\",\"target\":\"C\",\"directed\":false}}}\\r\n" +
-////                    "{\"ae\":{\"CA\":{\"source\":\"C\",\"target\":\"A\",\"directed\":false}}}"
-        }
-//
-        println(result)
+    fun visualizeNodes(nodes: Collection<SearchNode<StateType, NodeType>>) {
+        val nodeOperations = nodes.map { visualizeNode(it) }
+//        val edgeOperations = nodes.map { visualizeEdge(it.parent, it) }
+        val edgeOperations = nodes.flatMap { target -> target.predecessors.map { visualizeEdge(it.node, target) } }
+        publishGraph(nodeOperations + edgeOperations)
     }
 
-    client.close()
+    private fun visualizeNode(node: SearchNode<StateType, NodeType>): String {
+        val operation = if (visualizedNodes.contains(node)) "cn" else "an"
+        val nodeId = node.id
+        visualizedNodes.add(node)
+
+        val extras = if (node is RealTimeSearchNode) {
+            ",\"iteration\": ${node.iteration}"
+        } else ""
+
+        return "{\"$operation\":{ \"$nodeId\": {\"label\":${node.f} $extras}}}"
+    }
+
+    private fun visualizeEdge(sourceNode: SearchNode<StateType, NodeType>, targetNode: SearchNode<StateType, NodeType>): String {
+        val edge = sourceNode to targetNode
+        val operation = if (visualizedEdges.contains(edge)) "ce" else "ae"
+        val edgeId = "${sourceNode.id}_${targetNode.id}"
+
+        visualizedEdges.add(edge)
+
+        return "{\"$operation\":{ \"$edgeId\": {" +
+                "\"source\":\"${sourceNode.id}\"," +
+                "\"target\":\"${targetNode.id}\"," +
+                "\"label\":\"\"," +
+                "\"directed\":true}}}"
+    }
+
+    private fun publishGraph(operations: Collection<String>) {
+        val body = operations.joinToString("\n\r")
+
+        val (request, response, result1) = Fuel
+                .post("http://localhost:5000/workspace1", parameters = listOf("operation" to "updateGraph"))
+                .body(body = body, charset = Charset.forName("UTF-8"))
+                .response()
+
+    }
 }

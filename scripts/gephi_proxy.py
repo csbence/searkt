@@ -12,11 +12,9 @@ def index():
     print('Proxy: Incoming request')
     data = list(request.form.items())[0][0]
     print('Proxy: data: {}'.format(data))
-    r = requests.post("http://localhost:8080/workspace1?operation=updateGraph",
-                      data='{"an":{"X":{"label":"Streaming Node X"}}}')
-    print(r.text)
     response = requests.post("http://localhost:8080/workspace1", data=data, params={'operation': 'updateGraph'})
-    return response.text
+    print(response)
+    return response
 
 
 def generate_structured_nodes():
@@ -51,5 +49,5 @@ def generate_structured_nodes():
 
 
 if __name__ == '__main__':
-    generate_structured_nodes()
-    # app.run(debug=True)
+    # generate_structured_nodes()
+    app.run(debug=True)
