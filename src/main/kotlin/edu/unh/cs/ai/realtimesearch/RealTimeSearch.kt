@@ -48,28 +48,28 @@ fun main(args: Array<String>) {
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
     val baselineConfig = generateConfigurations(true)
 
-//    val experimentConfig = generateConfigurations(false)
-//    println("Experiment Configuration")
-//    println(experimentConfig)
+    val experimentConfig = generateConfigurations(false)
+    println("Experiment Configuration")
+    println(experimentConfig)
 
     val baselineLoader = ExperimentConfiguration.serializer().list
     val parsedBaseConfigurations = JSON.parse(baselineLoader, baselineConfig)
 
-//    val experimentLoader = ExperimentConfiguration.serializer().list
-//    val parsedExperimentConfigurations = JSON.parse(experimentLoader, experimentConfig)
-//    println(parsedExperimentConfigurations)
+    val experimentLoader = ExperimentConfiguration.serializer().list
+    val parsedExperimentConfigurations = JSON.parse(experimentLoader, experimentConfig)
+    println(parsedExperimentConfigurations)
 
     val baseResults = ConfigurationExecutor.executeConfigurations(parsedBaseConfigurations, dataRootPath = null, parallelCores = 1)
     val rawBaseResults = JSON.Companion.stringify(ExperimentResult.serializer().list, baseResults)
     PrintWriter(basePath, "UTF-8").use { it.write(rawBaseResults) }
 
 
-//    val experimentResults = ConfigurationExecutor.executeConfigurations(parsedExperimentConfigurations, dataRootPath = null, parallelCores = 1)
-//    val rawExperimentResults = JSON.Companion.stringify(ExperimentResult.serializer().list, experimentResults)
-//    PrintWriter(outputPath, "UTF-8").use { it.write(rawExperimentResults) }
-//
-//    println('#') // Indicator for the parser
-//    println(rawExperimentResults) // This should be the last printed line
+    val experimentResults = ConfigurationExecutor.executeConfigurations(parsedExperimentConfigurations, dataRootPath = null, parallelCores = 1)
+    val rawExperimentResults = JSON.Companion.stringify(ExperimentResult.serializer().list, experimentResults)
+    PrintWriter(outputPath, "UTF-8").use { it.write(rawExperimentResults) }
+
+    println('#') // Indicator for the parser
+    println(rawExperimentResults) // This should be the last printed line
 
 //    runVisualizer(result = results.first())
 }
@@ -82,12 +82,11 @@ private fun generateConfigurations(baseline: Boolean): String {
 
     val configurations = generateConfigurations(
 //            domains = listOf(
-//                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
 //                    GRID_WORLD to "input/vacuum/empty.vw"
 //                    GRID_WORLD to "input/vacuum/h_400.vw",
 //                    GRID_WORLD to "input/vacuum/slalom_04.vw",
 //                    GRID_WORLD to "input/vacuum/big_minimum.vw",
-//                    GRID_WORLD to "input/vacuum/minima/minima0.vw"
+//                    GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
 //                    GRID_WORLD to "input/vacuum/minima/minima1.vw",
 //                    GRID_WORLD to "input/vacuum/minima/minima2.vw",
 //                    GRID_WORLD to "input/vacuum/minima/minima3.vw"
@@ -97,28 +96,21 @@ private fun generateConfigurations(baseline: Boolean): String {
 //                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
 //                    GRID_WORLD to "input/vacuum/openBox_400.vw"
 //                    GRID_WORLD to "input/vacuum/maze.vw"
-//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track"
-//                    RACETRACK to "input/racetrack/barto-big.track",
-//                    RACETRACK to "input/racetrack/uniform.track",
-//                    RACETRACK to "input/racetrack/barto-small.track"
-//                    TRAFFIC to "input/traffic/vehicle0.v"
 //            ),
-            domains = (0..199).map { GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" },
+            domains = (0..49).map { GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" },
             planners = planners,
-            actionDurations = listOf(50L),// 100L, 150L, 200L),// 250L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(10L, 20L, 50L, 100L, 150L, 250L, 500L, 1000L, 2000L),
+//            actionDurations = listOf(150L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
-            expansionLimit = 10000000,
+            expansionLimit = 100000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(CES, BACKLOG_RATIO, listOf(10.0, 50.0, 100.0)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
-            ),
-            domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
             )
     )
     println("${configurations.size} configuration has been generated.")
