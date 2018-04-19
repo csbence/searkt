@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
+import edu.unh.cs.ai.realtimesearch.debugTools
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
@@ -183,7 +184,23 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
-        visualizer.visualizeNodes(nodes.entries.map { it.value })
+        visualizer.clear()
+
+        var currentNode = nodes[sourceState]!!
+        val planNodes = mutableListOf(currentNode)
+
+        plan!!.forEach {
+            currentNode = nodes[domain.transition(currentNode.state, it.action)]!!
+            planNodes.add(currentNode)
+        }
+
+        // So we have inner f values:
+        val saveOpen = openList.toList()
+        dijkstra(this)
+        saveOpen.forEach { openList.add(it) }
+
+        visualizer.visualizeNodes(nodes.entries.map { it.value }.filter { it.iteration == iterationCounter }, planNodes)
+        println("Commit \n")
 
         return plan!!
     }
@@ -470,7 +487,14 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     currentExpansionDuration++
                 }
                 .forEach {
+
+                    val avgCoverage = calculateAverageSafeFrontierDistance()
+
                     if (currentExpansionDuration >= costBucket) {
+                        debugTools.avgCoverage.add(avgCoverage to true)
+                        println(avgCoverage to true)
+                        println(">>>>>>>>>>>>>>>>>>>>>> Prove")
+
                         // Switch to safety
                         totalExpansionDuration += currentExpansionDuration
                         currentExpansionDuration = 0L
@@ -485,6 +509,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                         totalSafetyDuration += safetyProofDuration
 
                         if (nextTopNode.safe) {
+                            println(">>>>>>>>>>>>>>>>>>>>>> Success")
+                            predecessorSafetyPropagation(listOf(nextTopNode))
                             // If proof was successful reset the bucket
                             proofSuccessful++
                             costBucket = 10
@@ -493,6 +519,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                             // Increase the
                             costBucket *= 2
                         }
+                    } else {
+                        debugTools.avgCoverage.add(avgCoverage to false)
+                        println(avgCoverage to false)
                     }
                 }
 
@@ -505,39 +534,41 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>,
             SafeRealTimeSearchNode<StateType>?> {
 
-        val maxAvgSafeStateDist = 5; // TODO: make parameter
+        val maxAvgSafeStateDist = 2.2 // TODO: make parameter
 
         logger.debug { "Starting safetyCoverageSearch from sourceState: $sourceState" }
         initializeAStar(sourceState)
 
-        var avgSafeStateDist = .0
-
-        aStarSequence.generateWhile {
-            !terminationChecker.reachedTermination() &&
-                    !domain.isGoal(
-                            openList.peek()?.state ?: throw GoalNotReachableException("Open list is empty.")
+        aStarSequence
+                .generateWhile {
+                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty.")
                     )
-        }.onEach {
-            terminationChecker.notifyExpansion()
-        }.forEach {
+                }
+                .onEach {
+                    terminationChecker.notifyExpansion()
+                }
+                .forEach { expandedNode ->
+                    // maybe we're lucky...
+                    expandedNode.safe = domain.isSafe(expandedNode.state)
 
-            // TODO: we can probably give it a name in a more kotlin-way
-            var expandedNode = it
+                    val avgCoverage = calculateAverageSafeFrontierDistance()
+                    println(avgCoverage)
 
-            // maybe we're lucky...
-            expandedNode.safe = domain.isSafe(expandedNode.state);
+                    // attempt to prove safety if we are below our desired safety coverage
+                    if ((!expandedNode.safe) && avgCoverage > maxAvgSafeStateDist) {
+                        proveSafety(expandedNode, FakeTerminationChecker)
+                        debugTools.avgCoverage.add(avgCoverage to true)
+                    } else {
+                        debugTools.avgCoverage.add(avgCoverage to false)
+                    }
 
-            // attempt to prove safety if we are below our desired safety coverage
-            if ((!expandedNode.safe) && avgSafeStateDist > maxAvgSafeStateDist)
-                proveSafety(expandedNode, FakeTerminationChecker)
-
-            /* update our coverage */
-            if (expandedNode.safe)
-                predecessorSafetyPropagation(listOf(expandedNode))
-
-            avgSafeStateDist = calculateAverageSafeFrontierDistance()
-
-        }
+                    // update our coverage
+                    if (expandedNode.safe) {
+                        println(">>>>>>>>>>>>>>>>>>>>>> Success")
+                        predecessorSafetyPropagation(listOf(expandedNode))
+                    }
+                }
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
 
@@ -577,21 +608,37 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     }
 
 
+    /**
+     * Calculate the average number of parents we have to visit from any frontier node to find a safe predecessor.
+     *
+     * The lower the better
+     */
     private fun calculateAverageSafeFrontierDistance(): Double {
 
         var totalSafeFrontierDistance = 0
-        openList.forEach {
-            var currentNode = it
+        var weightedSafeFrontierDistance = 0.0
+        var totalWeight = 0.0
+
+        val topNodes = openList.toList().sortedBy { it.f }.take(5)
+
+        topNodes.forEach { frontierNode ->
+            var currentNode = frontierNode
             var depth = 0
             while (currentNode.parent != currentNode) {
                 if (currentNode.safe) break
                 depth++
                 currentNode = currentNode.parent
             }
+
+            val weight = 1 / frontierNode.f
+            totalWeight += weight
+
             totalSafeFrontierDistance += depth
+            weightedSafeFrontierDistance += weight * depth
         }
 
-        return totalSafeFrontierDistance.toDouble() / openList.size
+//        return totalSafeFrontierDistance.toDouble() / openList.size
+        return weightedSafeFrontierDistance / totalWeight
     }
 
     private fun initializeAStar(state: StateType) {

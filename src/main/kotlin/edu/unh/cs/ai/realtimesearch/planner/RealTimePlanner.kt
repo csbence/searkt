@@ -70,8 +70,7 @@ val fValueComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs,
     }
 }
 
-val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
-        = Comparator { lhs, rhs ->
+val heuristicComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs, rhs ->
     when {
         lhs.heuristic < rhs.heuristic -> -1
         lhs.heuristic > rhs.heuristic -> 1
@@ -82,6 +81,7 @@ val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
 
 interface RealTimeSearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : SearchNode<StateType, NodeType> {
     var iteration: Long
+    var localDepth: Int
 }
 
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
@@ -167,6 +167,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
                 parent = sourceNode
                 action = successor.action
                 actionCost = successor.actionCost
+                localDepth = sourceNode.localDepth + 1
             }
 
             if (!successorNode.open) {

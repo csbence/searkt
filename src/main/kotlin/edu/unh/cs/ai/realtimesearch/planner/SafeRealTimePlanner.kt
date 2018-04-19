@@ -29,6 +29,8 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
         override var iteration: Long,
         parent: SafeRealTimeSearchNode<StateType>? = null) : RealTimeSearchNode<StateType, SafeRealTimeSearchNode<StateType>>, Indexable, Safe {
 
+    override var localDepth: Int = 0
+
     override val id: Int = getNodeCount()
 
     /** Item index in the open list. */

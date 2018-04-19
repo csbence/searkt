@@ -6,20 +6,16 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMM
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.*
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
+import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import kotlinx.io.PrintWriter
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -47,6 +43,8 @@ fun main(args: Array<String>) {
     println(parsedConfigurations)
 
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
+    println("Summary: ")
+    results.forEach { println("Success: ${it.success}  gat: ${it.goalAchievementTime}") }
 
     val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
 //    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
@@ -54,7 +52,7 @@ fun main(args: Array<String>) {
 //    System.err.println(results.summary())
 
     println('#') // Indicator for the parser
-    println(rawResults) // This should be the last printed line
+//    println(rawResults) // This should be the last printed line
 
 //    System.err.println("Searkt is done!")
 //    System.err.flush()
@@ -77,7 +75,7 @@ private fun generateConfigurations(): String {
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
             planners = listOf(SAFE_RTS),
-            actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
@@ -107,8 +105,22 @@ private fun generateConfigurations(): String {
                     Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
             )
     )
+
     println("${configurations.size} configuration has been generated.")
-    return JSON.indented.stringify(SimpleSerializer.list, configurations.toList())
+    return JSON.indented.stringify(SimpleSerializer.list, configurations.take(1).toList())
 }
+
+class DebugTools {
+    val avgCoverage = mutableListOf<Pair<Double, Boolean>>()
+
+
+    fun save() {
+        PrintWriter("avgCoverage.csv", "UTF-8").use { writer ->
+            avgCoverage.forEach{ writer.write("${it.first}")}
+        }
+    }
+}
+
+val debugTools = DebugTools()
 
 

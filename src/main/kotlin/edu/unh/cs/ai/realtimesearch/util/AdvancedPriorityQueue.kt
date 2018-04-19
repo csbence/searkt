@@ -205,6 +205,8 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
         }
     }
 
+    fun toList(): List<T> = backingArray.take(size).map { it!! }
+
     /**
      * Apply the given action to every item in the priority queue and clear the priority queue.
      */
