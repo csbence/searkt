@@ -34,4 +34,4 @@ def main(result_path, src_path_prefix, output_dir):
 
 
 if __name__ == "__main__":
-    main('../output/reachability.json', '../src/main/resources/', './filtered_domains')
+    main('../output/uniform_reachability.json', '../src/main/resources/', './filtered_uniform_domains')

@@ -77,6 +77,7 @@ def plot_domain_instances(data):
 
 def plot_all_experiments(data, plot_title):
     results = DataFrame(columns="actionDuration withinOpt algorithmName".split())
+    cpu_time_results = DataFrame(columns="algorithm cpu_per_iteration_ms, planning_time, iteration_count".split())
 
     # Change data structure such that goal achievement time is averaged,
     # grouped by action duration and algorithm
@@ -89,10 +90,22 @@ def plot_all_experiments(data, plot_title):
         mean_within_opt = duration_group['withinOpt'].mean()
         results = add_row(results, [fields[2], mean_within_opt, alg_name])
 
+    for fields, alg_group in data.groupby(['algorithmName', 'backlogRatio']):
+        alg_name = fields[0]
+        if fields[0] == "CES":
+            alg_name += " Backup Ratio: " + str(fields[1])
+
+        mean_planning_time = alg_group['planningTime'].mean()
+        mean_iteration_count = alg_group['iterationCount'].mean()
+        mean_cpu_time = (alg_group['planningTime'] / alg_group['iterationCount']).mean() / 1000000
+        cpu_time_results = add_row(cpu_time_results, [alg_name, mean_cpu_time, mean_planning_time, mean_iteration_count])
+
     pivot = results.pivot(index="actionDuration", columns="algorithmName", values="withinOpt")
 
     palette = sns.color_palette(n_colors=10)
     plot = pivot.plot(color=palette, title=plot_title, legend=True)
+
+    plot.set_xscale('log')
 
     plot.set_xlabel('Expansion Limit (Per Iteration)')
     plot.set_ylabel('Goal Achievement Time (Factor of Optimal)')
@@ -100,16 +113,21 @@ def plot_all_experiments(data, plot_title):
 
     plt.savefig("../output/" + plot_title + ".png", format="png")
 
+    cpu_time_results.to_csv("../output/" + plot_title + "_cpu.csv")
+
 
 def main(individual_plots, path_to_base, path, title):
-    results = read_data(path)
-    baseline_results = read_data(path_to_base)
+    # results = read_data(path)
+    results = []
+    for path_name in path:
+        results += read_data(path_name)
 
-    results += baseline_results
+    for base_path_name in path_to_base:
+        results += read_data(base_path_name)
 
     data = construct_data_frame(results)
 
-    #we'll see if we want this...
+    # we'll see if we want this...
     set_rc()
 
     data.drop(['commitmentType', "success", "timeLimit",
@@ -144,8 +162,9 @@ def main(individual_plots, path_to_base, path, title):
 # define command line usage
 parser = argparse.ArgumentParser()
 
-parser.add_argument("path_to_base", nargs="?", help="Path to base results JSON", default="../output/base_results.json")
-parser.add_argument("path", nargs="?", help="Path to experiment results JSON", default="../output/results.json")
+parser.add_argument("-b", "--path_to_base", nargs="*", help="Path to base results JSON",
+                    default=["../output/base_results.json"])
+parser.add_argument("-p", "--path", nargs="*", help="Path to experiment results JSON", default=["../output/results.json"])
 parser.add_argument("-i", "--individual",
                     help="Should plots be generated for each domain individually? (Primarily for debugging)",
                     action="store_true")
