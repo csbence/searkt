@@ -35,7 +35,7 @@ class ExperimentResult {
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
                 systemProperties: HashMap<String, String> = HashMap(),
-                experimentRunTime: Long){
+                experimentRunTime: Double){
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -71,7 +71,7 @@ class ExperimentResult {
     var timestamp: Long = 0
     var success: Boolean = false
     var systemProperties: MutableMap<String, String>
-    var experimentRunTime: Long = 0
+    var experimentRunTime: Double = 0.0
 
     @Optional
     var errorDetails: String = ""

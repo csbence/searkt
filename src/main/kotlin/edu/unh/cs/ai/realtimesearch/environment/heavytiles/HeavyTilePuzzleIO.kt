@@ -36,7 +36,8 @@ object HeavyTilePuzzleIO {
 
         val slidingTilePuzzle = HeavyTilePuzzle(dimension, actionDuration)
         val tiles = ByteArray(16, {0.toByte()})
-        val slidingTilePuzzleState = HeavyTilePuzzle4State(0, tiles, 0.0, 0.0)
+        val slidingTilePuzzleState = HeavyTilePuzzle4State(0, tiles, 0.0, 0.0,
+                slidingTilePuzzle.calculateHashCode(tiles))
 
         try {
             val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
@@ -54,8 +55,10 @@ object HeavyTilePuzzleIO {
             val zeroIndex = slidingTilePuzzleState.getIndex(zeroLocation!!.x, zeroLocation!!.y)
             val heuristic = slidingTilePuzzle.initialHeuristic(slidingTilePuzzleState)
             val distance = slidingTilePuzzle.initialDistance(slidingTilePuzzleState)
+            val hashCode = slidingTilePuzzle.calculateHashCode(slidingTilePuzzleState.tiles)
 
-            return SlidingTilePuzzleInstance(slidingTilePuzzle, HeavyTilePuzzle4State(zeroIndex, slidingTilePuzzleState.tiles, heuristic, distance))
+            return SlidingTilePuzzleInstance(slidingTilePuzzle, HeavyTilePuzzle4State(zeroIndex,
+                    slidingTilePuzzleState.tiles, heuristic, distance, hashCode))
         } catch (e: NumberFormatException) {
             throw InvalidSlidingTilePuzzleException("Tile must be a number.", e)
         }

@@ -10,10 +10,10 @@ import java.util.Comparator
 //public class GEQueue<E extends RBTreeElement<E, E> & MinHeapable> {
 class GEQueue<E>(openComparator: Comparator<E>,
                  private val geComparator: Comparator<E>,
-                 focalComparator: Comparator<E>,
-                 private val id: Int) where E : SearchQueueElement<E>, E : RBTreeElement<E, E> {
+                 private val id: Int,
+                 private val focal: BinHeap<E>) where E : SearchQueueElement<E>, E : RBTreeElement<E, E> {
     private val open: RBTree<E, E> = RBTree(openComparator, geComparator)
-    private val focal: BinHeap<E> = BinHeap(focalComparator, id)
+//    private val focal: BinHeap<E> = BinHeap(1000000, focalComparator, id)
 
     private val focalVisitor = object : RBTreeVisitor<E> {
         override fun visit(e: E, op: Int) {

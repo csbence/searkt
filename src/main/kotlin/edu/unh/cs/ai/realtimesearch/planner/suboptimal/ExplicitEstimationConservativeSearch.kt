@@ -12,7 +12,7 @@ import java.util.*
 import kotlin.Comparator
 import kotlin.math.abs
 
-class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
+class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
     private val errorModel: String = configuration.errorModel
@@ -65,8 +65,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     private val explicitNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fHat <= weight * rhs.fHat -> -1
-            lhs.fHat > weight * rhs.fHat -> 1
+            lhs.fHat <= weight * rhs.f -> -1
+            lhs.fHat > weight * rhs.f -> 1
             else -> 0
         }
     }
@@ -130,8 +130,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                                        var actionCost: Double, var action: Action, override var d: Double,
                                                        override var parent: Node<StateType>? = null) :
-            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>,
-            Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>> {
+            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>> {
         override val g: Double
             get() = cost
         override val h: Double
@@ -224,14 +223,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
             if (parent != null) {
-//                println("${this.sseH} + (($edgeCost + $heuristic) - ${parent.heuristic})")
                 this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
                 this.sseD = parent.sseD + ((1 + d) - parent.d)
-//                println("sseH: $sseH | sseD: $sseD")
             }
             this.hHat = computeHHat()
             this.dHat = computeDHat()
-//            println("$fHat >= $f")
             assert(fHat >= f)
             assert(dHat >= 0)
         }
@@ -272,8 +268,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     }
 
     private fun insertNode(node: Node<StateType>) {
-        val bestFHat = openList.peekOpen() ?: node
-        openList.add(node, bestFHat)
+        val bestF = cleanup.peek() ?: node
+        openList.add(node, bestF)
         cleanup.add(node)
         nodes[node.state] = node
     }
@@ -348,7 +344,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         // bestChild will be the successor of the source with the lowest f (ties broken on d)
         // calculate the global errors
         val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
-        val parentF = currentGValue + sourceNode.h // currentGValue + domain.heuristic(sourceNode.state)
+        val parentF = sourceNode.f // currentGValue + domain.heuristic(sourceNode.state)
         heuristicErrorGlobalSum += bestChildF - parentF // should be equal if not record the error
         val bestChildL = currentDepthValue + 1 + domain.distance(bestChild.state)
         val parentL = currentDepthValue + domain.distance(sourceNode.state)
@@ -380,7 +376,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                     actionCost = successor.actionCost
                 }
                 successorNode.computeHats() // set the inadmissible estimates after setting the cost
-//                println(successorNode)
                 if (!successorNode.open) {
                     insertNode(successorNode)
                 } else {

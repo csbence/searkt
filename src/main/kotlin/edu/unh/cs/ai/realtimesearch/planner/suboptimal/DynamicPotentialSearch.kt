@@ -20,8 +20,8 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     var terminationChecker: TerminationChecker? = null
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var actionCost: Double, var action: Action,
                                              var parent: DynamicPotentialSearch.Node<StateType>? = null) : BucketNode {
 
         val open: Boolean
@@ -33,7 +33,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
         override fun getFValue(): Double = f
 
-        override fun getGValue(): Double = cost.toDouble()
+        override fun getGValue(): Double = cost
 
         override fun getHValue(): Double = heuristic
 
@@ -61,7 +61,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000000, 1.toFloat())
     private var openList = BucketOpenList<Node<StateType>>(weight) //BucketOpenList<Node<StateType>>(weight)
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
@@ -76,7 +76,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Long.MAX_VALUE
+                    cost = Double.MAX_VALUE
             )
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -87,7 +87,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
-        logger.debug("Expanding $sourceNode.")
         val currentGValue = sourceNode.cost
         val successors = domain.successors(sourceNode.state)
         for (successor in successors) {
@@ -127,16 +126,17 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction)
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
         var currentNode: Node<StateType>
+        val starTime = System.nanoTime()
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
 
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = openList.chooseNode() ?: throw GoalNotReachableException("Open list is empty")
-            logger.debug("Top node is $topNode.")
             if (domain.isGoal(topNode.state)) {
+                executionNanoTime = System.nanoTime() - starTime
                 return extractPlan(topNode, state)
             }
             currentNode = topNode

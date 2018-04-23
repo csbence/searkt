@@ -241,7 +241,7 @@ object ConfigurationExecutor {
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             EETS -> executeOfflineSearch(ExplicitEstimationTildeSearch(domain, configuration), configuration, domain, sourceState)
-            EESD -> executeOfflineSearch(ExplicitEstimateSearch(domain, configuration), configuration, domain, sourceState)
+            EECS -> executeOfflineSearch(ExplicitEstimationConservativeSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 

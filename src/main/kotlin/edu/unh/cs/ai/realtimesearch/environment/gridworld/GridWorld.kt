@@ -33,7 +33,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 successors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = actionDuration))
+                        actionCost = actionDuration.toDouble()))
             }
         }
 
@@ -127,7 +127,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
                 predecessors.add(SuccessorBundle(
                         GridWorldState(newLocation),
                         action,
-                        actionCost = 1))
+                        actionCost = 1.0))
             }
         }
 

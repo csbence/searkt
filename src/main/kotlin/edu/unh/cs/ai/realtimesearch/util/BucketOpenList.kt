@@ -13,8 +13,8 @@ interface BucketNode {
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val openList = AdvancedPriorityQueue(100000000, PotentialComparator<Bucket<T>>())
-    private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000000, 1.toFloat())
+    private val openList = BinHeap(1000000, PotentialComparator<Bucket<T>>(), 0)//AdvancedPriorityQueue(100000000, PotentialComparator<Bucket<T>>())
+    private val lookUpTable = HashMap<GHPair, Bucket<T>>(1000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 
@@ -48,9 +48,28 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     private data class GHPair(val g: Double, val h: Double)
 
 
-    inner class Bucket<T : BucketNode>(val f: Double, val g: Double, val h: Double,
-                                       val nodes: ArrayList<T>) : Indexable {
+    inner class Bucket<T : BucketNode>(override val f: Double, override val g: Double, override val h: Double,
+                                       val nodes: ArrayList<T>) : Indexable, SearchQueueElement<Bucket<T>> {
+        override val d: Double
+            get() = g
+        override val depth: Double
+            get() = g
+        override val hHat: Double
+            get() = h
+        override val dHat: Double
+            get() = d
+        override var parent: Bucket<T>?
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            set(value) {}
 
+        override fun setIndex(key: Int, index: Int) {
+            indexMap[key] = index
+        }
+
+        override fun getIndex(key: Int): Int {
+            return indexMap[key]
+        }
+        private val indexMap = Array(1, {-1})
         override var index: Int = -1
 
         val potential: Double
@@ -103,7 +122,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         get() = lookUpTable.size
 
     val size
-        get() = openList.size
+        get() = openList.size()
 
     fun isNotEmpty(): Boolean = size != 0
 
@@ -114,7 +133,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     override fun toString(): String {
         val stringBuilder = StringBuilder()
                 .appendln("fMin: $fMin")
-                .appendln("OpenList size: ${openList.size}")
+                .appendln("OpenList size: ${openList.size()}")
 
         openList.forEach { stringBuilder.append(it.toString()) }
 
@@ -196,7 +215,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         topBucketOnOpen.remove(firstElementInTopBucket)
 
         if (topBucketOnOpen.isEmpty()) {
-            openList.pop() // pop the empty bucket
+            openList.poll() // pop the empty bucket
             val nextBucketFValue = openList.peek()?.f ?: Double.MAX_VALUE
             if (firstElementInTopBucket.getFValue() == minFValue && nextBucketFValue > minFValue) {
                 recomputeMinFValue() // recompute the new minimum f value on open

@@ -278,7 +278,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
             }
 
             // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost))
+            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
 
             // Skip if we got back to the parent
             if (successorState == sourceNode.parent.state) {
@@ -294,10 +294,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
                 successorNode.apply {
                     val currentDistanceEstimate = distanceError / (1.0 - distanceError) // Dionne 2011 (3.8)
 
-                    cost = successorGValueFromCurrent
+                    cost = successorGValueFromCurrent.toLong()
                     parent = sourceNode
                     action = successor.action
-                    actionCost = successor.actionCost
+                    actionCost = successor.actionCost.toLong()
                     correctedHeuristic = heuristicError * currentDistanceEstimate + heuristic
                 }
 
@@ -349,7 +349,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
                     heuristic = heuristic,
                     distance = distance,
                     cost = Long.MAX_VALUE,
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     iteration = iterationCounter,

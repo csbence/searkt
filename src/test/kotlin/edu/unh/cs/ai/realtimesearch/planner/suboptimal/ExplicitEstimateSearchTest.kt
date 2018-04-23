@@ -2,6 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
@@ -13,11 +14,12 @@ import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
 import kotlin.math.roundToInt
+import kotlin.system.measureNanoTime
 import kotlin.test.assertTrue
 
-class ExplicitEstimateSearchTest {
+class ExplicitEstimationSearchTest {
     private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
-            null, 1L, 1000L, Long.MAX_VALUE, null, 1.0, null, null, null, null,
+            null, 100000L, 1000L, Long.MAX_VALUE, null, 1.0, null, null, null, null,
             null, null, null, null, null, null, errorModel = "path")
 
     private fun createInstanceFromString(puzzle: String): InputStream {
@@ -40,9 +42,9 @@ class ExplicitEstimateSearchTest {
     fun testEES() {
         val tiles = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
         kotlin.test.assertTrue { eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000)).isEmpty() }
     }
 
@@ -50,9 +52,9 @@ class ExplicitEstimateSearchTest {
     fun testEES2() {
         val tiles = "1 2 3 0 4 5 6 7 8 9 10 11 12 13 14 15"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -63,9 +65,9 @@ class ExplicitEstimateSearchTest {
     fun testEES3() {
         val tiles = "4 1 2 3 8 5 6 7 12 9 10 11 13 14 15 0"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent= ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -76,9 +78,9 @@ class ExplicitEstimateSearchTest {
     fun testEES4() {
         val tiles = "0 4 1 2 8 5 6 3 12 9 10 7 13 14 15 11"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
         val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -89,13 +91,36 @@ class ExplicitEstimateSearchTest {
     fun testEES5() {
         val tiles = "4 1 2 3 8 0 10 6 12 5 9 7 13 14 15 11"
         val instance = createInstanceFromString(tiles)
-        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, 1L)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val eesAgent = ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
-        val plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        var plan: List<Action> = emptyList()
+        val timeTaken = measureNanoTime {
+            plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        }
+        println("timeTaken:${eesAgent.executionNanoTime}")
+        println("timeTaken:$timeTaken")
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
+    }
+
+    @Test
+    fun testOneExpansion() {
+        val tiles = "1 0 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+        val instance = createInstanceFromString(tiles)
+        val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = slidingTilePuzzle.initialState
+        val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        var plan: List<Action> = emptyList()
+        val timeTaken = measureNanoTime {
+            plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
+        }
+        println("timeTaken:${eesAgent.executionNanoTime}")
+        println("timeTaken:$timeTaken")
+        println(plan)
+        kotlin.test.assertTrue { plan.isNotEmpty() }
+        kotlin.test.assertTrue { plan.size == 1 }
     }
 
     @Test
@@ -119,23 +144,24 @@ class ExplicitEstimateSearchTest {
                 46, 59, 62, 42, 66, 55, 46, 52, 54, 59, 49, 54, 52, 58, 53, 52, 54, 47, 50, 59, 60, 52, 55, 52, 58, 53, 49, 54, 54,
                 42, 64, 50, 51, 49, 47, 49, 59, 53, 56, 56, 64, 56, 41, 55, 50, 51, 57, 66, 45, 57, 56, 51, 47, 61, 50, 51, 53, 52,
                 44, 56, 49, 56, 48, 57, 54, 53, 42, 57, 53, 62, 49, 55, 44, 45, 52, 65, 54, 50, 57, 57, 46, 53, 50, 49, 44, 54, 57, 54)
-        val startingWeight = 3.0
+        val startingWeight = 1.2
         val stepSize = 0.00
         for (w in 2..2) {
             val currentWeight = startingWeight + (stepSize * w)
             println("running sub-optimality validation on weight: $currentWeight")
             configuration.weight = currentWeight
             for (i in 1..100) {
-                print(i.toString() + " ")
+                print(i.toString() + "\n")
+                System.out.flush()
                 System.out.flush()
                 val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
-                val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
+                val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, configuration.actionDuration)
                 val initialState = slidingTilePuzzle.initialState
-                val eetsAgent = ExplicitEstimateSearch(slidingTilePuzzle.domain, configuration)
+                val eetsAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
                 val plan: List<Action>
                 try {
                     plan = eetsAgent.plan(initialState, StaticExpansionTerminationChecker(Long.MAX_VALUE))
-                    val pathLength  = plan.size.toLong()
+                    val pathLength = plan.size.toLong()
                     var currentState = initialState
                     // valid plan check
                     plan.forEach { action ->

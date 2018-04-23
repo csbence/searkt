@@ -68,6 +68,15 @@ class InverseTilePuzzleTest {
     }
 
     @Test
+    fun testHeuristicSimple() {
+        val tiles = "1 2 3 0 4 5 6 7 8 9 10 11 12 13 14 15"
+        val instance = createInstanceFromString(tiles)
+        val inverseTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
+        val initialState = inverseTilePuzzle.initialState
+        val successors = inverseTilePuzzle.domain.successors(initialState)
+    }
+
+    @Test
     fun testSolving() {
         val tiles = "4 1 2 3 8 0 10 6 12 5 9 7 13 14 15 11"
         val instance = createInstanceFromString(tiles)
@@ -89,7 +98,7 @@ class InverseTilePuzzleTest {
                 46, 59, 62, 42, 66, 55, 46, 52, 54, 59, 49, 54, 52, 58, 53, 52, 54, 47, 50, 59, 60, 52, 55, 52, 58, 53, 49, 54, 54,
                 42, 64, 50, 51, 49, 47, 49, 59, 53, 56, 56, 64, 56, 41, 55, 50, 51, 57, 66, 45, 57, 56, 51, 47, 61, 50, 51, 53, 52,
                 44, 56, 49, 56, 48, 57, 54, 53, 42, 57, 53, 62, 49, 55, 44, 45, 52, 65, 54, 50, 57, 57, 46, 53, 50, 49, 44, 54, 57, 54)
-        val startingWeight = 2.0
+        val startingWeight = 15
         val stepSize = 0.0
         for (w in 2..2) {
             val currentWeight = startingWeight + (stepSize * w)
@@ -105,6 +114,7 @@ class InverseTilePuzzleTest {
                 val plan: List<Action>
                 try {
                     plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(5000000))
+                    println(plan)
                     val pathLength  = plan.size.toLong()
                     var currentState = initialState
                     // valid plan check
@@ -121,8 +131,8 @@ class InverseTilePuzzleTest {
                     e.printStackTrace()
                     System.err.println(e.message + " on instance $i with weight $currentWeight")
                 }
-                // assertTrue { (optimalSolutionLengths[i - 1] * currentWeight).roundToInt() >= plan.size }
-                // assertEquals((optimalSolutionLengths[i - 1 ] * 1.25).roundToInt(), plan.size, "instance $i")
+//                 assertTrue { (optimalSolutionLengths[i - 1] * currentWeight).roundToInt() >= plan.size }
+//                 assertEquals((optimalSolutionLengths[i - 1 ] * 1.25).roundToInt(), plan.size, "instance $i")
             }
         }
     }

@@ -25,12 +25,20 @@ import java.util.Comparator
  *
  * @author Matthew Hatem
  */
-class BinHeap<E : SearchQueueElement<E>>(private val cmp: Comparator<E>, val key: Int) {
+class BinHeap<E : SearchQueueElement<E>>(private var queue: ArrayList<E>, private val cmp: Comparator<E>, val key: Int) {
 
-    private val heap: ArrayList<E> = ArrayList()
+    val heap: ArrayList<E>
+        get() = queue
+
+    companion object {
+        inline operator fun <reified E: SearchQueueElement<E>> invoke(capacity: Int, cmp: Comparator<E>, key: Int) =
+                BinHeap(ArrayList(capacity), cmp, key)
+    }
 
     val isEmpty: Boolean
         get() = heap.isEmpty()
+
+    fun isNotEmpty() = !isEmpty
 
     fun size(): Int {
         return heap.size
@@ -153,5 +161,11 @@ class BinHeap<E : SearchQueueElement<E>>(private val cmp: Comparator<E>, val key
 
     fun getElementAt(i: Int): E {
         return heap[i]
+    }
+
+    inline fun forEach(action: (E) -> Unit) {
+        for (item in this.heap) {
+            action(item)
+        }
     }
 }

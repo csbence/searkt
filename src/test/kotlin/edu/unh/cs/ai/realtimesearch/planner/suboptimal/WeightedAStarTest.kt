@@ -64,6 +64,7 @@ class WeightedAStarTest {
         val initialState = slidingTilePuzzle.initialState
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
         kotlin.test.assertTrue { aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L)).isEmpty() }
+        println("timeTaken:${aStarAgent.executionNanoTime}")
     }
 
     @Test
@@ -114,6 +115,7 @@ class WeightedAStarTest {
         val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
         val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
         println(plan)
+        println("timeTaken:${aStarAgent.executionNanoTime}")
         kotlin.test.assertTrue { plan.isNotEmpty() }
         kotlin.test.assertTrue { plan.size == 12 }
     }

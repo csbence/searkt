@@ -51,7 +51,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 successors.add(SuccessorBundle(
                         PointRobotState(state.x + xdot, state.y + ydot),
                         PointRobotAction(xdot, ydot),
-                        actionDuration))
+                        actionDuration.toDouble()))
             }
         }
         return successors
@@ -131,7 +131,7 @@ class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location
                 predecessors.add(SuccessorBundle(
                         PointRobotState(state.x - xdot, state.y - ydot),
                         PointRobotAction(xdot, ydot),
-                        actionDuration))
+                        actionDuration.toDouble()))
             }
         }
         return predecessors

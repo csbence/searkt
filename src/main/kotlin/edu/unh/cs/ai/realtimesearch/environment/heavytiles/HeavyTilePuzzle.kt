@@ -4,13 +4,17 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
+import java.util.*
 
 class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTilePuzzle4State> {
+
+    private val randomIntegerTable = Array(256, {Random(Random().nextLong()).nextInt()})
+
     val logger = LoggerFactory.getLogger(HeavyTilePuzzle::class.java)!!
 
     private val goalState: HeavyTilePuzzle4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })
-        val state = HeavyTilePuzzle4State(0, tiles, 0.0, 0.0)
+        val state = HeavyTilePuzzle4State(0, tiles, 0.0, 0.0, calculateHashCode(tiles))
         assert(initialHeuristic(state) == 0.0)
         state
     }
@@ -23,7 +27,7 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
 
             if (successorState != null) {
                 val tileToBeMoved = state.tiles[state.zeroIndex + state.getIndex(action.relativeX, action.relativeY)]
-                successorBundles.add(SuccessorBundle(successorState, action, tileToBeMoved.toLong()))
+                successorBundles.add(SuccessorBundle(successorState, action, tileToBeMoved.toDouble()))
             }
         }
 
@@ -47,13 +51,22 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
             val modifiedTiles = ByteArray(16, { state.tiles[it] })
             val heuristic = initialHeuristic(state)
             val distance = initialDistance(state)
+            val hashCode = calculateHashCode(state.tiles)
 
             state.tiles = savedTiles
 
-            return HeavyTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic, distance)
+            return HeavyTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic, distance, hashCode)
         }
 
         return null
+    }
+
+    fun calculateHashCode(state: ByteArray): Int {
+        var hashCode = 0
+        state.forEach { byte ->
+            hashCode = (Integer.rotateLeft(hashCode, 1) xor randomIntegerTable[byte.toInt()])
+        }
+        return hashCode
     }
 
     fun initialDistance(state: HeavyTilePuzzle4State): Double {

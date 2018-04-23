@@ -37,7 +37,7 @@ class VacuumWorld(val width: Int,
                     successors.add(SuccessorBundle(
                             VacuumWorldState(newLocation, state.dirtyCells),
                             it,
-                            1)) // all actions have cost of 1
+                            1.0)) // all actions have cost of 1
 
                 }
             } else if (newLocation in state.dirtyCells) {
@@ -46,7 +46,7 @@ class VacuumWorld(val width: Int,
                         // TODO: inefficient?
                         VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
                         it,
-                        1))
+                        1.0))
             }
         }
 

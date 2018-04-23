@@ -103,5 +103,5 @@ interface Domain<State> {
     fun appendDomainSpecificResults(results: ExperimentResult) {}
 }
 
-data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Long)
+data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Double)
 

@@ -4,13 +4,17 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import org.slf4j.LoggerFactory
 import java.lang.Math.abs
+import java.util.*
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
+
+    private val randomIntegerTable = Array(256, { Random(Random().nextLong()).nextInt() })
+
     val logger = LoggerFactory.getLogger(SlidingTilePuzzle::class.java)!!
 
     private val goalState: SlidingTilePuzzle4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })
-        val state = SlidingTilePuzzle4State(0, tiles, 0.0)
+        val state = SlidingTilePuzzle4State(0, tiles, 0.0, calculateHashCode(tiles))
         assert(initialHeuristic(state) == 0.0)
         state
     }
@@ -22,7 +26,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             val successorState = successorState(state, action.relativeX, action.relativeY, action)
 
             if (successorState != null) {
-                successorBundles.add(SuccessorBundle(successorState, action, 1))
+                successorBundles.add(SuccessorBundle(successorState, action, 1.0))
             }
         }
 
@@ -45,13 +49,22 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
             val modifiedTiles = ByteArray(16, { state.tiles[it] })
             val heuristic = initialHeuristic(state)
+            val hashCode = calculateHashCode(state.tiles)
 
             state.tiles = savedTiles
 
-            return SlidingTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic)
+            return SlidingTilePuzzle4State(newZeroIndex, modifiedTiles, heuristic, hashCode)
         }
 
         return null
+    }
+
+    fun calculateHashCode(state: ByteArray): Int {
+        var hashCode = 0
+        state.forEach { byte ->
+            hashCode = (Integer.rotateLeft(hashCode, 1) xor randomIntegerTable[byte.toInt()])
+        }
+        return hashCode
     }
 
     override fun heuristic(state: SlidingTilePuzzle4State): Double = state.heuristic

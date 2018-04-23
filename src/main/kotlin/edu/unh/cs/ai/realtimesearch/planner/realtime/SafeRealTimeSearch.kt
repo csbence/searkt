@@ -585,7 +585,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             val undiscoveredNode = SafeRealTimeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = Long.MAX_VALUE,

@@ -8,6 +8,7 @@ import copy
 import datetime
 import getpass
 import itertools
+import time
 import json
 import os
 import sys
@@ -45,11 +46,21 @@ class Worker(Thread):
         self.hostname = hostname
         self.password = password
 
+    def machine_is_not_idle(self, client, host):
+        stdin, stdout, stderr = client.exec_command("vmstat 2 2")
+        output = stdout.readlines()
+        last_line = output[-1].split()
+        idle = last_line[-3]
+        return int(idle) <= 98
+
     def run(self):
         client = spawn_ssh_client(self.hostname, self.password)
         while True:
             try:
                 experiment = self.experiment_queue.get(block=False)
+                while self.machine_is_not_idle(client, self.hostname):
+                    print("Machine {} is not idle, sleeping and retrying".format(self.hostname))
+                    time.sleep(0.05)
                 command_to_run = experiment.command
                 # print("RUNNING: {}".format(command_to_run))
                 stdin, stdout, stderr = client.exec_command(command_to_run)
@@ -93,7 +104,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['errorModel'] = ['global']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
@@ -101,6 +112,7 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
+    # weight = [3.0]
     weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
@@ -120,12 +132,10 @@ def generate_base_suboptimal_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'EETS']])
 
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', weight,
-                                                [['algorithmName', 'EESD']])
-
-
-    return compiled_configurations
+    experiment_tag = ""
+    for alg in algorithms_to_run:
+        experiment_tag = experiment_tag + "-" + alg
+    return compiled_configurations, experiment_tag
 
 
 def generate_base_configuration():
@@ -155,7 +165,7 @@ def generate_base_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [1.5, 2.0, 2.5, 3.0, 3.5, 4.5, 5.0]
+    weight = [2.0, 2.5, 3.0, 3.5, 4.5, 5.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -197,7 +207,8 @@ def generate_base_configuration():
 
 
 def create_experiments(configurations):
-    command = "cd IdeaProjects/real-time-search && java -jar build/libs/real-time-search-1.0-SNAPSHOT.jar"
+    command = "cd IdeaProjects/real-time-search && " \
+              "../../jdk-9.0.4/bin/java -jar build/libs/real-time-search-1.0-SNAPSHOT.jar"
     return [Experiment(configuration, command) for configuration in configurations]
 
 
@@ -217,8 +228,8 @@ def generate_racetrack():
 
 
 def generate_tile_puzzle():
-    configurations = generate_base_suboptimal_configuration()
-
+    configurations, tag = generate_base_suboptimal_configuration()
+    puzzle_to_run = 'SLIDING_TILE_PUZZLE_4'
     puzzles = []
     for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
@@ -226,10 +237,12 @@ def generate_tile_puzzle():
     puzzle_base_path = 'input/tiles/korf/4/real/'
     full_puzzle_paths = [puzzle_base_path + puzzle for puzzle in puzzles]
 
-    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
+    configurations = cartesian_product(configurations, 'domainName', [puzzle_to_run])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
-    return configurations
+    tag = tag + "-" + puzzle_to_run
+
+    return configurations, tag
 
 
 def cartesian_product(base, key, values, filters=None):
@@ -251,7 +264,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configuration(configuration, timeout=100000):
-    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-Xms7500m', '-Xmx7500m', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configuration = json.dumps(configuration)
 
     try:
@@ -292,10 +305,10 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results):
+def save_results(results, tag):
     l_results = []
     o_results = []
-    f = open("output/data-{:%H-%M-%d-%m-%y}.json".format(datetime.datetime.now()), 'w')
+    f = open("output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now()), 'w')
     for result in results:
         parse_result = [result.result[0].strip(), result.result[1].strip()]
         result_offset = parse_result.index('#') + 1
@@ -313,7 +326,7 @@ def main():
     command_queue = Queue()
     result_queue = Queue()
 
-    configurations = generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
 
     experiments = create_experiments(configurations)
     for experiment in experiments:
@@ -342,7 +355,7 @@ def main():
     results = [result_queue.get() for i in range(result_queue.qsize())]
 
     slack_notification.end_experiment_notification()
-    save_results(results)
+    save_results(results, tag)
     # print_summary(results)
 
     print('{} results have been received.'.format(len(results)))

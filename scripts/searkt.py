@@ -19,7 +19,7 @@ import notify2
 import slack_notification
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR', 'DPS']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -46,17 +46,21 @@ def generate_base_suboptimal_configuration():
     print(len(compiled_configurations))
 
     # Algorithm specific configurations
-    weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
-    # weight = [3.0]
-    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    # weight = [1.2]
+    # weight = [2.4, 2.8, 3.2, 3.6, 4.0, 4.4, 4.8]  # quick unit / heavy weights
+    # weight = [25, 35, 45, 55, 65]  # quick inverse weights
+    # weight = [3.0] # quick
+    # weight = [1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0,
+    #           3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0]  # Unit / heavy tile weights
+    weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
-    # compiled_configurations = cartesian_product(compiled_configurations,
-    #                                             'weight', weight,
-    #                                             [['algorithmName', 'DPS']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                 'weight', weight,
+                                                 [['algorithmName', 'DPS']])
 
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
@@ -66,7 +70,15 @@ def generate_base_suboptimal_configuration():
                                                  'weight', weight,
                                                 [['algorithmName', 'EETS']])
 
-    return compiled_configurations
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                 'weight', weight,
+                                                [['algorithmName', 'EECS']])
+
+    experiment_tag = ""
+    for alg in algorithms_to_run:
+        experiment_tag = experiment_tag + "-" + alg
+
+    return compiled_configurations, experiment_tag
 
 
 def generate_base_configuration():
@@ -153,8 +165,9 @@ def generate_racetrack():
 
 
 def generate_tile_puzzle():
-    configurations = generate_base_suboptimal_configuration()
-
+    configurations, tag = generate_base_suboptimal_configuration()
+    puzzle_to_run = 'SLIDING_TILE_PUZZLE_4_HEAVY'
+    # puzzles = ['one-expansion']
     puzzles = []
     for puzzle in range(1, 101):
         puzzles.append(str(puzzle))
@@ -162,10 +175,12 @@ def generate_tile_puzzle():
     puzzle_base_path = 'input/tiles/korf/4/real/'
     full_puzzle_paths = [puzzle_base_path + puzzle for puzzle in puzzles]
 
-    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
+    configurations = cartesian_product(configurations, 'domainName', [puzzle_to_run])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
-    return configurations
+    tag = tag + "-" + puzzle_to_run
+
+    return configurations, tag
 
 
 def cartesian_product(base, key, values, filters=None):
@@ -187,7 +202,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    command = ['java', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-Xms7500m', '-Xmx7500m', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -244,8 +259,8 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/data-{:%H-%M-%d-%m-%y}.json'.format(datetime.datetime.now()), 'w') as outfile:
+def save_results(results_json, tag):
+    with open('output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -257,7 +272,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
     slack_notification.start_experiment_notification(len(configurations), 'byodoin')
@@ -269,8 +284,8 @@ def main():
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    print(results)
-    save_results(results)
+    # print(results)
+    save_results(results, tag)
     print_summary(results)
 
     print('{} results have been received.'.format(len(results)))

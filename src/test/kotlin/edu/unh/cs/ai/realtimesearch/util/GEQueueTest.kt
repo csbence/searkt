@@ -52,7 +52,8 @@ class GEQueueTest {
 
     @Test
     fun testCreation() {
-        val geQueue = GEQueue(basicCompare, basicCompare, basicCompare, 1)
+        val focal = BinHeap(100, basicCompare,1 )
+        val geQueue = GEQueue(basicCompare, basicCompare, 1, focal)
         val initNode = Node()
         initNode.value = 110
         (1..10).forEach {

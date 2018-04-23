@@ -95,7 +95,7 @@ class RaceTrack(val width: Int,
                 successors.add(SuccessorBundle(
                         state = RaceTrackState(state.x, state.y, newDX, newDY),
                         action = action,
-                        actionCost = actionDuration)
+                        actionCost = actionDuration.toDouble())
                 )
                 continue
             }
@@ -105,7 +105,7 @@ class RaceTrack(val width: Int,
                 successors.add(SuccessorBundle(
                         RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
                         action,
-                        actionCost = actionDuration))
+                        actionCost = actionDuration.toDouble()))
             }
         }
 
@@ -254,7 +254,7 @@ class RaceTrack(val width: Int,
      */
     override fun safeDistance(state: RaceTrackState): Pair<Int, Int> = max(abs(state.dX), abs(state.dY)) to min(abs(state.dX), abs(state.dY))
 
-    override fun getIdentityAction(state: RaceTrackState): SuccessorBundle<RaceTrackState>? = if (state.dX == 0 && state.dY == 0) SuccessorBundle(state, NO_OP, actionDuration) else null
+    override fun getIdentityAction(state: RaceTrackState): SuccessorBundle<RaceTrackState>? = if (state.dX == 0 && state.dY == 0) SuccessorBundle(state, NO_OP, actionDuration.toDouble()) else null
 
     override fun transition(sourceState: RaceTrackState, action: Action): RaceTrackState? {
         val targetState = super.transition(sourceState, action)

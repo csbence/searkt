@@ -79,7 +79,7 @@ class Acrobot(val configuration: AcrobotConfiguration = AcrobotConfiguration(),
             // add the legal movement actions
             successors.add(SuccessorBundle(
                     calculateNextState(state, action),
-                    action, actionCost = actionDuration))
+                    action, actionCost = actionDuration.toDouble()))
         }
 
         return successors

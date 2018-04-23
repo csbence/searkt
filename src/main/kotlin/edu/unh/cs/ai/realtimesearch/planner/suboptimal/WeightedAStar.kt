@@ -18,19 +18,19 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     var terminationChecker: TerminationChecker? = null
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var actionCost: Double, var action: Action,
                                              override var parent: WeightedAStar.Node<StateType>? = null):
             Indexable, SearchQueueElement<Node<StateType>> {
         private val indexMap = Array(1, {-1})
         override val g: Double
-            get() = cost.toDouble()
+            get() = cost
         override val depth: Double
-            get() = cost.toDouble()
+            get() = cost
         override val h: Double
             get() = heuristic
         override val d: Double
-            get() = cost.toDouble()
+            get() = cost
         override val hHat: Double
             get() = heuristic
         override val dHat: Double
@@ -74,9 +74,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap<StateType, WeightedAStar.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap(1000000, 1.toFloat())
 
-    private var openList = BinHeap(fValueComparator, 0) //(100000000, fValueComparator)
+    private var openList = BinHeap(1000000, fValueComparator, 0) //(100000000, fValueComparator)
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -90,7 +90,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Long.MAX_VALUE
+                    cost = Double.MAX_VALUE
             )
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
@@ -101,7 +101,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
-        logger.debug("Expanding $sourceNode.")
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -133,16 +132,17 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val node = Node(state, weight * domain.heuristic(state), 0, 0, NoOperationAction)
+        val node = Node(state, weight * domain.heuristic(state), 0.0, 0.0, NoOperationAction)
         var currentNode: Node<StateType>
+        val startTime = System.nanoTime()
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
 
         while (!openList.isEmpty && !terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
-            logger.debug("Top node is $topNode.")
             if (domain.isGoal(topNode.state)) {
+                executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(topNode, state)
             }
             currentNode = openList.poll() ?: throw GoalNotReachableException("Open list is empty")

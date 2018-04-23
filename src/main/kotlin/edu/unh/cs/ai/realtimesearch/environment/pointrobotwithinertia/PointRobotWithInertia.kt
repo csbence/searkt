@@ -80,7 +80,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 successors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot + xDoubleDot, state.ydot + yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(xDoubleDot, yDoubleDot),
-                        actionDuration))
+                        actionDuration.toDouble()))
             }
         }
 
@@ -249,7 +249,7 @@ class PointRobotWithInertia(val width: Int, val height: Int, val blockedCells: S
                 predecessors.add(SuccessorBundle(
                         PointRobotWithInertiaState(x, y, state.xdot - it.xDoubleDot, state.ydot - it.yDoubleDot, stateFraction),
                         PointRobotWithInertiaAction(it.xDoubleDot, it.yDoubleDot),
-                        actionDuration))
+                        actionDuration.toDouble()))
             }
         }
         return predecessors

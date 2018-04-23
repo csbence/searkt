@@ -149,7 +149,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
-                experimentRunTime = totalPlanningNanoTime
+                experimentRunTime = convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)
         )
 
         domain.appendDomainSpecificResults(experimentResult)

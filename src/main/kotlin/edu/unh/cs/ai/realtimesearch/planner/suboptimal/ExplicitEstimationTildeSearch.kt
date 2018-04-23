@@ -14,11 +14,14 @@ import kotlin.math.sqrt
 
 class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
-            ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
+            ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Tilde Search is not specified.")
+    private val errorModel: String = configuration.errorModel
+            ?: throw MetronomeConfigurationException("Error model for Explicit Estimation Tilde Search is not specified")
+    private val actionDuration = configuration.actionDuration
 
     var terminationChecker: TerminationChecker? = null
 
-    private val fNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val cleanupNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -28,31 +31,31 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val dHatComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val focalNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.dHat < rhs.dHat -> -1
             lhs.dHat > rhs.dHat -> 1
-            lhs.cost > rhs.cost -> -1
-            lhs.cost < rhs.cost -> 1
-            lhs.fHat < rhs.fHat -> -1
-            lhs.fHat > rhs.fHat -> 1
-            else -> 0
-        }
-    }
-
-    private val fHatComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
-        when {
             lhs.fHat < rhs.fHat -> -1
             lhs.fHat > rhs.fHat -> 1
             lhs.cost > rhs.cost -> -1
             lhs.cost < rhs.cost -> 1
-            lhs.dHat < rhs.dHat -> -1
-            lhs.dHat > rhs.dHat -> 1
             else -> 0
         }
     }
 
-    private val fTildeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val openNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.fHat < rhs.fHat -> -1
+            lhs.fHat > rhs.fHat -> 1
+            lhs.d < rhs.d -> -1
+            lhs.d > rhs.d -> 1
+            lhs.cost > rhs.cost -> -1
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
+    private val newOpenNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde < rhs.fTilde -> -1
             lhs.fTilde > rhs.fTilde -> 1
@@ -67,7 +70,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private val promisingComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde <= weight * rhs.fHat -> -1
-            lhs.fTilde > weight * rhs.fHat-> 1
+            lhs.fTilde > weight * rhs.fHat -> 1
             else -> 0
         }
     }
@@ -82,43 +85,44 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     // accessors and setters for the individual indices within each container
 
-    private val qualifiedSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.qualifiedIndex = index }
-    private val qualifiedGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.qualifiedIndex }
+//    private val qualifiedSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.qualifiedIndex = index }
+//    private val qualifiedGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.qualifiedIndex }
 
-    private val promisingSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.promisingIndex = index }
-    private val promisingGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.promisingIndex }
+//    private val promisingSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.promisingIndex = index }
+//    private val promisingGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.promisingIndex }
 
     // set up for the containers to store the nodes
 
-    private val qualifiedRBTree = TreeMap<Node<StateType>, Node<StateType>>(fNodeComparator)
-    private val qualifiedFocal = AdvancedPriorityQueue(arrayOfNulls(100000000), fTildeComparator, qualifiedSetIndex, qualifiedGetIndex)
+    private val qualifiedRBTree = RBTree(cleanupNodeComparator, qualifiedComparator)
+    private val qualifiedFocal = BinHeap(1000000, newOpenNodeComparator, 0)
 
-    private val promisingRBTree = TreeMap<Node<StateType>, Node<StateType>>(fTildeComparator)
-    private val promisingFocal = AdvancedPriorityQueue(arrayOfNulls(100000000), dHatComparator, promisingSetIndex, promisingGetIndex)
+    private val promisingRBTree = RBTree(newOpenNodeComparator, promisingComparator)
+    private val promisingFocal = BinHeap(1000000, focalNodeComparator, 1)
 
-    private val nodes: HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>> = HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>> = HashMap(100000000, 1.toFloat())
 
     // uses four separate containers to store the nodes during search
 
-    private val qualifiedNodes = ExplicitQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, qualifiedGetIndex)
-    private val promisingNodes = ExplicitQueue(promisingRBTree, promisingFocal, promisingComparator, promisingGetIndex)
+    private val qualifiedNodes = ExplicitQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, 0)
+    private val promisingNodes = ExplicitQueue(promisingRBTree, promisingFocal, promisingComparator, 1)
 
-    private val fHatHeap = AdvancedPriorityQueue(100000000, fHatComparator)
+    private val fHatHeap = BinHeap(1000000, openNodeComparator, 2)
 
     private var fMinExpansion = 0
     private var fHatMinExpansion = 0
     private var dHatMinExpansion = 0
 
-    class ExplicitQueue<E>(val open: TreeMap<E, E>, val focal: AdvancedPriorityQueue<E>, private val explicitComparator: Comparator<E>,
-                           private val getFocalIndex: (E) -> (Int)) where E : RedBlackTreeElement<E, E>, E : Indexable {
+    class ExplicitQueue<E>(val open: RBTree<E, E>, val focal: BinHeap<E>, private val explicitComparator: Comparator<E>,
+                           private val key: Int)
+            where E : RBTreeElement<E, E>, E : Indexable, E: SearchQueueElement<E>{
 
-        fun isEmpty(): Boolean = open.firstEntry() == null || open.firstEntry().value == null
+        fun isEmpty(): Boolean = focal.isEmpty// open.firstEntry() == null || open.firstEntry().value == null
 
         fun isNotEmpty(): Boolean = !isEmpty()
 
         // returns true when the element qualifies for left prefix
         fun add(e: E, oldBest: E): Boolean {
-            open[e] = e
+            open.insert(e, e)
             if (explicitComparator.compare(e, oldBest) <= 0) {
                 focal.add(e)
                 return true
@@ -127,48 +131,63 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
 
         fun remove(e: E) {
-            open.remove(e)
-            if (getFocalIndex(e) != -1) {
+            open.delete(e)
+            if (e.getIndex(key) != -1) {
                 focal.remove(e)
             }
         }
 
         fun pollOpen(): E? {
-            val e = open.pollFirstEntry().value
-            if (e != null && getFocalIndex(e) != -1) {
+            val e = open.poll()
+            if (e != null && e.getIndex(key) != -1) {
                 focal.remove(e)
             }
             return e
         }
 
         fun pollFocal(): E? {
-            val e = focal.pop()
+            val e = focal.poll()
             if (e != null) {
-                open.remove(e)
+                open.delete(e)
             }
             return e
         }
 
-        fun peekOpen(): E? = if (open.firstEntry() != null) open.firstEntry().value else null
-        fun peekFocal(): E? = focal.peek()
+        fun peekOpen(): E? = open.peek()
+//        fun peekFocal(): E? = focal.peek()
     }
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action, var d: Double,
-                                             var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) : Indexable, RedBlackTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>> {
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+                                             var actionCost: Double, var action: Action, override var d: Double,
+                                             override var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) :
+            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>,
+            Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>>{
+        override var node: RBTreeNode<Node<StateType>, Node<StateType>>?
+            get() = internalNode
+            set(value) { internalNode = value }
+        private val indexMap = Array(3, {-1})
+        override val g: Double
+            get() = cost.toDouble()
+        override val h: Double
+            get() = heuristic
+
+        override fun setIndex(key: Int, index: Int) {
+            indexMap[key] = index
+        }
+
+        override fun getIndex(key: Int): Int {
+            return indexMap[key]
+        }
+
         override val open: Boolean
-            get() = index >= 0
+            get() = indexMap[2] >= 0
 
-        var qualifiedIndex: Int = -1
+        private var internalNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 
-        var promisingIndex: Int = -1
-
-        private var redBlackNode: RedBlackTreeNode<Node<StateType>, Node<StateType>>? = null
-
-        val f: Double
+        override val f: Double
             get() = cost + heuristic
 
-        private val depth: Int = parent?.depth?.plus(1) ?: 17
+        override val depth: Double = parent?.depth?.plus(1) ?: 17.0
 
         private var sseH = 0.0
 
@@ -180,9 +199,9 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         val fTilde: Double
             get() = fHat + (1.96 * sqrt(dHat * dHatVariance))
 
-        private var hHat = 0.0
+        override var hHat = 0.0
 
-        var dHat = 0.0
+        override var dHat = 0.0
 
         private var dHatMean: Double = 0.0
         private var dHatVariance: Double = 0.0
@@ -229,8 +248,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
         private fun computeHHat(): Double {
             var hHat = Double.MAX_VALUE
-            val sseMean = if (cost == 0L) sseH else sseH / depth
-            val dMean = if (cost == 0L) sseD else sseD / depth
+            val sseMean = if (cost == 0.0) sseH else sseH / depth
+            val dMean = if (cost == 0.0) sseD else sseD / depth
             if (dMean < 1) {
                 hHat = heuristic + ((d / (1 - dMean)) * sseMean)
             }
@@ -239,7 +258,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
         private fun computeDHat(): Double {
             var dHat = Double.MAX_VALUE
-            val dMean = if (cost == 0L) sseD else sseD / depth
+            val dMean = if (cost == 0.0) sseD else sseD / depth
             if (dMean < 1) {
                 dHat = d / (1 - dMean)
             }
@@ -252,18 +271,11 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             return diff
         }
 
-        override fun getNode(): RedBlackTreeNode<Node<StateType>, Node<StateType>>? {
-            return redBlackNode
-        }
-
-        override fun setNode(node: RedBlackTreeNode<Node<StateType>, Node<StateType>>?) {
-            this.redBlackNode = node
-        }
     }
 
     private fun selectNode(): Node<StateType> {
         when {
-            qualifiedNodes.focal.isEmpty() -> {
+            qualifiedNodes.focal.isEmpty -> {
                 val chosenNode = qualifiedNodes.pollOpen()!!
                 promisingNodes.remove(chosenNode)
                 fHatHeap.remove(chosenNode)
@@ -272,8 +284,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 // nothing qualifies [f <= w*fMin]
                 // return fMin
             }
-            promisingNodes.focal.isEmpty() -> {
-                val chosenNode = fHatHeap.pop()!!
+            promisingNodes.focal.isEmpty -> {
+                val chosenNode = fHatHeap.poll()!!
                 promisingNodes.remove(chosenNode)
                 qualifiedNodes.remove(chosenNode)
                 ++fHatMinExpansion
@@ -290,7 +302,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 // something is in qualified AND promising
                 // return dHatMin which is from promising
             }
-       }
+        }
     }
 
     private fun initializeAStar(): Long = System.currentTimeMillis()
@@ -307,7 +319,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
-                    cost = Long.MAX_VALUE,
+                    cost = Double.MAX_VALUE,
                     d = domain.distance(successorState)
             )
             nodes[successorState] = undiscoveredNode
@@ -374,18 +386,18 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val startTime = initializeAStar()
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, d = domain.distance(state))
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, d = domain.distance(state))
+        val startTime = System.nanoTime()
         nodes[state] = node
         fHatHeap.add(node)
         qualifiedNodes.add(node, node)
         promisingNodes.add(node, node)
         generatedNodeCount++
 
-        while (fHatHeap.isNotEmpty() && !terminationChecker.reachedTermination()) {
+        while (!fHatHeap.isEmpty && !terminationChecker.reachedTermination()) {
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
-                executionNanoTime = System.currentTimeMillis() - startTime
+                executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)

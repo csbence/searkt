@@ -48,7 +48,7 @@ class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Locati
                         SuccessorBundle(
                                 VehicleWorldState(newLocation),
                                 action,
-                                actionCost = actionDuration
+                                actionCost = actionDuration.toDouble()
                         )
                 )
             }
