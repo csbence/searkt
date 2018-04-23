@@ -50,7 +50,12 @@ class GraphiVisualizer<StateType : State<StateType>, NodeType : SearchNode<State
         }
 
         if (nodesInPlan.contains(node)) group += "-plan"
-        if (node is RealTimeSearchNode) extras += ",\"iteration\": ${node.iteration},\"localDepth\": ${node.localDepth}"
+        if (node is RealTimeSearchNode) {
+            extras += ",\"iteration\": ${node.iteration},\"localDepth\": ${node.localDepth}"
+
+            extras += ",\"y\":${min(node.f, 100000.0)}"
+            extras += ",\"x\":${node.localDepth * 100}"
+        }
         if (group.isNotBlank()) extras += ",\"group\": \"$group\""
 
 //        extras += ",\"size\":${(5000.0 / node.f).toInt()}"
