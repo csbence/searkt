@@ -54,6 +54,8 @@ data class ExperimentConfiguration(
         // Domain
         @Optional
         var domainSeed: Long? = null,
+        @Optional
+        val domainSizeMultiplier: Int = 1,
 
         // AStar
         @Optional
@@ -90,4 +92,5 @@ data class ExperimentConfiguration(
         // Anytime Experiment
         @Optional
         val anytimeMaxCount: Long? = null
-)
+) {
+}

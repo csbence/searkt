@@ -94,7 +94,7 @@ class RaceTrack(val width: Int,
                     val location = Location(x, y)
                     if (heuristicMap.containsKey(location)) {
                         val heuristic = heuristicMap[location]!!
-                        writer.print((heuristic * 10 / maxHeuristic).toInt())
+                        writer.print((heuristic * 9 / maxHeuristic).toInt())
                     } else {
                         writer.print(".")
                     }
