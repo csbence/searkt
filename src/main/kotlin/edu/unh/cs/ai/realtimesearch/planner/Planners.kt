@@ -5,7 +5,6 @@ enum class Planners {
     RTA_STAR,
     LSS_LRTA_STAR,
     CES,
-    RTC,
     ARA_STAR,
     WEIGHTED_A_STAR,
     DYNAMIC_F_HAT,

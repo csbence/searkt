@@ -116,13 +116,13 @@ def plot_all_experiments(data, plot_title):
     cpu_time_results.to_csv("../output/" + plot_title + "_cpu.csv")
 
 
-def main(individual_plots, path_to_base, path, title):
+def main(individual_plots, paths_to_base, paths, title):
     # results = read_data(path)
     results = []
-    for path_name in path:
+    for path_name in paths:
         results += read_data(path_name)
 
-    for base_path_name in path_to_base:
+    for base_path_name in paths_to_base:
         results += read_data(base_path_name)
 
     data = construct_data_frame(results)
@@ -162,9 +162,9 @@ def main(individual_plots, path_to_base, path, title):
 # define command line usage
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-b", "--path_to_base", nargs="*", help="Path to base results JSON",
+parser.add_argument("-b", "--paths_to_base", nargs="*", help="Path to base results JSON",
                     default=["../output/base_results.json"])
-parser.add_argument("-p", "--path", nargs="*", help="Path to experiment results JSON", default=["../output/results.json"])
+parser.add_argument("-p", "--paths", nargs="*", help="Path to experiment results JSON", default=["../output/results.json"])
 parser.add_argument("-i", "--individual",
                     help="Should plots be generated for each domain individually? (Primarily for debugging)",
                     action="store_true")
@@ -172,10 +172,10 @@ parser.add_argument("-t", "--title", help="Title for plot (ignored for individua
 
 args = parser.parse_args()
 individual_plots = args.individual
-path_to_base = args.path_to_base
-path = args.path
+paths_to_base = args.paths_to_base
+paths = args.paths
 title = args.title
 
 
 if __name__ == "__main__":
-    main(individual_plots, path_to_base, path, title)
+    main(individual_plots, paths_to_base, paths, title)

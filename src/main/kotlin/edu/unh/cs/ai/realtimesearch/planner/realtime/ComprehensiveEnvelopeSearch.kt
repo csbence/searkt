@@ -467,5 +467,9 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         return actionList
     }
 
+    enum class ComprehensiveConfigurations(val configurationName: String) {
+        BACKLOG_RATIO ("backlogRatio");
 
+        override fun toString() = configurationName
+    }
 }
