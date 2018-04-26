@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -70,8 +69,7 @@ val fValueComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs,
     }
 }
 
-val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
-        = Comparator { lhs, rhs ->
+val heuristicComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs, rhs ->
     when {
         lhs.heuristic < rhs.heuristic -> -1
         lhs.heuristic > rhs.heuristic -> 1
@@ -82,6 +80,26 @@ val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
 
 interface RealTimeSearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : SearchNode<StateType, NodeType> {
     var iteration: Long
+}
+
+class PureRealTimeSearchNode<StateType : State<StateType>>(
+        override val state: StateType,
+        override var heuristic: Double,
+        override var cost: Long,
+        override var actionCost: Long,
+        override var action: Action,
+        override var iteration: Long,
+        parent: PureRealTimeSearchNode<StateType>? = null
+) : RealTimeSearchNode<StateType, PureRealTimeSearchNode<StateType>>, Indexable {
+
+    /** Item index in the open list. */
+    override var index: Int = -1
+
+    /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
+    override var predecessors: MutableList<SearchEdge<PureRealTimeSearchNode<StateType>>> = arrayListOf()
+
+    /** Parent pointer that points to the min cost predecessor. */
+    override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
 }
 
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
@@ -115,6 +133,30 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
     } while (currentNode.state != sourceState)
 
     return actions.reversed()
+}
+
+/**
+ * Extracts an node sequence that leads from the start state to the target state.
+ * The path follows the parent pointers from the target to the start in reversed order.
+ *
+ * @return path from source to target if exists.
+ */
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractNodeChain(targetNode: NodeType?, boundaryChecker: (StateType) -> Boolean): List<NodeType> {
+    targetNode ?: return emptyList()
+
+    val parentChain = ArrayList<NodeType>(100)
+    var currentNode: NodeType = targetNode
+
+    if (boundaryChecker(targetNode.state)) {
+        return emptyList()
+    }
+
+    do {
+        parentChain.add(currentNode.parent)
+        currentNode = currentNode.parent
+    } while (!boundaryChecker(currentNode.state))
+
+    return parentChain.reversed()
 }
 
 /**

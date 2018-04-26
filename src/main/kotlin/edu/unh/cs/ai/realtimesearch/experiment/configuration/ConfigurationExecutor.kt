@@ -147,7 +147,8 @@ object ConfigurationExecutor {
         val domainStream: InputStream = when {
             configuration.rawDomain != null -> configuration.rawDomain.byteInputStream()
             dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
-            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
+            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath)
+                    ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }
 
         val domain = Domains.valueOf(domainName)
@@ -233,6 +234,7 @@ object ConfigurationExecutor {
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
+            TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
         }
     }
 
