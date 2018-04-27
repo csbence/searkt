@@ -1,19 +1,18 @@
 package edu.unh.cs.ai.realtimesearch
 
-import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
+import edu.unh.cs.ai.realtimesearch.environment.Domains.GRID_WORLD
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.SimpleSerializer
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.generateConfigurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
-import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
-import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.Planners.A_STAR
+import edu.unh.cs.ai.realtimesearch.planner.Planners.CES
+import edu.unh.cs.ai.realtimesearch.planner.realtime.ComprehensiveEnvelopeSearch.ComprehensiveConfigurations.BACKLOG_RATIO
 import kotlinx.io.PrintWriter
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
@@ -25,83 +24,96 @@ import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun main(args: Array<String>) {
 
-//    val outputPath = if (args.isNotEmpty()) {
-//        args[0]
-//    } else {
-//        File("output").mkdir()
-//        "output/results_${LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}.json"
-//    }
-//    val outputFile = File(outputPath)
-//    outputFile.createNewFile()
-//    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
+    var outputPath : String?
+    var basePath : String?
+    if (args.isNotEmpty()) {
+        outputPath = args[0]
 
-    println("Please provide a JSON list of configurations to execute:")
-    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
-    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+        val fileNameIndex = outputPath.lastIndexOf("\\")
+
+        basePath = StringBuilder(outputPath).insert(fileNameIndex + 1, "base_").toString()
+    } else {
+        File("output").mkdir()
+        val path = "results_${LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}.json"
+        outputPath = "output/" + path
+        basePath = "output/base_" + path
+    }
+    val outputFile = File(outputPath)
+    outputFile.createNewFile()
+    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
+
+    val baseFile = File(basePath)
+    baseFile.createNewFile()
+    if (!baseFile.isFile || !baseFile.canWrite()) throw MetronomeException("Can't write the output file: $basePath")
+
+//    println("Please provide a JSON list of configurations to execute:")
+//    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+//    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
-    println(rawConfiguration)
 
-    val loader = ExperimentConfiguration.serializer().list
-    val parsedConfigurations = JSON.parse(loader, rawConfiguration)
-    println(parsedConfigurations)
+    val baselineConfig = generateConfigurations(true)
+    val experimentConfig = generateConfigurations(false)
+    println("Experiment Configuration")
+    println(experimentConfig)
 
-    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
+    val baselineLoader = ExperimentConfiguration.serializer().list
+    val parsedBaseConfigurations = JSON.parse(baselineLoader, baselineConfig)
 
-    val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
-//    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
-//    System.err.println("\nResult has been saved to $outputPath")
-//    System.err.println(results.summary())
+    val experimentLoader = ExperimentConfiguration.serializer().list
+    val parsedExperimentConfigurations = JSON.parse(experimentLoader, experimentConfig)
+    println(parsedExperimentConfigurations)
+
+    val baseResults = ConfigurationExecutor.executeConfigurations(parsedBaseConfigurations, dataRootPath = null, parallelCores = 1)
+    val rawBaseResults = JSON.Companion.stringify(ExperimentResult.serializer().list, baseResults)
+    PrintWriter(basePath, "UTF-8").use { it.write(rawBaseResults) }
+
+
+    val experimentResults = ConfigurationExecutor.executeConfigurations(parsedExperimentConfigurations, dataRootPath = null, parallelCores = 1)
+    val rawExperimentResults = JSON.Companion.stringify(ExperimentResult.serializer().list, experimentResults)
+    PrintWriter(outputPath, "UTF-8").use { it.write(rawExperimentResults) }
 
     println('#') // Indicator for the parser
-    println(rawResults) // This should be the last printed line
-
-//    System.err.println("Searkt is done!")
-//    System.err.flush()
+    println(rawExperimentResults) // This should be the last printed line
 
 //    runVisualizer(result = results.first())
 }
 
-private fun generateConfigurations(): String {
+private fun generateConfigurations(baseline: Boolean): String {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
+    val planners = if (baseline) listOf(A_STAR)
+        else listOf(CES)//, LSS_LRTA_STAR)
+
     val configurations = generateConfigurations(
-            domains = listOf(
-//                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-//                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                    RACETRACK to "input/racetrack/barto-big.track",
-                    RACETRACK to "input/racetrack/uniform.track",
-                    RACETRACK to "input/racetrack/barto-small.track"
-//                    TRAFFIC to "input/traffic/vehicle0.v"
-            ),
-//            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SAFE_RTS),
-            actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+//            domains = listOf(
+//                    GRID_WORLD to "input/vacuum/empty.vw"
+//                    GRID_WORLD to "input/vacuum/h_400.vw",
+//                    GRID_WORLD to "input/vacuum/slalom_04.vw",
+//                    GRID_WORLD to "input/vacuum/big_minimum.vw",
+//                    GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
+//                    GRID_WORLD to "input/vacuum/minima/minima1.vw",
+//                    GRID_WORLD to "input/vacuum/minima/minima2.vw",
+//                    GRID_WORLD to "input/vacuum/minima/minima3.vw"
+//                    GRID_WORLD to "input/vacuum/wall.vw"
+//                    GRID_WORLD to "input/vacuum/randomNoisy1k.vw",
+//                    GRID_WORLD to "input/vacuum/cups.vw",
+//                    GRID_WORLD to "input/vacuum/randomShapes1k.vw",
+//                    GRID_WORLD to "input/vacuum/openBox_400.vw"
+//                    GRID_WORLD to "input/vacuum/maze.vw"
+//            ),
+            domains = (0..49).map { GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" },
+            planners = planners,
+            actionDurations = listOf(10L, 20L, 50L, 100L, 150L, 250L, 500L, 1000L, 2000L),
+//            actionDurations = listOf(150L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
-            expansionLimit = 10000000,
+            expansionLimit = 100000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
-                    Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(S_ZERO, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SafetyBackup.PREDECESSOR.toString())),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
-                    Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
-            ),
-            domainExtras = listOf(
-                    Triple(RACETRACK, Configurations.DOMAIN_SEED.toString(), 77L..77L)
+                    //Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(CES, BACKLOG_RATIO, listOf(1.0, 2.0))
             )
     )
     println("${configurations.size} configuration has been generated.")

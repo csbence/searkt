@@ -91,6 +91,10 @@ data class ExperimentConfiguration(
 
         // Anytime Experiment
         @Optional
-        val anytimeMaxCount: Long? = null
-) {
-}
+        val anytimeMaxCount: Long? = null,
+
+        //Real Time Comprehensive
+        @Optional
+        val backlogRatio: Double? = null
+)
+
