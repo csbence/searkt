@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
+import kotlinx.io.PrintWriter
 import org.slf4j.LoggerFactory
 import java.lang.Math.*
 import java.util.*
@@ -38,6 +39,7 @@ class RaceTrack(val width: Int,
     /** Pre-calculated heuristic value store */
     val maxXSpeed = width / 2
     val maxYSpeed = height / 2
+    val maxSpeed = max(maxXSpeed, maxYSpeed)
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
     private val velocities = mutableListOf<Double>()
@@ -81,6 +83,26 @@ class RaceTrack(val width: Int,
         }
 
         return heuristicMap
+    }
+
+    fun printHeuristicMap() {
+        PrintWriter("racetrack_heuristic", "UTF-8").use { writer ->
+            val maxHeuristic = heuristicMap.entries.maxBy { it.value }!!.value
+            writer.println(maxHeuristic)
+            for (y in 0..height) {
+                for (x in 0..width) {
+                    val location = Location(x, y)
+                    if (heuristicMap.containsKey(location)) {
+                        val heuristic = heuristicMap[location]!!
+                        writer.print((heuristic * 9 / maxHeuristic).toInt())
+                    } else {
+                        writer.print(".")
+                    }
+                }
+
+                writer.println()
+            }
+        }
     }
 
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
@@ -141,7 +163,7 @@ class RaceTrack(val width: Int,
      *
      * @return true if location is legal, else false.
      */
-    fun isLegalLocation(x: Double, y: Double): Boolean {
+    private fun isLegalLocation(x: Double, y: Double): Boolean {
         return x >= 0 && y >= 0 && x < width &&
                 y < height && Location(Math.round(x).toInt(), Math.round(y).toInt()) !in obstacles
     }
@@ -149,7 +171,12 @@ class RaceTrack(val width: Int,
     /*
     * Heuristic is the distance divided by the max speed
     * */
-    override fun heuristic(state: RaceTrackState) = distance(state) * actionDuration
+    override fun heuristic(state: RaceTrackState): Double {
+        val dijkstraDistance = heuristicMap[Location(state.x, state.y)]
+                ?: throw MetronomeException("No pre-calculated heuristic exists for state: $state")
+
+        return dijkstraDistance / maxSpeed * actionDuration
+    }
 
     override fun heuristic(startState: RaceTrackState, endState: RaceTrackState) = distance(startState, endState) * actionDuration
 
@@ -235,7 +262,8 @@ class RaceTrack(val width: Int,
 
     override fun randomizedStartState(state: RaceTrackState, seed: Long): RaceTrackState {
         val startLocation = Location(state.x, state.y)
-        val goalDistance = heuristicMap[startLocation] ?: throw MetronomeException("Goal is not reachable from initial state.")
+        val goalDistance = heuristicMap[startLocation]
+                ?: throw MetronomeException("Goal is not reachable from initial state.")
         val locations = ArrayList<Location>()
         heuristicMap.filter { (_, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
                 .mapTo(locations, { it.key })
