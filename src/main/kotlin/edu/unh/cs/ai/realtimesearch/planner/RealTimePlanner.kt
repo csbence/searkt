@@ -1,5 +1,6 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
@@ -100,6 +101,9 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
 
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
+
+    override fun toString() =
+            "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 }
 
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
@@ -135,8 +139,22 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
     return actions.reversed()
 }
 
+
+fun <StateType : State<StateType>> constructPath(statePath: Collection<StateType>, domain: Domain<StateType>): List<RealTimePlanner.ActionBundle> {
+    if (statePath.isEmpty()) {
+        throw MetronomeException("Cannot construct path from empty list")
+    }
+
+    return statePath
+            .windowed(partialWindows = false, size = 2) {
+                domain.transition(it[0], it[1])
+                        ?: throw MetronomeException("Unable to construct path on the given state sequence")
+            }
+            .map { RealTimePlanner.ActionBundle(it.first, it.second) }
+}
+
 /**
- * Extracts an node sequence that leads from the start state to the target state.
+ * Extracts an node sequence that leads from the boundary state(s) to the target state.
  * The path follows the parent pointers from the target to the start in reversed order.
  *
  * @return path from source to target if exists.
@@ -144,12 +162,12 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
 fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractNodeChain(targetNode: NodeType?, boundaryChecker: (StateType) -> Boolean): List<NodeType> {
     targetNode ?: return emptyList()
 
-    val parentChain = ArrayList<NodeType>(100)
-    var currentNode: NodeType = targetNode
-
     if (boundaryChecker(targetNode.state)) {
         return emptyList()
     }
+
+    var currentNode: NodeType = targetNode
+    val parentChain = mutableListOf(currentNode)
 
     do {
         parentChain.add(currentNode.parent)
@@ -158,6 +176,7 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
 
     return parentChain.reversed()
 }
+
 
 /**
  * Expands a node and add it to closed list. For each successor

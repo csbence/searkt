@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 
@@ -91,6 +92,9 @@ data class ExperimentConfiguration(
 
         // Anytime Experiment
         @Optional
-        val anytimeMaxCount: Long? = null
-) {
-}
+        val anytimeMaxCount: Long? = null,
+
+        // TBA*
+        @Optional
+        val tbaOptimization: TBAOptimization? = null
+)

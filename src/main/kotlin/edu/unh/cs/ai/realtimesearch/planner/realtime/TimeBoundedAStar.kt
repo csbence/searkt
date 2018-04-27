@@ -1,15 +1,17 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.NONE
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
@@ -22,6 +24,9 @@ import kotlin.system.measureTimeMillis
 class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
 
     // Configuration
+    private val tbaOptimization = configuration.tbaOptimization
+            ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
+
     override var iterationCounter = 0L
 
     private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000).resize()
@@ -35,8 +40,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var aStarPopCounter = 0
 
     var aStarTimer = 0L
-
-    var lastSafeNode: PureRealTimeSearchNode<StateType>? = null
 
     private val aStarSequence
         get() = generateSequence {
@@ -71,7 +74,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             openList.add(rootNode)
         }
 
-        val currentAgentState = nodes[sourceState]
+        val currentAgentNode = nodes[sourceState]
                 ?: throw MetronomeException("Agent is at an unknown state. It is unlikely that the planner sent the agent to an undiscovered node.")
 
         if (domain.isGoal(sourceState)) {
@@ -87,21 +90,37 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             val targetNode = if (domain.isGoal(topOfOpen.state)) {
                 topOfOpen // Stick to the goal if we already found it
             } else {
-                aStar(FakeTerminationChecker)
+                aStar(terminationChecker)
             }
 
             val rootToBestChain = extractNodeChain(targetNode, { it == rootState!! }).map { it.state }.toSet()
+            println()
 
-            plan = if (rootToBestChain.contains(currentAgentState.state)) {
-                // Move agent to target
+            println(currentAgentNode)
+            plan = if (rootToBestChain.contains(currentAgentNode.state)) {
+                // The agent's current state is an ancestor of the current best
+                // Move agent to current best target
                 extractPath(targetNode, sourceState)
             } else {
-                // Find common ancestor
-                val commonAncesterToAgent = extractNodeChain(targetNode, { rootToBestChain.contains(it) })
+                when (tbaOptimization) {
+                    NONE -> {
+                        // Find common ancestor
+                        rootToBestChain.forEach { println(it) }
 
-                extractPath(targetNode, sourceState)
+
+                        val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestChain.contains(it) })
+
+                        // There should be only one overlap between the two chains
+                        assert(rootToBestChain.contains(commonAncestorToAgent.first().state))
+                        assert(commonAncestorToAgent.drop(1).none { rootToBestChain.contains(it.state) })
+
+                        constructPath(commonAncestorToAgent.reversed().map { it.state }, domain)
+                                .plus(extractPath(targetNode, commonAncestorToAgent.first().state))
+                    }
+                    SHORTCUT -> TODO()
+                    TBAOptimization.THRESHOLD -> TODO()
+                }
             }
-
         }
 
         return plan!!
@@ -191,5 +210,15 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             tempSuccessorNode
         }
     }
+}
+
+enum class TBAOptimization {
+    NONE, SHORTCUT, THRESHOLD
+}
+
+enum class TBAStarConfiguration(val key: String) {
+    TBA_OPTIMIZATION("tbaOptimization");
+
+    override fun toString(): String = key
 }
 
