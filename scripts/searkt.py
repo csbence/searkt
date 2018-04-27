@@ -7,22 +7,18 @@
 import copy
 import json
 import os
-import sys
-import datetime
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import itertools
-import notify2
 
-import slack_notification
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR', 'DPS']
-    expansion_limit = [sys.maxsize]
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
+    expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [sys.maxsize]
+    time_limit = [100000000000]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -36,49 +32,23 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
     for key, value in base_configuration.items():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
-    print(len(compiled_configurations))
-
     # Algorithm specific configurations
-    # weight = [1.2]
-    # weight = [2.4, 2.8, 3.2, 3.6, 4.0, 4.4, 4.8]  # quick unit / heavy weights
-    # weight = [25, 35, 45, 55, 65]  # quick inverse weights
-    # weight = [3.0] # quick
-    # weight = [1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0,
-    #           3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0]  # Unit / heavy tile weights
-    weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
-    # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
+    weight = [3.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                 'weight', weight,
-                                                 [['algorithmName', 'DPS']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
-                                                [['algorithmName', 'EES']])
+                                                [['algorithmName', 'DPS']])
 
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                 'weight', weight,
-                                                [['algorithmName', 'EETS']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                 'weight', weight,
-                                                [['algorithmName', 'EECS']])
-
-    experiment_tag = ""
-    for alg in algorithms_to_run:
-        experiment_tag = experiment_tag + "-" + alg
-
-    return compiled_configurations, experiment_tag
+    return compiled_configurations
 
 
 def generate_base_configuration():
@@ -165,22 +135,19 @@ def generate_racetrack():
 
 
 def generate_tile_puzzle():
-    configurations, tag = generate_base_suboptimal_configuration()
-    puzzle_to_run = 'SLIDING_TILE_PUZZLE_4_HEAVY'
-    # puzzles = ['one-expansion']
+    configurations = generate_base_suboptimal_configuration()
+
     puzzles = []
-    for puzzle in range(1, 101):
+    for puzzle in range(1, 11):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
     full_puzzle_paths = [puzzle_base_path + puzzle for puzzle in puzzles]
 
-    configurations = cartesian_product(configurations, 'domainName', [puzzle_to_run])
+    configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
-    tag = tag + "-" + puzzle_to_run
-
-    return configurations, tag
+    return configurations
 
 
 def cartesian_product(base, key, values, filters=None):
@@ -202,7 +169,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    command = ['java', '-Xms7500m', '-Xmx7500m', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -259,39 +226,31 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json, tag):
-    with open('output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
+def save_results(results_json):
+    with open('output/results_srts.json', 'w') as outfile:
         json.dump(results_json, outfile)
 
 
 def main():
-    notify2.init('searKt')
     os.chdir('..')
 
     if not build_searkt():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
+    configurations = generate_racetrack()  # generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
-    slack_notification.start_experiment_notification(len(configurations), 'byodoin')
     results = parallel_execution(configurations, 1)
-
-    slack_notification.end_experiment_notification()
 
     for result in results:
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    # print(results)
-    save_results(results, tag)
+    save_results(results)
     print_summary(results)
 
-    print('{} results have been received.'.format(len(results)))
-    n = notify2.Notification("searKt has finished running", '{} results have been received'.format(len(results)),
-                             "notification-message-email")
-    n.show()
+    print('{} results has been received.'.format(len(results)))
 
 
 if __name__ == '__main__':
