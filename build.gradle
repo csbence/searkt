@@ -19,7 +19,8 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.31'
+
+    ext.kotlin_version = '1.2.40'
     ext.serialization_version = '0.4.2'
 
     repositories {

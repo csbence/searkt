@@ -191,6 +191,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeRaceTrack(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val domainSizeMultiplier = configuration.domainSizeMultiplier
         val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration)
         return executeDomain(configuration, raceTrackInstance.domain, raceTrackInstance.initialState)
     }

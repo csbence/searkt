@@ -6,7 +6,7 @@ import java.util.*
 
 object RaceTrackIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long): RaceTrackInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long, sizeMultiplier: Int = 1): RaceTrackInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -26,14 +26,19 @@ object RaceTrackIO {
         val endLocations = arrayListOf<Location>()
 
         try {
-            for (y in 0..rowCount - 1) {
+            for (y in 0 until rowCount) {
                 val line = inputScanner.nextLine()
 
-                for (x in 0..columnCount - 1) {
-                    when (line[x]) {
-                        '#' -> blockedCells.add(Location(x, y))
-                        '*' -> endLocations.add(Location(x, y))
-                        '@' -> startLocation = Location(x, y)
+                for (x in 0 until columnCount) {
+                    for (xOffset in 0 until sizeMultiplier) {
+                        for (yOffset in 0 until sizeMultiplier) {
+                            val element = Location(x * sizeMultiplier + xOffset, y * sizeMultiplier + yOffset)
+                            when (line[x]) {
+                                '#' -> blockedCells.add(element)
+                                '*' -> endLocations.add(element)
+                                '@' -> startLocation = element
+                            }
+                        }
                     }
                 }
             }
@@ -49,8 +54,16 @@ object RaceTrackIO {
             throw InvalidRaceTrackException("Unknown end location. End location has was not defined.")
         }
 
-        val raceTrack = edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack(columnCount, rowCount, blockedCells.toHashSet(), endLocations.toHashSet(), actionDuration)
+        val raceTrack = RaceTrack(
+                columnCount * sizeMultiplier,
+                rowCount * sizeMultiplier,
+                blockedCells.toHashSet(),
+                endLocations.toHashSet(),
+                actionDuration
+        )
+
         val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0)
+
         return RaceTrackInstance(raceTrack, startState)
     }
 
