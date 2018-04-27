@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import json
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import re
 import seaborn as sns
 import statsmodels.stats.api as sms
-import sys
 from pandas import DataFrame
 from statsmodels.stats.proportion import proportion_confint
 
@@ -189,12 +189,11 @@ def plot_gat(data):
     # TODO remove - just for testing
     # results = results[results.algorithmName != 'A_STAR']
 
-
     pivot = results.pivot(index='actionDuration', columns='algorithmName', values='withinOpt')
     # Bunch of tweaks to get the plot to look right
     # mpl.rcParams.update({'font.size': 60})
     plot = pivot.plot(ax=ax, yerr=errors, figsize=(4.5, 4),
-                      capsize=4, capthick=1,# ecolor='black',
+                      capsize=4, capthick=1,  # ecolor='black',
                       # ylim=(0,60),
                       # color=["red", "blue", "green", "orange", "cyan"],
                       elinewidth=1)
@@ -206,11 +205,42 @@ def plot_gat(data):
     # plt.show()
 
 
+def explode_stats(df):
+    # This is slow don't be surprised
+    row_accumulator = []
+
+    def split(row):
+        stats = row.depthRankOfOpen
+
+        for s in stats:
+            new_row = row.to_dict()
+            row_accumulator.append({**row.to_dict(), **s})
+
+    df.apply(split, axis=1)
+    new_df = pd.DataFrame(row_accumulator)
+
+    return new_df
+
+
+def plot_stats(data):
+    data = explode_stats(data)
+    data.drop(['depthRankOfOpen'], axis=1, inplace=True, errors='ignore')
+
+    print('hello')
+
+    pass
+
+
 def main():
     # The script takes one or more jsons as an argument and creates a dataframe out of all of them
     # You will probably be passing fixed_A_STAR_result.json, fixed_SAFE_RTS_result.json, etc. to this function
-    data = construct_data_frame(read_data(sys.argv[1]))
-    for i in sys.argv[2:]:
+
+    data_tile_names = [sys.argv]
+    # Manual override
+    data_tile_names = ['../output/srts_stats_10_v2.json']
+
+    data = construct_data_frame(read_data(data_tile_names[0]))
+    for i in data_tile_names[2:]:
         print('.')
         data2 = construct_data_frame(read_data(i))
         data = pd.concat([data, data2])
@@ -237,6 +267,8 @@ def main():
         data['domainSeed'] = data['domainPath']
         data['domainPath'] = 'vehicle'
 
+    data['id'] = data.actionDuration.astype(str) + data.domainPath + data.domainSeed.astype(str) + data.algorithmName
+
     # Duplicate cleaning - might be necessary
     # data.drop_duplicates(subset=["domainPath", "domainSeed", "algorithmName", "actionDuration"], inplace=True,
     #                      keep='last')
@@ -251,7 +283,8 @@ def main():
     # Constructs the survival plots using the dataframe
     # make_survival_plots(data)
 
-    plot_gat(data)
+    # plot_gat(data)
+    plot_stats(data)
 
 
 if __name__ == "__main__":
