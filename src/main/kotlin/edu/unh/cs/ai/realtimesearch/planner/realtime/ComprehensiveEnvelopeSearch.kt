@@ -1,9 +1,12 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Action
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -20,18 +23,18 @@ import kotlin.system.measureTimeMillis
  * @author Kevin C. Gall
  * @date 3/17/18
  */
-class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
+class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         val domain: Domain<StateType>,
-        val configuration : ExperimentConfiguration) : RealTimePlanner<StateType>(){
+        val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
     //Configuration parameters
-    private val expansionRatio : Double = configuration.backlogRatio ?: 1.0
+    private val expansionRatio: Double = configuration.backlogRatio ?: 1.0
     //Logger and timekeeping
     private val logger = LoggerFactory.getLogger(ComprehensiveEnvelopeSearch::class.java)
     var dijkstraTimer = 0L
     var expansionTimer = 0L
 
 
-    class Node<StateType: State<StateType>> (val state: StateType, var heuristic: Double) : Indexable {
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double) : Indexable {
         override var index: Int = -1
 
         val ancestors = HashMap<StateType, DiEdge<StateType>>()
@@ -52,7 +55,7 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         }
 
         companion object EdgeFactory {
-            fun <StateType : State<StateType>> createEdge(source : Node<StateType>, destination : Node<StateType>, actionCost : Long, action : Action) {
+            fun <StateType : State<StateType>> createEdge(source: Node<StateType>, destination: Node<StateType>, actionCost: Long, action: Action) {
                 val edge = DiEdge(source, destination, actionCost, action)
 
                 source.successors[destination.state] = edge
@@ -62,20 +65,20 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
     }
 
     //Directed edge class - describes relationship from node to node
-    data class DiEdge<StateType : State<StateType>> (val source : Node<StateType>, val destination : Node<StateType>,
-                                                val actionCost : Long, val action: Action) {
-        fun getCost() : Double {
+    data class DiEdge<StateType : State<StateType>>(val source: Node<StateType>, val destination: Node<StateType>,
+                                                    val actionCost: Long, val action: Action) {
+        fun getCost(): Double {
             return destination.heuristic + actionCost
         }
     }
 
     //initialization and persistent state
-    private var lastExpansionCount : Long = 0
+    private var lastExpansionCount: Long = 0
     private var iterationCount = 0
     private var backupCount = 0
     private var foundGoal = false
 
-    private var currentAgentState : StateType? = null
+    private var currentAgentState: StateType? = null
 
     //Closed List (also includes nodes on the frontier)
     private val closed = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat())
@@ -151,10 +154,8 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
      * </ul>
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
-        logger.debug("""
-            |Selecting action with source state:
-            |$sourceState
-            """.trimMargin())
+        logger.debug { "Selecting action with source state:\n $sourceState" }
+
         if (iterationCount == 0) {
             frontier.add(Node(sourceState, domain.heuristic(sourceState)))
             closed[sourceState] = frontier.peek()!!
@@ -186,7 +187,8 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
 
         iterationCount++
 
-        logger.debug("""
+        logger.debug {
+            """
             |*****Status after Iteration $iterationCount*****
             |Timers:
             |   Dijkstra - $dijkstraTimer
@@ -194,7 +196,8 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
             |
             |Frontier Size: ${frontier.size}
             |Backlog Queue Size: ${backlogQueue.size}
-            """.trimMargin())
+            """.trimMargin()
+        }
         return moveAgent(sourceState)
     }
 
@@ -202,7 +205,8 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
     private fun dijkstra(terminationChecker: TerminationChecker) {
         val limit = (expansionRatio * lastExpansionCount).toLong()
 
-        logger.debug("Learning Phase: Limit $limit")
+        logger.debug { "Learning Phase: Limit $limit" }
+
         //resort min queues
         //with more analysis and work, this may be informed by techniques from D* Lite
         backlogQueue.reorder(fuzzyFComparator)
@@ -210,12 +214,12 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         for (i in 1..limit) {
             //break checks
             if (terminationChecker.reachedTermination()) {
-                logger.debug("Learning phase could not complete before termination")
+                logger.debug { "Learning phase could not complete before termination" }
                 break
             }
 
             if (backlogQueue.isEmpty()) {
-                logger.debug("Reached the end of the backlog queue")
+                logger.debug { "Reached the end of the backlog queue" }
                 break
             }
 
@@ -225,14 +229,14 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         }
     }
 
-    private fun updateNodeHeuristic(node : Node<StateType>) {
+    private fun updateNodeHeuristic(node: Node<StateType>) {
         //sanity error check
         if (node.onGoalPath) {
             throw IllegalArgumentException("Error in program: goal path node should not have heuristic updated")
         }
 
         var bestH = Double.POSITIVE_INFINITY
-        var bestNode : Node<StateType>? = null
+        var bestNode: Node<StateType>? = null
         for (successorMapEntry in node.successors) {
             val successorEdge = successorMapEntry.value
             val successorNode = successorEdge.destination
@@ -260,7 +264,7 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
      *  Add previously expanded ancestors to backlog queue. Note that if an ancestor is on the
      *  goal path, we ignore it: it is part of the backwards A*, so should not be touched in backups
      */
-    private fun addAncestorsToBacklog(node : Node<StateType>) {
+    private fun addAncestorsToBacklog(node: Node<StateType>) {
         node.ancestors.values.forEach {
             if (!it.source.onGoalPath && !backlogQueue.contains(it.source)) {
                 backlogQueue.add(it.source)
@@ -274,15 +278,15 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
      * If the goal is found, this phase ends immediately and algorithm proceeds to new stage: backward search
      * @return whether or not the goal was found
      */
-    private fun expandFrontier(terminationChecker: TerminationChecker) : Boolean {
-        logger.debug("Expansion Phase")
+    private fun expandFrontier(terminationChecker: TerminationChecker): Boolean {
+        logger.debug { "Expansion Phase" }
 
         //reset in prep for next learning phase
         lastExpansionCount = 0
 
         var nextNode = frontier.pop()
 
-        var expandedGoal : Boolean
+        var expandedGoal: Boolean
         while (!terminationChecker.reachedTermination()) {
             if (nextNode === null) {
                 throw GoalNotReachableException("No reachable path to goal")
@@ -302,7 +306,7 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
     /**
      * @return Whether or not the goal node was just expanded
      */
-    private fun expandFrontierNode(terminationChecker: TerminationChecker, frontierNode : Node<StateType>) : Boolean {
+    private fun expandFrontierNode(terminationChecker: TerminationChecker, frontierNode: Node<StateType>): Boolean {
         if (domain.isGoal(frontierNode.state)) {
             frontierNode.onGoalPath = true
 
@@ -310,14 +314,13 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
             //clear it to reset indices
             frontier.clear()
             backwardFrontier.add(frontierNode)
-            println("found goal")
 
             return true
         } else {
             val successors = domain.successors(frontierNode.state)
 
-            var bestNode : Node<StateType> = frontierNode
-            var bestH : Double = Double.POSITIVE_INFINITY
+            var bestNode: Node<StateType> = frontierNode
+            var bestH: Double = Double.POSITIVE_INFINITY
             successors.forEach {
                 val successorNode: Node<StateType>?
                 if (!closed.containsKey(it.state)) {
@@ -368,7 +371,7 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
 
         while (!terminationChecker.reachedTermination()) {
             if (goalPathNode == null) {
-                logger.debug("Goal path propagation complete! No more nodes to update")
+                logger.debug { "Goal path propagation complete! No more nodes to update" }
                 return
             }
 
@@ -378,11 +381,11 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         }
     }
 
-    private fun expandGoalPathNode(terminationChecker: TerminationChecker, goalPathNode : Node<StateType>) {
+    private fun expandGoalPathNode(terminationChecker: TerminationChecker, goalPathNode: Node<StateType>) {
         val ancestors = domain.predecessors(goalPathNode.state)
 
         ancestors.forEach {
-            var ancestorNode : Node<StateType>?
+            var ancestorNode: Node<StateType>?
 
             if (closed.containsKey(it.state)) {
                 ancestorNode = closed[it.state]
@@ -419,14 +422,14 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
 
     //Agent moves to the next state with the lowest cost (action cost + h), breaking ties on h.
     //If on the goal path, follows diminishing h values
-    private fun moveAgent(sourceState : StateType) : List<ActionBundle> {
-        logger.debug("Movement Phase")
+    private fun moveAgent(sourceState: StateType): List<ActionBundle> {
+        logger.debug { "Movement Phase" }
 
         //only commit 1 at a time
         val actionList = ArrayList<ActionBundle>()
 
-        var currentNode = closed[sourceState] ?:
-            throw NullPointerException("Closed list has State Key which points to Null")
+        var currentNode = closed[sourceState]
+                ?: throw NullPointerException("Closed list has State Key which points to Null")
 
         //hard coding limit of 1 for now. May change later, so keeping it in loop
         val actionPlanLimit = 1
@@ -436,7 +439,7 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
             //break when currentNode is on the frontier - we haven't examined past it yet!
             if (currentNode.successors.size == 0) break
 
-            val pathEdge= currentNode.successors.values.reduce { minSoFar, next ->
+            val pathEdge = currentNode.successors.values.reduce { minSoFar, next ->
                 val lhsCost = minSoFar.getCost()
                 val rhsCost = next.getCost()
 
@@ -467,8 +470,8 @@ class ComprehensiveEnvelopeSearch<StateType: State<StateType>>(
         return actionList
     }
 
-    enum class ComprehensiveConfigurations(val configurationName: String) {
-        BACKLOG_RATIO ("backlogRatio");
+    enum class ComprehensiveConfigurations(private val configurationName: String) {
+        BACKLOG_RATIO("backlogRatio");
 
         override fun toString() = configurationName
     }
