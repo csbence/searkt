@@ -1,12 +1,12 @@
 package edu.unh.cs.ai.realtimesearch
 
+import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
@@ -14,12 +14,9 @@ import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARG
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
-import kotlinx.io.PrintWriter
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration.TBA_OPTIMIZATION
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -36,9 +33,10 @@ fun main(args: Array<String>) {
 //    if (!outputFile.isFile || !outputFile.canWrite()) throw MetronomeException("Can't write the output file: $outputPath")
 
     println("Please provide a JSON list of configurations to execute:")
-    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
-    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+//    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+//    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
+    val rawConfiguration = generateConfigurations()
     println(rawConfiguration)
 
     val loader = ExperimentConfiguration.serializer().list
@@ -47,7 +45,7 @@ fun main(args: Array<String>) {
 
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
 
-    val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
+    val rawResults = JSON.indented.stringify(ExperimentResult.serializer().list, results)
 //    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
 //    System.err.println("\nResult has been saved to $outputPath")
 //    System.err.println(results.summary())
@@ -67,16 +65,16 @@ private fun generateConfigurations(): String {
     val configurations = generateConfigurations(
             domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-//                    Domains.GRID_WORLD to "input/vacuum/empty.vw"
-                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-                    RACETRACK to "input/racetrack/barto-big.track",
-                    RACETRACK to "input/racetrack/uniform.track",
-                    RACETRACK to "input/racetrack/barto-small.track"
+                    Domains.GRID_WORLD to "input/vacuum/cups.vw"
+//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
+//                    RACETRACK to "input/racetrack/barto-big.track",
+//                    RACETRACK to "input/racetrack/uniform.track",
+//                    RACETRACK to "input/racetrack/barto-small.track"
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(SAFE_RTS),
-            actionDurations = listOf(50L, 100L, 150L, 200L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(TIME_BOUNDED_A_STAR),
+            actionDurations = listOf(5),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
@@ -91,6 +89,8 @@ private fun generateConfigurations(): String {
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
                     Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(TIME_BOUNDED_A_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE)),
                     Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SafetyBackup.PREDECESSOR.toString())),
                     Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
