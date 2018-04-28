@@ -1,7 +1,7 @@
 package edu.unh.cs.ai.realtimesearch
 
 import edu.unh.cs.ai.realtimesearch.environment.Domains
-import edu.unh.cs.ai.realtimesearch.environment.Domains.*
+import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
@@ -15,29 +15,30 @@ import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARG
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
-import kotlinx.io.PrintWriter
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration.TBA_OPTIMIZATION
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun main(args: Array<String>) {
 
-    var outputPath : String?
-    var basePath : String?
+    var outputPath: String?
+    var basePath: String?
     if (args.isNotEmpty()) {
         outputPath = args[0]
 
         val fileNameIndex = outputPath.lastIndexOf("\\")
+    }
 
     println("Please provide a JSON list of configurations to execute:")
-    val rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
     if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
-    println(rawConfiguration)
+//    println(rawConfiguration)
+
+    // Manually override
+    rawConfiguration = generateConfigurations()
 
     val loader = ExperimentConfiguration.serializer().list
     val parsedConfigurations = JSON.parse(loader, rawConfiguration)
@@ -48,13 +49,10 @@ fun main(args: Array<String>) {
     val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
 //    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
 //    System.err.println("\nResult has been saved to $outputPath")
-//    System.err.println(results.summary())
+    System.err.println(results.summary())
 
     println('#') // Indicator for the parser
     println(rawResults) // This should be the last printed line
-
-//    System.err.println("Searkt is done!")
-//    System.err.flush()
 
 //    runVisualizer(result = results.first())
 }
