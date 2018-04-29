@@ -27,6 +27,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private val tbaOptimization = configuration.tbaOptimization
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
 
+    //HARD CODED for testing. Should be configurable
+    private val traceCost = 10 //cost of backtrace relative to expansion
+
+    private val resourceRatio = 0.9 //ratio of time for Expansions
+
     override var iterationCounter = 0L
 
     private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000).resize()
@@ -38,6 +43,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var rootState: StateType? = null
 
     private var aStarPopCounter = 0
+
+    //Relevant Path lists
+    private var traceInProgress : List<PureRealTimeSearchNode<StateType>>? = null
+
+    private var targetPath : List<PureRealTimeSearchNode<StateType>>? = null
 
     var aStarTimer = 0L
 
@@ -93,32 +103,57 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 aStar(terminationChecker)
             }
 
-            val rootToBestChain = extractNodeChain(targetNode, { it == rootState!! }).map { it.state }.toSet()
+            //calculate backtrace here. Simply using astar pop count until we determine best way to compare with other algorithms
+            val traceLimit = aStarPopCounter
+            var currentTraceCount = 0
+
+            val rootToBestChain = extractNodeChain(targetNode, {
+                currentTraceCount++
+                currentTraceCount >= traceLimit || it == rootState!! || it == sourceState
+            })
+
+            if (rootToBestChain[0].state == rootState || rootToBestChain[0].state == sourceState) {
+                targetPath = rootToBestChain
+                traceInProgress = null
+            } else {
+                traceInProgress = rootToBestChain
+            }
             println()
 
+            assert(targetPath != null)
+
             println(currentAgentNode)
-            plan = if (rootToBestChain.contains(currentAgentNode.state)) {
+            /*
+                TODO: Account for agent reaching path that extends to start.
+                Below does not account for the case where a targetPath has fully backTraced to the root and
+                the agent lands on the path by backtracking.
+             */
+            plan = if (targetPath!![0].state == sourceState) {
                 // The agent's current state is an ancestor of the current best
                 // Move agent to current best target
-                extractPath(targetNode, sourceState)
+                targetPath = targetPath!!.subList(1, targetPath!!.lastIndex)
+                extractPath(targetPath!![targetPath!!.lastIndex], sourceState)
             } else {
                 when (tbaOptimization) {
-                    NONE -> {
-                        // Find common ancestor
-                        rootToBestChain.forEach { println(it) }
-
-
-                        val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestChain.contains(it) })
-
-                        // There should be only one overlap between the two chains
-                        assert(rootToBestChain.contains(commonAncestorToAgent.first().state))
-                        assert(commonAncestorToAgent.drop(1).none { rootToBestChain.contains(it.state) })
-
-                        constructPath(commonAncestorToAgent.reversed().map { it.state }, domain)
-                                .plus(extractPath(targetNode, commonAncestorToAgent.first().state))
-                    }
+                    NONE -> TODO()
+//                    {
+//                        // Find common ancestor
+//                        rootToBestChain.forEach { println(it) }
+//
+//                        /*
+//                            TODO: check if on target path and if so move forward on it
+//                         */
+//                        val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestChain.contains(it) })
+//
+//                        // There should be only one overlap between the two chains
+//                        assert(rootToBestChain.contains(commonAncestorToAgent.first().state))
+//                        assert(commonAncestorToAgent.drop(1).none { rootToBestChain.contains(it.state) })
+//
+//                        constructPath(commonAncestorToAgent.reversed().map { it.state }, domain)
+//                                .plus(extractPath(targetNode, commonAncestorToAgent.first().state))
+//                    }
                     SHORTCUT -> TODO()
-                    TBAOptimization.THRESHOLD -> TODO()
+                    TBAOptimization.THRESHOLD -> TODO() //requires a list which points to agent's current path as well
                 }
             }
         }
