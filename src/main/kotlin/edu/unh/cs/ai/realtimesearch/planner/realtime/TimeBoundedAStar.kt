@@ -20,6 +20,7 @@ import kotlin.system.measureTimeMillis
 
 /**
  * @author Bence Cserna (bence@cserna.net)
+ * @author Kevin C. Gall
  */
 class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
 
@@ -49,7 +50,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     //Relevant Path lists
     private var traceInProgress : MutableList<PureRealTimeSearchNode<StateType>>? = null
-
     private var targetPath : MutableList<PureRealTimeSearchNode<StateType>>? = null
 
     var aStarTimer = 0L
@@ -94,13 +94,13 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             return emptyList()
         }
 
-        // Exploration phase
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val currentTargetPath = getCurrentPath(sourceState, terminationChecker)
-            println()
 
-            println(currentAgentNode)
+//            println()
+//            println(currentAgentNode)
+
             plan = if (currentTargetPath[0].state == sourceState) {
                 if (currentTargetPath.size == 1) {
                     /* First handle the edge case where the agent has reached the end of its
@@ -145,7 +145,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val safePlan = if(plan == null || plan?.size == 0) {
             val targetNode = nodes[lastAgentState] ?:
                 throw MetronomeException("Cannot construct plan: no plan or previous state")
-            constructPath(extractNodeChain(targetNode, { it == sourceState }).map { it.state }, domain)
+
+            if (configuration.commitmentStrategy != CommitmentStrategy.SINGLE)
+                throw MetronomeException("TBA* does not support commitment strategies other than SINGLE")
+            //TODO: Add support for multiple commitment.
+            // All it requires is tracking the last state committed rather than the agent's previous state
+            constructPath(listOf(sourceState, targetNode.state), domain)
         } else {
             plan!!
         }
