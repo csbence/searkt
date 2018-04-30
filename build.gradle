@@ -2,9 +2,9 @@ group 'unh-ai'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'application'
-apply plugin: "org.jetbrains.kotlin.jvm"
 apply plugin: 'excelsiorJet'
 apply plugin: 'kotlinx-serialization'
+apply plugin: "org.jetbrains.kotlin.jvm"
 
 applicationDefaultJvmArgs = [
         "-server", "-XX:+AggressiveOpts", "-ea", //"–XX:+UseG1GC",
@@ -19,6 +19,7 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
+
     ext.kotlin_version = '1.2.40'
     ext.serialization_version = '0.4.2'
 
@@ -52,6 +53,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
+
 
 sourceSets {
     main.java.srcDirs += file('src/main/kotlin')

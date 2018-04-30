@@ -94,6 +94,10 @@ data class ExperimentConfiguration(
         @Optional
         val anytimeMaxCount: Long? = null,
 
+        //Real Time Comprehensive
+        @Optional
+        val backlogRatio: Double? = null,
+
         // TBA*
         @Optional
         val tbaOptimization: TBAOptimization? = null
