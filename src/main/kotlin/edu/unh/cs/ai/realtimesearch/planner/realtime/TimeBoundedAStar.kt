@@ -15,6 +15,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -31,7 +32,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000).resize()
 
-    // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
+    // LSS stores heuristic values. Use those, but initialize them according to the globalDomain heuristic
     // The cost values are initialized to infinity
     override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000, fValueComparator)
 
@@ -41,12 +42,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     var aStarTimer = 0L
 
+    // SearchEnvelope for visualizer
+    private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
+
     private val aStarSequence
         get() = generateSequence {
             aStarPopCounter++
 
             val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
+            expandedNodes.add(currentNode)
             expandFromNode(this, currentNode, {})
 
             currentNode
@@ -93,11 +98,13 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 aStar(terminationChecker)
             }
 
-            val rootToBestChain = extractNodeChain(targetNode, { it == rootState!! }).map { it.state }.toSet()
-            println()
+            val rootToBestChain = extractNodeChain(targetNode, { it == rootState!! })
+            val rootToBestSet = rootToBestChain.map { it.state }.toSet()
+            visualizer?.updateRootToBest(rootToBestChain)
+            visualizer?.updateCommonAncestorToAgentChain(emptyList<PureRealTimeSearchNode<StateType>>())
 
             println(currentAgentNode)
-            plan = if (rootToBestChain.contains(currentAgentNode.state)) {
+            plan = if (rootToBestSet.contains(currentAgentNode.state)) {
                 // The agent's current state is an ancestor of the current best
                 // Move agent to current best target
                 extractPath(targetNode, sourceState)
@@ -105,14 +112,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 when (tbaOptimization) {
                     NONE -> {
                         // Find common ancestor
-                        rootToBestChain.forEach { println(it) }
+                        rootToBestSet.forEach { println(it) }
 
-
-                        val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestChain.contains(it) })
+                        val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestSet.contains(it) })
+                        visualizer?.updateCommonAncestorToAgentChain(commonAncestorToAgent)
 
                         // There should be only one overlap between the two chains
-                        assert(rootToBestChain.contains(commonAncestorToAgent.first().state))
-                        assert(commonAncestorToAgent.drop(1).none { rootToBestChain.contains(it.state) })
+                        assert(rootToBestSet.contains(commonAncestorToAgent.first().state))
+                        assert(commonAncestorToAgent.drop(1).none { rootToBestSet.contains(it.state) })
 
                         constructPath(commonAncestorToAgent.reversed().map { it.state }, domain)
                                 .plus(extractPath(targetNode, commonAncestorToAgent.first().state))
@@ -123,8 +130,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             }
         }
 
+        visualizer?.updateSearchEnvelope(expandedNodes)
+        visualizer?.updateAgentLocation(currentAgentNode)
+        Thread.sleep(1000)
         return plan!!
     }
+
 
     /**
      * Runs AStar until termination and returns the path to the head of openList
@@ -141,6 +152,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 .forEach {
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
+//                    expandedNodes.add(it)
                 }
 
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")

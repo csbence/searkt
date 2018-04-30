@@ -65,6 +65,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
+        initializeVisualizer()
+
+
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.resetTo(timeBound)
@@ -151,6 +154,25 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         domain.appendDomainSpecificResults(experimentResult)
         planner.appendPlannerSpecificResults(experimentResult)
         return experimentResult
+    }
+
+    private fun initializeVisualizer() {
+        Thread({
+            Application.launch(OnlineGridVisualizer::class.java)
+        }).start()
+
+        visualizerLatch.await()
+        println("Visualizer initialized")
+
+        val setupLatch = CountDownLatch(1)
+        // Visualizer setup
+        Platform.runLater {
+            visualizer?.setup(domain, initialState)
+            setupLatch.countDown()
+        }
+
+        setupLatch.await()
+        println("Setup completed")
     }
 
     private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {
