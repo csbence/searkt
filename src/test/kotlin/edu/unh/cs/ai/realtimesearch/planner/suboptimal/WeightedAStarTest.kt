@@ -18,8 +18,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WeightedAStarTest {
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, "input/tiles/korf/4/real/12", 1000000L, 1000L, 1000000L,
-            null, 3.0, LookaheadType.STATIC, CommitmentStrategy.SINGLE, null, null, null, null, null, null, null, null)
+//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, "input/tiles/korf/4/real/12", 1000000L, 1000L, 1000000L,
+//            null, 3.0, LookaheadType.STATIC, CommitmentStrategy.SINGLE, null, null, null, null, null, null, null, null)
+
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "WEIGHTED_A_STAR",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 1000000L, weight = 3.0)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -123,10 +127,7 @@ class WeightedAStarTest {
     @Test
     fun testAStar6() {
         val weight = 1.0
-        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
-                null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
-                null, null, null, null, null, null)
-
+        configuration.weight = weight
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
             val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
@@ -216,9 +217,7 @@ class WeightedAStarTest {
     @Test
     fun testAStarHardPuzzle() {
         val weight = 1.5
-        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHED_A_STAR", TerminationType.EXPANSION,
-                null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
-                null, null, null, null, null, null)
+        configuration.weight = weight
 
         //val configuration = GeneralExperimentConfiguration(mutableMapOf(Configurations.WEIGHT.toString() to weight))
 

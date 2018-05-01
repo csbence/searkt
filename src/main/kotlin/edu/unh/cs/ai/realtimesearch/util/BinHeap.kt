@@ -84,7 +84,8 @@ class BinHeap<E : SearchQueueElement<E>>(private var queue: ArrayList<E>, privat
 
     fun remove(e: E): E {
         val ix = e.getIndex(key)
-        return removeAt(ix)
+        return if (ix != -1) removeAt(ix)
+        else e
     }
 
     private fun removeAt(ix: Int): E {

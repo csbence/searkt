@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.math.abs
 
 /**
  * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
@@ -35,16 +36,17 @@ class VacuumWorld(val width: Int,
             if (it != VacuumWorldAction.VACUUM) {
                 if (isLegalLocation(newLocation)) {
                     successors.add(SuccessorBundle(
-                            VacuumWorldState(newLocation, state.dirtyCells),
+                            VacuumWorldState(newLocation, state.dirtyCells, calculateHeuristic(newLocation, state.dirtyCells)),
                             it,
                             1.0)) // all actions have cost of 1
 
                 }
             } else if (newLocation in state.dirtyCells) {
                 // add legit vacuum action
+                val newDirtyCells = state.dirtyCells.filter { it != newLocation }
                 successors.add(SuccessorBundle(
                         // TODO: inefficient?
-                        VacuumWorldState(newLocation, state.dirtyCells.filter { it != newLocation }),
+                        VacuumWorldState(newLocation, newDirtyCells, calculateHeuristic(newLocation, newDirtyCells)),
                         it,
                         1.0))
             }
@@ -72,7 +74,7 @@ class VacuumWorld(val width: Int,
      * @return the # of dirty cells
      */
     override fun heuristic(state: VacuumWorldState): Double {
-        return state.dirtyCells.size.toDouble()
+        return state.heuristic //state.dirtyCells.size.toDouble()
     }
 
     //TODO: Create heuristic between two states for vacuumworld
@@ -83,7 +85,7 @@ class VacuumWorld(val width: Int,
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: VacuumWorldState) = heuristic(state)
+    override fun distance(state: VacuumWorldState) = state.heuristic //heuristic(state)
 
     /**
      * Returns whether the current state is a goal state.
@@ -105,8 +107,8 @@ class VacuumWorld(val width: Int,
      */
     override fun print(state: VacuumWorldState): String {
         val description = StringBuilder()
-        for (h in 1..height) {
-            for (w in 1..width) {
+        for (h in 0 until height) {
+            for (w in 0 until width) {
                 val charCell = when (Location(w, h)) {
                     state.agentLocation -> '@'
                     in blockedCells -> '#'
@@ -136,7 +138,8 @@ class VacuumWorld(val width: Int,
                 dirtyCells.add(randomLocation)
         }
 
-        val randomState = VacuumWorldState(randomLocation(width, height), dirtyCells)
+        val randomLocation = randomLocation(width, height)
+        val randomState = VacuumWorldState(randomLocation, dirtyCells, calculateHeuristic(randomLocation, dirtyCells))
         logger.debug { "Returning random state $randomState" }
 
         return randomState
@@ -158,6 +161,21 @@ class VacuumWorld(val width: Int,
 
     override fun predecessors(state: VacuumWorldState): List<SuccessorBundle<VacuumWorldState>> {
         throw UnsupportedOperationException()
+    }
+
+    fun calculateHeuristic(state: Location, dirtyCells: List<Location>): Double {
+        val agentX = state.x
+        val agentY = state.y
+
+        val numberOfDirtyCells = dirtyCells.size
+        var longestPathToDirtyCell = 0
+
+        dirtyCells.forEach { dirt ->
+            val pathToDirtyCell = abs(dirt.x - agentX) + abs(dirt.y - agentY)
+            if (pathToDirtyCell > longestPathToDirtyCell) longestPathToDirtyCell = pathToDirtyCell
+        }
+
+        return (longestPathToDirtyCell + numberOfDirtyCells).toDouble()
     }
 }
 

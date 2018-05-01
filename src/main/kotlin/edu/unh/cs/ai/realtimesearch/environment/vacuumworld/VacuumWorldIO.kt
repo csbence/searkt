@@ -46,7 +46,7 @@ object VacuumWorldIO {
         }
 
         val vacuumWorld = edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld(columnCount, rowCount, blockedCells.toHashSet())
-        val startState = VacuumWorldState(startLocation, dirtyCells)
+        val startState = VacuumWorldState(startLocation, dirtyCells, vacuumWorld.calculateHeuristic(startLocation, dirtyCells))
         return VacuumWorldInstance(vacuumWorld, startState)
     }
 

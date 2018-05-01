@@ -18,9 +18,9 @@ import kotlin.test.assertTrue
 
 class InverseTilePuzzleTest {
 
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4_INVERSE", null, "EES", TerminationType.EXPANSION,
-            null, 100000L, 1000L, 1000000L, null, 1.0, null, null, null, null,
-            null, null, null, null, null, null, errorModel = "global")
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4_INVERSE",
+            algorithmName = "WEIGHTED_A_STAR", terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            errorModel = "global", expansionLimit = 1000000L, weight = 1.0)
 
 
     private fun createInstanceFromString(puzzle: String): InputStream {
@@ -82,7 +82,7 @@ class InverseTilePuzzleTest {
         val instance = createInstanceFromString(tiles)
         val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(instance, 1L)
         val initialState = slidingTilePuzzle.initialState
-        val aStarAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+        val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
         val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000))
         println(plan)
         kotlin.test.assertTrue { plan.isNotEmpty() }
@@ -105,12 +105,11 @@ class InverseTilePuzzleTest {
             println("running sub-optimality validation on weight: $currentWeight")
             configuration.weight = currentWeight
             for (i in 1..100) {
-                print(i.toString() + " ")
-                System.out.flush()
+                println(i.toString())
                 val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(stream, 1L)
                 val initialState = slidingTilePuzzle.initialState
-                val eesAgent = ExplicitEstimationSearch(slidingTilePuzzle.domain, configuration)
+                val eesAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)
                 val plan: List<Action>
                 try {
                     plan = eesAgent.plan(initialState, StaticExpansionTerminationChecker(5000000))

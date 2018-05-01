@@ -16,9 +16,13 @@ import kotlin.test.assertTrue
 class DynamicPotentialSearchTest {
 
 
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
-            null, null, null, null, null, null)
+//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
+//            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
+//            null, null, null, null, null, null)
+
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "DPS",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 1000000L, weight = 1.0)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -120,10 +124,7 @@ class DynamicPotentialSearchTest {
     @Test
     fun testDPSHardPuzzle() {
         val weight = 1.5
-        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "DPS", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
-            null, null, null, null, null, null)
-
+        configuration.weight = weight
         val instanceNumbers = intArrayOf(1, 3)
         val optimalSolutionLengths = intArrayOf(57, 59)
 

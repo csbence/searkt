@@ -275,18 +275,18 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
     }
 
     private fun selectNode(): Node<StateType> {
-        val bestDHat = openList.peekFocal() ?: throw MetronomeException("Focal is Empty!")
-        val bestFHat = openList.peekOpen() ?: throw MetronomeException("Open is Empty!")
+        val bestDHat = openList.peekFocal()
+        val bestFHat = openList.peekOpen()
         val bestF = cleanup.peek() ?: throw MetronomeException("Cleanup is Empty!")
 
         when {
-            bestDHat.fHat <= weight * bestF.f -> {
+            bestDHat != null && bestDHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollFocal() ?: throw MetronomeException("Focal is Empty!")
                 cleanup.remove(chosenNode)
                 ++dHatExpansions
                 return chosenNode
             }
-            bestFHat.fHat <= weight * bestF.f -> {
+            bestFHat != null && bestFHat.fHat <= weight * bestF.f -> {
                 val chosenNode = openList.pollOpen() ?: throw MetronomeException("Open is Empty!")
                 cleanup.remove(chosenNode)
                 ++fHatExpansions
@@ -406,7 +406,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
         openList.add(node, node)
         generatedNodeCount++
 
-        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+        while (cleanup.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.nanoTime() - startTime

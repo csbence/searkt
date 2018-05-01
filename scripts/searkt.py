@@ -6,19 +6,22 @@
 
 import copy
 import json
+import sys
 import os
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import itertools
+import datetime
+import slack_notification
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
-    expansion_limit = [100000000]
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS']
+    expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
+    time_limit = [sys.maxsize]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -39,7 +42,12 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    # weight = [3.0]
+    # weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0,
+              3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -48,7 +56,18 @@ def generate_base_suboptimal_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'DPS']])
 
-    return compiled_configurations
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EES']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EECS']])
+
+    experiment_tag = ""
+    for alg in algorithms_to_run:
+        experiment_tag = experiment_tag + "-" + alg
+    return compiled_configurations, experiment_tag
 
 
 def generate_base_configuration():
@@ -132,6 +151,23 @@ def generate_racetrack():
     configurations = cartesian_product(configurations, 'domainSeed', range(10))
 
     return configurations
+
+
+def generate_vacuum_worlds():
+    configurations, tag = generate_base_suboptimal_configuration()
+    worlds_to_run = []
+    for world in range(0,50):
+        worlds_to_run.append('vacuum'+str(world)+'.vw')
+
+    world_base_path = 'input/vacuum/gen/'
+    full_world_paths = [world_base_path + world for world in worlds_to_run]
+
+    configurations = cartesian_product(configurations, 'domainName', ['VACUUM_WORLD'])
+    configurations = cartesian_product(configurations, 'domainPath', full_world_paths)
+
+    tag = tag + '-VACUUM_WORLD'
+
+    return configurations, tag
 
 
 def generate_tile_puzzle():
@@ -226,8 +262,8 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/results_srts.json', 'w') as outfile:
+def save_results(results_json, tag):
+    with open('output/data{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -238,19 +274,20 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_racetrack()  # generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_vacuum_worlds()  # generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
-
+    slack_notification.start_experiment_notification(len(configurations), 'byodoin')
     results = parallel_execution(configurations, 1)
 
     for result in results:
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    save_results(results)
-    print_summary(results)
+    save_results(results, tag)
+    # print_summary(results)
 
     print('{} results has been received.'.format(len(results)))
+    slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':

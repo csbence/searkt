@@ -18,9 +18,13 @@ import kotlin.test.assertTrue
 
 class ExplicitEstimationSearchExtensionsTest {
 
-    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
-            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
-            null, null, null, null, null, null, errorModel = "path")
+//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+//            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
+//            null, null, null, null, null, null, errorModel = "path")
+
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "EES",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 1000000L, errorModel = "path")
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
