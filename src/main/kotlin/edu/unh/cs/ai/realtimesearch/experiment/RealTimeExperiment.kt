@@ -24,6 +24,7 @@ import javafx.application.Application
 import javafx.application.Platform
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
