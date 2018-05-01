@@ -45,7 +45,17 @@ abstract class RealTimePlanner<StateType : State<StateType>> : Planner<StateType
 
 }
 
-data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long)
+data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long) {
+
+    override fun hashCode(): Int = node!!.hashCode()
+
+    override fun equals(other: Any?): Boolean = when (other) {
+        null -> false
+        is SearchEdge<*> -> node == other.node
+        is SearchEdge<*> -> node == other.node
+        else -> false
+    }
+}
 
 interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : Indexable {
     val state: StateType
@@ -102,8 +112,18 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
 
+    override fun hashCode(): Int = state.hashCode()
+
+    override fun equals(other: Any?): Boolean = when (other) {
+        null -> false
+        is SearchNode<*, *> -> state == other.state
+        is State<*> -> state == other
+        else -> false
+    }
+
     override fun toString() =
             "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
+
 }
 
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
