@@ -200,7 +200,9 @@ class OnlineGridVisualizer : Application() {
 //            grid.clear()
 //            grid.draw()
         }
+    }
 
-
+    fun delay() {
+        Thread.sleep(1000)
     }
 }

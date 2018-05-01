@@ -132,7 +132,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         visualizer?.updateSearchEnvelope(expandedNodes)
         visualizer?.updateAgentLocation(currentAgentNode)
-        Thread.sleep(1000)
+        visualizer?.delay()
         return plan!!
     }
 
