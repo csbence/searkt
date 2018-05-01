@@ -8,9 +8,12 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.SearchEdge
+import edu.unh.cs.ai.realtimesearch.planner.SearchNode
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
+import edu.unh.cs.ai.realtimesearch.visualizer
 import org.slf4j.LoggerFactory
 import java.lang.Double.min
 import java.util.*
@@ -34,7 +37,24 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     var expansionTimer = 0L
 
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double) : Indexable {
+    class Node<StateType : State<StateType>>(override val state: StateType, override var heuristic: Double) : SearchNode<StateType, Node<StateType>>, Indexable {
+
+        // We need this for the visualizer - this should be resolved
+        override var cost: Long
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            set(value) {}
+        override var actionCost: Long
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            set(value) {}
+        override var action: Action
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            set(value) {}
+        override var parent: Node<StateType>
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            set(value) {}
+        override val predecessors: MutableList<SearchEdge<Node<StateType>>>
+            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
         override var index: Int = -1
 
         val ancestors = HashMap<StateType, DiEdge<StateType>>()
@@ -115,6 +135,9 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     //Will need to be reordered before every learning phase
     private val backlogQueue = AdvancedPriorityQueue(1000000, fuzzyFComparator)
     private val backwardFrontier = AdvancedPriorityQueue(1000000, fuzzyFComparator)
+
+    // Visualizer
+    private val expandedNodes = mutableListOf<Node<StateType>>()
 
     override fun init() {
         dijkstraTimer = 0
@@ -198,6 +221,13 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
             |Backlog Queue Size: ${backlogQueue.size}
             """.trimMargin()
         }
+
+
+
+        visualizer?.updateSearchEnvelope(expandedNodes)
+        visualizer?.updateAgentLocation(thisNode)
+        visualizer?.delay()
+
         return moveAgent(sourceState)
     }
 
@@ -284,22 +314,15 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         //reset in prep for next learning phase
         lastExpansionCount = 0
 
-        var nextNode = frontier.pop()
-
-        var expandedGoal: Boolean
         while (!terminationChecker.reachedTermination()) {
-            if (nextNode === null) {
-                throw GoalNotReachableException("No reachable path to goal")
-            } else {
-                expandedGoal = expandFrontierNode(terminationChecker, nextNode)
-            }
+            val nextNode = frontier.pop() ?: throw GoalNotReachableException("No reachable path to goal")
+            expandedNodes.add(nextNode)
+            val expandedGoal = expandFrontierNode(terminationChecker, nextNode)
 
             if (expandedGoal) return true
 
             lastExpansionCount++
-            nextNode = if (!terminationChecker.reachedTermination()) frontier.pop() else null
         }
-
         return false
     }
 
