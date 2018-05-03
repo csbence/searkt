@@ -5,13 +5,13 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorld
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldState
 import edu.unh.cs.ai.realtimesearch.planner.SearchNode
-import edu.unh.cs.ai.realtimesearch.visualizer
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.AgentView
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.GridCanvasPane
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.MapInfo
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.SearchEnvelopeCell
-import edu.unh.cs.ai.realtimesearch.visualizerLatch
+//import edu.unh.cs.ai.realtimesearch.visualizerLatch
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.scene.Group
@@ -48,7 +48,7 @@ class OnlineGridVisualizer : Application() {
 
     override fun start(primaryStage: Stage) {
         this.primaryStage = primaryStage
-        visualizer = this
+//        visualizer = this
 
         val root = Group()
         val scene = Scene(root, 800.0, 600.0, Color.BLACK)
@@ -57,7 +57,7 @@ class OnlineGridVisualizer : Application() {
         primaryStage.show()
 //        setup(globalDomain!!, globalInitialState!!)
 
-        visualizerLatch.countDown()
+//        visualizerLatch.countDown()
     }
 
     /**

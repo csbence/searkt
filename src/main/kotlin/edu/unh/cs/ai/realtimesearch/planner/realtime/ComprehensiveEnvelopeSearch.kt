@@ -13,7 +13,7 @@ import edu.unh.cs.ai.realtimesearch.planner.SearchNode
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
-import edu.unh.cs.ai.realtimesearch.visualizer
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import org.slf4j.LoggerFactory
 import java.lang.Double.min
 import java.util.*
@@ -224,9 +224,9 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
 
 
 
-        visualizer?.updateSearchEnvelope(expandedNodes)
-        visualizer?.updateAgentLocation(thisNode)
-        visualizer?.delay()
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.updateAgentLocation(thisNode)
+//        visualizer?.delay()
 
         return moveAgent(sourceState)
     }

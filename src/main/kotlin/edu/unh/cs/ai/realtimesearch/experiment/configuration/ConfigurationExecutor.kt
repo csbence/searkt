@@ -236,6 +236,7 @@ object ConfigurationExecutor {
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
+            ENVELOPE -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 

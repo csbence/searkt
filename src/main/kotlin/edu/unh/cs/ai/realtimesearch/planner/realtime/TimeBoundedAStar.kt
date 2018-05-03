@@ -15,7 +15,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
-import edu.unh.cs.ai.realtimesearch.visualizer
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -100,8 +100,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
             val rootToBestChain = extractNodeChain(targetNode, { it == rootState!! })
             val rootToBestSet = rootToBestChain.map { it.state }.toSet()
-            visualizer?.updateRootToBest(rootToBestChain)
-            visualizer?.updateCommonAncestorToAgentChain(emptyList<PureRealTimeSearchNode<StateType>>())
+//            visualizer?.updateRootToBest(rootToBestChain)
+//            visualizer?.updateCommonAncestorToAgentChain(emptyList<PureRealTimeSearchNode<StateType>>())
 
             println(currentAgentNode)
             plan = if (rootToBestSet.contains(currentAgentNode.state)) {
@@ -115,7 +115,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                         rootToBestSet.forEach { println(it) }
 
                         val commonAncestorToAgent = extractNodeChain(currentAgentNode, { rootToBestSet.contains(it) })
-                        visualizer?.updateCommonAncestorToAgentChain(commonAncestorToAgent)
+//                        visualizer?.updateCommonAncestorToAgentChain(commonAncestorToAgent)
 
                         // There should be only one overlap between the two chains
                         assert(rootToBestSet.contains(commonAncestorToAgent.first().state))
@@ -130,9 +130,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             }
         }
 
-        visualizer?.updateSearchEnvelope(expandedNodes)
-        visualizer?.updateAgentLocation(currentAgentNode)
-        visualizer?.delay()
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.updateAgentLocation(currentAgentNode)
+//        visualizer?.delay()
         return plan!!
     }
 
