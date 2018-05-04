@@ -78,7 +78,7 @@ object ConfigurationExecutor {
 
         val executor = Executors.newFixedThreadPool(parallelCores)
         return configurations
-                .map { executor.submit(Callable<ExperimentResult> { executeConfiguration(it, dataRootPath) }) }
+                .map { executor.submit(Callable<ExperimentResult> { unsafeConfigurationExecution(it, dataRootPath) }) }
                 .map {
                     val experimentResult = it.get()
                     progressBar.updateProgress()
@@ -162,7 +162,7 @@ object ConfigurationExecutor {
 //            POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(configuration, domainStream)
             RACETRACK -> executeRaceTrack(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
-            else -> throw MetronomeException("Unknown or deactivated domain: $domain")
+            else -> throw MetronomeException("Unknown or deactivated globalDomain: $domain")
         }
     }
 
@@ -183,7 +183,7 @@ object ConfigurationExecutor {
 //
 //        val pointRobotWithInertiaInstance = PointRobotWithInertiaIO.parseFromStream(domainStream, numActions, actionFraction, stateFraction, configuration.actionDuration)
 //
-//        return executeDomain(configuration, pointRobotWithInertiaInstance.domain, pointRobotWithInertiaInstance.initialState)
+//        return executeDomain(configuration, pointRobotWithInertiaInstance.globalDomain, pointRobotWithInertiaInstance.initialState)
 //    }
 
     private fun executeVacuumWorld(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
@@ -228,6 +228,7 @@ object ConfigurationExecutor {
             A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
+            ES -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
             RTA_STAR -> executeRealTimeSearch(RealTimeAStarPlanner(domain, configuration), configuration, domain, sourceState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
