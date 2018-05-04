@@ -65,26 +65,43 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         override fun toString() =
                 "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 
+        /**
+         *  Shallow copy of node. This is so that we can put effectively the same node into two priority queues:
+         *  the frontier and the backlog open list
+         */
+        fun copy() : EnvelopeSearchNode<StateType> {
+            val nodeCopy= EnvelopeSearchNode(state, heuristic, cost, actionCost, action, iteration, parent)
+            nodeCopy.predecessors = predecessors
+            nodeCopy.successors = successors
+            nodeCopy.rhsHeuristic = rhsHeuristic
+            nodeCopy.isGoal = isGoal
+            nodeCopy.expanded = expanded
 
+            return nodeCopy
+        }
     }
 
+    //Not using backup ratio. TODO: examine and delete if necessary
     private val backupRatio = configuration.backlogRatio ?: 0.0
     private var backupCount = 0
     private var resourceLimit = 0L
     override var iterationCounter = 0L
+    private val backupComparatorType = configuration.backupComparator ?: BackupComparator.H_VALUE
+    private var dijkstraComparator: Comparator<RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>>>? = null
 
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100000000, 1.toFloat()).resize()
+    private val envelopeFrontier = AdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(1000000, heuristicComparator)
     override var openList = AdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(1000000, heuristicComparator)
 
     private var rootState: StateType? = null
     private var currentAgentState: StateType? = null
-
     private var goalNode: EnvelopeSearchNode<StateType>? = null
-    private var newGoalDiscovered = false
-    private var currentTarget: EnvelopeSearchNode<StateType>? = null
-    private var goalReachedAgent = false
 
-    private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+    private var executeNewBackup = true
+    private var foundGoal = false
+    private var goalBackedUp = false
+
+    private val pseudoFComparator = Comparator<RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>>> { lhs, rhs ->
         //using heuristic function for pseudo-g
         val lhsPseudoG = domain.heuristic(currentAgentState!!, lhs.state)
         val rhsPseudoG = domain.heuristic(currentAgentState!!, rhs.state)
@@ -99,6 +116,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             rhs.heuristic > lhs.heuristic -> 1
             else -> 0
         }
+    }
+
+    init {
+        dijkstraComparator =
+                when (backupComparatorType) {
+                    BackupComparator.H_VALUE -> Comparator{ lhs, rhs -> heuristicComparator.compare(lhs, rhs) }
+                    BackupComparator.PSEUDO_F -> pseudoFComparator
+                }
+
     }
 
     // TODO add D*
@@ -119,30 +145,66 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             return emptyList()
         }
 
-        if (!goalReachedAgent) {
-            // Exploration phase
-            // TODO maybe on pseudo f not h
-            val targetNode = explore(sourceState, terminationChecker)
-            if (resourceLimit == 0L) resourceLimit = expandedNodeCount.toLong()
-
-            // Backup phase
-            flushBackups(sourceState, targetNode, resourceLimit)
+        // Exploration phase
+        // TODO maybe on pseudo f not h
+        val agentNode = nodes[sourceState] ?: EnvelopeSearchNode(sourceState, domain.heuristic(sourceState), 0, 0, NoOperationAction, 0)
+        if (nodes[sourceState] == null) {
+            nodes[sourceState] = agentNode
+            generatedNodeCount++
         }
+
+        explore(agentNode, terminationChecker)
+        if (resourceLimit == 0L) resourceLimit = expandedNodeCount.toLong()
+
+        // Backup phase
+
+        // Note: Need to ensure that goal backups don't get overwritten
+        // Therefore, we keep backing up from goal node. This is a bandaid, not
+        // a real solution. TODO: come up with something better
+
+        var freshBackup = false
+        if (openList.isEmpty() || executeNewBackup) {
+            openList.clear() //in case we are clearing the way for the goal
+
+            freshBackup = true
+            executeNewBackup = false
+            // Refill open list with current frontier
+            envelopeFrontier.backingArray.forEach {
+                //Copying nodes to add to open list. These are frontier nodes as
+                //well, so we need to maintain their envelopeFrontier pointers!
+                if (it != null) openList.add(it.copy())
+            }
+
+            // Seed the goal
+            if (goalNode != null) openList.add(goalNode!!)
+        }
+
+        // Execute backups until we envelope the agent, run out of time, or flush the queue
+        var currentBackupCount = 0
+        dynamicDijkstra(this, freshBackup, dijkstraComparator!!) {
+            //check if all successors of the agent have been backed up in the current iteration
+            val agentEnveloped = agentNode.successors.fold(agentNode.iteration == iterationCounter,
+                    {goodSoFar, successor -> goodSoFar && successor.node.iteration == iterationCounter})
+            if (agentEnveloped) executeNewBackup = true
+
+            if (currentBackupCount >= resourceLimit || agentEnveloped) true
+            else {
+                currentBackupCount++
+                it.isEmpty()
+            }
+        }
+
+        backupCount += currentBackupCount
 
 
         return listOf(getBestAction(sourceState))
     }
 
-    private fun explore(state: StateType, terminationChecker: TerminationChecker): EnvelopeSearchNode<StateType> {
-        iterationCounter++
-
-        val node = nodes[state] ?: EnvelopeSearchNode(state, domain.heuristic(state), 0, 0, NoOperationAction, 0)
-        if (nodes[state] == null) {
-            nodes[state] = node
-            generatedNodeCount++
-        }
-
-        var currentNode = if (node.successors.size == 0) node else popFromOpen()
+    /**
+     * @return The node of the agent's current location
+     */
+    private fun explore(sourceNode: EnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker) {
+        var currentNode = if (sourceNode.successors.size == 0) sourceNode else popFromFrontier()
 
         while (!terminationChecker.reachedTermination()) {
             /* I don't think Envelope Search wants to stop when we reach the goal node.
@@ -151,80 +213,29 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 //            if (domain.isGoal(topNode.state)) return topNode
             if (domain.isGoal(currentNode.state)) {
                 if (currentNode.isGoal) { //this is a reexamination, meaning the queue is empty
-                    return currentNode
+                    break
                 } else {
-                    newGoalDiscovered = true
-                    goalNode = currentNode
                     currentNode.isGoal = true
-                    //we want to expand the envelope closest to the agent now
-                    openList.reorder(pseudoFComparator)
-
-                    // Adding to backup since we do care about predecessors
-                    currentNode.iteration = Long.MAX_VALUE //goal is important! should always be top priority!
+                    foundGoal = true
+                    goalNode = currentNode
                 }
             } else {
                 expandFromNode(currentNode)
             }
 
             terminationChecker.notifyExpansion()
-            if (!terminationChecker.reachedTermination()) currentNode = popFromOpen()
+            if (!terminationChecker.reachedTermination()) currentNode = popFromFrontier()
         }
-
-        return (if(newGoalDiscovered) goalNode else currentNode) ?: goalNode ?: throw GoalNotReachableException("Open list is empty.")
     }
 
-    private fun popFromOpen() : EnvelopeSearchNode<StateType> {
-        openList.peek() ?: return goalNode ?: throw GoalNotReachableException("Open list is empty.")
-        return openList.pop()!!
-    }
-
-    private fun flushBackups(currentState: StateType, targetNode: EnvelopeSearchNode<StateType>, currentResourceLimit: Long) {
-        val backupLimit = (currentResourceLimit * backupRatio).toLong()
-
-        if (newGoalDiscovered && targetNode.isGoal) {
-            newGoalDiscovered = false
-            dStarQueue.clear()
-
-            currentTarget = targetNode
-            //add goal's predecessors to queue, not the goal state itself
-            targetNode.predecessors.forEach {
-                it.node.iteration = targetNode.iteration
-                dStarQueue.add(it.node)
-            }
-        } else if (dStarQueue.isEmpty()) {
-            dStarQueue.add(targetNode)
-            currentTarget = targetNode
-        } else {
-            //resort for proximity to agent
-            dStarQueue.reorder(pseudoFComparator)
-        }
-
-        for (i in 1..backupLimit) {
-            //if backlog queue is fully flushed, return
-            val topNode = dStarQueue.pop() ?: return
-            backupNode(topNode)
-
-            // if we reach the agent, back up all its successors so that the agent makes an informed decision,
-            // then clear the queue
-            // TODO: Force this to be within the backlog limit
-            if (topNode.state == currentState) {
-                topNode.successors.forEach{
-                    if (it.node.successors.size > 0) backupNode(it.node)
-                }
-
-                if (currentTarget!!.isGoal) goalReachedAgent = true
-
-                dStarQueue.clear()
-                break
-            }
-        }
+    private fun popFromFrontier() : EnvelopeSearchNode<StateType> {
+        envelopeFrontier.peek() ?: return goalNode ?: throw GoalNotReachableException("Open list is empty.")
+        return envelopeFrontier.pop()!!
     }
 
     /**
      * Action chosen based on iteration counter. Agent prefers, in this order:
-     * Is the Target Node;
      * Max Iteration;
-     * Not on the backlog queue;
      * Best heuristic
      */
     private val nextActionComparator = Comparator<SearchEdge<EnvelopeSearchNode<StateType>>> { lhs, rhs ->
@@ -235,19 +246,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val rhsCost = rhsNode.heuristic + rhs.actionCost
 
         when {
-            lhsNode == currentTarget -> -1
-            rhsNode == currentTarget -> 1
             lhsNode.iteration > rhsNode.iteration -> -1
             lhsNode.iteration < rhsNode.iteration -> 1
-            !lhsNode.open && rhsNode.open -> -1
-            lhsNode.open && !rhsNode.open -> 1
             lhsCost < rhsCost -> -1
             lhsCost > rhsCost -> 1
             else -> 0
         }
     }
-    // Backup immediately after getting action.
-    // Note: Inadmissible heuristic results!
+    // Backup from best successor immediately after getting action.
     private fun getBestAction(sourceState: StateType): ActionBundle {
         val thisNode = nodes[sourceState] ?: throw MetronomeException("Agent's current state not generated. The Planner is confused")
 
@@ -271,7 +277,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         expandedNodeCount += 1
 
         var rhsHeuristic = Double.POSITIVE_INFINITY
-        sourceNode.iteration = expandedNodeCount.toLong()
 
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
@@ -283,8 +288,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 successorNode.predecessors.add(edge)
             }
 
-            if (!successorNode.expanded) {
-                openList.add(successorNode)
+            if (!successorNode.expanded && !successorNode.open) {
+                envelopeFrontier.add(successorNode)
             }
 
             rhsHeuristic = min(successorNode.heuristic + successor.actionCost, rhsHeuristic)
@@ -328,43 +333,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             tempSuccessorNode
         }
     }
+}
 
-    /**
-     * Backs up node by taking the best successor heursitic plus cost to get there from those successors with the
-     * highest "iteration counter"
-     * Adds all predecessors to backup queue (dStarQueue) and resets their iteration counter
-     */
-    private fun backupNode(node: EnvelopeSearchNode<StateType>) {
-        if (node.isGoal) return
+enum class BackupComparator {
+    H_VALUE, PSEUDO_F;
+}
 
-        val maxIteration = node.successors.map { it.node.iteration }.max() ?: 0L
-        val bestSuccessorEdge =
-            node.successors.filter {
-                it.node.iteration == maxIteration
-            } .minBy {
-                it.node.heuristic + it.actionCost
-            } ?: throw MetronomeException("No viable successor edges. The planner is confused")
+enum class EnvelopeConfigurations(private val configurationName: String) {
+    BACKLOG_RATIO("backlogRatio"),
+    COMPARATOR("backupComparator");
 
-        val tempH = node.heuristic
-        node.heuristic = bestSuccessorEdge.node.heuristic + bestSuccessorEdge.actionCost
-        node.rhsHeuristic = node.heuristic
-
-        val hChanged = tempH != node.heuristic
-
-        node.predecessors.forEach {
-            if (it.node.iteration < node.iteration || hChanged) {
-                it.node.iteration = node.iteration
-
-                if (!it.node.open) dStarQueue.add(it.node)
-            }
-        }
-
-        backupCount++
-    }
-
-    enum class EnvelopeConfigurations(private val configurationName: String) {
-        BACKLOG_RATIO("backlogRatio");
-
-        override fun toString() = configurationName
-    }
+    override fun toString() = configurationName
 }
