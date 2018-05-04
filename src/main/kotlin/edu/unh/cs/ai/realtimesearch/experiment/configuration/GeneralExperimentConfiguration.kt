@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
+import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 
@@ -100,5 +101,9 @@ data class ExperimentConfiguration(
 
         // TBA*
         @Optional
-        val tbaOptimization: TBAOptimization? = null
+        val tbaOptimization: TBAOptimization? = null,
+
+        // Envelope Search
+        @Optional
+        val backupComparator: BackupComparator? = null
 )

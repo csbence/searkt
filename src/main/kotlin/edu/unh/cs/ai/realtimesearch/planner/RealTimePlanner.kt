@@ -315,3 +315,52 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
         }
     }
 }
+
+/**
+ * Dynamic dijkstra operation which supports custom termination checker and ordering comparator
+ */
+fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> dynamicDijkstra(
+        context: RealTimePlannerContext<StateType, NodeType>,
+        freshSearch: Boolean = true,
+        openListComparator: Comparator<RealTimeSearchNode<StateType,NodeType>> = Comparator {lhs, rhs -> heuristicComparator.compare(lhs, rhs)},
+        reachedTermination: (AdvancedPriorityQueue<NodeType>) -> Boolean = {openList -> openList.isEmpty()}) {
+    val openList = context.openList
+
+    // Invalidate the current heuristic value by incrementing the counter
+    // Otherwise, we continue the previous iteration
+    if (freshSearch) context.iterationCounter++
+
+    // change openList ordering to heuristic only
+    openList.reorder(openListComparator)
+
+    while (!reachedTermination(openList)) {
+        val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
+
+        node.iteration = context.iterationCounter
+
+        val currentHeuristicValue = node.heuristic
+
+        // update heuristic value for each predecessor
+        for (predecessor in node.predecessors) {
+            val predecessorNode = predecessor.node
+
+            // This node was already learned and closed in the current iteration
+            if (predecessorNode.iteration == context.iterationCounter && !predecessorNode.open) continue
+
+            val predecessorHeuristicValue = predecessorNode.heuristic
+
+            if (!predecessorNode.open) {
+                // This node is not open yet, because it was not visited in the current planning iteration
+
+                predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                predecessorNode.iteration = context.iterationCounter
+
+                openList.add(predecessorNode)
+            } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
+                // This node was visited in this learning phase, but the current path is better then the previous
+                predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                openList.update(predecessorNode) // Update priority
+            }
+        }
+    }
+}
