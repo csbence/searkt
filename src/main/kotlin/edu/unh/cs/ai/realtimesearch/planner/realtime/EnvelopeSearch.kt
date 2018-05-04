@@ -169,14 +169,21 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             freshBackup = true
             executeNewBackup = false
             // Refill open list with current frontier
-            envelopeFrontier.backingArray.forEach {
-                //Copying nodes to add to open list. These are frontier nodes as
-                //well, so we need to maintain their envelopeFrontier pointers!
-                if (it != null) openList.add(it.copy())
-            }
+//            envelopeFrontier.backingArray.forEach {
+//                //Copying nodes to add to open list. These are frontier nodes as
+//                //well, so we need to maintain their envelopeFrontier pointers!
+//                if (it != null) openList.add(it.copy())
+//            }
 
             // Seed the goal
             if (goalNode != null) openList.add(goalNode!!)
+            else {
+                envelopeFrontier.backingArray.forEach {
+                    //Copying nodes to add to open list. These are frontier nodes as
+                    //well, so we need to maintain their envelopeFrontier pointers!
+                    if (it != null) openList.add(it.copy())
+                }
+            }
         }
 
         // Execute backups until we envelope the agent, run out of time, or flush the queue
