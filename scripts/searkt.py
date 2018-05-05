@@ -53,12 +53,12 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['SAFE_RTS']
+    algorithms_to_run = ['TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
-    action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
-    # action_durations = [50, 100, 150, 200, 250]
+    action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200]
+    # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
 
@@ -82,6 +82,18 @@ def generate_base_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
+
+    # Comprehensive Envelope
+    backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'CES']])
+
+    # TBA*
+    optimizations = ['NONE', 'THRESHOLD']
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'tbaOptimization', optimizations,
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # S-RTS specific attributes
     compiled_configurations = cartesian_product(compiled_configurations,
@@ -146,6 +158,23 @@ def generate_tile_puzzle():
 
     configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
+
+    return configurations
+
+
+# Generates configs for Dragon Age Origins game map (Nathan Sturtevant)
+def generate_grid_world():
+    configurations = generate_base_configuration()
+
+    grids = []
+    for scenario in range(0, 50):
+        grids.append(str(scenario))
+
+    scenario_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
+    full_grid_paths = [scenario_base_path + scenario for scenario in grids]
+
+    configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
+    configurations = cartesian_product(configurations, 'domainPath', full_grid_paths)
 
     return configurations
 
@@ -238,7 +267,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_tile_puzzle()  # generate_racetrack()
+    configurations = generate_grid_world()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
     results = parallel_execution(configurations, 1)

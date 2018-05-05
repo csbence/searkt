@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
 //    println(rawConfiguration)
 
     // Manually override
-    rawConfiguration = generateConfigurations()
+//    rawConfiguration = generateConfigurations()
 
     val loader = ExperimentConfiguration.serializer().list
     val parsedConfigurations = JSON.parse(loader, rawConfiguration)
@@ -63,7 +63,8 @@ private fun generateConfigurations(): String {
     val configurations = generateConfigurations(
             domains = listOf(
 //                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-                    Domains.GRID_WORLD to "input/vacuum/cups.vw"
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-31.vw"
 //                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
 //                    RACETRACK to "input/racetrack/barto-big.track",
 //                    RACETRACK to "input/racetrack/uniform.track",
@@ -71,31 +72,19 @@ private fun generateConfigurations(): String {
 //                    TRAFFIC to "input/traffic/vehicle0.v"
             ),
 //            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(TIME_BOUNDED_A_STAR),
-            actionDurations = listOf(5),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(TIME_BOUNDED_A_STAR, CES),
+            actionDurations = listOf(50L, 100L, 150L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
             expansionLimit = 10000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
-                    Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, SAFETY_EXPLORATION_RATIO, listOf(1.0)),
-                    Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(S_ZERO, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY_BACKUP, listOf(SafeZeroSafetyBackup.PREDECESSOR.toString())),
-                    Triple(S_ZERO, SafeZeroConfiguration.SAFETY, listOf(SafeZeroSafety.PREFERRED.toString())),
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(TIME_BOUNDED_A_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE)),
-                    Triple(SIMPLE_SAFE, Configurations.LOOKAHEAD_DEPTH_LIMIT, listOf(10)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY_BACKUP, listOf(SafetyBackup.PREDECESSOR.toString())),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.SAFETY, listOf(SimpleSafeSafety.PREFERRED.toString())),
-                    Triple(SIMPLE_SAFE, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SIMPLE_SAFE, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(SIMPLE_SAFE, SimpleSafeConfiguration.VERSION, listOf(SimpleSafeVersion.TWO.toString())),
-                    Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE, TBAOptimization.THRESHOLD)),
+                    Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
+                    Triple(CES, ComprehensiveEnvelopeSearch.ComprehensiveConfigurations.BACKLOG_RATIO, listOf(1.0, 50.0)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
