@@ -95,7 +95,7 @@ data class ExperimentConfiguration(
         @Optional
         val anytimeMaxCount: Long? = null,
 
-        //Real Time Comprehensive
+        //Envelope-based searching (i.e. not LSS)
         @Optional
         val backlogRatio: Double? = null,
 
