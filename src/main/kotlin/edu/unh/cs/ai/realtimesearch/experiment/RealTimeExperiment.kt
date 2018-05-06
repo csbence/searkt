@@ -17,9 +17,9 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-//import edu.unh.cs.ai.realtimesearch.visualizer
+import edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.online.OnlineGridVisualizer
-//import edu.unh.cs.ai.realtimesearch.visualizerLatch
+import edu.unh.cs.ai.realtimesearch.visualizerLatch
 import javafx.application.Application
 import javafx.application.Platform
 import org.slf4j.LoggerFactory
@@ -167,13 +167,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             Application.launch(OnlineGridVisualizer::class.java)
         }).start()
 
-//        visualizerLatch.await()
+        visualizerLatch.await()
         println("Visualizer initialized")
 
         val setupLatch = CountDownLatch(1)
         // Visualizer setup
         Platform.runLater {
-//            visualizer?.setup(domain, initialState)
+            visualizer?.setup(domain, initialState)
             setupLatch.countDown()
         }
 
