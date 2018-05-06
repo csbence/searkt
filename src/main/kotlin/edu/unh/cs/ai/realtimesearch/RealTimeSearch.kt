@@ -10,14 +10,13 @@ import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.SAFETY_EXPLORATION_RATIO
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchConfiguration.TARGET_SELECTION
-import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection.SAFE_TO_BEST
-import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
-import edu.unh.cs.ai.realtimesearch.planner.realtime.*
+import edu.unh.cs.ai.realtimesearch.planner.realtime.ComprehensiveEnvelopeSearch
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration.TBA_OPTIMIZATION
+import edu.unh.cs.ai.realtimesearch.visualizer.online.OnlineGridVisualizer
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -95,4 +94,6 @@ private fun generateConfigurations(): String {
     return JSON.indented.stringify(SimpleSerializer.list, configurations.toList())
 }
 
+val visualizerLatch = CountDownLatch(1)
+var visualizer: OnlineGridVisualizer? = null
 

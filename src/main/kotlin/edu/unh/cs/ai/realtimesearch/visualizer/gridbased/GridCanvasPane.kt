@@ -7,6 +7,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlin.math.min
 
 /**
  * A canvas which displays the grid specified in the provided {@link MapInfo}.  All cells except start cells are
@@ -51,12 +52,11 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
         canvas.layoutX = left
         canvas.layoutY = top
 
-//        if (layoutWidth != canvas.width || layoutHeight != canvas.height) {
         canvas.width = layoutWidth
         canvas.height = layoutHeight
         val graphicsContext: GraphicsContext = canvas.graphicsContext2D
 
-        addGrid(graphicsContext)
+//        addGrid(graphicsContext)
 
         // Add blocked cells
         graphicsContext.fill = blockedCellColor
@@ -65,11 +65,17 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
         }
 
         // Add searchEnvelope
-        println("env size: ${mapInfo.searchEnvelope.size}")
         graphicsContext.fill = Color.rgb(214, 210, 196, 0.5)
         for (cell in mapInfo.searchEnvelope) {
-            println("env cell: ${cell.location}")
             addCell(graphicsContext, cell.location)
+            addHeuristic(graphicsContext, cell)
+        }
+
+        // Add searchEnvelope
+        graphicsContext.fill = Color.rgb(214, 100, 100, 0.5)
+        for (cell in mapInfo.backPropagation) {
+            addCell(graphicsContext, cell.location)
+            addHeuristic(graphicsContext, cell)
         }
 
         // Add goal cells
@@ -98,16 +104,39 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
 
         // Add agent cells
         val agentCell = mapInfo.agentCell
-        val agentCircleRadius = tileSize / 5.0
-        val agentCircleDiameter = agentCircleRadius * 2
+//        val agentCircleRadius = tileSize / 5.0
+        val agentCircleRadius = min(layoutWidth, layoutHeight) / 30.0
         if (startCellBackgroundColor != null && agentCell != null) {
             graphicsContext.fill = ThemeColors.AGENT.color
-            val dirtyLocX = agentCell.x * tileSize + tileSize / 2.0 - agentCircleRadius
-            val dirtyLocY = agentCell.y * tileSize + tileSize / 2.0 - agentCircleRadius
-            graphicsContext.fillOval(dirtyLocX, dirtyLocY, agentCircleDiameter, agentCircleDiameter)
+            addCircle(graphicsContext, agentCell, agentCircleRadius, true)
         }
 
-//        }
+        // Add agent cells
+        val focusCell = mapInfo.focusedCell
+        if (startCellBackgroundColor != null && focusCell != null) {
+            graphicsContext.stroke = ThemeColors.AGENT.color
+            addCircle(graphicsContext, focusCell, agentCircleRadius, true)
+        }
+    }
+
+    private fun addHeuristic(graphicsContext: GraphicsContext, cell: SearchEnvelopeCell) {
+        graphicsContext.fillText(
+                cell.value.toString(),
+                cell.location.x.toDouble() * tileSize,
+                cell.location.y.toDouble() * tileSize
+        )
+    }
+
+    private fun addCircle(graphicsContext: GraphicsContext, cell: Location, radius: Double, fill: Boolean) {
+        val centerX = cell.x * tileSize + tileSize / 2.0 - radius
+        val centerY = cell.y * tileSize + tileSize / 2.0 - radius
+        val diameter = radius * 2
+
+        if (fill) {
+            graphicsContext.fillOval(centerX, centerY, diameter, diameter)
+        } else {
+            graphicsContext.strokeOval(centerX, centerY, diameter, diameter)
+        }
     }
 
     fun clear() {

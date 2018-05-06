@@ -14,9 +14,11 @@ data class MapInfo(
         val blockedCells: MutableList<Location> = mutableListOf(),
         val startCells: MutableList<Location> = mutableListOf(),
         var agentCell: Location? = null,
-        val goalCells: MutableList<Location> = mutableListOf()) {
+        val goalCells: MutableList<Location> = mutableListOf(),
+        var focusedCell: Location? = null) {
 
     var searchEnvelope: MutableList<SearchEnvelopeCell> = mutableListOf()
+    var backPropagation: MutableList<SearchEnvelopeCell> = mutableListOf()
     var rootToBestChain: MutableList<Location> = mutableListOf()
     var agentToCommonAncestorChain: MutableList<Location> = mutableListOf()
     var agentToBestChain: MutableList<Location> = mutableListOf()
@@ -26,4 +28,8 @@ data class MapInfo(
     }
 }
 
-data class SearchEnvelopeCell(val location: Location, val value: Double)
+data class SearchEnvelopeCell(val location: Location, val value: Double, val direction: Direction? = null)
+
+enum class Direction {
+    UP, DOWN, LEFT, RIGHT;
+}

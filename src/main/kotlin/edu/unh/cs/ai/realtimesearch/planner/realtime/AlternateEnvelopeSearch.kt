@@ -343,13 +343,3 @@ class AlternateEnvelopeSearch<StateType : State<StateType>>(override val domain:
     }
 }
 
-enum class BackupComparator {
-    H_VALUE, PSEUDO_F;
-}
-
-enum class EnvelopeConfigurations(private val configurationName: String) {
-    BACKLOG_RATIO("backlogRatio"),
-    COMPARATOR("backupComparator");
-
-    override fun toString() = configurationName
-}

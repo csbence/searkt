@@ -1,17 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.visualizer.online
 
+//import edu.unh.cs.ai.realtimesearch.visualizerLatch
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorld
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldState
 import edu.unh.cs.ai.realtimesearch.planner.SearchNode
-//import edu.unh.cs.ai.realtimesearch.visualizer
+import edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.ThemeColors
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.AgentView
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.GridCanvasPane
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.MapInfo
 import edu.unh.cs.ai.realtimesearch.visualizer.gridbased.SearchEnvelopeCell
-//import edu.unh.cs.ai.realtimesearch.visualizerLatch
+import edu.unh.cs.ai.realtimesearch.visualizerLatch
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.scene.Group
@@ -48,16 +49,15 @@ class OnlineGridVisualizer : Application() {
 
     override fun start(primaryStage: Stage) {
         this.primaryStage = primaryStage
-//        visualizer = this
+        visualizer = this
 
         val root = Group()
         val scene = Scene(root, 800.0, 600.0, Color.BLACK)
         primaryStage.scene = scene
 
         primaryStage.show()
-//        setup(globalDomain!!, globalInitialState!!)
 
-//        visualizerLatch.countDown()
+        visualizerLatch.countDown()
     }
 
     /**
@@ -131,16 +131,34 @@ class OnlineGridVisualizer : Application() {
                     .map {
                         val state = it.state
                         if (state is GridWorldState) {
+
                             SearchEnvelopeCell(state.agentLocation, it.heuristic)
                         } else {
                             null
                         }
                     }
                     .filterNotNullTo(mapInfo.searchEnvelope)
+        }
 
+    }
 
-//            grid.clear()
-//            grid.draw()
+    fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> updateBackpropagation(backpropagation: Collection<SearchNode<StateType, NodeType>>) {
+
+        Platform.runLater {
+            mapInfo.backPropagation.clear()
+
+            backpropagation
+                    .map {
+                        val state = it.state
+                        if (state is GridWorldState) {
+
+                            SearchEnvelopeCell(state.agentLocation, it.heuristic)
+                        } else {
+                            null
+                        }
+                    }
+                    .filterNotNullTo(mapInfo.backPropagation)
+
         }
 
     }
@@ -152,12 +170,27 @@ class OnlineGridVisualizer : Application() {
             if (state is GridWorldState) {
                 mapInfo.agentCell = state.agentLocation
 
-                grid.clear()
-                grid.draw()
+//                grid.clear()
+//                grid.draw()
+            }
+        }
+    }
+
+    fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>>
+            updateFocusedNode(focusedNode: SearchNode<StateType, NodeType>?) {
+        Platform.runLater {
+            val state = focusedNode?.state
+
+            if (state != null && state is GridWorldState) {
+                mapInfo.focusedCell = state.agentLocation
+
+            } else {
+                mapInfo.focusedCell = null
             }
 
+            grid.clear()
+            grid.draw()
         }
-
     }
 
     fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>>
@@ -175,9 +208,6 @@ class OnlineGridVisualizer : Application() {
                         }
                     }
                     .filterNotNullTo(mapInfo.rootToBestChain)
-
-//            grid.clear()
-//            grid.draw()
         }
     }
 
@@ -196,13 +226,13 @@ class OnlineGridVisualizer : Application() {
                         }
                     }
                     .filterNotNullTo(mapInfo.agentToCommonAncestorChain)
-
-//            grid.clear()
-//            grid.draw()
         }
     }
 
     fun delay() {
-        Thread.sleep(1000)
+//        Thread.sleep(20)
+
+        grid.clear()
+        grid.draw()
     }
 }
