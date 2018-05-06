@@ -15,6 +15,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -30,8 +31,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     //HARD CODED for testing. Should be configurable
     private val traceCost = 10 //cost of backtrace relative to expansion
-
-    private val resourceRatio = 0.9 //ratio of time for Expansions
+    private val backlogRatio = configuration.backlogRatio ?: 1.0 //how many more tracebacks per expansion we do
 
     override var iterationCounter = 0L
 
@@ -54,12 +54,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     var aStarTimer = 0L
 
+    // SearchEnvelope for visualizer
+    private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
+
     private val aStarSequence
         get() = generateSequence {
             aStarPopCounter++
 
             val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
+            expandedNodes.add(currentNode)
             expandFromNode(this, currentNode, {})
 
             currentNode
@@ -155,6 +159,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             plan!!
         }
         lastAgentState = sourceState
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.updateAgentLocation(currentAgentNode)
+//        visualizer?.delay()
 
         return safePlan
     }
@@ -174,6 +181,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 .forEach {
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
+                    expandedNodes.add(it)
                 }
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
@@ -205,7 +213,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         //calculate backtrace here. Simply using expansion limit until we determine best way to compare with other algorithms
         //plus 2 because we pop from the frontier (not expanded) and the root is "free"
-        val traceLimit = expansionLimit + 2
+        val traceLimit = (expansionLimit * backlogRatio) + 2
         var currentTraceCount = 0
 
         val bestNodeTraceback = extractNodeChain(targetNode, {
@@ -319,7 +327,8 @@ enum class TBAOptimization {
 }
 
 enum class TBAStarConfiguration(val key: String) {
-    TBA_OPTIMIZATION("tbaOptimization");
+    TBA_OPTIMIZATION("tbaOptimization"),
+    BACKLOG_RATIO("backlogRatio");
 
     override fun toString(): String = key
 }

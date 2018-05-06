@@ -83,11 +83,18 @@ def generate_base_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
-    # Comprehensive Envelope
-    backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
+    # Envelope-based
+    # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
+    backup_ratios = [1.0, 2.0, 5.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'backlogRatio', backup_ratios,
                                                 [['algorithmName', 'CES']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'ENVELOPE']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # TBA*
     optimizations = ['NONE', 'THRESHOLD']

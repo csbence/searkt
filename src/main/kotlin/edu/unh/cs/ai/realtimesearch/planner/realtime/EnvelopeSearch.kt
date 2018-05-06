@@ -190,8 +190,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var currentBackupCount = 0
         dynamicDijkstra(this, freshBackup, dijkstraComparator!!) {
             //check if all successors of the agent have been backed up in the current iteration
-            val agentEnveloped = agentNode.successors.fold(agentNode.iteration == iterationCounter,
-                    {goodSoFar, successor -> goodSoFar && successor.node.iteration == iterationCounter})
+            val agentEnveloped = agentNode.iteration == iterationCounter && agentNode.successors.all {successor ->
+                successor.node.iteration == iterationCounter
+            }
             if (agentEnveloped) executeNewBackup = true
 
             if (currentBackupCount >= resourceLimit || agentEnveloped) true
