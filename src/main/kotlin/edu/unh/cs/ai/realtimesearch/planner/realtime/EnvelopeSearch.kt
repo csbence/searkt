@@ -48,7 +48,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var wavePseudoF = Double.POSITIVE_INFINITY
         var waveAgentHeuristic: Double = Double.POSITIVE_INFINITY
         var waveExpanded = false
-        lateinit var frontierPointer : EnvelopeSearchNode<StateType>
+        lateinit var frontierPointer: EnvelopeSearchNode<StateType>
         var backupIndex = -1
 
         var expanded = -1
@@ -139,6 +139,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private var firstIteration = true
     private lateinit var currentAgentState: StateType
 
+    private var lastPlannedPath = mutableSetOf<StateType>()
+
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         if (rootState == null) {
             rootState = sourceState
@@ -166,21 +168,29 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         val path = when (updateStrategy) {
             UpdateStrategy.PSEUDO -> {
-                wavePropagation(currentAgentState, FakeTerminationChecker, false)
+                lastPlannedPath.add(currentAgentState)
+
+                wavePropagation(currentAgentState, FakeTerminationChecker, false, lastPlannedPath)
                 val lastWaveNode = bestWaveSuccessor(currentAgentState)
+                val agentToFrontier = projectPath(currentAgentState)
+
+                val pointerProjection = listOf(nodes[currentAgentState]!!, nodes[currentAgentState]!!.frontierPointer)
+
+                lastPlannedPath = agentToFrontier.toMutableSet()
 
                 //Stealing 2 expansions here. TODO: Bookkeeping for these expansions
                 if (lastWaveNode.expanded == -1) {
                     expandFromNode(lastWaveNode)
                     openList.remove(lastWaveNode)
                 }
-                if (lastWaveNode.frontierPointer.expanded == -1) {
+
+                if (lastWaveNode.frontierPointer.expanded == -1 && !domain.isGoal(lastWaveNode.frontierPointer.state)) {
                     expandFromNode(lastWaveNode.frontierPointer)
                     openList.remove(lastWaveNode.frontierPointer)
                 }
 
-                val agentToFrontier = projectPath(currentAgentState)
                 visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
+                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
 
                 visualizer?.updateSearchEnvelope(expandedNodes)
                 visualizer?.updateBackpropagation(backedUpNodes)
@@ -201,17 +211,23 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         return path
     }
 
+    private fun bestExpandedWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
+            .mapNotNull { nodes[it.state] }
+            .filter { it.expanded != -1 && (!it.open || domain.isGoal(it.state)) }
+            .onEach { println(it) }
+            .minWith(waveComparator)
+            ?: throw MetronomeException("No successors available from the agent's current location.")
+
     private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
-//            .filter { expandedNodes.contains(it) }
             .onEach { println(it) }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
 
-    private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, continueWave: Boolean = false): Boolean {
+    private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, continueWave: Boolean = false, agentPath: Set<StateType>): Boolean {
         val agentSuccessorSet = domain.successors(agentState)
-                .map{getNode(nodes[agentState]!!, it)}
+                .map { getNode(nodes[agentState]!!, it) }
                 .toMutableSet()
 
         if (!continueWave) {
@@ -246,16 +262,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val waveFront = waveFrontier.pop()!!
 
-
-            // TODO agent or agentToFrontier path detection
-//            if (waveFront == currentAgentState) {
-//                return true
-//            }
-
             backupNode(waveFront)
             agentSuccessorSet.remove(waveFront)
 
-            if (agentSuccessorSet.isEmpty()) return true
+            if (agentSuccessorSet.isEmpty() || agentPath.contains(waveFront.state)) return true
 
         }
 
@@ -291,7 +301,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             predecessorNode.waveParent = sourceNode
             predecessorNode.frontierPointer = sourceNode.frontierPointer
             predecessorNode.heuristic = valueFromSource
-//            predecessorNode.waveAgentHeuristic = domain.heuristic(currentAgentState, predecessorNode.state)
 
             if (predecessorNode.backupIndex == -1) {
                 waveFrontier.add(predecessorNode)
@@ -312,10 +321,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
 
             if (currentNode.open || domain.isGoal(currentNode.state)) {
+                sourceToCurrentTrace.add(currentState)
                 return sourceToCurrentTrace
             }
 
-            if (currentNode.state in currentTrace) {
+            if (currentState in currentTrace) {
                 return sourceToCurrentTrace
 //                throw MetronomeException("Policy does not lead to the frontier.")
             }
@@ -323,7 +333,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             sourceToCurrentTrace.add(currentState)
             currentTrace.add(currentState)
 
-            currentState = bestWaveSuccessor(currentState).state
+            currentState = bestExpandedWaveSuccessor(currentState).state
         }
     }
 
@@ -477,7 +487,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         sourceNode.iteration = expandedNodeCount.toLong()
         sourceNode.expanded = expandedNodeCount
-        sourceNode.heuristic = Double.POSITIVE_INFINITY
+//        sourceNode.heuristic = Double.POSITIVE_INFINITY
 
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
@@ -492,14 +502,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 openList.add(successorNode)
             }
 
-            val relativeHeuristic = successorNode.heuristic + successor.actionCost
+//            val relativeHeuristic = successorNode.heuristic + successor.actionCost
 
-            // This is a backup // TODO consider to remove
-            if (sourceNode.rhsHeuristic > relativeHeuristic) {
-                sourceNode.rhsHeuristic = relativeHeuristic
-                sourceNode.heuristic = relativeHeuristic
-                sourceNode.parent = successorNode
-            }
+//            // This is a backup // TODO consider to remove
+//            if (sourceNode.rhsHeuristic > relativeHeuristic) {
+//                sourceNode.rhsHeuristic = relativeHeuristic
+//                sourceNode.heuristic = relativeHeuristic
+//                sourceNode.parent = successorNode
+//            }
         }
 
 //        updateRhs(sourceNode, propagate = false)
