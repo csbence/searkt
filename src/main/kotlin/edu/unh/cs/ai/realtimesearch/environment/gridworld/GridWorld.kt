@@ -59,10 +59,8 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      */
     override fun heuristic(state: GridWorldState) = distance(state) * actionDuration
 
-    override fun heuristic(startState: GridWorldState, endState: GridWorldState): Double {
-        return Math.abs(startState.agentLocation.x - endState.agentLocation.x) + Math.abs(startState.agentLocation.y - endState.agentLocation.y).toDouble()
-        //        return state.run { location.manhattanDistance(goal).toDouble() }
-    }
+    override fun heuristic(startState: GridWorldState, endState: GridWorldState) =
+            startState.agentLocation.manhattanDistance(endState.agentLocation) * actionDuration.toDouble()
 
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.

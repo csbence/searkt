@@ -75,8 +75,8 @@ class VacuumWorld(val width: Int,
         return state.dirtyCells.size.toDouble()
     }
 
-    //TODO: Create heuristic between two states for vacuumworld
     override fun heuristic(startState: VacuumWorldState, endState: VacuumWorldState): Double {
+        TODO()
         return 0.0
     }
 
