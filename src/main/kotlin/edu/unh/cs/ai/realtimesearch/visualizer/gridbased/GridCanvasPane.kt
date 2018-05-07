@@ -120,10 +120,13 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
     }
 
     private fun addHeuristic(graphicsContext: GraphicsContext, cell: SearchEnvelopeCell) {
+        if (tileSize < 10) {
+            return
+        }
         graphicsContext.fillText(
                 cell.value.toString(),
-                cell.location.x.toDouble() * tileSize,
-                cell.location.y.toDouble() * tileSize
+                cell.location.x.toDouble() * tileSize + tileSize / 2,
+                cell.location.y.toDouble() * tileSize + tileSize / 2
         )
     }
 

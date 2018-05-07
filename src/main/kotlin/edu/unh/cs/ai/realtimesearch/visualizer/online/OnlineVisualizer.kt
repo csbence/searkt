@@ -151,7 +151,6 @@ class OnlineGridVisualizer : Application() {
                     .map {
                         val state = it.state
                         if (state is GridWorldState) {
-
                             SearchEnvelopeCell(state.agentLocation, it.heuristic)
                         } else {
                             null

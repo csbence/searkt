@@ -63,7 +63,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         override fun toString() =
-                "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
+                "RTSNode: [State: $state h: $heuristic, wave:$waveCounter, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 
         val consistent: Boolean
             get() = heuristic == rhsHeuristic
@@ -191,7 +191,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
-//            .filter { expandedNodes.contains(it) }
+            .filter { expandedNodes.contains(it) }
+            .onEach { println(it) }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
@@ -207,12 +208,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 waveFrontier.add(it)
                 it.waveCounter = waveCounter
                 it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
-                it.heuristic = getOutsideHeuristic(it)
+                it.heuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
                 it.wavePseudoF = it.heuristic // TODO agentH?
             }
         }
-
-        waveFrontier.forEach { println(it) }
 
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val waveFront = waveFrontier.pop()!!
@@ -277,13 +276,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         while (true) {
             val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
 
-            if (currentNode.open) {
+            if (currentNode.open || domain.isGoal(currentNode.state)) {
                 return sourceToCurrentTrace
             }
 
             if (currentNode.state in currentTrace) {
                 return sourceToCurrentTrace
-                throw MetronomeException("Policy does not lead to the frontier.")
+//                throw MetronomeException("Policy does not lead to the frontier.")
             }
 
             sourceToCurrentTrace.add(currentState)
@@ -431,8 +430,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      * state has not been seen before, or is found with a lower g value
      */
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
-        println("expand: ${sourceNode.state}")
-
         expandedNodeCount += 1
         expandedNodes.add(sourceNode)
         visualizer?.updateSearchEnvelope(expandedNodes)
