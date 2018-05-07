@@ -53,8 +53,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var expanded = -1
         var generated = -1
 
-        lateinit var frontierPointer: EnvelopeSearchNode<StateType>
-
         override fun hashCode(): Int = state.hashCode()
 
         override fun equals(other: Any?): Boolean = when (other) {
@@ -165,17 +163,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         val path = when (updateStrategy) {
             UpdateStrategy.PSEUDO -> {
-                wavePropagation(currentAgentState, FakeTerminationChecker, false)
+                wavePropagation(FakeTerminationChecker, false)
                 val lastWaveNode = bestWaveSuccessor(currentAgentState)
-                //Stealing 2 expansions here. TODO: Bookkeeping for these expansions
-                if (lastWaveNode.expanded == -1) {
-                    expandFromNode(lastWaveNode)
-                    openList.remove(lastWaveNode)
-                }
-                if (lastWaveNode.frontierPointer.expanded == -1) {
-                    expandFromNode(lastWaveNode.frontierPointer)
-                    openList.remove(lastWaveNode.frontierPointer)
-                }
+                expandFromNode(lastWaveNode)
 
                 val agentToFrontier = projectPath(currentAgentState)
                 visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
@@ -201,17 +191,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
-            .filter { expandedNodes.contains(it) }
+//            .filter { expandedNodes.contains(it) }
             .onEach { println(it) }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
 
-    private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, continueWave: Boolean = false): Boolean {
-        val agentSuccessorSet = domain.successors(agentState)
-                .map{getNode(nodes[agentState]!!, it)}
-                .toMutableSet()
-
+    private fun wavePropagation(terminationChecker: TerminationChecker, continueWave: Boolean = false): Boolean {
         if (!continueWave) {
             // Initialize wave
             waveCounter++
@@ -224,12 +210,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
                 it.heuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
                 it.wavePseudoF = it.heuristic // TODO agentH?
-                it.frontierPointer = it
             }
         }
 
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val waveFront = waveFrontier.pop()!!
+
 
             // TODO agent or agentToFrontier path detection
 //            if (waveFront == currentAgentState) {
@@ -237,9 +223,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 //            }
 
             backupNode(waveFront)
-            agentSuccessorSet.remove(waveFront)
-
-            if (agentSuccessorSet.isEmpty()) return true
         }
 
         return false
@@ -272,7 +255,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             predecessorNode.waveCounter = waveCounter
             predecessorNode.waveParent = sourceNode
-            predecessorNode.frontierPointer = sourceNode.frontierPointer
             predecessorNode.heuristic = valueFromSource
 //            predecessorNode.waveAgentHeuristic = domain.heuristic(currentAgentState, predecessorNode.state)
 
@@ -473,7 +455,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             val relativeHeuristic = successorNode.heuristic + successor.actionCost
 
             // This is a backup // TODO consider to remove
-            if (sourceNode.heuristic > relativeHeuristic) {
+            if (sourceNode.rhsHeuristic > relativeHeuristic) {
                 sourceNode.rhsHeuristic = relativeHeuristic
                 sourceNode.heuristic = relativeHeuristic
                 sourceNode.parent = successorNode
