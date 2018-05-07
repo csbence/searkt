@@ -45,8 +45,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         var waveCounter: Int = -1
         lateinit var waveParent: EnvelopeSearchNode<StateType>
-        var wavePseudoF = Double.POSITIVE_INFINITY
-        var waveAgentHeuristic: Double = Double.POSITIVE_INFINITY
+        var waveHeuristic: Double = Double.POSITIVE_INFINITY
         var waveExpanded = false
         lateinit var frontierPointer: EnvelopeSearchNode<StateType>
         var backupIndex = -1
@@ -72,8 +71,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         //using heuristic function for pseudo-g
-        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state)
-        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state)
+        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state) * 2
+        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state) * 2
         val lhsPseudoF = lhs.heuristic + lhsPseudoG
         val rhsPseudoF = rhs.heuristic + rhsPseudoG
 
@@ -89,17 +88,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        //using heuristic function for pseudo-g
-        val lhsValue = lhs.waveAgentHeuristic * 0 + lhs.wavePseudoF * 2.0
-        val rhsValue = rhs.waveAgentHeuristic * 0 + rhs.wavePseudoF * 2.0
-
-        //break ties on lower H -> this is better info!
+    val waveHeuristicComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         when {
-            lhsValue < rhsValue -> -1
-            lhsValue > lhsValue -> 1
-            lhs.waveAgentHeuristic < rhs.waveAgentHeuristic -> -1
-            lhs.waveAgentHeuristic > rhs.waveAgentHeuristic -> 1
+            lhs.waveHeuristic < rhs.waveHeuristic -> -1
+            lhs.waveHeuristic > rhs.waveHeuristic -> 1
             else -> 0
         }
     }
@@ -110,6 +102,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             lhs.waveCounter < rhs.waveCounter -> 1
             lhs.heuristic < rhs.heuristic -> -1
             lhs.heuristic > rhs.heuristic -> 1
+
             else -> 0
         }
     })
@@ -122,7 +115,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     override var openList = AdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(1000000, pseudoFComparator)
 
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), heuristicComparator) {
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveHeuristicComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
@@ -148,7 +141,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         currentAgentState = sourceState
 
-        val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
+        val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 4)
         val backupTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
 
         if (domain.isGoal(sourceState)) {
@@ -161,6 +154,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 explore(sourceState, expansionTerminationChecker)
             }
             ExpansionStrategy.PSEUDO_F -> {
+                openList.reorder(heuristicComparator)
+                explore(sourceState, expansionTerminationChecker)
+
+                expansionTerminationChecker.resetTo(0)
+
                 openList.reorder(pseudoFComparator)
                 explore(sourceState, expansionTerminationChecker)
             }
@@ -171,7 +169,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 lastPlannedPath.add(currentAgentState)
 
                 wavePropagation(currentAgentState, FakeTerminationChecker, false, lastPlannedPath)
-                val lastWaveNode = bestWaveSuccessor(currentAgentState)
+                val lastWaveNode = nodes[currentAgentState]!!.waveParent
                 val agentToFrontier = projectPath(currentAgentState)
 
                 val pointerProjection = listOf(nodes[currentAgentState]!!, nodes[currentAgentState]!!.frontierPointer)
@@ -179,18 +177,18 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 lastPlannedPath = agentToFrontier.toMutableSet()
 
                 //Stealing 2 expansions here. TODO: Bookkeeping for these expansions
-                if (lastWaveNode.expanded == -1) {
-                    expandFromNode(lastWaveNode)
-                    openList.remove(lastWaveNode)
-                }
-
-                if (lastWaveNode.frontierPointer.expanded == -1 && !domain.isGoal(lastWaveNode.frontierPointer.state)) {
-                    expandFromNode(lastWaveNode.frontierPointer)
-                    openList.remove(lastWaveNode.frontierPointer)
-                }
+//                if (lastWaveNode.expanded == -1) {
+//                    expandFromNode(lastWaveNode)
+//                    openList.remove(lastWaveNode)
+//                }
+//
+//                if (lastWaveNode.frontierPointer.expanded == -1 && !domain.isGoal(lastWaveNode.frontierPointer.state)) {
+//                    expandFromNode(lastWaveNode.frontierPointer)
+//                    openList.remove(lastWaveNode.frontierPointer)
+//                }
 
                 visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
-                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
+//                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
 
                 visualizer?.updateSearchEnvelope(expandedNodes)
                 visualizer?.updateBackpropagation(backedUpNodes)
@@ -214,13 +212,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private fun bestExpandedWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
             .filter { it.expanded != -1 && (!it.open || domain.isGoal(it.state)) }
-            .onEach { println(it) }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
     private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
-            .onEach { println(it) }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
@@ -238,19 +234,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             if (foundGoals.isEmpty()) {
                 openList.forEach {
-                    it.heuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
-                    waveFrontier.add(it)
-
                     it.waveCounter = waveCounter
-                    it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
-                    it.wavePseudoF = it.heuristic // TODO agentH?
+                    it.waveHeuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
                     it.frontierPointer = it
+                    it.waveParent = it
+
+                    waveFrontier.add(it)
                 }
             } else {
                 foundGoals.forEach {
                     it.heuristic = 0.0
                     it.waveCounter = waveCounter
                     it.frontierPointer = it
+                    it.waveParent = it
 
                     waveFrontier.add(it)
                 }
@@ -275,32 +271,41 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private fun backupNode(sourceNode: EnvelopeSearchNode<StateType>) {
         sourceNode.waveExpanded = true
         backedUpNodes.add(sourceNode)
-        visualizer?.updateBackpropagation(backedUpNodes)
-        visualizer?.delay()
+//        visualizer?.updateBackpropagation(backedUpNodes)
+//        visualizer?.delay()
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
 
             if (outdated) {
                 predecessorNode.waveExpanded = false
+                predecessorNode.waveHeuristic = Double.POSITIVE_INFINITY
                 predecessorNode.heuristic = Double.POSITIVE_INFINITY
             }
 
             // Skip if it was updated in this iteration
             if (predecessorNode.waveExpanded) continue
 
-            val valueFromSource = sourceNode.heuristic + actionCost
-            val currentValue = predecessorNode.heuristic
+            val valueFromSource = sourceNode.waveHeuristic + actionCost
+            val currentValue = predecessorNode.waveHeuristic
 
-            if (!outdated && currentValue <= valueFromSource) {
+            if (currentValue < valueFromSource) {
                 // The node was already updated in this iteration and has a better value
                 continue
             }
+
+//            val currentTarget = predecessorNode.frontierPointer.heuristic
+//            val sourceTarget = sourceNode.frontierPointer.heuristic
+//            if (currentValue == valueFromSource && currentTarget < sourceTarget) {
+//                // We want to pick the target that goes deeper
+//                continue
+//            }
 
             predecessorNode.waveCounter = waveCounter
             predecessorNode.waveParent = sourceNode
             predecessorNode.frontierPointer = sourceNode.frontierPointer
             predecessorNode.heuristic = valueFromSource
+            predecessorNode.waveHeuristic = valueFromSource
 
             if (predecessorNode.backupIndex == -1) {
                 waveFrontier.add(predecessorNode)
@@ -333,7 +338,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             sourceToCurrentTrace.add(currentState)
             currentTrace.add(currentState)
 
-            currentState = bestExpandedWaveSuccessor(currentState).state
+            currentState = currentNode.waveParent.state
+//            currentState = bestExpandedWaveSuccessor(currentState).state
         }
     }
 
@@ -342,10 +348,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val sourceToCurrentTrace = mutableListOf<StateType>()
         val currentTrace = mutableSetOf<StateType>()
 
-        if ((iterationCounter % 100L) == 0L) {
-            visualizer?.updateSearchEnvelope(expandedNodes)
-            visualizer?.updateAgentLocation(nodes[sourceState]!!)
-        }
+//        if ((iterationCounter % 100L) == 0L) {
+//            visualizer?.updateSearchEnvelope(expandedNodes)
+//            visualizer?.updateAgentLocation(nodes[sourceState]!!)
+//        }
         var pathConsistent = true
         var currentState = sourceState
         while (!terminationChecker.reachedTermination()) {
@@ -482,8 +488,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
         expandedNodeCount += 1
         expandedNodes.add(sourceNode)
-        visualizer?.updateSearchEnvelope(expandedNodes)
-        visualizer?.delay()
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.delay()
 
         sourceNode.iteration = expandedNodeCount.toLong()
         sourceNode.expanded = expandedNodeCount
@@ -539,6 +545,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             )
 
             undiscoveredNode.generated = generatedNodeCount
+            undiscoveredNode.waveParent = undiscoveredNode
+//            undiscoveredNode.frontierPointer = undiscoveredNode
 
             nodes[successorState] = undiscoveredNode
             undiscoveredNode
