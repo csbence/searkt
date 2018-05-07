@@ -19,8 +19,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
 
-    val expansionStrategy = ExpansionStrategy.PSEUDO_F
-    val updateStrategy = UpdateStrategy.PSEUDO
+    private val expansionStrategy = ExpansionStrategy.PSEUDO_F
+    private val updateStrategy = UpdateStrategy.PSEUDO
 
     class EnvelopeSearchNode<StateType : State<StateType>>(
             override val state: StateType,
@@ -69,10 +69,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             get() = heuristic == rhsHeuristic
     }
 
-    private val pseudoFComparator = Comparator<RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>>> { lhs, rhs ->
+    private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         //using heuristic function for pseudo-g
-        val lhsPseudoG = domain.heuristic(currentAgentState!!, lhs.state)
-        val rhsPseudoG = domain.heuristic(currentAgentState!!, rhs.state)
+        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state)
+        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state)
         val lhsPseudoF = lhs.heuristic + lhsPseudoG
         val rhsPseudoF = rhs.heuristic + rhsPseudoG
 
@@ -81,7 +81,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             lhsPseudoF < rhsPseudoF -> -1
             lhsPseudoF > rhsPseudoF -> 1
             lhs.heuristic < rhs.heuristic -> -1
-            rhs.heuristic > lhs.heuristic -> 1
+            lhs.heuristic > rhs.heuristic -> 1
+            lhs.generated < rhs.generated -> -1
+            lhs.generated > rhs.generated -> 1
             else -> 0
         }
     }
@@ -96,10 +98,20 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             lhsValue < rhsValue -> -1
             lhsValue > lhsValue -> 1
             lhs.waveAgentHeuristic < rhs.waveAgentHeuristic -> -1
-            rhs.waveAgentHeuristic > lhs.waveAgentHeuristic -> 1
+            lhs.waveAgentHeuristic > rhs.waveAgentHeuristic -> 1
             else -> 0
         }
     }
+
+    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>>({ lhs, rhs ->
+        when {
+            lhs.waveCounter > rhs.waveCounter -> -1
+            lhs.waveCounter < rhs.waveCounter -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
+    })
 
     override var iterationCounter = 0L
 
@@ -152,7 +164,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val path = when (updateStrategy) {
             UpdateStrategy.PSEUDO -> {
                 wavePropagation(FakeTerminationChecker, false)
-                val lastWaveNode = bestWaveSuccessor()
+                val lastWaveNode = bestWaveSuccessor(currentAgentState)
+                expandFromNode(lastWaveNode)
+
+                val agentToFrontier = projectPath(currentAgentState)
+                visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
 
                 visualizer?.updateSearchEnvelope(expandedNodes)
                 visualizer?.updateBackpropagation(backedUpNodes)
@@ -175,18 +191,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
             .mapNotNull { nodes[it.state] }
-            .filter { expandedNodes.contains(it) }
-            .minWith(heuristicComparator)
-
-//            .minWith(Comparator({ lhs, rhs ->
-//                when {
-//                    lhs.waveCounter > rhs.waveCounter -> -1
-//                    lhs.waveCounter < rhs.waveCounter -> 1
-//                    lhs.heuristic < rhs.heuristic -> -1
-//                    rhs.heuristic > lhs.heuristic -> 1
-//                    else -> 0
-//                }
-//            }))
+//            .filter { expandedNodes.contains(it) }
+            .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
 
@@ -212,6 +218,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             val waveFront = waveFrontier.pop()!!
 
 
+            // TODO agent or agentToFrontier path detection
 //            if (waveFront == currentAgentState) {
 //                return true
 //            }
@@ -227,14 +234,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         backedUpNodes.add(sourceNode)
         visualizer?.updateBackpropagation(backedUpNodes)
         visualizer?.delay()
-//        updateRhs(sourceNode, false)
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
 
             if (outdated) {
                 predecessorNode.waveExpanded = false
-                predecessorNode.backupIndex = -1
                 predecessorNode.heuristic = Double.POSITIVE_INFINITY
             }
 
@@ -262,6 +267,32 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
     }
+
+    private fun projectPath(sourceState: StateType): Collection<StateType> {
+        val sourceToCurrentTrace = mutableListOf<StateType>()
+        val currentTrace = mutableSetOf<StateType>()
+
+        var currentState = sourceState
+
+        while (true) {
+            val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
+
+            if (currentNode.open) {
+                return sourceToCurrentTrace
+            }
+
+            if (currentNode.state in currentTrace) {
+                return sourceToCurrentTrace
+                throw MetronomeException("Policy does not lead to the frontier.")
+            }
+
+            sourceToCurrentTrace.add(currentState)
+            currentTrace.add(currentState)
+
+            currentState = bestWaveSuccessor(currentState).state
+        }
+    }
+
 
     private fun projectPolicy(sourceState: StateType, targetNode: EnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker): Collection<StateType> {
         val sourceToCurrentTrace = mutableListOf<StateType>()
@@ -379,6 +410,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         while (!terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            // TODO don't stop
             if (domain.isGoal(topNode.state)) return topNode
 
             val currentNode = openList.pop()
@@ -408,6 +440,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         sourceNode.iteration = expandedNodeCount.toLong()
         sourceNode.expanded = expandedNodeCount
+        sourceNode.heuristic = Double.POSITIVE_INFINITY
 
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
@@ -424,7 +457,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             val relativeHeuristic = successorNode.heuristic + successor.actionCost
 
-            if (sourceNode.rhsHeuristic < relativeHeuristic) {
+            // This is a backup // TODO consider to remove
+            if (sourceNode.rhsHeuristic > relativeHeuristic) {
                 sourceNode.rhsHeuristic = relativeHeuristic
                 sourceNode.heuristic = relativeHeuristic
                 sourceNode.parent = successorNode

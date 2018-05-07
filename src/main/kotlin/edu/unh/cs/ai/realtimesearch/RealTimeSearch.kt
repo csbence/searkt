@@ -30,14 +30,14 @@ fun main(args: Array<String>) {
         val fileNameIndex = outputPath.lastIndexOf("\\")
     }
 
-    println("Please provide a JSON list of configurations to execute:")
-    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
-    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+//    println("Please provide a JSON list of configurations to execute:")
+//    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+//    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
 //    println(rawConfiguration)
 
     // Manually override
-//    rawConfiguration = generateConfigurations()
+    val rawConfiguration = generateConfigurations()
 
     val loader = ExperimentConfiguration.serializer().list
     val parsedConfigurations = JSON.parse(loader, rawConfiguration)
@@ -61,18 +61,10 @@ private fun generateConfigurations(): String {
 
     val configurations = generateConfigurations(
             domains = listOf(
-//                    Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/12"
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-31.vw"
-//                    RACETRACK to "input/racetrack/hansen-bigger-quad.track",
-//                    RACETRACK to "input/racetrack/barto-big.track",
-//                    RACETRACK to "input/racetrack/uniform.track",
-//                    RACETRACK to "input/racetrack/barto-small.track"
-//                    TRAFFIC to "input/traffic/vehicle0.v"
+                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
             ),
-//            domains = (88..88).map { TRAFFIC to "input/traffic/50/traffic$it" },
-            planners = listOf(TIME_BOUNDED_A_STAR, CES),
-            actionDurations = listOf(50L, 100L, 150L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            planners = listOf(ES),
+            actionDurations = listOf(8),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
@@ -82,6 +74,7 @@ private fun generateConfigurations(): String {
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(TIME_BOUNDED_A_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE, TBAOptimization.THRESHOLD)),
+                    Triple(ES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(CES, ComprehensiveEnvelopeSearch.ComprehensiveConfigurations.BACKLOG_RATIO, listOf(1.0, 50.0)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))

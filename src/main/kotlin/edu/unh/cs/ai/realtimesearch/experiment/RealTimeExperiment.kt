@@ -71,8 +71,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
-        //initializeVisualizer()
-
+        initializeVisualizer()
 
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
