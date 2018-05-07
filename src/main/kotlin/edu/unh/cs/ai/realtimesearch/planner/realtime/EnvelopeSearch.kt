@@ -53,6 +53,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var expanded = -1
         var generated = -1
 
+        lateinit var frontierPointer: EnvelopeSearchNode<StateType>
+
         override fun hashCode(): Int = state.hashCode()
 
         override fun equals(other: Any?): Boolean = when (other) {
@@ -163,9 +165,17 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         val path = when (updateStrategy) {
             UpdateStrategy.PSEUDO -> {
-                wavePropagation(FakeTerminationChecker, false)
+                wavePropagation(currentAgentState, FakeTerminationChecker, false)
                 val lastWaveNode = bestWaveSuccessor(currentAgentState)
-                expandFromNode(lastWaveNode)
+                //Stealing 2 expansions here. TODO: Bookkeeping for these expansions
+                if (lastWaveNode.expanded == -1) {
+                    expandFromNode(lastWaveNode)
+                    openList.remove(lastWaveNode)
+                }
+                if (lastWaveNode.frontierPointer.expanded == -1) {
+                    expandFromNode(lastWaveNode.frontierPointer)
+                    openList.remove(lastWaveNode.frontierPointer)
+                }
 
                 val agentToFrontier = projectPath(currentAgentState)
                 visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
@@ -196,7 +206,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
 
-    private fun wavePropagation(terminationChecker: TerminationChecker, continueWave: Boolean = false): Boolean {
+    private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, continueWave: Boolean = false): Boolean {
+        val agentSuccessorSet = domain.successors(agentState)
+                .map{getNode(nodes[agentState]!!, it)}
+                .toMutableSet()
+
         if (!continueWave) {
             // Initialize wave
             waveCounter++
@@ -209,6 +223,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
                 it.heuristic = getOutsideHeuristic(it)
                 it.wavePseudoF = it.heuristic // TODO agentH?
+                it.frontierPointer = it
             }
         }
 
@@ -217,13 +232,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val waveFront = waveFrontier.pop()!!
 
-
             // TODO agent or agentToFrontier path detection
 //            if (waveFront == currentAgentState) {
 //                return true
 //            }
 
             backupNode(waveFront)
+            agentSuccessorSet.remove(waveFront)
+
+            if (agentSuccessorSet.isEmpty()) return true
         }
 
         return false
@@ -256,6 +273,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             predecessorNode.waveCounter = waveCounter
             predecessorNode.waveParent = sourceNode
+            predecessorNode.frontierPointer = sourceNode.frontierPointer
             predecessorNode.heuristic = valueFromSource
 //            predecessorNode.waveAgentHeuristic = domain.heuristic(currentAgentState, predecessorNode.state)
 
@@ -458,7 +476,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             val relativeHeuristic = successorNode.heuristic + successor.actionCost
 
             // This is a backup // TODO consider to remove
-            if (sourceNode.rhsHeuristic > relativeHeuristic) {
+            if (sourceNode.heuristic > relativeHeuristic) {
                 sourceNode.rhsHeuristic = relativeHeuristic
                 sourceNode.heuristic = relativeHeuristic
                 sourceNode.parent = successorNode
