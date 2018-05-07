@@ -133,6 +133,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private var rootState: StateType? = null
 
+    private val foundGoals = mutableListOf<EnvelopeSearchNode<StateType>>()
+
     private var firstIteration = true
     private lateinit var currentAgentState: StateType
 
@@ -204,13 +206,23 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveFrontier.clear()
             backedUpNodes.clear()
 
-            openList.forEach {
-                waveFrontier.add(it)
-                it.waveCounter = waveCounter
-                it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
-                it.heuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
-                it.wavePseudoF = it.heuristic // TODO agentH?
+            if (foundGoals.isEmpty()) {
+                openList.forEach {
+                    it.heuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
+                    waveFrontier.add(it)
+
+                    it.waveCounter = waveCounter
+                    it.waveAgentHeuristic = domain.heuristic(currentAgentState, it.state)
+                    it.wavePseudoF = it.heuristic // TODO agentH?
+                }
+            } else {
+                foundGoals.forEach {
+                    it.heuristic = 0.0
+                    waveFrontier.add(it)
+                }
             }
+
+
         }
 
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
@@ -410,7 +422,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         while (!terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
             // TODO don't stop
-            if (domain.isGoal(topNode.state)) return topNode
+            if (domain.isGoal(topNode.state)) {
+                if (!foundGoals.contains(topNode)) {
+                    foundGoals.add(topNode)
+                }
+                return topNode
+            }
 
             val currentNode = openList.pop()
                     ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
