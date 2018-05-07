@@ -218,6 +218,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             } else {
                 foundGoals.forEach {
                     it.heuristic = 0.0
+                    it.waveCounter = waveCounter
                     waveFrontier.add(it)
                 }
             }
