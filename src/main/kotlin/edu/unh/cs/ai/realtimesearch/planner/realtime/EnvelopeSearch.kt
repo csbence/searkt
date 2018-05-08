@@ -7,8 +7,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansi
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.realtime.EnvelopeSearch.EnvelopeSearchPhases.GOAL_BACKUP
-import edu.unh.cs.ai.realtimesearch.planner.realtime.EnvelopeSearch.EnvelopeSearchPhases.GOAL_SEARCH
+import edu.unh.cs.ai.realtimesearch.planner.realtime.EnvelopeSearch.EnvelopeSearchPhases.*
 import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
@@ -97,6 +96,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
+    val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
+        val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
+
+        when {
+            lhsWaveF < rhsWaveF -> -1
+            lhsWaveF > rhsWaveF -> 1
+            lhs.waveHeuristic < rhs.waveHeuristic -> -1
+            lhs.waveHeuristic > rhs.waveHeuristic -> 1
+            else -> 0
+        }
+    }
+
     private val waveComparator = Comparator<EnvelopeSearchNode<StateType>>({ lhs, rhs ->
         when {
             lhs.waveCounter > rhs.waveCounter -> -1
@@ -146,30 +158,29 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         currentAgentState = sourceState
 
-        val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 4)
-        val backupTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
 
         if (domain.isGoal(sourceState)) {
             return emptyList()
         }
 
-        when (expansionStrategy) {
-            ExpansionStrategy.H_VALUE -> {
-                openList.reorder(heuristicComparator)
-                explore(sourceState, expansionTerminationChecker)
-            }
-            ExpansionStrategy.PSEUDO_F -> {
-                if (foundGoals.isEmpty()) {
-                    openList.reorder(heuristicComparator)
-                    explore(sourceState, expansionTerminationChecker)
+        if (foundGoals.isEmpty()) {
+            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 4)
 
-                    expansionTerminationChecker.resetTo(0)
+            openList.reorder(heuristicComparator)
+            explore(sourceState, expansionTerminationChecker)
 
-                    openList.reorder(pseudoFComparator)
-                    explore(sourceState, expansionTerminationChecker)
-                }
-            }
+            expansionTerminationChecker.resetTo(0)
+
+            openList.reorder(pseudoFComparator)
+            explore(sourceState, expansionTerminationChecker)
         }
+
+        if (searchPhase == PATH_IMPROVEMENT) {
+            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
+            openList.reorder(pseudoFComparator)
+            explore(sourceState, expansionTerminationChecker)
+        }
+
 
         lastPlannedPath.add(currentAgentState)
         val agentNode = nodes[currentAgentState]!!
@@ -180,6 +191,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             backupInProgress = false
         }
 
+        val backupTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
         backupInProgress = wavePropagation(currentAgentState, backupTerminationChecker, backupInProgress, lastPlannedPath)
 
         val lastWaveNode = agentNode.waveParent
@@ -224,9 +236,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             // A current backup is in progress not from the goal, while we know where the goal is
             // We should terminate this and start a backup from the goal
 
+            searchPhase = GOAL_BACKUP
+
             waveCounter++
             waveFrontier.clear()
             backedUpNodes.clear()
+
+            waveFrontier.reorder(waveFComparator)
 
             foundGoals.forEach {
                 it.heuristic = 0.0
@@ -238,7 +254,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 waveFrontier.add(it)
             }
 
-            searchPhase = GOAL_BACKUP
         } else if (!continueWave && searchPhase == GOAL_SEARCH) {
             // Initialize wave
             waveCounter++
@@ -253,6 +268,20 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
                 waveFrontier.add(it)
             }
+        } else if (!continueWave && searchPhase == PATH_IMPROVEMENT) {
+            waveCounter++
+            waveFrontier.clear()
+            backedUpNodes.clear()
+
+            foundGoals.forEach {
+                it.heuristic = 0.0
+                it.waveHeuristic = 0.0
+                it.waveCounter = waveCounter
+                it.frontierPointer = it
+                it.waveParent = it
+
+                waveFrontier.add(it)
+            }
         }
 
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
@@ -260,7 +289,16 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             backupNode(waveFront)
 
-            if (waveFront.state in agentPath || waveFront == agentState) {
+            if (searchPhase == GOAL_BACKUP && waveFront == agentState) {
+                searchPhase = PATH_IMPROVEMENT
+                return false
+            }
+
+            if (searchPhase == PATH_IMPROVEMENT && waveFront == agentState) {
+                return false
+            }
+
+            if (searchPhase == GOAL_SEARCH && (waveFront.state in agentPath || waveFront == agentState)) {
                 return false
             }
 
