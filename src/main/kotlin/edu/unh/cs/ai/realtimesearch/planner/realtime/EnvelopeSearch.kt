@@ -66,8 +66,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         //using heuristic function for pseudo-g
-        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state) * 2
-        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state) * 2
+        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state)
+        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state)
         val lhsPseudoF = lhs.heuristic + lhsPseudoG
         val rhsPseudoF = rhs.heuristic + rhsPseudoG
 
@@ -121,9 +121,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100000000, 1.toFloat()).resize()
 
-    override var openList = AdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(1000000, pseudoFComparator)
+    override var openList = AdvancedPriorityQueue(1000000, pseudoFComparator)
 
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveHeuristicComparator) {
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveFComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
@@ -157,7 +157,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         if (foundGoals.isEmpty()) {
-            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 4)
+            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() * 4 / 9)
 
             openList.reorder(heuristicComparator)
             explore(sourceState, expansionTerminationChecker)
@@ -175,11 +175,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         if (searchPhase == PATH_IMPROVEMENT) {
-            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
+            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() * 8 / 9)
             openList.reorder(pseudoFComparator)
             explore(sourceState, expansionTerminationChecker)
         }
-
 
         lastPlannedPath.add(currentAgentState)
 
@@ -189,7 +188,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             backupInProgress = false
         }
 
-        val backupTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
+        val totalTime = terminationChecker.remaining()
+        val remainingTime = totalTime - totalTime * 8 / 9
+        val backupTerminationChecker = StaticExpansionTerminationChecker(totalTime)
         backupInProgress = wavePropagation(currentAgentState, backupTerminationChecker, backupInProgress, lastPlannedPath)
 
         val agentNextNode = if (agentNode.waveParent == agentNode) {
