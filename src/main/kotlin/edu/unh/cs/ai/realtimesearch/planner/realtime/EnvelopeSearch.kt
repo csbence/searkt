@@ -19,9 +19,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
 
-    private val expansionStrategy = ExpansionStrategy.PSEUDO_F
-    private val updateStrategy = UpdateStrategy.PSEUDO
-
     class EnvelopeSearchNode<StateType : State<StateType>>(
             override val state: StateType,
             override var heuristic: Double,
@@ -65,8 +62,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         override fun toString() =
                 "RTSNode: [State: $state h: $heuristic, wave:$waveCounter, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 
-        val consistent: Boolean
-            get() = heuristic == rhsHeuristic
     }
 
     private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
