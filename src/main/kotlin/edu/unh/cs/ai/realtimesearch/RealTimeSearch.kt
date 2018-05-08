@@ -61,10 +61,12 @@ private fun generateConfigurations(): String {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_0"
+//                            Domains.GRID_WORLD to "input/vacuum/slalom_03.vw"
+                    Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw"
             ),
             planners = listOf(ES),
-            actionDurations = listOf(8),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(15),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),

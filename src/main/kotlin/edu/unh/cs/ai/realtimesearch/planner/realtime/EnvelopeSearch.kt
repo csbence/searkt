@@ -142,7 +142,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val foundGoals = mutableListOf<EnvelopeSearchNode<StateType>>()
     private var backupInProgress = false
-    private var endOfPathReached = false
 
     private var firstIteration = true
     private lateinit var currentAgentState: StateType
@@ -193,23 +192,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         //up, start a new frontier backup!
         if (agentNode.waveCounter == waveCounter) {
             backupInProgress = false
-            endOfPathReached = false
         }
 
         val backupTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
         backupInProgress = wavePropagation(currentAgentState, backupTerminationChecker, backupInProgress, lastPlannedPath)
 
-        val agentNextNode = if ((agentNode.waveParent == agentNode && backupInProgress) || endOfPathReached) {
-            endOfPathReached = true
+        val agentNextNode = if (agentNode.waveParent == agentNode) {
             updateLocalHeuristic(agentNode)
+            bestExpandedWaveSuccessor()
         } else {
             agentNode.waveParent
         }
-        val agentToFrontier = if (endOfPathReached) {
-            listOf(agentNode.state, agentNextNode.state)
-        } else {
-            projectPath(currentAgentState)
-        }
+
+        val agentToFrontier = projectPath(currentAgentState)
 
         lastPlannedPath = agentToFrontier.toMutableSet()
 
@@ -315,7 +310,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             }
 
             if (searchPhase == GOAL_SEARCH && (waveFront.state in agentPath || waveFront == agentState)) {
-                endOfPathReached = false
                 return false
             }
 
@@ -396,16 +390,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             sourceToCurrentTrace.add(currentState)
             currentTrace.add(currentState)
 
-            currentState = currentNode.waveParent.state
-//            currentState = bestExpandedWaveSuccessor(currentState).state
+            currentState = if (currentState != currentNode.waveParent.state) {
+                currentNode.waveParent.state
+            } else {
+                bestWaveSuccessor(currentState).state
+            }
         }
     }
 
     //Can only be called on an expanded node
-    private fun updateLocalHeuristic(currentNode: EnvelopeSearchNode<StateType>) : EnvelopeSearchNode<StateType> {
+    private fun updateLocalHeuristic(currentNode: EnvelopeSearchNode<StateType>): EnvelopeSearchNode<StateType> {
         val bestNode = domain.successors(currentNode.state)
-                .map{ nodes[it.state]!! }
-                .minWith(Comparator{ lhs, rhs ->
+                .map { nodes[it.state]!! }
+                .minWith(Comparator { lhs, rhs ->
                     val lhsH = lhs.heuristic + lhs.actionCost
                     val rhsH = rhs.heuristic + rhs.actionCost
                     when {
@@ -422,7 +419,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         return bestNode
     }
-
 
 
     private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successors(sourceNode.state)
