@@ -158,8 +158,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         currentAgentState = sourceState
 
-        val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 4)
-
         if (domain.isGoal(sourceState)) {
             return emptyList()
         }
@@ -176,6 +174,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             explore(sourceState, expansionTerminationChecker)
         }
 
+        val agentNode = nodes[currentAgentState]!!
+        if (searchPhase == GOAL_BACKUP && agentNode.expanded == -1) {
+            expandFromNode(agentNode)
+            terminationChecker.notifyExpansion()
+        }
+
         if (searchPhase == PATH_IMPROVEMENT) {
             val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() / 2)
             openList.reorder(pseudoFComparator)
@@ -184,7 +188,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
 
         lastPlannedPath.add(currentAgentState)
-        val agentNode = nodes[currentAgentState]!!
 
         //If the agent has reached the wave frontier before it has been backed
         //up, start a new frontier backup!
@@ -402,12 +405,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private fun updateLocalHeuristic(currentNode: EnvelopeSearchNode<StateType>) : EnvelopeSearchNode<StateType> {
         val bestNode = domain.successors(currentNode.state)
                 .map{ nodes[it.state]!! }
-                .filter{ it.waveCounter == waveCounter }
-                ?.minBy{ it.heuristic + it.actionCost }
-            ?:
-                domain.successors((currentNode.state))
-                        .map{ nodes[it.state]!! }
-                        .minBy{ it.heuristic + it.actionCost }!!
+                .minWith(Comparator{ lhs, rhs ->
+                    val lhsH = lhs.heuristic + lhs.actionCost
+                    val rhsH = rhs.heuristic + rhs.actionCost
+                    when {
+                        rhs.heuristic == Double.POSITIVE_INFINITY -> -1
+                        lhs.heuristic == Double.POSITIVE_INFINITY -> 1
+                        lhs.waveCounter == waveCounter && rhs.waveCounter != waveCounter -> -1
+                        rhs.waveCounter == waveCounter && lhs.waveCounter != waveCounter -> 1
+                        lhsH < rhsH -> -1
+                        rhsH < lhsH -> 1
+                        else -> 0
+                    }
+                })!!
         currentNode.heuristic = bestNode.heuristic + bestNode.actionCost
 
         return bestNode
