@@ -96,7 +96,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+    private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
         val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
 
