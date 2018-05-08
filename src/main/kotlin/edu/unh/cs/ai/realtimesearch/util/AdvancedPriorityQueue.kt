@@ -92,6 +92,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         getIndex(item) == -1 -> false
         else -> {
             removeAt(getIndex(item))
+            setIndex(item, -1)
             true
         }
     }
