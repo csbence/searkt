@@ -128,6 +128,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private var rootState: StateType? = null
 
     private val foundGoals = mutableListOf<EnvelopeSearchNode<StateType>>()
+    private var goalBackedUp = false
     private var backupInProgress = false
 
     private var firstIteration = true
@@ -264,7 +265,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             backupNode(waveFront)
 
             //Note: not returning. Primitive "path smoothing." We'll go until the termination checker stops us
-            if (agentState == waveFront.state || agentPath.contains(waveFront.state)) pauseBackup = false
+            if (agentState == waveFront.state || (!goalBackedUp && agentPath.contains(waveFront.state))) {
+                pauseBackup = false
+                if (foundGoals.size > 0) goalBackedUp = true
+            }
+            else if (waveFrontier.isEmpty()) pauseBackup = false
+
             terminationChecker.notifyExpansion()
         }
 
