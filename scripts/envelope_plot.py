@@ -17,7 +17,7 @@ __author__ = 'Bence Cserna, modified by Kevin C. Gall'
 
 alg_map = {"A_STAR": "A*", "LSS_LRTA_STAR": "LSS-LRTA*", "SAFE_RTS": "SRTS", "S_ZERO": "S0", "SIMPLE_SAFE": "SS",
            "SINGLE_SAFE": "BEST_SAFE", "SAFE_RTS_TOP": "SRTS_TOP", "TIME_BOUNDED_A_STAR": "TBA*", "CES": "CES",
-           "ENVELOPE": "Envelope"}
+           "ENVELOPE": "Envelope v0.5", "ES": "Envelope"}
 
 
 def flatten(experiment):
@@ -141,7 +141,7 @@ def plot_all_experiments(data, plot_title):
     cpu_time_results.to_csv("../output/" + plot_title + "_cpu.csv")
 
 
-def main(individual_plots, paths_to_base, paths, title):
+def main(individual_plots, paths_to_base, paths, title, domain_token):
     set_rc()
 
 
@@ -170,6 +170,8 @@ def main(individual_plots, paths_to_base, paths, title):
     # drop certain rows for brevity
     dropped_ratios = [0.0, 10.0, 2.0]
     data = data[~data['backlogRatio'].isin(dropped_ratios)]
+    if domain_token is not None:
+        data = data[data['domainPath'].str.contains(domain_token)]
 
     # Need to default backlogRatio so it is groupable later
     for i, row in data.iterrows():
@@ -199,12 +201,14 @@ parser.add_argument("-i", "--individual",
                     help="Should plots be generated for each domain individually? (Primarily for debugging)",
                     action="store_true")
 parser.add_argument("-t", "--title", help="Title for plot (ignored for individual plots)", default="Experiments")
+parser.add_argument("-d", "--domain_token", help="Domain token for filtering")
 
 args = parser.parse_args()
 individual_plots = args.individual
 paths_to_base = args.paths_to_base
 paths = args.paths
 title = args.title
+domain_token = args.domain_token
 
 if __name__ == "__main__":
-    main(individual_plots, paths_to_base, paths, title)
+    main(individual_plots, paths_to_base, paths, title, domain_token)
