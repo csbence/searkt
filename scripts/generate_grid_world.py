@@ -104,7 +104,7 @@ for iteration in range(0, number):
 
     aFile = open(completeFile, "w")
 
-    preamble = args.height+"\n"+args.width+"\n"
+    preamble = args.width+"\n"+args.height+"\n"
     world = ""
 
     obstacleLocations = set()
