@@ -51,7 +51,8 @@ fun main(args: Array<String>) {
     System.err.println(results.summary())
 
     println('#') // Indicator for the parser
-    println(rawResults) // This should be the last printed line
+//    println(rawResults) // This should be the last printed line
+    results.forEach { println(it.goalAchievementTime) }
 
 //    runVisualizer(result = results.first())
 }
@@ -60,13 +61,11 @@ private fun generateConfigurations(): String {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
     val configurations = generateConfigurations(
-            domains = listOf(
-//                    Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_0"
-//                            Domains.GRID_WORLD to "input/vacuum/slalom_03.vw"
-                    Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw"
-            ),
+            domains = (0..2).map {
+                Domains.GRID_WORLD to "input/vacuum/minima/minima3000_300-$it.vw"
+            },
             planners = listOf(ES),
-            actionDurations = listOf(15),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            actionDurations = listOf(100),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
             terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),

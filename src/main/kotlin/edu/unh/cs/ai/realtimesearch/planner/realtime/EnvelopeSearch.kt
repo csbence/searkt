@@ -66,8 +66,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         //using heuristic function for pseudo-g
-        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state)
-        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state)
+        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state) * 2.0
+        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state) * 2.0
         val lhsPseudoF = lhs.heuristic + lhsPseudoG
         val rhsPseudoF = rhs.heuristic + rhsPseudoG
 
@@ -157,15 +157,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         if (foundGoals.isEmpty()) {
-            val expansionTerminationChecker = StaticExpansionTerminationChecker(terminationChecker.remaining() * 4 / 9)
 
             openList.reorder(heuristicComparator)
-            explore(sourceState, expansionTerminationChecker)
-
-            expansionTerminationChecker.resetTo(0)
+            explore(sourceState, StaticExpansionTerminationChecker(terminationChecker.remaining() * 7 / 9))
 
             openList.reorder(pseudoFComparator)
-            explore(sourceState, expansionTerminationChecker)
+            explore(sourceState, StaticExpansionTerminationChecker(terminationChecker.remaining() * 1 / 9))
         }
 
         val agentNode = nodes[currentAgentState]!!
