@@ -37,15 +37,17 @@ fun main(args: Array<String>) {
 
     val jsonTree = File(searchTreePath).readText()
 
-    val jsonOpticNodes = JSON.parse<OpticDump>(jsonTree).nodes
+    val opticDump = JSON.parse<OpticDump>(jsonTree)
+    val jsonOpticNodes = opticDump.nodes
     println("Json node parsing was successful.")
 
     val opticNodes = jsonOpticNodes.map(JsonOpticNode::toOpticNode)
+    val rootNodeId = opticDump.initialState.removePrefix("0x").toLong(16)
 
     opticNodes
             .parallelStream()
             .forEach {
-                aStar(opticNodes, it)
+                aStar(opticNodes, it, rootNodeId)
                 System.out.flush()
                 it.minGoalDistance = it.expansionsToGoals?.min()
             }
@@ -107,10 +109,12 @@ data class OpticNode(val id: Long,
                      @Transient
                      val successors: List<Long>,
                      var expansionsToGoals: List<Int>? = null,
-                     var minGoalDistance: Int? = null)
+                     var minGoalDistance: Int? = null,
+                     var expansionTime: Int = 0,
+                     var generationTime: Int = 0)
 
 
-fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode) {
+fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
     data class Node(val opticNode: OpticNode, var closed: Boolean = false, override var index: Int = -1) : Indexable
 
     // Add
@@ -124,12 +128,15 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode) {
     openList.add(localNodeMap[sourceNode.id] ?: throw MetronomeException("Source node is not found"))
 
     var expansionCount = 0
+    var generationCount = 0
     val expansionsToGoals = mutableListOf<Int>()
 
     while (openList.isNotEmpty()) {
         val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
         expansionCount++
+        if (sourceNode.id == rootNodeId)
+            currentNode.opticNode.expansionTime = expansionCount
 
         for (successorId in currentNode.opticNode.successors) {
             val successorNode = localNodeMap[successorId]
@@ -150,6 +157,10 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode) {
             if (successorNode.open) {
                 openList.update(successorNode)
             } else {
+                generationCount++
+                if (sourceNode.id == rootNodeId)
+                    successorNode.opticNode.generationTime = generationCount
+
                 openList.add(successorNode)
             }
         }
