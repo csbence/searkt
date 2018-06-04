@@ -105,7 +105,7 @@ class GridCanvasPane(val mapInfo: MapInfo, val tileSize: Double) : Pane() {
         // Add agent cells
         val agentCell = mapInfo.agentCell
 //        val agentCircleRadius = tileSize / 5.0
-        val agentCircleRadius = min(layoutWidth, layoutHeight) / 30.0
+        val agentCircleRadius = min(layoutWidth, layoutHeight) / 60.0
         if (startCellBackgroundColor != null && agentCell != null) {
             graphicsContext.fill = ThemeColors.AGENT.color
             addCircle(graphicsContext, agentCell, agentCircleRadius, true)

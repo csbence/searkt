@@ -26,10 +26,10 @@ object VacuumWorldIO {
         var startLocation: Location? = null
 
         try {
-            for (y in 0..rowCount - 1) {
+            for (y in 0 until rowCount) {
                 val line = inputScanner.nextLine()
 
-                for (x in 0..columnCount - 1) {
+                for (x in 0 until columnCount) {
                     when (line[x]) {
                         '#' -> blockedCells.add(Location(x, y))
                         '*' -> dirtyCells.add(Location(x, y))
