@@ -5,7 +5,8 @@ package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
  *
  * @param timeLimit is the limit allowed after resetTo before termination is confirmed
  */
-class MutableTimeTerminationChecker : TimeTerminationChecker() {
+class MutableTimeTerminationChecker(epsilon: Long) : TimeTerminationChecker(epsilon) {
+
     override var startTime: Long = 0
     override var timeLimit: Long = 0
 

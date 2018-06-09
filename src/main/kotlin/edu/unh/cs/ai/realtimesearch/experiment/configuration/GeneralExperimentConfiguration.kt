@@ -10,6 +10,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
+import java.util.concurrent.TimeUnit
 
 open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf()) : ExperimentData(values) {
     constructor(domainName: String,
@@ -68,6 +69,8 @@ data class ExperimentConfiguration(
         val lookaheadType: LookaheadType? = null,
         @Optional
         val commitmentStrategy: CommitmentStrategy? = null,
+        @Optional
+        val terminationTimeEpsilon: Long = TimeUnit.NANOSECONDS.convert(2000, TimeUnit.MICROSECONDS),
         @Optional
         val stepLimit: Long? = null,
 

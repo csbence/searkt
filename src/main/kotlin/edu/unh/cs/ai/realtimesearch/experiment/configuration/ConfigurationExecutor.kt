@@ -21,6 +21,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.*
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.*
 import edu.unh.cs.ai.realtimesearch.planner.Planners
@@ -78,7 +79,7 @@ object ConfigurationExecutor {
 
         val executor = Executors.newFixedThreadPool(parallelCores)
         return configurations
-                .map { executor.submit(Callable<ExperimentResult> { unsafeConfigurationExecution(it, dataRootPath) }) }
+                .map { executor.submit(Callable<ExperimentResult> { executeConfiguration(it, dataRootPath) }) }
                 .map {
                     val experimentResult = it.get()
                     progressBar.updateProgress()
@@ -226,7 +227,7 @@ object ConfigurationExecutor {
         return when (Planners.valueOf(algorithmName)) {
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
-            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, sourceState)
+            LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ES -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
@@ -238,7 +239,7 @@ object ConfigurationExecutor {
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
             ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
-            ENVELOPE -> throw MetronomeException("Bence, you need to update the ConfigurationExecutor")
+            ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
         }
     }
 
@@ -251,20 +252,6 @@ object ConfigurationExecutor {
 
     private fun <StateType : State<StateType>> executeOfflineSearch(planner: ClassicalPlanner<StateType>, configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         return ClassicalExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
-    }
-
-    private fun getTerminationChecker(configuration: ExperimentConfiguration): TerminationChecker {
-        val lookaheadType = configuration.lookaheadType
-        val terminationType = configuration.terminationType
-
-        return when {
-            lookaheadType == DYNAMIC && terminationType == TIME -> MutableTimeTerminationChecker()
-            lookaheadType == DYNAMIC && terminationType == EXPANSION -> DynamicExpansionTerminationChecker()
-            lookaheadType == STATIC && terminationType == TIME -> StaticTimeTerminationChecker(configuration.actionDuration)
-            lookaheadType == STATIC && terminationType == EXPANSION -> StaticExpansionTerminationChecker(configuration.actionDuration)
-            terminationType == UNLIMITED -> FakeTerminationChecker
-            else -> throw MetronomeException("Invalid termination checker configuration")
-        }
     }
 
     private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {

@@ -88,9 +88,19 @@ val heuristicComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { l
     }
 }
 
+val learningHeuristicComparator: java.util.Comparator<RealTimeSearchNode<*, *>> = Comparator { lhs, rhs ->
+    when {
+        lhs.lastLearnedHeuristic < rhs.lastLearnedHeuristic -> -1
+        lhs.lastLearnedHeuristic > rhs.lastLearnedHeuristic -> 1
+        else -> 0
+    }
+}
+
 
 interface RealTimeSearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : SearchNode<StateType, NodeType> {
     var iteration: Long
+    var lastLearnedHeuristic: Double
+    var minPathLength: Long
 }
 
 class PureRealTimeSearchNode<StateType : State<StateType>>(
@@ -111,6 +121,9 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
 
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
+
+    override var lastLearnedHeuristic = heuristic
+    override var minPathLength: Long = 0L
 
     override fun hashCode(): Int = state.hashCode()
 
@@ -156,7 +169,7 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
         currentNode = currentNode.parent
     } while (currentNode.state != sourceState)
 
-    return actions.reversed()
+    return actions.asReversed()
 }
 
 
@@ -210,15 +223,17 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
 
     context.expandedNodeCount += 1
 
+    var successorCount = 0
     for (successor in context.domain.successors(sourceNode.state)) {
         val successorState = successor.state
         val successorNode = context.getNode(sourceNode, successor)
 
-        if (successorNode.heuristic == Double.POSITIVE_INFINITY
-                && successorNode.iteration != context.iterationCounter) {
+        if (successorNode.heuristic == Double.POSITIVE_INFINITY) {
             // Ignore this successor as it is a dead end
             continue
         }
+
+        successorCount++
 
         // If the node is outdated it should be updated.
         if (successorNode.iteration != context.iterationCounter) {
@@ -246,6 +261,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
             successorNode.apply {
                 cost = successorGValueFromCurrent
                 parent = sourceNode
+                minPathLength = sourceNode.minPathLength + 1
                 action = successor.action
                 actionCost = successor.actionCost
             }
@@ -258,7 +274,9 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
         }
     }
 
-    sourceNode.heuristic = Double.POSITIVE_INFINITY
+    sourceNode.lastLearnedHeuristic = Double.POSITIVE_INFINITY
+    // If no successors, update heuristic now, as it will never be learned in the dijkstra phase
+    if (successorCount == 0) sourceNode.heuristic = Double.POSITIVE_INFINITY
 }
 
 /**
@@ -281,7 +299,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
     context.iterationCounter++
 
     // change openList ordering to heuristic only
-    openList.reorder(heuristicComparator)
+    openList.reorder(learningHeuristicComparator)
 
     while (openList.isNotEmpty()) {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
@@ -303,6 +321,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
                 // This node is not open yet, because it was not visited in the current planning iteration
 
                 predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                predecessorNode.lastLearnedHeuristic = predecessorNode.heuristic
                 assert(predecessorNode.iteration == context.iterationCounter - 1)
                 predecessorNode.iteration = context.iterationCounter
 
@@ -310,6 +329,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
             } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
                 // This node was visited in this learning phase, but the current path is better then the previous
                 predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                predecessorNode.lastLearnedHeuristic = predecessorNode.heuristic
                 openList.update(predecessorNode) // Update priority
             }
         }
@@ -322,7 +342,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
 fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> dynamicDijkstra(
         context: RealTimePlannerContext<StateType, NodeType>,
         freshSearch: Boolean = true,
-        openListComparator: Comparator<RealTimeSearchNode<StateType,NodeType>> = Comparator {lhs, rhs -> heuristicComparator.compare(lhs, rhs)},
+        openListComparator: Comparator<RealTimeSearchNode<StateType,NodeType>> = Comparator {lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs)},
         reachedTermination: (AdvancedPriorityQueue<NodeType>) -> Boolean = {openList -> openList.isEmpty()}) {
     val openList = context.openList
 
@@ -353,12 +373,14 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
                 // This node is not open yet, because it was not visited in the current planning iteration
 
                 predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                predecessorNode.lastLearnedHeuristic = predecessorNode.heuristic
                 predecessorNode.iteration = context.iterationCounter
 
                 openList.add(predecessorNode)
             } else if (predecessorHeuristicValue > currentHeuristicValue + predecessor.actionCost) {
                 // This node was visited in this learning phase, but the current path is better then the previous
                 predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
+                predecessorNode.lastLearnedHeuristic = predecessorNode.heuristic
                 openList.update(predecessorNode) // Update priority
             }
         }

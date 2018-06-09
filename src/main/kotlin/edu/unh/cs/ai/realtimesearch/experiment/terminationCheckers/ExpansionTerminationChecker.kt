@@ -12,7 +12,7 @@ abstract class ExpansionTerminationChecker : TerminationChecker {
         expansionCount += expansions
     }
 
-    override fun reachedTermination() = expansionCount >= expansionLimit
+    override fun reachedTermination(buffer: Long) = (expansionCount + buffer) >= expansionLimit
 
     override fun remaining(): Long = expansionLimit - expansionCount
 

@@ -53,11 +53,11 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['TIME_BOUNDED_A_STAR']
+    algorithms_to_run = ['CES', 'ES', 'ALT_ENVELOPE', 'TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
-    action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200]
+    action_durations = [50, 100, 200, 500]
     # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -85,7 +85,7 @@ def generate_base_configuration():
 
     # Envelope-based
     # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
-    backup_ratios = [1.0, 2.0, 5.0]
+    backup_ratios = [1.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'backlogRatio', backup_ratios,
                                                 [['algorithmName', 'CES']])
@@ -263,7 +263,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json):
-    with open('output/results_.json', 'w') as outfile:
+    with open('output/results_test.json', 'w') as outfile:
         json.dump(results_json, outfile)
 
 

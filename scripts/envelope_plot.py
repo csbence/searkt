@@ -17,7 +17,7 @@ __author__ = 'Bence Cserna, modified by Kevin C. Gall'
 
 alg_map = {"A_STAR": "A*", "LSS_LRTA_STAR": "LSS-LRTA*", "SAFE_RTS": "SRTS", "S_ZERO": "S0", "SIMPLE_SAFE": "SS",
            "SINGLE_SAFE": "BEST_SAFE", "SAFE_RTS_TOP": "SRTS_TOP", "TIME_BOUNDED_A_STAR": "TBA*", "CES": "CES",
-           "ENVELOPE": "Envelope v0.5", "ES": "Envelope"}
+           "ENVELOPE": "Envelope v0.5", "ES": "RES"}
 
 
 def flatten(experiment):
@@ -90,7 +90,7 @@ def plot_all_experiments(data, plot_title):
     # grouped by action duration and algorithm
     for fields, duration_group in data.groupby(['algorithmName', 'backlogRatio', 'actionDuration']):
         alg_name = alg_map[fields[0]]
-        if fields[0] == "CES" or fields[0] == "ENVELOPE" or fields[0] == "TIME_BOUNDED_A_STAR":
+        if fields[0] == "CES" or fields[0] == "ENVELOPE":
             alg_name += " Backup Ratio: " + str(fields[1])
 
         # Get mean of within optimal calculation, add row to results dataframe
@@ -170,6 +170,7 @@ def main(individual_plots, paths_to_base, paths, title, domain_token):
     # drop certain rows for brevity
     dropped_ratios = [0.0, 10.0, 2.0]
     data = data[~data['backlogRatio'].isin(dropped_ratios)]
+    data = data[~(data['tbaOptimization'] == 'NONE')]
     if domain_token is not None:
         data = data[data['domainPath'].str.contains(domain_token)]
 

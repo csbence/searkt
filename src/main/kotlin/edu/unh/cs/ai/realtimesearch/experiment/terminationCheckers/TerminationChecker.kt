@@ -1,5 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers
 
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+
 /**
  * General interface for time and expansion based termination checkers.
  *
@@ -11,9 +15,11 @@ interface TerminationChecker {
     /**
      * Check if the termination is reached.
      *
+     * @param buffer Optional parameter which allows users to specify a dynamic quantum of time as a "buffer" in case
+     * additional operations must occur after the main operation finishes
      * @return true if the termination is reached, else false.
      */
-    fun reachedTermination(): Boolean
+    fun reachedTermination(buffer: Long = 0L): Boolean
 
     /**
      * Notify the termination checker about expansions.
@@ -39,4 +45,23 @@ interface TerminationChecker {
      * @return The number of expansion or nanosecond elapsed since the last reset of the termination checker.
      */
     fun elapsed(): Long
+}
+
+/**
+ * Factory method for termination checker from experiment configuration
+ */
+fun getTerminationChecker(configuration: ExperimentConfiguration, durationOverride: Long = 0L) : TerminationChecker {
+    val lookaheadType = configuration.lookaheadType
+    val terminationType = configuration.terminationType
+    val duration= if (durationOverride > 0) durationOverride else configuration.actionDuration
+    val epsilon = configuration.terminationTimeEpsilon
+
+    return when {
+        lookaheadType == LookaheadType.DYNAMIC && terminationType == TerminationType.TIME -> MutableTimeTerminationChecker(epsilon)
+        lookaheadType == LookaheadType.DYNAMIC && terminationType == TerminationType.EXPANSION -> DynamicExpansionTerminationChecker()
+        lookaheadType == LookaheadType.STATIC && terminationType == TerminationType.TIME -> StaticTimeTerminationChecker(duration, epsilon)
+        lookaheadType == LookaheadType.STATIC && terminationType == TerminationType.EXPANSION -> StaticExpansionTerminationChecker(duration)
+        terminationType == TerminationType.UNLIMITED -> FakeTerminationChecker
+        else -> throw InsufficientTerminationCriterionException("Invalid termination checker configuration")
+    }
 }

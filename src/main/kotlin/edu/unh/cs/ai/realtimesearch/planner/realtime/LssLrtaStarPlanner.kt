@@ -4,8 +4,10 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
@@ -26,7 +28,7 @@ import kotlin.system.measureTimeMillis
  *
  * This loop continue until the goal has been found
  */
-class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Domain<StateType>) :
+class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
@@ -44,6 +46,10 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
     var dijkstraTimer = 0L
+
+    // configuration
+    /** The maximum proportion of each iteration that can be spent on learning. */
+    private val learningMaxFactor = 0.75
 
     /**
      * Selects a action given current sourceState.
@@ -80,7 +86,18 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
         // Learning phase
         if (openList.isNotEmpty()) {
-            dijkstraTimer += measureTimeMillis { dijkstra(this) }
+            //calculate learning time and get a new termination checker. To satisfy all possible checkers, we need
+            //to reset the bound after we construct the checker
+            val learningTime  = (terminationChecker.remaining() * learningMaxFactor).toLong()
+            val learningTerminationChecker = getTerminationChecker(configuration, learningTime)
+            learningTerminationChecker.resetTo(learningTime)
+
+            dijkstraTimer += measureTimeMillis {
+                //Note that dynamic dijkstra does not notify expansions: expansion-based termination checkers will never "reach termination"
+                dynamicDijkstra(this, reachedTermination = {open ->
+                    open.isEmpty() || learningTerminationChecker.reachedTermination()
+                })
+            }
         }
 
         // Exploration phase
