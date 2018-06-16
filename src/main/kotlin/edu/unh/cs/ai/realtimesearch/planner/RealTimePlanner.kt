@@ -100,7 +100,7 @@ val learningHeuristicComparator: java.util.Comparator<RealTimeSearchNode<*, *>> 
 interface RealTimeSearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : SearchNode<StateType, NodeType> {
     var iteration: Long
     var lastLearnedHeuristic: Double
-    var minPathLength: Long
+    var minCostPathLength: Long
 }
 
 class PureRealTimeSearchNode<StateType : State<StateType>>(
@@ -123,7 +123,7 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
     override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
 
     override var lastLearnedHeuristic = heuristic
-    override var minPathLength: Long = 0L
+    override var minCostPathLength: Long = 0L
 
     override fun hashCode(): Int = state.hashCode()
 
@@ -261,7 +261,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
             successorNode.apply {
                 cost = successorGValueFromCurrent
                 parent = sourceNode
-                minPathLength = sourceNode.minPathLength + 1
+                minCostPathLength = sourceNode.minCostPathLength + 1
                 action = successor.action
                 actionCost = successor.actionCost
             }

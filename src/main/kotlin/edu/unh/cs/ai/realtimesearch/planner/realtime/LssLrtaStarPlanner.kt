@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
@@ -50,6 +51,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
     // configuration
     /** The maximum proportion of each iteration that can be spent on learning. */
     private val learningMaxFactor = 0.75
+    private val treeFollowingFactor = 100.0
 
     /**
      * Selects a action given current sourceState.
@@ -129,8 +131,9 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
+        var pathLengthBuffer = 0L
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination()) {
+            while (!terminationChecker.reachedTermination(pathLengthBuffer)) {
                 aStarPopCounter++
 
                 val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
@@ -138,6 +141,11 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
                 currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
                 expandFromNode(this, currentNode, {})
+
+                //we only care about path length for time termination limits. Expansion limits get free tree following
+                if (configuration.terminationType == TerminationType.TIME) {
+                    pathLengthBuffer = ((openList.peek()?.minCostPathLength ?: 0).toDouble() * treeFollowingFactor).toLong()
+                }
                 terminationChecker.notifyExpansion()
             }
         }

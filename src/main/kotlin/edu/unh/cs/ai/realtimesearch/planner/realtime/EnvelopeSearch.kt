@@ -38,7 +38,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         /** Parent pointer that points to the min cost predecessor. */
         override var parent: EnvelopeSearchNode<StateType> = parent ?: this
 
-        var rhsHeuristic = Double.POSITIVE_INFINITY
+        override var lastLearnedHeuristic = heuristic
+        override var minCostPathLength: Long = 0L
 
         var waveCounter: Int = -1
         lateinit var waveParent: EnvelopeSearchNode<StateType>

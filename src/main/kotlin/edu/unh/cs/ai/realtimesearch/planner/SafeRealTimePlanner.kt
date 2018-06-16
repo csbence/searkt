@@ -39,6 +39,9 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: SafeRealTimeSearchNode<StateType> = parent ?: this
 
+    override var lastLearnedHeuristic = heuristic
+    override var minCostPathLength = 0L
+
     override fun hashCode(): Int = state.hashCode()
 
     override fun equals(other: Any?): Boolean = when (other) {

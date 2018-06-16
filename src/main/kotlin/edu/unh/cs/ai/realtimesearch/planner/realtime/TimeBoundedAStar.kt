@@ -7,7 +7,9 @@ import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.NONE
@@ -15,6 +17,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.ai.realtimesearch.visualizer
 //import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -105,6 +108,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 //            println()
 //            println(currentAgentNode)
 
+            //checking if agent is on what is identified as the current target path
             plan = if (currentTargetPath[0].state == sourceState) {
                 if (currentTargetPath.size == 1) {
                     /* First handle the edge case where the agent has reached the end of its
@@ -159,9 +163,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             plan!!
         }
         lastAgentState = sourceState
-//        visualizer?.updateSearchEnvelope(expandedNodes)
-//        visualizer?.updateAgentLocation(currentAgentNode)
-//        visualizer?.delay()
+        visualizer?.updateSearchEnvelope(expandedNodes)
+        visualizer?.updateAgentLocation(currentAgentNode)
+        visualizer?.delay()
 
         return safePlan
     }
@@ -201,24 +205,47 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             return targetPath!!
         }
 
+        val tracebackBuffer = if (configuration.terminationType == TerminationType.TIME) {
+            /*  For real time bounds, divvying up time by dividing it up into chunks
+             *  according to the configurable trace cost estimation and allocating time according
+             *  to the intended "backlog ratio", which is the amount of traces that should occur per
+             *  expansion
+             */
+            (backlogRatio * (terminationChecker.remaining().toDouble() / (traceCost + 1.0))).toLong()
+        } else {
+            0L
+        }
+
+        val astarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
+
         val bestNode = if (domain.isGoal(topOfOpen.state)) {
             foundGoal = true
             topOfOpen
         } else {
-            aStar(terminationChecker)
+            aStar(astarTermChecker)
         }
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
         val targetNode = traceInProgress?.first() ?: bestNode
 
-        //calculate backtrace here. Simply using expansion limit until we determine best way to compare with other algorithms
-        //plus 2 because we pop from the frontier (not expanded) and the root is "free"
+        /*  Again, if using real time bound, we will use the termination checker instead of
+         *  a numeric trace limit
+         */
         val traceLimit = (expansionLimit * backlogRatio) + 2
         var currentTraceCount = 0
+        val traceBound : () -> Boolean = if (configuration.terminationType == TerminationType.TIME) {
+            {
+                terminationChecker.reachedTermination()
+            }
+        } else {
+            {
+                currentTraceCount++
+                currentTraceCount >= traceLimit
+            }
+        }
 
         val bestNodeTraceback = extractNodeChain(targetNode, {
-            currentTraceCount++
-            currentTraceCount >= traceLimit || it == rootState!! || it == sourceState
+            traceBound() || it == rootState!! || it == sourceState
         })
 
         val currentBacktrace = bestNodeTraceback.toMutableList()
@@ -237,6 +264,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
+    /**
+     * Checks if the agent's current state is in the target path. If so, the path from current state to the end of the
+     * path. Otherwise backtrace to root
+     */
     private fun findNewPath(bestPath : MutableList<PureRealTimeSearchNode<StateType>>, currentAgentNode : PureRealTimeSearchNode<StateType>) : List<RealTimePlanner.ActionBundle>? {
         // Find common ancestor
         val sourceState = currentAgentNode.state
