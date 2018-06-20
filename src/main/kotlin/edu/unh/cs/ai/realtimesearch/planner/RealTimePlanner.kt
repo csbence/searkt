@@ -122,6 +122,9 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
 
+    /** Optional-use descendant pointer which can store the node's next best successor */
+    var next: PureRealTimeSearchNode<StateType>? = null
+
     override var lastLearnedHeuristic = heuristic
     override var minCostPathLength: Long = 0L
 

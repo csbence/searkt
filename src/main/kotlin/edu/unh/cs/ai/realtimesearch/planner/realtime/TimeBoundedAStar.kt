@@ -2,10 +2,7 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 
 import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
-import edu.unh.cs.ai.realtimesearch.environment.Domain
-import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
-import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
@@ -33,8 +30,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
 
     //HARD CODED for testing. Should be configurable
-    private val traceCost = 10 //cost of backtrace relative to expansion
-    private val backlogRatio = configuration.backlogRatio ?: 1.0 //how many more tracebacks per expansion we do
+    /** cost of backtrace relative to expansion. Lower number means backtrace is more costly */
+    private val traceCost = 10
+    /** ratio of tracebacks to expansions */
+    private val backlogRatio = configuration.backlogRatio ?: 1.0
 
     override var iterationCounter = 0L
 
@@ -51,9 +50,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var aStarPopCounter = 0
     private var expansionLimit = 0L
 
-    //Relevant Path lists
-    private var traceInProgress : MutableList<PureRealTimeSearchNode<StateType>>? = null
-    private var targetPath : MutableList<PureRealTimeSearchNode<StateType>>? = null
+    // Basically a Linked List Deque implementation with a hash map of states registered in the chain
+    data class PathTrace<StateType : State<StateType>>(
+            var pathEnd: PureRealTimeSearchNode<StateType>,
+            val states : MutableSet<PureRealTimeSearchNode<StateType>> = mutableSetOf()) {
+        var pathHead = pathEnd
+        init {states.add(pathEnd)}
+    }
+
+    private var traceInProgress : PathTrace<StateType>? = null
+    private var targetPath : PathTrace<StateType>? = null
 
     var aStarTimer = 0L
 
@@ -109,12 +115,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 //            println(currentAgentNode)
 
             //checking if agent is on what is identified as the current target path
-            plan = if (currentTargetPath[0].state == sourceState) {
-                if (currentTargetPath.size == 1) {
+            plan = if (currentTargetPath.pathHead.state == sourceState) {
+                if (currentTargetPath.pathHead == currentTargetPath.pathEnd) {
                     /* First handle the edge case where the agent has reached the end of its
                      * path while another path is being traced. Begin backtracing to root
                      */
-                    targetPath = mutableListOf(currentAgentNode.parent)
+                    targetPath = PathTrace(currentAgentNode.parent)
                     if (currentAgentNode.state == rootState) null
                     else constructPath(listOf(currentAgentNode.state, currentAgentNode.parent.state), domain)
                 } else {
@@ -122,8 +128,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                      * Move agent to current best target
                      * Remove current state from the target path for the next iteration
                      */
-                    targetPath = currentTargetPath.subList(1, currentTargetPath.size)
-                    extractPath(currentTargetPath[currentTargetPath.lastIndex], sourceState)
+                    currentTargetPath.pathHead = currentTargetPath.pathHead.next!!
+                    targetPath = currentTargetPath
+                    //TODO: Add support for multiple commit
+                    extractPath(currentTargetPath.pathHead, sourceState)
                 }
             } else {
                 when (tbaOptimization) {
@@ -138,8 +146,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                         //check if the new path has at least as high a g value as the current path.
                         //Exception is if the agent is currently backtracing: make the new current
                         //best the target path
-                        if (currentTargetPath.last().cost >= priorTargetPath.last().cost
-                            || (priorTargetPath.size == 1 && priorTargetPath[0] == currentAgentNode)) {
+                        if (currentTargetPath.pathEnd.cost >= priorTargetPath.pathEnd.cost
+                            || (priorTargetPath.pathEnd == priorTargetPath.pathHead
+                                        && priorTargetPath.pathHead == currentAgentNode)) {
                             findNewPath(currentTargetPath, currentAgentNode)
                         } else {
                             findNewPath(priorTargetPath, currentAgentNode)
@@ -195,13 +204,13 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     /**
      * Get the next path to be followed. If best node has not been fully back traced,
      * return current target path
+     * Uses full allotted time quantum minus configured "epsilon" buffer
      */
-    private fun getCurrentPath(sourceState : StateType, terminationChecker: TerminationChecker)
-            : MutableList<PureRealTimeSearchNode<StateType>> {
+    private fun getCurrentPath(sourceState : StateType, terminationChecker: TerminationChecker) : PathTrace<StateType> {
 
         val topOfOpen = openList.peek() ?: throw GoalNotReachableException()
         //Goal found and traced
-        if (foundGoal && traceInProgress == null && targetPath?.last() == topOfOpen) {
+        if (foundGoal && traceInProgress == null && targetPath?.pathEnd == topOfOpen) {
             return targetPath!!
         }
 
@@ -216,19 +225,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             0L
         }
 
-        val astarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
+        val aStarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
 
         val bestNode = if (domain.isGoal(topOfOpen.state)) {
             foundGoal = true
             topOfOpen
         } else {
-            aStar(astarTermChecker)
+            aStar(aStarTermChecker)
         }
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
-        val targetNode = traceInProgress?.first() ?: bestNode
+        val targetNode = traceInProgress?.pathHead ?: bestNode
 
-        /*  Again, if using real time bound, we will use the termination checker instead of
+        /*  if using real time bound, we will use the termination checker instead of
          *  a numeric trace limit
          */
         val traceLimit = (expansionLimit * backlogRatio) + 2
@@ -239,46 +248,51 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             }
         } else {
             {
-                currentTraceCount++
-                currentTraceCount >= traceLimit
+                currentTraceCount++ >= traceLimit
             }
         }
 
-        val bestNodeTraceback = extractNodeChain(targetNode, {
-            traceBound() || it == rootState!! || it == sourceState
-        })
+        if (traceInProgress == null) {
+            traceInProgress = PathTrace(targetNode)
+        }
 
-        val currentBacktrace = bestNodeTraceback.toMutableList()
-        //adding previous trace to current trace. Cutting out first element of previous trace, as it will be duplicate
-        currentBacktrace.addAll(traceInProgress?.subList(1, traceInProgress!!.size) ?: listOf())
+        val currentBacktrace = traceInProgress!!
+        var currentNode = targetNode
+
+        while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
+            currentBacktrace.pathHead = currentNode.parent
+            currentBacktrace.states.add(currentNode.parent)
+            currentNode.parent.next = currentNode
+            currentNode = currentNode.parent
+        }
 
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
-        return if (currentBacktrace[0].state == rootState || currentBacktrace[0].state == sourceState) {
+        return if (currentBacktrace.pathHead.state == rootState || currentBacktrace.pathHead.state == sourceState) {
             traceInProgress = null
             currentBacktrace
         } else {
-            traceInProgress = currentBacktrace
-
             assert(targetPath != null)
             targetPath!!
         }
     }
 
     /**
-     * Checks if the agent's current state is in the target path. If so, the path from current state to the end of the
-     * path. Otherwise backtrace to root
+     * Checks if the agent's current state is in the target path. If so, the path from current state to the next state
+     * toward end of the path. Otherwise backtrace to root
+     * Average case constant time. (Worst case linear in path size, but only because of hash-set properties.
      */
-    private fun findNewPath(bestPath : MutableList<PureRealTimeSearchNode<StateType>>, currentAgentNode : PureRealTimeSearchNode<StateType>) : List<RealTimePlanner.ActionBundle>? {
+    private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : PureRealTimeSearchNode<StateType>)
+            : List<RealTimePlanner.ActionBundle>? {
         // Find common ancestor
         val sourceState = currentAgentNode.state
-
-        val sourceIndex = bestPath.indexOfFirst { it.state == sourceState }
+        val sourceOnPath = bestPath.states.contains(currentAgentNode)
 
         targetPath = bestPath
-        if (sourceIndex > -1) {
+        if (sourceOnPath) {
             //Note: setting target path here
-            targetPath = bestPath.subList(sourceIndex + 1, bestPath.size)
-            return extractPath(bestPath[bestPath.lastIndex], sourceState)
+            targetPath = bestPath
+            //TODO: refactor for multiple commit
+            return extractPath(currentAgentNode.next, sourceState)
         } else if (currentAgentNode.state == rootState) { //if we're at the root, there's no path!
             return null
         } else {
