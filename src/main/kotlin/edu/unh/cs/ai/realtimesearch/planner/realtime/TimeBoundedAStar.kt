@@ -31,7 +31,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion. Lower number means backtrace is more costly */
-    private val traceCost = 10
+    private val traceCost = 1
     /** ratio of tracebacks to expansions */
     private val backlogRatio = configuration.backlogRatio ?: 1.0
 
@@ -227,12 +227,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         val aStarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
 
+        println(terminationChecker.remaining())
         val bestNode = if (domain.isGoal(topOfOpen.state)) {
             foundGoal = true
             topOfOpen
         } else {
             aStar(aStarTermChecker)
         }
+        println(terminationChecker.remaining())
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
         val targetNode = traceInProgress?.pathHead ?: bestNode
@@ -259,6 +261,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val currentBacktrace = traceInProgress!!
         var currentNode = targetNode
 
+        println(terminationChecker.remaining())
         while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
             currentBacktrace.pathHead = currentNode.parent
             currentBacktrace.states.add(currentNode.parent)

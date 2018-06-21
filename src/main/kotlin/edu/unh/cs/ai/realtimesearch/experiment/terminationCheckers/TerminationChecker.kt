@@ -53,10 +53,10 @@ interface TerminationChecker {
 fun getTerminationChecker(configuration: ExperimentConfiguration, durationOverride: Long = 0L) : TerminationChecker {
     val lookaheadType = configuration.lookaheadType
     val terminationType = configuration.terminationType
-    val duration= if (durationOverride > 0) durationOverride else configuration.actionDuration
+    val duration = if (durationOverride > 0) durationOverride else configuration.actionDuration
     val epsilon = configuration.terminationTimeEpsilon
 
-    return when {
+    val termChecker = when {
         lookaheadType == LookaheadType.DYNAMIC && terminationType == TerminationType.TIME -> MutableTimeTerminationChecker(epsilon)
         lookaheadType == LookaheadType.DYNAMIC && terminationType == TerminationType.EXPANSION -> DynamicExpansionTerminationChecker()
         lookaheadType == LookaheadType.STATIC && terminationType == TerminationType.TIME -> StaticTimeTerminationChecker(duration, epsilon)
@@ -64,4 +64,7 @@ fun getTerminationChecker(configuration: ExperimentConfiguration, durationOverri
         terminationType == TerminationType.UNLIMITED -> FakeTerminationChecker
         else -> throw InsufficientTerminationCriterionException("Invalid termination checker configuration")
     }
+
+    termChecker.resetTo(duration)
+    return termChecker
 }
