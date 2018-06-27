@@ -44,6 +44,13 @@ fun main(args: Array<String>) {
     val opticNodes = jsonOpticNodes.map(JsonOpticNode::toOpticNode)
     val rootNodeId = opticDump.initialState.removePrefix("0x").toLong(16)
 
+    if (opticNodes.none { it.tag == NodeTag.goal }) {
+        println("\nGoal not found.")
+        return
+    }
+
+    checkInvariant(opticNodes)
+
     opticNodes
             .parallelStream()
             .forEach {
@@ -111,7 +118,8 @@ data class OpticNode(val id: Long,
                      var expansionsToGoals: List<Int>? = null,
                      var minGoalDistance: Int? = null,
                      var expansionTime: Int = 0,
-                     var generationTime: Int = 0)
+                     var generationTime: Int = 0,
+                     var latestStartTimesForGoals: List<Double>? = null)
 
 
 fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
@@ -130,6 +138,7 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
     var expansionCount = 0
     var generationCount = 0
     val expansionsToGoals = mutableListOf<Int>()
+    val latestStartTimesForGoals = mutableListOf<Double>()
 
     while (openList.isNotEmpty()) {
         val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
@@ -148,6 +157,7 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
 
             if (successorNode.opticNode.tag == NodeTag.goal) {
                 expansionsToGoals.add(expansionCount)
+                latestStartTimesForGoals.add(successorNode.opticNode.latestStartTimeUB ?: throw MetronomeException("Unknown latest start time for goal"))
             }
 
             successorNode.closed = true
@@ -155,6 +165,7 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
             // Cost of duplicates? Could it be better than the original?
 
             if (successorNode.open) {
+                println("\n This should not happen! ***")
                 openList.update(successorNode)
             } else {
                 generationCount++
@@ -167,5 +178,26 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
     }
 
     sourceNode.expansionsToGoals = expansionsToGoals
+    sourceNode.latestStartTimesForGoals = latestStartTimesForGoals
+}
+
+fun checkInvariant(nodes: List<OpticNode>) {
+    data class Node(val opticNode: OpticNode)
+
+    val localNodeMap = nodes.associate { it.id to Node(it) }.toMutableMap()
+    nodes.forEach { opticNode -> opticNode.duplicates.forEach { duplicate -> localNodeMap[duplicate] = localNodeMap[opticNode.id]!! } }
+
+
+    // Check invariant
+    nodes
+            .parallelStream()
+            .forEach { sourceNode ->
+                val nonMonotonic = sourceNode.successors.any {
+                    localNodeMap[it]!!.opticNode.latestStartTimeUB ?: Double.MAX_VALUE < sourceNode?.latestStartTimeUB ?: Double.MIN_VALUE
+                }
+
+                if (nonMonotonic) throw MetronomeException("Invariant violated.")
+            }
+
 }
 
