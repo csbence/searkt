@@ -12,7 +12,7 @@ import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import edu.unh.cs.ai.realtimesearch.visualizer
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import kotlin.Long.Companion.MAX_VALUE
 
 class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
@@ -209,7 +209,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 //                    openList.remove(lastWaveNode.frontierPointer)
 //                }
 
-        visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
+//        visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
 //                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
 
 //        visualizer?.updateSearchEnvelope(expandedNodes)
@@ -316,8 +316,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private fun backupNode(sourceNode: EnvelopeSearchNode<StateType>) {
         sourceNode.waveExpanded = true
         backedUpNodes.add(sourceNode)
-        visualizer?.updateBackpropagation(backedUpNodes)
-        visualizer?.delay()
+//        visualizer?.updateBackpropagation(backedUpNodes)
+//        visualizer?.delay()
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
@@ -464,8 +464,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
         expandedNodeCount += 1
         expandedNodes.add(sourceNode)
-        visualizer?.updateSearchEnvelope(expandedNodes)
-        visualizer?.delay()
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.delay()
 
         sourceNode.iteration = expandedNodeCount.toLong()
         sourceNode.expanded = expandedNodeCount

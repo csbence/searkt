@@ -9,6 +9,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
+import kotlin.system.measureNanoTime
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -270,7 +271,12 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
             }
 
             if (!successorNode.open) {
-                context.openList.add(successorNode) // Fresh node not on the open yet
+//                val openListExecutionTime = measureNanoTime {
+//                    context.openList.add(successorNode) // Fresh node not on the open yet
+//                }
+//                println("""Adding to Open List time: $openListExecutionTime""")
+                context.openList.add(successorNode)
+
             } else {
                 context.openList.update(successorNode)
             }
