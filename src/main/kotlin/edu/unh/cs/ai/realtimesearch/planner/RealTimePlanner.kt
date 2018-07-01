@@ -40,7 +40,7 @@ abstract class RealTimePlanner<StateType : State<StateType>> : Planner<StateType
      *
      * This call does not count towards the planning time.
      */
-    open fun init() {
+    open fun init(rootState : StateType) {
 
     }
 

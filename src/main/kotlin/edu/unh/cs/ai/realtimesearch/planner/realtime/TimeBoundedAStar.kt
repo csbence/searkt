@@ -14,7 +14,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
-//import edu.unh.cs.ai.realtimesearch.visualizer
+import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -37,7 +37,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     override var iterationCounter = 0L
 
-    private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000, 1.0f).resize()
+    private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100_000_000, 1.0f).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
@@ -64,19 +64,49 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     var aStarTimer = 0L
 
     // SearchEnvelope for visualizer
-    //private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
+    private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
 
     private val aStarSequence
         get() = generateSequence {
-            aStarPopCounter++
+            var currentNode : PureRealTimeSearchNode<StateType>? = null
 
-            val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+            val sequenceGeneratorTime = measureNanoTime{
+                aStarPopCounter++
 
-            //expandedNodes.add(currentNode)
-            expandFromNode(this, currentNode){}
+                val popOpenExecutionTime = measureNanoTime {
+                    currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+                }
+                printMessage("""Pop execution time: $popOpenExecutionTime""")
 
-            currentNode
+                expandedNodes.add(currentNode!!)
+                val expandFromNodeExecutionTime = measureNanoTime {
+                    expandFromNode(this, currentNode!!){}
+                }
+                printMessage("""Expand Node Execution Time: $expandFromNodeExecutionTime""")
+            }
+            printMessage("""A* Node Expansion total: $sequenceGeneratorTime""")
+
+            currentNode!!
         }
+
+    //"Priming" the hash table with the initial state so that the first iteration does not spend time initializing
+    //the HashMap. We remove the initial state so that we don't cheat on first iteration planning time
+    override fun init(initialState : StateType) {
+        val node = PureRealTimeSearchNode(
+                state = initialState,
+                heuristic = domain.heuristic(initialState),
+                actionCost = 0,
+                action = NoOperationAction,
+                cost = 0,
+                iteration = 0)
+        node.parent = node
+
+        val hashPutExecutionTime = measureNanoTime {
+            nodes[initialState] = node
+        }
+        println("""Init put execution time: $hashPutExecutionTime""")
+        nodes.remove(initialState)
+    }
 
     /**
      * Selects a action given current sourceState.
@@ -92,11 +122,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
-        println("""Initial: ${terminationChecker.remaining()}""")
+        printMessage("""Initial: ${terminationChecker.remaining()}""")
         if (rootState == null) {
             rootState = sourceState
-            println("""Getting root: ${terminationChecker.remaining()}""")
-            val rootNode = getRootNode(sourceState, terminationChecker)
+            printMessage("""Getting root: ${terminationChecker.remaining()}""")
+            val rootNode = getRootNode(sourceState)
             openList.add(rootNode)
         }
 
@@ -156,7 +186,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                     }
                 }
             }
-            println("""Find Path Execution Time: ${findPathExecutionTime}; Remaining Time: ${terminationChecker.remaining()}""")
+            printMessage("""Find Path Execution Time: ${findPathExecutionTime}; Remaining Time: ${terminationChecker.remaining()}""")
 
         }
 
@@ -174,9 +204,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             plan!!
         }
         lastAgentState = sourceState
-//        visualizer?.updateSearchEnvelope(expandedNodes)
-//        visualizer?.updateAgentLocation(currentAgentNode)
-//        visualizer?.delay()
+        visualizer?.updateSearchEnvelope(expandedNodes)
+        visualizer?.updateAgentLocation(currentAgentNode)
+        visualizer?.delay()
 
         return safePlan
     }
@@ -196,7 +226,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 .forEach {
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
-                    //expandedNodes.add(it)
+                    expandedNodes.add(it)
                 }
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
@@ -238,7 +268,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 aStar(aStarTermChecker)
             }
         }
-        println("""A* Execution Time: ${aStarExecutionTime}; Time Remaining: ${terminationChecker.remaining()}""")
+        printMessage("""A* Execution Time: ${aStarExecutionTime}; Time Remaining: ${terminationChecker.remaining()}""")
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
         val targetNode = traceInProgress?.pathHead ?: bestNode!!
@@ -250,7 +280,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         var currentTraceCount = 0
         val traceBound : () -> Boolean = if (configuration.terminationType == TerminationType.TIME) {
             {
-                terminationChecker.reachedTermination()
+                terminationChecker.reachedTermination() && targetPath != null
             }
         } else {
             {
@@ -265,14 +295,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val currentBacktrace = traceInProgress!!
         var currentNode = targetNode
 
-        println("""Before Trace: ${terminationChecker.remaining()}""")
+        printMessage("""Before Trace: ${terminationChecker.remaining()}""")
         while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
             currentBacktrace.pathHead = currentNode.parent
             currentBacktrace.states.add(currentNode.parent)
             currentNode.parent.next = currentNode
             currentNode = currentNode.parent
         }
-        println("""After Trace: ${terminationChecker.remaining()}""")
+        printMessage("""After Trace: ${terminationChecker.remaining()}""")
 
 
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
@@ -310,7 +340,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
-    private fun getRootNode(state: StateType, terminationChecker: TerminationChecker): PureRealTimeSearchNode<StateType> {
+    private fun getRootNode(state: StateType): PureRealTimeSearchNode<StateType> {
         generatedNodeCount++
         val node = PureRealTimeSearchNode(
                 state = state,
@@ -324,7 +354,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val hashPutExecutionTime = measureNanoTime {
             nodes[state] = node
         }
-        println("""Hash Table Execution Time: ${hashPutExecutionTime}; Time Remaining: ${terminationChecker.remaining()}""")
+        printMessage("""Hash Table Execution Time: ${hashPutExecutionTime}""")
         return node
     }
 
@@ -353,14 +383,15 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             val addNodeExecutionTime = measureNanoTime {
                 nodes.put(successorState, undiscoveredNode)
             }
-            println("""Put Node execution time: $addNodeExecutionTime""")
-            if (addNodeExecutionTime > 1000) println(nodes.size)
+            printMessage("""Put Node execution time: $addNodeExecutionTime""")
             undiscoveredNode
         } else {
             tempSuccessorNode!!
         }
     }
 }
+
+inline fun printMessage(msg : String) = 0//println(msg)
 
 enum class TBAOptimization {
     NONE, SHORTCUT, THRESHOLD

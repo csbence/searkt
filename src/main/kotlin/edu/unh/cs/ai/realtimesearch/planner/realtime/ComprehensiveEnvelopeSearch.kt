@@ -139,18 +139,6 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     // Visualizer
     private val expandedNodes = mutableListOf<Node<StateType>>()
 
-    override fun init() {
-        dijkstraTimer = 0
-        expansionTimer = 0
-        foundGoal = false
-        iterationCount = 0
-        lastExpansionCount = 0
-        backupCount = 0
-        frontier.clear()
-        closed.clear()
-        backlogQueue.clear()
-    }
-
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.backupCount = this.backupCount
     }
