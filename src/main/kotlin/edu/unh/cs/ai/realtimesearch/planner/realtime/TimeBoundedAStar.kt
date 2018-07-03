@@ -31,7 +31,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion. Lower number means backtrace is more costly */
-    private val traceCost = 1
+    private val traceCost = 10000
     /** ratio of tracebacks to expansions */
     private val backlogRatio = configuration.backlogRatio ?: 1.0
 
@@ -150,8 +150,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                          * path while another path is being traced. Begin backtracing to root
                          */
                         targetPath = PathTrace(currentAgentNode.parent)
+
                         if (currentAgentNode.state == rootState) null
-                        else constructPath(listOf(currentAgentNode.state, currentAgentNode.parent.state), domain)
+                        else backtrack(currentAgentNode)
                     } else {
                         /* The agent's current state is an ancestor of the current best
                          * Move agent to current best target
@@ -199,7 +200,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 throw MetronomeException("TBA* does not support commitment strategies other than SINGLE")
             //TODO: Add support for multiple commitment.
             // All it requires is tracking the last state committed rather than the agent's previous state
-            constructPath(listOf(sourceState, targetNode.state), domain)
+            backtrack(currentAgentNode, targetNode)
         } else {
             plan!!
         }
@@ -216,18 +217,33 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * Will just repeatedly expand according to A*.
      */
     private fun aStar(terminationChecker: TerminationChecker): PureRealTimeSearchNode<StateType> {
+        // for expansion termination type bookkeeping on first iteration.
+        // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
 
-        aStarSequence
-                .generateWhile {
-                    !terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
-                            ?: throw GoalNotReachableException("Open list is empty."))
+        while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                        ?: throw GoalNotReachableException("Open list is empty."))) {
+            val iterationExecutionTime = measureNanoTime {
+                aStarPopCounter++
+
+                val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+
+//                val listAddExTime = measureNanoTime {
+//                    expandedNodes.add(currentNode)
+//                }
+//                printMessage("""Adding to List Execution Time: $listAddExTime""")
+
+                val expandExecutionTime = measureNanoTime {
+                    expandFromNode(this, currentNode){}
                 }
-                .forEach {
-                    terminationChecker.notifyExpansion()
-                    currentExpansionDuration++
-                    expandedNodes.add(it)
-                }
+                printMessage("""Expand Node Execution Time: $expandExecutionTime""")
+
+                terminationChecker.notifyExpansion()
+                currentExpansionDuration++
+            }
+
+            printMessage("""Iteration execution time: $iterationExecutionTime""")
+        }
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
@@ -324,19 +340,21 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             : List<RealTimePlanner.ActionBundle>? {
         // Find common ancestor
         val sourceState = currentAgentNode.state
-        val sourceOnPath = bestPath.states.contains(currentAgentNode)
+        var sourceOnPath = false
+        val hashMapContainsTime = measureNanoTime {
+            sourceOnPath = bestPath.states.contains(currentAgentNode)
+        }
+        printMessage("""Contains Execution Time: $hashMapContainsTime""")
 
         targetPath = bestPath
-        if (sourceOnPath) {
-            //Note: setting target path here
-            targetPath = bestPath
-            //TODO: refactor for multiple commit
-            return extractPath(currentAgentNode.next, sourceState)
-        } else if (currentAgentNode.state == rootState) { //if we're at the root, there's no path!
-            return null
-        } else {
-            //single step plan follows immediate back pointer
-            return constructPath(listOf(currentAgentNode.state, currentAgentNode.parent.state), domain)
+
+        return when {
+            sourceOnPath -> {
+                targetPath = bestPath
+                extractPath(currentAgentNode.next, sourceState)
+            }
+            currentAgentNode.state == rootState -> null
+            else -> backtrack(currentAgentNode)
         }
     }
 
@@ -380,14 +398,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                     iteration = iterationCounter
             )
 
-            val addNodeExecutionTime = measureNanoTime {
-                nodes.put(successorState, undiscoveredNode)
-            }
-            printMessage("""Put Node execution time: $addNodeExecutionTime""")
+            nodes[successorState] = undiscoveredNode
+
             undiscoveredNode
         } else {
             tempSuccessorNode!!
         }
+    }
+
+    private fun backtrack(currentNode: PureRealTimeSearchNode<StateType>,
+                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<RealTimePlanner.ActionBundle> {
+        val transition = domain.transition(currentNode.state, nextNode.state)
+                ?: throw GoalNotReachableException("Cannot backtrack in this domain")
+        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
     }
 }
 

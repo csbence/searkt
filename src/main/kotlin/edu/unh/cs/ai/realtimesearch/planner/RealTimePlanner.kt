@@ -176,7 +176,9 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
     return actions.asReversed()
 }
 
-
+/**
+ *  @note Too costly for real time bounds with very small intervals (i.e. 10 ms)
+ */
 fun <StateType : State<StateType>> constructPath(statePath: Collection<StateType>, domain: Domain<StateType>): List<RealTimePlanner.ActionBundle> {
     if (statePath.isEmpty()) {
         throw MetronomeException("Cannot construct path from empty list")

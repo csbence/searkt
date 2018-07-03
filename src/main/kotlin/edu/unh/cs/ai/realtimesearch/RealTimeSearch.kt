@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
@@ -19,6 +20,7 @@ import kotlinx.serialization.list
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration
 
 fun main(args: Array<String>) {
 
@@ -61,12 +63,27 @@ private fun generateConfigurations(): String {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 
     val configurations = generateConfigurations(
-            domains = (0..2).map {
-                Domains.GRID_WORLD to "input/vacuum/minima/minima3000_300-$it.vw"
-            },
-            planners = listOf(ES),
-            actionDurations = listOf(100),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            terminationType = EXPANSION,
+            domains = listOf(
+//                    Domains.GRID_WORLD to "input/vacuum/random1k.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-4.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-5.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-6.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-8.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-9.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-10.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-11.vw",
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-12.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima3k_300/minima3000_300-0.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/random5k.vw"
+            ),
+            planners = listOf(TIME_BOUNDED_A_STAR),
+            actionDurations = listOf(10_000_000),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = TIME,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
             expansionLimit = 10000000,
@@ -74,10 +91,12 @@ private fun generateConfigurations(): String {
             plannerExtras = listOf(
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(TIME_BOUNDED_A_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE, TBAOptimization.THRESHOLD)),
+                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE)),
+                    Triple(TIME_BOUNDED_A_STAR, Configurations.TERMINATION_EPSILON, listOf(4_000_000)),
+                    Triple(LSS_LRTA_STAR, Configurations.TERMINATION_EPSILON, listOf(6_000_000)),
                     Triple(ES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(CES, ComprehensiveEnvelopeSearch.ComprehensiveConfigurations.BACKLOG_RATIO, listOf(1.0, 50.0)),
+                    Triple(TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKLOG_RATIO, listOf(1.0)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
@@ -90,4 +109,3 @@ private fun generateConfigurations(): String {
 
 val visualizerLatch = CountDownLatch(1)
 var visualizer: OnlineGridVisualizer? = null
-
