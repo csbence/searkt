@@ -22,6 +22,15 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Bence Cserna (bence@cserna.net)
  * @author Kevin C. Gall
+ *
+ * Maintains a single A* search throughout the life of the algorithm. Commits the agent along the path to the
+ * best node discovered so far and switches paths once a better one is discovered. Depends on undirected state space
+ * (i.e. the ability to return to a parent node).
+ * Splits time between the A* search and tracing a path from the best frontier node (at the start of the trace) to
+ * either the agent or the root node.
+ *
+ * @history 7/4/2018 Kevin C. Gall Tuned to work under a 10ms real time bound. Note: stripped out Kotlin constructs
+ * and convenience functions on purpose. Do not add them back if you want to hit real time bounds!
  */
 class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
 
@@ -30,8 +39,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
 
     //HARD CODED for testing. Should be configurable
-    /** cost of backtrace relative to expansion. Lower number means backtrace is more costly */
-    private val traceCost = 10000
+    /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
+    private val traceCost = 5 //number tuned on Lubuntu 18.04 w/ low-latency kernel, OpenJ9 JVM, Intel i7-4770 3.4GHz (4 core)
     /** ratio of tracebacks to expansions */
     private val backlogRatio = configuration.backlogRatio ?: 1.0
 
@@ -221,6 +230,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
 
+        val expansions = aStarPopCounter
         while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
                         ?: throw GoalNotReachableException("Open list is empty."))) {
             val iterationExecutionTime = measureNanoTime {
@@ -236,14 +246,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 val expandExecutionTime = measureNanoTime {
                     expandFromNode(this, currentNode){}
                 }
-                printMessage("""Expand Node Execution Time: $expandExecutionTime""")
+                //printMessage("""Expand Node Execution Time: $expandExecutionTime""")
 
                 terminationChecker.notifyExpansion()
                 currentExpansionDuration++
             }
 
-            printMessage("""Iteration execution time: $iterationExecutionTime""")
+            //printMessage("""Iteration execution time: $iterationExecutionTime""")
         }
+
+        printMessage("""Expanded ${aStarPopCounter - expansions} Nodes""")
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
@@ -311,18 +323,22 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val currentBacktrace = traceInProgress!!
         var currentNode = targetNode
 
+        var traceCount = 0L
         printMessage("""Before Trace: ${terminationChecker.remaining()}""")
         while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
             currentBacktrace.pathHead = currentNode.parent
             currentBacktrace.states.add(currentNode.parent)
             currentNode.parent.next = currentNode
             currentNode = currentNode.parent
+
+            traceCount++
         }
-        printMessage("""After Trace: ${terminationChecker.remaining()}""")
+        printMessage("""After Trace: ${terminationChecker.remaining()}; Trace Count: $traceCount""")
 
 
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
         return if (currentBacktrace.pathHead.state == rootState || currentBacktrace.pathHead.state == sourceState) {
+            printMessage("Finished Trace")
             traceInProgress = null
             currentBacktrace
         } else {

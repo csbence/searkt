@@ -273,10 +273,6 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
             }
 
             if (!successorNode.open) {
-//                val openListExecutionTime = measureNanoTime {
-//                    context.openList.add(successorNode) // Fresh node not on the open yet
-//                }
-//                println("""Adding to Open List time: $openListExecutionTime""")
                 context.openList.add(successorNode)
 
             } else {
@@ -361,7 +357,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
     // Otherwise, we continue the previous iteration
     if (freshSearch) context.iterationCounter++
 
-    // change openList ordering to heuristic only
+    // change openList ordering by user-provided comparator
     openList.reorder(openListComparator)
 
     while (!reachedTermination(openList)) {

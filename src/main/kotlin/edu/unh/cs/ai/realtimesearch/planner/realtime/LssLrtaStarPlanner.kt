@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.measure
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
@@ -17,6 +18,7 @@ import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import kotlin.Long.Companion.MAX_VALUE
+import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 /**
@@ -28,6 +30,9 @@ import kotlin.system.measureTimeMillis
  * - Run A* from the expected destination state
  *
  * This loop continue until the goal has been found
+ *
+ * @history Kevin C. Gall Adding nano-time measurements outside of logger. Logger disabled as it depends on Groovy,
+ * and it is not a good use of my time to reimplement logging when all I need is simple measurements
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
@@ -51,7 +56,22 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
     // configuration
     /** The maximum proportion of each iteration that can be spent on learning. */
     private val learningMaxFactor = 0.75
+    /** Cost in nanoseconds of following a tree pointer. Used in buffer calculation on when to stop exploring */
     private val treeFollowingFactor = 100.0
+
+    override fun init(rootState: StateType) {
+        val node = PureRealTimeSearchNode(
+                state = rootState,
+                heuristic = domain.heuristic(rootState),
+                actionCost = 0,
+                action = NoOperationAction,
+                cost = 0,
+                iteration = 0)
+        node.parent = node
+
+        nodes[rootState] = node
+        nodes.remove(rootState)
+    }
 
     /**
      * Selects a action given current sourceState.
@@ -96,23 +116,33 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
             dijkstraTimer += measureTimeMillis {
                 //Note that dynamic dijkstra does not notify expansions: expansion-based termination checkers will never "reach termination"
-                dynamicDijkstra(this, reachedTermination = {open ->
-                    open.isEmpty() || learningTerminationChecker.reachedTermination()
-                })
+                val dijkstraNanoTimer = measureNanoTime {
+                    dynamicDijkstra(this, reachedTermination = {open ->
+                        open.isEmpty() || learningTerminationChecker.reachedTermination()
+                    })
+                }
+                printMessage("""Learning: $dijkstraNanoTimer""")
             }
         }
 
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(sourceState, terminationChecker)
+            val aStarNanoTimer = measureNanoTime {
+                val targetNode = aStar(sourceState, terminationChecker)
 
-            plan = extractPath(targetNode, sourceState)
-            rootState = targetNode.state
+                /* Execution time accounted for with pathLengthBuffer in aStar operation */
+                plan = extractPath(targetNode, sourceState)
+                rootState = targetNode.state
+            }
+
+            printMessage("""A* Time: $aStarNanoTimer""")
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+
+        printMessage("""Remaining Time: ${terminationChecker.remaining()}""")
 
         return plan!!
     }
@@ -198,4 +228,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
         }
     }
 
+    //conveniently turn on / off console printing
+    private fun printMessage(message: String) = 0//println(message)
 }
