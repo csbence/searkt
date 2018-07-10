@@ -109,7 +109,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         size = 0
     }
 
-    fun pop(): T? {
+    open fun pop(): T? {
         if (size == 0) {
             return null
         }
