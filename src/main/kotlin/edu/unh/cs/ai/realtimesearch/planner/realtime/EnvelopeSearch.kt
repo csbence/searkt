@@ -178,18 +178,16 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
 
         if (foundGoals.isEmpty()) {
-            // TODO: parameterize the termination checker time slicing
-            // Must also make the termination checker instantiation conform to configuration
 
             // TODO: Deal with these reorderings...
-            // Think about implementing D* Lite Priority Queue into AdvancedPriorityQueue
+            // Perhaps a purpose-built data structure that combines 3 priority queues? 2 for the open list
             openList.reorder(heuristicComparator)
             explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice))
 
             openList.reorder(pseudoFComparator)
             explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice))
         } else if (searchPhase == PATH_IMPROVEMENT) {
-            // TODO: Remove this call to reorder! We should perform it one time when the phase changes
+            // TODO: Remove this call to reorder! We should use a D*-Lite Priority Queue technique
             openList.reorder(pseudoFComparator)
             explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice + pseudoFTimeSlice))
         }
@@ -216,6 +214,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val backupTerminationChecker = if (configuration.terminationType == TerminationType.TIME) terminationChecker
             else getTerminationChecker(configuration, wavePropagationTimeSlice)
 
+        lastPlannedPath = projectPath(currentAgentState, backupTerminationChecker)
+
         wavePropagation(currentAgentState, backupTerminationChecker, lastPlannedPath)
 
         val agentNextNode = if (agentNode.waveParent == agentNode) {
@@ -225,10 +225,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             agentNode.waveParent
         }
 
-        val agentToFrontier = projectPath(currentAgentState)
-
-        lastPlannedPath = agentToFrontier.toMutableSet()
-
 //        visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
 //                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
 //
@@ -237,10 +233,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 //        visualizer?.updateAgentLocation(nodes[sourceState]!!)
 //        visualizer?.delay()
 
-        val path =
-                constructPath(listOf(sourceState, agentNextNode.state), domain)
-
-        return path
+        val transition = domain.transition(sourceState, agentNextNode.state)
+                ?: throw GoalNotReachableException("Dead end found")
+        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
     }
 
     private fun explore(state: StateType, terminationChecker: TerminationChecker): EnvelopeSearchNode<StateType> {
@@ -333,6 +328,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveCounter++
 //            backedUpNodes.clear()
 
+            // TODO: Keep an eye out here. Linear time in the size of the open list with an expansion
             openList.forEach {
                 it.waveCounter = waveCounter
                 it.waveHeuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
@@ -430,27 +426,31 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     }
 
-    private fun projectPath(sourceState: StateType): Collection<StateType> {
-        val sourceToCurrentTrace = mutableListOf<StateType>()
+    /**
+     * @return The set of states in the agent's current intended path
+     */
+    private fun projectPath(sourceState: StateType, terminationChecker: TerminationChecker): MutableSet<StateType> {
         val currentTrace = mutableSetOf<StateType>()
 
         var currentState = sourceState
 
+        var checkTerm = 1L
         while (true) {
+            if (checkTerm.rem(1000L) == 0L && terminationChecker.reachedTermination()) return currentTrace
+
             val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
 
             if (currentNode.open || domain.isGoal(currentNode.state)) {
-                sourceToCurrentTrace.add(currentState)
-                return sourceToCurrentTrace
+                currentTrace.add(currentState)
+                return currentTrace
             }
 
             if (currentState in currentTrace) {
-                return sourceToCurrentTrace
+                return currentTrace
 //                if (firstIteration) return sourceToCurrentTrace
 //                else throw MetronomeException("Policy does not lead to the frontier.")
             }
 
-            sourceToCurrentTrace.add(currentState)
             currentTrace.add(currentState)
 
             currentState = if (currentState != currentNode.waveParent.state) {
@@ -458,6 +458,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             } else {
                 bestWaveSuccessor(currentState).state
             }
+
+            checkTerm++
         }
     }
 
