@@ -26,14 +26,14 @@ interface Indexable {
 abstract class AbstractAdvancedPriorityQueue<T>(
         private var queue: Array<T?>,
         private var comparator: Comparator<in T>
-) {
+) : PriorityQueue<T> {
     abstract fun getIndex(item: T): Int
     abstract fun setIndex(item: T, index: Int)
 
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
     private var resizable = false
-    var size = 0
+    override var size = 0
 
     val backingArray: Array<T?>
         get() = queue
@@ -68,7 +68,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         }
     }
 
-    fun add(item: T) {
+    override fun add(item: T) {
         if (size >= queue.size) {
             grow(size + 1)
         }
@@ -84,7 +84,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         size += 1
     }
 
-    fun peek(): T? = if (size == 0) null else queue[0]
+    override fun peek(): T? = if (size == 0) null else queue[0]
 
     operator fun contains(item: T): Boolean = getIndex(item) != -1
 
@@ -97,7 +97,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         }
     }
 
-    fun clear() {
+    override fun clear() {
         for (i in 0 until size) {
             val item = queue[i]
             if (item != null) {
@@ -109,7 +109,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         size = 0
     }
 
-    open fun pop(): T? {
+    override fun pop(): T? {
         if (size == 0) {
             return null
         }
@@ -221,9 +221,9 @@ abstract class AbstractAdvancedPriorityQueue<T>(
 
     fun siftDown(index: Int) = siftDown(index, queue[index]!!)
 
-    fun isEmpty() = size == 0
+    override fun isEmpty() = size == 0
 
-    fun isNotEmpty() = !isEmpty()
+    override fun isNotEmpty() = !isEmpty()
 
     inline fun forEach(action: (T) -> Unit) {
         for (i in 0 until size) {

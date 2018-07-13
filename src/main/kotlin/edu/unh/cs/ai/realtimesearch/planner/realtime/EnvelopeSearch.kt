@@ -395,10 +395,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             // TODO: Keep an eye out here. Linear time in the size of the open list, with an expansion
             // Note: Chose "pseudoFOpenList" because it is always updated in current algorithm, whereas other queue is not in Path Improvement phase
+            printMessage("""Open list size: ${pseudoFOpenList.size}""")
             pseudoFOpenList.forEach {
                 it.waveCounter = waveCounter
-//                it.waveHeuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
-                it.waveHeuristic = it.heuristic
+                it.waveHeuristic = if (domain.isGoal(it.state)) 0.0 else getOutsideHeuristic(it)
+//                it.waveHeuristic = it.heuristic
                 it.frontierPointer = it
                 it.waveParent = it
 
