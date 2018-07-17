@@ -12,4 +12,5 @@ interface PriorityQueue<T> {
     fun pop(): T?
     fun isEmpty() = size == 0
     fun isNotEmpty() = size != 0
+    fun remove(item: T): Boolean = throw UnsupportedOperationException("Arbitrary remove not supported in this Priority Queue Implementation")
 }

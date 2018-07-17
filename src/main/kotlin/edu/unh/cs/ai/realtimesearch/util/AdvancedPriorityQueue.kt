@@ -88,7 +88,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
 
     operator fun contains(item: T): Boolean = getIndex(item) != -1
 
-    fun remove(item: T): Boolean = when {
+    override fun remove(item: T): Boolean = when {
         getIndex(item) == -1 -> false
         else -> {
             removeAt(getIndex(item))
