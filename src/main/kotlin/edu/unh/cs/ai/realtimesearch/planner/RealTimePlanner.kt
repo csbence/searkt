@@ -44,7 +44,14 @@ abstract class RealTimePlanner<StateType : State<StateType>> : Planner<StateType
 
     }
 
+    open fun getIterationSummary(): IterationSummary<StateType> = IterationSummary() //default implementation provides blank summary
 }
+
+data class IterationSummary<StateType : State<StateType>>(val expandedStates: Set<StateType> = setOf(),
+                                                          val envelopeIsFresh: Boolean = false,
+                                                          val backedUpStates: Set<StateType> = setOf(),
+                                                          val backupIsFresh: Boolean = false,
+                                                          val projectedPath: Set<StateType>? = null)
 
 data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCost: Long) {
 

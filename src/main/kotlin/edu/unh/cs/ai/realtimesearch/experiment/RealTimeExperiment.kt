@@ -19,7 +19,7 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.online.OnlineGridVisualizer
-import edu.unh.cs.ai.realtimesearch.visualizerLatch
+import edu.unh.cs.ai.realtimesearch.visualizer.thrift.ThriftVisualizerClient
 import javafx.application.Application
 import javafx.application.Platform
 import org.slf4j.LoggerFactory
@@ -49,6 +49,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
+    private var visualizer: ThriftVisualizerClient<StateType, Domain<StateType>>? = null
 
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
@@ -71,9 +72,10 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
-        planner.init(initialState)
+        visualizer = initializeVisualizer()
+        visualizer?.initialize(initialState)
 
-//        initializeVisualizer()
+        planner.init(initialState)
 
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
@@ -93,6 +95,16 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
+
+            //send iteration data to visualizer
+            val itSummary = planner.getIterationSummary()
+            visualizer?.publishIteration(
+                    currentState,
+                    itSummary.envelopeIsFresh,
+                    itSummary.expandedStates,
+                    itSummary.backupIsFresh,
+                    itSummary.backedUpStates,
+                    itSummary.projectedPath)
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
             validateIteration(actionList, iterationNanoTime)
@@ -160,26 +172,13 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
         domain.appendDomainSpecificResults(experimentResult)
         planner.appendPlannerSpecificResults(experimentResult)
+
+        visualizer?.close()
         return experimentResult
     }
 
-    private fun initializeVisualizer() {
-        Thread({
-            Application.launch(OnlineGridVisualizer::class.java)
-        }).start()
-
-        visualizerLatch.await()
-        println("Visualizer initialized")
-
-        val setupLatch = CountDownLatch(1)
-        // Visualizer setup
-        Platform.runLater {
-            visualizer?.setup(domain, initialState)
-            setupLatch.countDown()
-        }
-
-        setupLatch.await()
-        println("Setup completed")
+    private fun initializeVisualizer() : ThriftVisualizerClient<StateType, Domain<StateType>>? {
+        return ThriftVisualizerClient.clientFactory(domain)
     }
 
     private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {

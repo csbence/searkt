@@ -133,7 +133,7 @@ class BinomialHeapPriorityQueue<T>(private var comparator: Comparator<in T>) : P
         return findTop()?.data
     }
 
-    override fun pop(): T? { //todo
+    override fun pop(): T? {
         size--
 
         val minNode = findTop() ?: return null

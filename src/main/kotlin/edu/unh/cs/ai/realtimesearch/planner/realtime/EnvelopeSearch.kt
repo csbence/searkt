@@ -13,6 +13,7 @@ import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
+import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureNanoTime
 
@@ -162,9 +163,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    // Visualizer properties. Commented out, but kept for reference when we refactor for different visualizer strategy
-//    private val expandedNodes = mutableListOf<EnvelopeSearchNode<StateType>>()
-//    private val backedUpNodes = mutableListOf<EnvelopeSearchNode<StateType>>()
+    // Visualizer properties
+    private val expandedNodes = ArrayList<StateType>(50000)
+    private var expandedNodesIndex = 0
+
+    private val backedUpNodes = ArrayList<StateType>(50000)
+    private var backedUpNodesIndex = 0
+    private var clearPreviousBackup = false
 
     // Current and discovered states
     private var rootState: StateType? = null
@@ -312,9 +317,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      */
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
         expandedNodeCount += 1
-//        expandedNodes.add(sourceNode)
-//        visualizer?.updateSearchEnvelope(expandedNodes)
-//        visualizer?.delay()
+        expandedNodes.add(expandedNodesIndex++, sourceNode.state) //for visualizer
 
         sourceNode.iteration = iterationCounter
         sourceNode.expanded = expandedNodeCount
@@ -376,7 +379,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             waveCounter++
             waveFrontier.clear()
-    //            backedUpNodes.clear()
+            clearPreviousBackup = true
 
             foundGoals.forEach {
                 it.heuristic = 0.0
@@ -391,7 +394,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         } else if (!waveInProgress && searchPhase == GOAL_SEARCH) {
             // Initialize wave
             waveCounter++
-    //            backedUpNodes.clear()
+            clearPreviousBackup = true
 
             // TODO: Keep an eye out here. Linear time in the size of the open list, with an expansion
             // Note: Chose "pseudoFOpenList" because it is always updated in current algorithm, whereas other queue is not in Path Improvement phase
@@ -407,7 +410,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             }
         } else if (!waveInProgress && searchPhase == PATH_IMPROVEMENT) {
             waveCounter++
-    //            backedUpNodes.clear()
+            clearPreviousBackup = true
 
             foundGoals.forEach {
                 it.heuristic = 0.0
@@ -434,9 +437,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun backupNode(sourceNode: EnvelopeSearchNode<StateType>) {
         sourceNode.waveExpanded = true
-//        backedUpNodes.add(sourceNode)
-//        visualizer?.updateBackpropagation(backedUpNodes)
-//        visualizer?.delay()
+        backedUpNodes.add(backedUpNodesIndex++, sourceNode.state)
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
@@ -594,7 +595,27 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         PATH_IMPROVEMENT
     }
 
-    private fun printMessage(msg : String) = println(msg)
+    private fun printMessage(msg : String) = 0//println(msg)
+
+    override fun getIterationSummary() : IterationSummary<StateType> {
+        val expandedStateSet = mutableSetOf<StateType>()
+        val backedUpStateSet = mutableSetOf<StateType>()
+
+        for (i in 0 until expandedNodesIndex) {
+            expandedStateSet.add(expandedNodes[i])
+        }
+        expandedNodesIndex = 0 //reset
+
+        for (i in 0 until backedUpNodesIndex) {
+            backedUpStateSet.add(backedUpNodes[i])
+        }
+        backedUpNodesIndex = 0 //reset
+
+        val summary = IterationSummary(expandedStateSet, false, backedUpStateSet, clearPreviousBackup, lastPlannedPath)
+        clearPreviousBackup = false
+
+        return summary
+    }
 }
 
 enum class ExpansionStrategy {
