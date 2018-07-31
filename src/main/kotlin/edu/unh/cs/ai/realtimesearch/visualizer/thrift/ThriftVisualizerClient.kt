@@ -75,21 +75,27 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
         when {
             domain is GridWorld -> {
                 val plannerIt = Iteration()
-                plannerIt.clearPrevious = clearPreviousEnvelope
+                plannerIt.setClearPreviousEnvelope(clearPreviousEnvelope)
+                    .setClearPreviousBackup(clearPreviousBackup)
 
                 assert (agentState is GridWorldState)
 
                 plannerIt.agentLocation = convertLocation((agentState as GridWorldState).agentLocation)
                 plannerIt.newEnvelopeNodesCells = mutableSetOf()
+                plannerIt.newBackedUpCells = mutableSetOf()
                 plannerIt.projectedPath = mutableSetOf()
 
                 newEnvelopeNodesCells.forEach {
                     plannerIt.newEnvelopeNodesCells.add(convertLocation((it as GridWorldState).agentLocation))
                 }
+                newBackedUpCells.forEach {
+                    plannerIt.newBackedUpCells.add(convertLocation((it as GridWorldState).agentLocation))
+                }
                 projectedPath?.forEach {
                     plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
                 }
 
+                println(plannerIt)
                 client.publishIteration(plannerIt)
             }
             else -> println("Domain / State Type unsupported by visualizer")
