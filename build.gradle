@@ -32,7 +32,6 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:$serialization_version"
         classpath 'com.excelsiorjet:excelsior-jet-gradle-plugin:1.1.2'
-        classpath 'org.apache.thrift:libthrift:0.9.1'
     }
 }
 
