@@ -95,7 +95,6 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
                     plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
                 }
 
-                println(plannerIt)
                 client.publishIteration(plannerIt)
             }
             else -> println("Domain / State Type unsupported by visualizer")

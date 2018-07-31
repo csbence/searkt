@@ -32,6 +32,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:$serialization_version"
         classpath 'com.excelsiorjet:excelsior-jet-gradle-plugin:1.1.2'
+        classpath 'org.apache.thrift:libthrift:0.9.1'
     }
 }
 
@@ -50,7 +51,10 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'org.slf4j:slf4j-nop:1.7.25'
 
-    compile files("libs/libthrift-1.0.0-SNAPSHOT.jar")
+    // https://mvnrepository.com/artifact/org.apache.thrift/libthrift
+    compile group: 'org.apache.thrift', name: 'libthrift', version: '0.11.0'
+
+    //compile files("libs/libthrift-1.0.0-SNAPSHOT.jar")
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
