@@ -17,6 +17,8 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
     private val client: Broker.Client
     private val iterationBuffer: MutableList<Iteration> = mutableListOf()
 
+    private var lastProjectedPath: MutableSet<S> = mutableSetOf()
+
     init {
         transport = TSocket("localhost", 8080)
         transport.open()
@@ -101,9 +103,19 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
 
                     plannerIt.newBackedUpNodes.add(backupNode)
                 }
+                var newProjectedPath = mutableSetOf<S>()
                 projectedPath?.forEach {
-                    plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
+                    newProjectedPath.add(it)
+
+                    if (!lastProjectedPath.remove(it)) {
+                        plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
+                    }
                 }
+                lastProjectedPath.forEach {
+                    //add to a "remove" set
+                }
+
+                lastProjectedPath = newProjectedPath
 
                 iterationBuffer.add(plannerIt)
 
