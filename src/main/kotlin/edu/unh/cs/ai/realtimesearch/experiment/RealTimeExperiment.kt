@@ -101,10 +101,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             visualizer?.publishIteration(
                     currentState,
                     itSummary.envelopeIsFresh,
-                    itSummary.expandedStates,
+                    itSummary.expandedNodes,
                     itSummary.backupIsFresh,
-                    itSummary.backedUpStates,
-                    itSummary.projectedPath)
+                    itSummary.backedUpNodes,
+                    itSummary.projectedPath,
+                    domain.isGoal(currentState))
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
             validateIteration(actionList, iterationNanoTime)

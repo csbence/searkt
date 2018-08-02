@@ -10,9 +10,12 @@ import org.apache.thrift.transport.TSocket
 import org.apache.thrift.transport.TTransport
 import java.net.ConnectException
 
+val CHUNK_SIZE = 100
+
 class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(private val domain: D) {
     private val transport: TTransport
     private val client: Broker.Client
+    private val iterationBuffer: MutableList<Iteration> = mutableListOf()
 
     init {
         transport = TSocket("localhost", 8080)
@@ -67,10 +70,11 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
 
     fun publishIteration(agentState: S,
                          clearPreviousEnvelope: Boolean,
-                         newEnvelopeNodesCells: Set<S>,
+                         newEnvelopeNodes: Map<S, Map<String, String>>,
                          clearPreviousBackup: Boolean,
-                         newBackedUpCells: Set<S>,
-                         projectedPath: Set<S>?) {
+                         newBackedUpNodes: Map<S, Map<String, String>>,
+                         projectedPath: Set<S>?,
+                         forcePublish: Boolean = false) {
 
         when {
             domain is GridWorld -> {
@@ -81,21 +85,33 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
                 assert (agentState is GridWorldState)
 
                 plannerIt.agentLocation = convertLocation((agentState as GridWorldState).agentLocation)
-                plannerIt.newEnvelopeNodesCells = mutableSetOf()
-                plannerIt.newBackedUpCells = mutableSetOf()
+                plannerIt.newEnvelopeNodes = mutableSetOf()
+                plannerIt.newBackedUpNodes = mutableSetOf()
                 plannerIt.projectedPath = mutableSetOf()
 
-                newEnvelopeNodesCells.forEach {
-                    plannerIt.newEnvelopeNodesCells.add(convertLocation((it as GridWorldState).agentLocation))
+                newEnvelopeNodes.forEach {(state, data) ->
+                    val envNode = Node(convertLocation((state as GridWorldState).agentLocation))
+                    envNode.setData(data)
+
+                    plannerIt.newEnvelopeNodes.add(envNode)
                 }
-                newBackedUpCells.forEach {
-                    plannerIt.newBackedUpCells.add(convertLocation((it as GridWorldState).agentLocation))
+                newBackedUpNodes.forEach {(state, data) ->
+                    val backupNode = Node(convertLocation((state as GridWorldState).agentLocation))
+                    backupNode.setData(data)
+
+                    plannerIt.newBackedUpNodes.add(backupNode)
                 }
                 projectedPath?.forEach {
                     plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
                 }
 
-                client.publishIteration(plannerIt)
+                iterationBuffer.add(plannerIt)
+
+                if (iterationBuffer.size == CHUNK_SIZE || forcePublish) {
+                    client.publishIterations(iterationBuffer)
+                    iterationBuffer.clear()
+                    println("publish")
+                }
             }
             else -> println("Domain / State Type unsupported by visualizer")
         }

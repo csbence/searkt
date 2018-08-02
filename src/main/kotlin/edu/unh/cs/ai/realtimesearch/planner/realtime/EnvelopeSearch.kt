@@ -164,10 +164,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 
     // Visualizer properties
-    private val expandedNodes = ArrayList<StateType>(50000)
+    private val expandedNodes = ArrayList<EnvelopeSearchNode<StateType>>(50000)
     private var expandedNodesIndex = 0
 
-    private val backedUpNodes = ArrayList<StateType>(50000)
+    private val backedUpNodes = ArrayList<EnvelopeSearchNode<StateType>>(50000)
     private var backedUpNodesIndex = 0
     private var clearPreviousBackup = false
 
@@ -265,14 +265,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             agentNode.waveParent
         }
 
-//        visualizer?.updateRootToBest(agentToFrontier.map { nodes[it]!! })
-//                visualizer?.updateCommonAncestorToAgentChain(pointerProjection)
-//
-//        visualizer?.updateSearchEnvelope(expandedNodes)
-//        visualizer?.updateBackpropagation(backedUpNodes)
-//        visualizer?.updateAgentLocation(nodes[sourceState]!!)
-//        visualizer?.delay()
-
         //Don't use constructPath here! Kotlin constructs become bottlenecks
         val transition = domain.transition(sourceState, agentNextNode.state)
                 ?: throw GoalNotReachableException("Dead end found")
@@ -287,10 +279,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         while (!terminationChecker.reachedTermination()) {
             // Must expand current node if not already expanded, meaning it is likely on the envelope frontier.
             // If we expand it now, we must remove from the open list rather than expand it again later (which doesn't make sense)
-            val currentNode = if (sourceNode.expanded == -1) {
-                if (isOpen(sourceNode)) removeFromOpen(sourceNode)
-                sourceNode
-            } else explorationQueue.pop() ?: break
+            val currentNode = if (sourceNode.expanded == -1) sourceNode
+                            else explorationQueue.pop() ?: break
+            removeFromOpen(currentNode)
 
             // TODO when in domains with multiple goals, don't stop looking for goals
             if (domain.isGoal(currentNode.state)) {
@@ -317,7 +308,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      */
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
         expandedNodeCount += 1
-        expandedNodes.add(expandedNodesIndex++, sourceNode.state) //for visualizer
+        expandedNodes.add(expandedNodesIndex++, sourceNode) //for visualizer
 
         sourceNode.iteration = iterationCounter
         sourceNode.expanded = expandedNodeCount
@@ -333,11 +324,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 successorNode.predecessors.add(edge)
             }
 
-            if (!successorNode.open && successorNode.iteration == 0L) {
+            if (!isOpen(successorNode) && successorNode.iteration == 0L) {
                 addToOpen(successorNode)
-//                openList.add(successorNode)
             }
         }
+
+        removeFromOpen(sourceNode)
     }
 
     private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, agentPath: Set<StateType>) {
@@ -437,7 +429,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun backupNode(sourceNode: EnvelopeSearchNode<StateType>) {
         sourceNode.waveExpanded = true
-        backedUpNodes.add(backedUpNodesIndex++, sourceNode.state)
+        backedUpNodes.add(backedUpNodesIndex++, sourceNode)
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
@@ -598,20 +590,27 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private fun printMessage(msg : String) = 0//println(msg)
 
     override fun getIterationSummary() : IterationSummary<StateType> {
-        val expandedStateSet = mutableSetOf<StateType>()
-        val backedUpStateSet = mutableSetOf<StateType>()
+        val expandedNodeMap = mutableMapOf<StateType, Map<String, String>>()
+        val backedUpNodeMap = mutableMapOf<StateType, Map<String, String>>()
 
         for (i in 0 until expandedNodesIndex) {
-            expandedStateSet.add(expandedNodes[i])
+            val node = expandedNodes[i]
+            expandedNodeMap[node.state] = mapOf("h" to node.heuristic.toString())
         }
         expandedNodesIndex = 0 //reset
 
         for (i in 0 until backedUpNodesIndex) {
-            backedUpStateSet.add(backedUpNodes[i])
+            val node = backedUpNodes[i]
+            backedUpNodeMap[node.state] = mapOf(
+                    "h" to node.heuristic.toString(),
+                    "\"Wave\" h" to node.waveHeuristic.toString(),
+                    "Wave Counter" to node.waveCounter.toString(),
+                    "Wave Parent" to node.waveParent.state.toString()
+            )
         }
         backedUpNodesIndex = 0 //reset
 
-        val summary = IterationSummary(expandedStateSet, false, backedUpStateSet, clearPreviousBackup, lastPlannedPath)
+        val summary = IterationSummary(expandedNodeMap, false, backedUpNodeMap, clearPreviousBackup, lastPlannedPath)
         clearPreviousBackup = false
 
         return summary

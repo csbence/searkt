@@ -21,8 +21,17 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration
+import edu.unh.cs.ai.realtimesearch.util.BinomialHeapPriorityQueue
+import edu.unh.cs.ai.realtimesearch.visualizer.thrift.ThriftVisualizerClient
 
 fun main(args: Array<String>) {
+//    val client = ThriftVisualizerClient.clientFactory()
+//
+//    if (client != null) {
+//        println("""Visualizer ping: ${client.ping()}""")
+//        client.close()
+//    }
+
 
     var outputPath: String?
     var basePath: String?
@@ -53,7 +62,7 @@ fun main(args: Array<String>) {
     System.err.println(results.summary())
 
     println('#') // Indicator for the parser
-//    println(rawResults) // This should be the last printed line
+    println(rawResults) // This should be the last printed line
     results.forEach { println(it.goalAchievementTime) }
 
 //    runVisualizer(result = results.first())
@@ -64,39 +73,39 @@ private fun generateConfigurations(): String {
 
     val configurations = generateConfigurations(
             domains = listOf(
-//                    Domains.GRID_WORLD to "input/vacuum/random1k.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-4.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-5.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-6.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-8.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-9.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-10.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-11.vw",
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-12.vw"
-//                    Domains.GRID_WORLD to "input/vacuum/minima3k_300/minima3000_300-0.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-4.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-5.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-6.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-8.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-9.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-10.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-11.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-12.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima3k_300/minima3000_300-0.vw",
+//                    Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/random5k.vw"
             ),
-            planners = listOf(TIME_BOUNDED_A_STAR),
-            actionDurations = listOf(10_000_000),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            terminationType = TIME,
+            planners = listOf(ES),
+            actionDurations = listOf(50L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
+            terminationType = EXPANSION,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
-            expansionLimit = 10000000,
+            expansionLimit = 10000000000,
             stepLimit = 10000000,
             plannerExtras = listOf(
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(TIME_BOUNDED_A_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE)),
-                    Triple(TIME_BOUNDED_A_STAR, Configurations.TERMINATION_EPSILON, listOf(4_000_000)),
-                    Triple(LSS_LRTA_STAR, Configurations.TERMINATION_EPSILON, listOf(6_000_000)),
+                    Triple(TIME_BOUNDED_A_STAR, TBA_OPTIMIZATION, listOf(TBAOptimization.NONE, TBAOptimization.THRESHOLD)),
+                    Triple(TIME_BOUNDED_A_STAR, Configurations.TERMINATION_EPSILON, listOf(2_000_000)),
+                    Triple(LSS_LRTA_STAR, Configurations.TERMINATION_EPSILON, listOf(2_000_000)),
                     Triple(ES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(CES, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKLOG_RATIO, listOf(1.0)),
+                    Triple(TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKLOG_RATIO, listOf(0.2)),
                     Triple(WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = listOf(
