@@ -89,7 +89,8 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
                 plannerIt.agentLocation = convertLocation((agentState as GridWorldState).agentLocation)
                 plannerIt.newEnvelopeNodes = mutableSetOf()
                 plannerIt.newBackedUpNodes = mutableSetOf()
-                plannerIt.projectedPath = mutableSetOf()
+                plannerIt.addToProjectedPath = mutableSetOf()
+                plannerIt.removeFromProjectedPath = mutableSetOf()
 
                 newEnvelopeNodes.forEach {(state, data) ->
                     val envNode = Node(convertLocation((state as GridWorldState).agentLocation))
@@ -103,16 +104,17 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
 
                     plannerIt.newBackedUpNodes.add(backupNode)
                 }
-                var newProjectedPath = mutableSetOf<S>()
+
+                val newProjectedPath = mutableSetOf<S>()
                 projectedPath?.forEach {
                     newProjectedPath.add(it)
 
                     if (!lastProjectedPath.remove(it)) {
-                        plannerIt.projectedPath.add(convertLocation((it as GridWorldState).agentLocation))
+                        plannerIt.addToProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
                     }
                 }
                 lastProjectedPath.forEach {
-                    //add to a "remove" set
+                    plannerIt.removeFromProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
                 }
 
                 lastProjectedPath = newProjectedPath
