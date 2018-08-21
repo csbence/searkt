@@ -1,5 +1,8 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import java.lang.Integer.max
+import java.lang.Integer.min
 import java.util.*
 
 /**
@@ -241,5 +244,54 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         }
         size = 0
     }
+
+    /**
+     * Copy elements from other priority queue.
+     *
+     * Notes:
+     *
+     * This function does not clean up the elements currently in the queue. This could lead to invalid queue indices.
+     * The queue must be heapified after initialization.
+     *
+     * Warning: only use this function if you properly understand what it does.
+     *
+     * @return - last copied element of other queue or null if the initialization is complete
+     */
+    fun initializeFromQueue(other: AbstractAdvancedPriorityQueue<T>, terminationChecker: TerminationChecker, startIndex: Int): Int? {
+        if (startIndex > size) throw RuntimeException("Initialization must be continuous!")
+
+        size = startIndex
+
+        while (!terminationChecker.reachedTermination()) {
+            val remainingCount = other.size - size
+
+            // Copy the remaining elements but max a thousand
+            for (i in 1..min(999, remainingCount)) {
+                backingArray[size] = other.backingArray[size]
+                ++size
+            }
+
+            if (size == other.size) return null
+        }
+
+        return size
+    }
+
+    fun heapify(terminationChecker: TerminationChecker, startIndex: Int = size / 2): Int? {
+        var currentIndex = startIndex
+
+        while (!terminationChecker.reachedTermination()) {
+            for (i in currentIndex downTo max(currentIndex - 1000, 0)) {
+                siftDown(currentIndex)
+                --currentIndex
+            }
+            println(currentIndex)
+
+            if (currentIndex == 0) return null
+        }
+
+        return currentIndex
+    }
+
 }
 
