@@ -1,7 +1,13 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
 import org.junit.Test
 import java.util.*
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -195,7 +201,50 @@ class AdvancedPriorityQueueTest {
         }
     }
 
+    @Test
+    fun testCopyInitialization() {
+        val comparator1 = Comparator<IndexableContainer> { lhs, rhs ->
+            lhs.value - rhs.value
+        }
 
+        val comparator2 = Comparator<IndexableContainer> { lhs, rhs ->
+            -(lhs.value - rhs.value)
+        }
+
+        val priorityQueue = AdvancedPriorityQueue(100000, comparator1)
+        val priorityQueueCopy = AdvancedPriorityQueue(100000, comparator2)
+
+        val numbers = Array(100000) { it }
+        val numberList = numbers.asList()
+
+        Collections.shuffle(numberList)
+
+        // Add all elements to queue 1
+        numberList.forEach { priorityQueue.add(IndexableContainer(it)) }
+        validateIndexes(priorityQueue)
+
+        assertTrue(priorityQueue.size == 100000)
+
+        val terminationChecker = StaticTimeTerminationChecker(100000, 0)
+        val fakeTerminationChecker = FakeTerminationChecker
+
+        // First incomplete step
+        val completedIndex1 = priorityQueueCopy.initializeFromQueue(priorityQueue, terminationChecker, 0)
+        assertNotNull(completedIndex1)
+
+        // First incomplete step
+        val completedIndex1b = priorityQueueCopy.initializeFromQueue(priorityQueue, fakeTerminationChecker, 0)
+        assertNull(completedIndex1b)
+
+        val completedIndex2 = priorityQueueCopy.initializeFromQueue(priorityQueue, fakeTerminationChecker, 0)
+        assertNull(completedIndex2)
+
+        terminationChecker.resetTo(0)
+        assertNotNull(priorityQueueCopy.heapify(terminationChecker))
+
+        assertNull(priorityQueueCopy.heapify(fakeTerminationChecker))
+        validateIndexes(priorityQueueCopy)
+    }
 
     private fun validateIndexes(queue: AdvancedPriorityQueue<*>) {
         for (i in  0..queue.backingArray.size - 1) {
