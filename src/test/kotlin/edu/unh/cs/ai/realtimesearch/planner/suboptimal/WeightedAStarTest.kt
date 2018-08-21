@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 
 class WeightedAStarTest {
     private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4",null, "WEIGHTED_A_STAR", TerminationType.EXPANSION,null,1L,1000L,1000000L,
-            null, 3.0, null, null,null, null, null, null, null, null, null, null)
+            null, 3, null, null,null, 0, null, null, null, null, null, null)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
