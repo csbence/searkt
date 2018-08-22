@@ -14,7 +14,6 @@ import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.realtime.ComprehensiveEnvelopeSearch
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration.TBA_OPTIMIZATION
-import edu.unh.cs.ai.realtimesearch.visualizer.online.OnlineGridVisualizer
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
 import java.util.concurrent.CountDownLatch
@@ -117,4 +116,3 @@ private fun generateConfigurations(): String {
 }
 
 val visualizerLatch = CountDownLatch(1)
-var visualizer: OnlineGridVisualizer? = null
