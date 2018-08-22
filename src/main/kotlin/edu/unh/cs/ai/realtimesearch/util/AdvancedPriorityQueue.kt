@@ -285,9 +285,8 @@ abstract class AbstractAdvancedPriorityQueue<T>(
                 siftDown(currentIndex)
                 --currentIndex
             }
-            println(currentIndex)
 
-            if (currentIndex == 0) return null
+            if (currentIndex == -1) return null
         }
 
         return currentIndex
