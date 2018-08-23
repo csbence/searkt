@@ -14,7 +14,6 @@ import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
-import edu.unh.cs.ai.realtimesearch.visualizer
 import java.util.*
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -214,9 +213,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             plan!!
         }
         lastAgentState = sourceState
-        visualizer?.updateSearchEnvelope(expandedNodes)
-        visualizer?.updateAgentLocation(currentAgentNode)
-        visualizer?.delay()
+//        visualizer?.updateSearchEnvelope(expandedNodes)
+//        visualizer?.updateAgentLocation(currentAgentNode)
+//        visualizer?.delay()
 
         return safePlan
     }

@@ -17,11 +17,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.visualizer
-import edu.unh.cs.ai.realtimesearch.visualizer.online.OnlineGridVisualizer
 import edu.unh.cs.ai.realtimesearch.visualizer.thrift.ThriftVisualizerClient
-import javafx.application.Application
-import javafx.application.Platform
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
 import java.util.concurrent.CountDownLatch

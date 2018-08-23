@@ -24,8 +24,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
 
-    private val greedyResourceRatio = 7.0/9.0 //r1
-    private val pseudoFResourceRatio = 1.0/9.0 //r2
+    private val greedyResourceRatio = 7.0 / 9.0 //r1
+    private val pseudoFResourceRatio = 1.0 / 9.0 //r2
     //r3 is the remainder of the time
 
     class EnvelopeSearchNode<StateType : State<StateType>>(
@@ -111,7 +111,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>>{ lhs, rhs ->
+    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         when {
             lhs.waveCounter > rhs.waveCounter -> -1
             lhs.waveCounter < rhs.waveCounter -> 1
@@ -265,7 +265,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         //To appease expansion termination checkers, we need to instantiate a final checker from the calculated remaining time
         val backupTerminationChecker = if (configuration.terminationType == TerminationType.TIME) terminationChecker
-            else getTerminationChecker(configuration, wavePropagationTimeSlice)
+        else getTerminationChecker(configuration, wavePropagationTimeSlice)
 
         val projectPathTime = measureNanoTime {
             lastPlannedPath = projectPath(currentAgentState, backupTerminationChecker)
@@ -299,7 +299,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             // Must expand current node if not already expanded, meaning it is likely on the envelope frontier.
             // If we expand it now, we must remove from the open list rather than expand it again later (which doesn't make sense)
             val currentNode = if (sourceNode.expanded == -1) sourceNode
-                            else explorationQueue.pop() ?: break
+            else explorationQueue.pop() ?: break
             removeFromOpen(currentNode)
 
             // TODO when in domains with multiple goals, don't stop looking for goals
@@ -613,7 +613,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         else pseudoFOpenList.add(successorNode)
     }
 
-    private fun isOpen(node: EnvelopeSearchNode<StateType>) : Boolean = node.pseudoFOpenIndex > -1 || node.heuristicOpenIndex > -1
+    private fun isOpen(node: EnvelopeSearchNode<StateType>): Boolean = node.pseudoFOpenIndex > -1 || node.heuristicOpenIndex > -1
 
     private fun removeFromOpen(node: EnvelopeSearchNode<StateType>) {
         if (node.pseudoFOpenIndex > -1) {
@@ -629,9 +629,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         PATH_IMPROVEMENT
     }
 
-    private fun printMessage(msg : String) = 0//println(msg)
+    private fun printMessage(msg: String) = 0//println(msg)
 
-    override fun getIterationSummary() : IterationSummary<StateType> {
+    override fun getIterationSummary(): IterationSummary<StateType> {
         val expandedNodeMap = mutableMapOf<StateType, Map<String, String>>()
         val backedUpNodeMap = mutableMapOf<StateType, Map<String, String>>()
 

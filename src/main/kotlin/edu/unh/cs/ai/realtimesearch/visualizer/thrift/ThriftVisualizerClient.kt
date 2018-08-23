@@ -12,7 +12,7 @@ import java.net.ConnectException
 
 val CHUNK_SIZE = 100
 
-class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(private val domain: D) {
+class ThriftVisualizerClient<S : State<S>, D : Domain<S>> private constructor(private val domain: D) {
     private val transport: TTransport
     private val client: Broker.Client
     private val iterationBuffer: MutableList<Iteration> = mutableListOf()
@@ -28,19 +28,19 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
     }
 
     companion object {
-        fun <S:State<S>, D:Domain<S>> clientFactory(domain: D) : ThriftVisualizerClient<S,D>? {
-            try {
-                val thriftClient = ThriftVisualizerClient<S,D>(domain)
-                val pingResponse = thriftClient.client.ping()
-                println("""Init ping: $pingResponse""")
+        fun <S : State<S>, D : Domain<S>> clientFactory(domain: D): ThriftVisualizerClient<S, D>? = try {
+            val thriftClient = ThriftVisualizerClient(domain)
+            val pingResponse = thriftClient.client.ping()
+            println("""Init ping: $pingResponse""")
 
-                if (pingResponse != 1) throw ConnectException("Could not connect to thrift server")
+            if (pingResponse != 1) throw ConnectException("Could not connect to thrift server")
 
-                return thriftClient
-            } catch (ex: Exception) {
-                println(ex.message)
-                return null
-            }
+            thriftClient
+        } catch (ex: Exception) {
+            println("Failed to connect to Visualizer.")
+            println(ex.message)
+
+            null
         }
     }
 
@@ -48,8 +48,8 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
     fun ping(): Int = client.ping()
 
     fun initialize(startState: S) {
-        when {
-            domain is GridWorld -> {
+        when (domain) {
+            is GridWorld -> {
                 assert(startState is GridWorldState)
                 val startLocation = startState as GridWorldState
 
@@ -78,60 +78,64 @@ class ThriftVisualizerClient<S:State<S>, D:Domain<S>> private constructor(privat
                          projectedPath: Set<S>?,
                          forcePublish: Boolean = false) {
 
-        when {
-            domain is GridWorld -> {
-                val plannerIt = Iteration()
-                plannerIt.setClearPreviousEnvelope(clearPreviousEnvelope)
-                    .setClearPreviousBackup(clearPreviousBackup)
-
-                assert (agentState is GridWorldState)
-
-                plannerIt.agentLocation = convertLocation((agentState as GridWorldState).agentLocation)
-                plannerIt.newEnvelopeNodes = mutableSetOf()
-                plannerIt.newBackedUpNodes = mutableSetOf()
-                plannerIt.addToProjectedPath = mutableSetOf()
-                plannerIt.removeFromProjectedPath = mutableSetOf()
-
-                newEnvelopeNodes.forEach {(state, data) ->
-                    val envNode = Node(convertLocation((state as GridWorldState).agentLocation))
-                    envNode.setData(data)
-
-                    plannerIt.newEnvelopeNodes.add(envNode)
-                }
-                newBackedUpNodes.forEach {(state, data) ->
-                    val backupNode = Node(convertLocation((state as GridWorldState).agentLocation))
-                    backupNode.setData(data)
-
-                    plannerIt.newBackedUpNodes.add(backupNode)
-                }
-
-                val newProjectedPath = mutableSetOf<S>()
-                projectedPath?.forEach {
-                    newProjectedPath.add(it)
-
-                    if (!lastProjectedPath.remove(it)) {
-                        plannerIt.addToProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
-                    }
-                }
-                lastProjectedPath.forEach {
-                    plannerIt.removeFromProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
-                }
-
-                lastProjectedPath = newProjectedPath
-
-                iterationBuffer.add(plannerIt)
-
-                if (iterationBuffer.size == CHUNK_SIZE || forcePublish) {
-                    client.publishIterations(iterationBuffer)
-                    iterationBuffer.clear()
-                    println("publish")
-                }
-            }
+        when (domain) {
+            is GridWorld -> publishGridWorld(clearPreviousEnvelope, clearPreviousBackup, agentState, newEnvelopeNodes, newBackedUpNodes, projectedPath, forcePublish)
             else -> println("Domain / State Type unsupported by visualizer")
         }
     }
 
-    private fun convertLocation(location: edu.unh.cs.ai.realtimesearch.environment.location.Location) : Location {
+    private fun publishGridWorld(clearPreviousEnvelope: Boolean, clearPreviousBackup: Boolean, agentState: S, newEnvelopeNodes: Map<S, Map<String, String>>, newBackedUpNodes: Map<S, Map<String, String>>, projectedPath: Set<S>?, forcePublish: Boolean) {
+        val plannerIt = Iteration()
+        plannerIt.setClearPreviousEnvelope(clearPreviousEnvelope)
+                .setClearPreviousBackup(clearPreviousBackup)
+
+        assert(agentState is GridWorldState)
+
+        plannerIt.agentLocation = convertLocation((agentState as GridWorldState).agentLocation)
+        plannerIt.newEnvelopeNodes = mutableSetOf()
+        plannerIt.newBackedUpNodes = mutableSetOf()
+        plannerIt.addToProjectedPath = mutableSetOf()
+        plannerIt.removeFromProjectedPath = mutableSetOf()
+
+        newEnvelopeNodes.forEach { (state, data) ->
+            val envNode = Node(convertLocation((state as GridWorldState).agentLocation))
+            envNode.setData(data)
+
+            plannerIt.newEnvelopeNodes.add(envNode)
+        }
+
+        newBackedUpNodes.forEach { (state, data) ->
+            val backupNode = Node(convertLocation((state as GridWorldState).agentLocation))
+            backupNode.setData(data)
+
+            plannerIt.newBackedUpNodes.add(backupNode)
+        }
+
+        val newProjectedPath = mutableSetOf<S>()
+        projectedPath?.forEach {
+            newProjectedPath.add(it)
+
+            if (!lastProjectedPath.remove(it)) {
+                plannerIt.addToProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
+            }
+        }
+
+        lastProjectedPath.forEach {
+            plannerIt.removeFromProjectedPath.add(convertLocation((it as GridWorldState).agentLocation))
+        }
+
+        lastProjectedPath = newProjectedPath
+
+        iterationBuffer.add(plannerIt)
+
+        if (iterationBuffer.size == CHUNK_SIZE || forcePublish) {
+            client.publishIterations(iterationBuffer)
+            iterationBuffer.clear()
+            println("publish")
+        }
+    }
+
+    private fun convertLocation(location: edu.unh.cs.ai.realtimesearch.environment.location.Location): Location {
         val converted = Location()
         converted.x = location.x
         converted.y = location.y
