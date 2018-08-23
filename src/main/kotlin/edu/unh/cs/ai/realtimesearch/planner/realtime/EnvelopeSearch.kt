@@ -111,7 +111,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>>(){ lhs, rhs ->
+    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>>{ lhs, rhs ->
         when {
             lhs.waveCounter > rhs.waveCounter -> -1
             lhs.waveCounter < rhs.waveCounter -> 1
@@ -257,6 +257,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         //up, start a new frontier backup!
         val safetyWaveClear = measureNanoTime {
             if (agentNode.waveCounter == waveCounter && !isWaveInitializationInProgress) {
+                if (searchPhase == GOAL_BACKUP) searchPhase = PATH_IMPROVEMENT
                 waveFrontier.clear()
             }
         }
@@ -387,7 +388,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun checkForWaveRefresh(terminationChecker: TerminationChecker) {
         //check for in-progress initialization
-        if (initializationIndex != null || heapifyIndex != null) {
+        if (isWaveInitializationInProgress) {
             initializeWaveFrontier(terminationChecker)
             return
         }
@@ -413,8 +414,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveCounter++
             clearPreviousBackup = true
 
-            // Note: Chose "pseudoFOpenList" because it is always updated in current algorithm, whereas other queue is not in Path Improvement phase
             printMessage("""Open list size: ${pseudoFOpenList.size}""")
+            initializationIndex = 0
             initializeWaveFrontier(terminationChecker)
         } else if (!waveInProgress && searchPhase == PATH_IMPROVEMENT) {
             waveCounter++

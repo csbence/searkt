@@ -294,7 +294,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
             }
 //            println(currentIndex)
 
-            if (currentIndex == 0) return null
+            if (currentIndex <= 0) return null
         }
 
         return currentIndex

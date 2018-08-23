@@ -73,8 +73,8 @@ private fun generateConfigurations(): String {
 
     val configurations = generateConfigurations(
             domains = listOf(
-//                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
-                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
+                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
