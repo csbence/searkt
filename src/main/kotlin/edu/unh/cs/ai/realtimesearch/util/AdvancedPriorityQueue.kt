@@ -257,7 +257,11 @@ abstract class AbstractAdvancedPriorityQueue<T>(
      *
      * @return - last copied element of other queue or null if the initialization is complete
      */
-    fun initializeFromQueue(other: AbstractAdvancedPriorityQueue<T>, terminationChecker: TerminationChecker, startIndex: Int): Int? {
+    fun initializeFromQueue(
+            other: AbstractAdvancedPriorityQueue<T>,
+            terminationChecker: TerminationChecker,
+            startIndex: Int,
+            func: (T) -> Unit = {}): Int? {
         if (startIndex > size) throw RuntimeException("Initialization must be continuous!")
 
         size = startIndex
@@ -268,6 +272,9 @@ abstract class AbstractAdvancedPriorityQueue<T>(
             // Copy the remaining elements but max a thousand
             for (i in 1..min(999, remainingCount)) {
                 backingArray[size] = other.backingArray[size]
+                setIndex(backingArray[size]!!, size)
+                func(backingArray[size]!!)
+
                 ++size
             }
 
@@ -285,7 +292,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
                 siftDown(currentIndex)
                 --currentIndex
             }
-            println(currentIndex)
+//            println(currentIndex)
 
             if (currentIndex == 0) return null
         }
