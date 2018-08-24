@@ -17,8 +17,11 @@ fun main(args: Array<String>) {
         println("Usage: <search_tree.json> <processed_tree.json>")
     }
 
-    var searchTreePath = "/Users/bencecserna/Downloads/testingstatic/searchtree.json"
-    var targetTreePath = "/Users/bencecserna/Downloads/testingstatic/processed_tree.json"
+//    var searchTreePath = "/Users/bencecserna/Downloads/testingstatic/searchtree.json"
+//    var targetTreePath = "/Users/bencecserna/Downloads/testingstatic/processed_tree.json"
+
+    var searchTreePath = "/home/aifs2/bence/development/projects/optic_metareasoning/test/searchtree.json"
+    var targetTreePath = "/home/aifs2/bence/development/projects/optic_metareasoning/test/processed_tree.json"
 
     if (args.size == 2) {
         searchTreePath = args[0]
@@ -49,21 +52,37 @@ fun main(args: Array<String>) {
         return
     }
 
-    checkInvariant(opticNodes)
+//    checkInvariant(opticNodes)
 
     opticNodes
             .parallelStream()
             .forEach {
                 aStar(opticNodes, it, rootNodeId)
                 System.out.flush()
-                it.minGoalDistance = it.expansionsToGoals?.min()
+
+                var minDistance: Int? = it.expansionsToGoals?.firstOrNull()
+                var minDistanceIndex: Int? = if (minDistance != null) 0 else null
+
+                it.expansionsToGoals?.forEachIndexed { index: Int, distance: Int ->
+                    if (minDistance == null || distance < minDistance!!) {
+                        minDistance = distance
+                        minDistanceIndex = index
+                    }
+                }
+
+                it.minGoalDistance = minDistance
+                if (minDistanceIndex != null) {
+                    it.firstGoalLatestStartTime = it.latestStartTimesForGoals?.get(minDistanceIndex!!)
+                }
             }
 
+    // Remove nodes that can't reach the goal
     val successfulNodes = opticNodes.filter { it.expansionsToGoals?.isNotEmpty() ?: false }
 
     println("\nNode count: ${jsonOpticNodes.size}")
     println("\nSuccess count: ${successfulNodes.size}")
 
+    // Save results as json
     val processedTree = JSON.plain.stringify(OpticNode.serializer().list, successfulNodes)
     outputTreePath.writeText(processedTree)
 }
@@ -117,6 +136,7 @@ data class OpticNode(val id: Long,
                      val successors: List<Long>,
                      var expansionsToGoals: List<Int>? = null,
                      var minGoalDistance: Int? = null,
+                     var firstGoalLatestStartTime: Double? = null,
                      var expansionTime: Int = 0,
                      var generationTime: Int = 0,
                      var latestStartTimesForGoals: List<Double>? = null)
@@ -157,7 +177,8 @@ fun aStar(nodes: List<OpticNode>, sourceNode: OpticNode, rootNodeId: Long) {
 
             if (successorNode.opticNode.tag == NodeTag.goal) {
                 expansionsToGoals.add(expansionCount)
-                latestStartTimesForGoals.add(successorNode.opticNode.latestStartTimeUB ?: throw MetronomeException("Unknown latest start time for goal"))
+                latestStartTimesForGoals.add(successorNode.opticNode.latestStartTimeUB
+                        ?: throw MetronomeException("Unknown latest start time for goal"))
             }
 
             successorNode.closed = true
@@ -193,7 +214,10 @@ fun checkInvariant(nodes: List<OpticNode>) {
             .parallelStream()
             .forEach { sourceNode ->
                 val nonMonotonic = sourceNode.successors.any {
-                    localNodeMap[it]!!.opticNode.latestStartTimeUB ?: Double.MAX_VALUE < sourceNode?.latestStartTimeUB ?: Double.MIN_VALUE
+                    val successorLatestStartTime = localNodeMap[it]!!.opticNode.latestStartTimeUB ?: Double.MAX_VALUE
+                    val sourceLatestStartTime = sourceNode?.latestStartTimeUB ?: Double.MIN_VALUE
+
+                    successorLatestStartTime > sourceLatestStartTime
                 }
 
                 if (nonMonotonic) throw MetronomeException("Invariant violated.")
