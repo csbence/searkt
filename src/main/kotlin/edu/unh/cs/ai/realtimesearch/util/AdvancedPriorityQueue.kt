@@ -269,8 +269,8 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         while (!terminationChecker.reachedTermination()) {
             val remainingCount = other.size - size
 
-            // Copy the remaining elements but max a thousand
-            for (i in 1..min(999, remainingCount)) {
+            // Copy the remaining elements but max 800
+            for (i in 1..min(499, remainingCount)) {
                 backingArray[size] = other.backingArray[size]
                 setIndex(backingArray[size]!!, size)
                 func(backingArray[size]!!)
@@ -288,7 +288,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         var currentIndex = startIndex
 
         while (!terminationChecker.reachedTermination()) {
-            for (i in currentIndex downTo max(currentIndex - 1000, 0)) {
+            for (i in currentIndex downTo max(currentIndex - 499, 0)) {
                 siftDown(currentIndex)
                 --currentIndex
             }

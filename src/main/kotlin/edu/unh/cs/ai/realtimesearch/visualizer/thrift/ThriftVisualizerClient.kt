@@ -10,7 +10,7 @@ import org.apache.thrift.transport.TSocket
 import org.apache.thrift.transport.TTransport
 import java.net.ConnectException
 
-val CHUNK_SIZE = 100
+val CHUNK_SIZE = 10
 
 class ThriftVisualizerClient<S : State<S>, D : Domain<S>> private constructor(private val domain: D) {
     private val transport: TTransport

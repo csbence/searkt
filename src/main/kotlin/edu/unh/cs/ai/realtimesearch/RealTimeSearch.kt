@@ -72,8 +72,8 @@ private fun generateConfigurations(): String {
 
     val configurations = generateConfigurations(
             domains = listOf(
-                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
-//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/maze.vw"
+                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-0.vw"
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
@@ -91,8 +91,8 @@ private fun generateConfigurations(): String {
 //                    Domains.GRID_WORLD to "input/vacuum/random5k.vw"
             ),
             planners = listOf(ES),
-            actionDurations = listOf(50L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),
-            terminationType = EXPANSION,
+            actionDurations = listOf(10_000_000L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),100_000_000L
+            terminationType = TIME,
             lookaheadType = DYNAMIC,
             timeLimit = NANOSECONDS.convert(1999, MINUTES),
             expansionLimit = 10000000000,
