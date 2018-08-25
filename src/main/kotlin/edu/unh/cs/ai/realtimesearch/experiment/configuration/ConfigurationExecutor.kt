@@ -10,10 +10,13 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.heavyvacuumworld.HeavyVacuumWorldIO
+import edu.unh.cs.ai.realtimesearch.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.squareroottiles.SquareRootTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.traffic.VehicleWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
@@ -154,7 +157,10 @@ object ConfigurationExecutor {
         return when (domain) {
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_HEAVY -> executeHeavySlidingTilePuzzle(configuration, domainStream)
+            SLIDING_TILE_PUZZLE_4_INVERSE -> executeInverseSlidingTilePuzzle(configuration, domainStream)
+            SLIDING_TILE_PUZZLE_4_SQRT -> executeSquareRootSlidingTilePuzzle(configuration, domainStream)
             VACUUM_WORLD -> executeVacuumWorld(configuration, domainStream)
+            HEAVY_VACUUM_WORLD -> executeHeavyVacuumWorld(configuration, domainStream)
             GRID_WORLD -> executeGridWorld(configuration, domainStream)
             ACROBOT -> executeAcrobot(configuration, domainStream)
             POINT_ROBOT -> executePointRobot(configuration, domainStream)
@@ -191,6 +197,11 @@ object ConfigurationExecutor {
         return executeDomain(configuration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
     }
 
+    private fun executeHeavyVacuumWorld(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val vacuumWorldInstance = HeavyVacuumWorldIO.parseFromStream(domainStream)
+        return executeDomain(configuration, vacuumWorldInstance.domain, vacuumWorldInstance.initialState)
+    }
+
     private fun executeRaceTrack(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val domainSizeMultiplier = configuration.domainSizeMultiplier
         val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration)
@@ -218,6 +229,15 @@ object ConfigurationExecutor {
         return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
     }
 
+    private fun executeInverseSlidingTilePuzzle(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = InverseTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    }
+
+    private fun executeSquareRootSlidingTilePuzzle(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val slidingTilePuzzleInstance = SquareRootTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
+    }
 
     private fun executeAcrobot(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val acrobotInstance = AcrobotIO.parseFromStream(domainStream, configuration.actionDuration)

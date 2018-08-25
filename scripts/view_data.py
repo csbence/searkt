@@ -1,13 +1,12 @@
 #! /usr/bin/env python
 
 import sys
-import math
-import pandas as pd
-import simplejson as json
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-from pprint import pprint
+import math
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import simplejson as json
 from IPython.display import display
 
 
@@ -62,8 +61,8 @@ def process_data():
                         # print("Failed Experiment! Algorithm: " + alg + " Weight: " + 
                         #         str(weight) + " Path: " + domain_path)
                         failed_experiments = failed_experiments + 1
-                        # print(instance["errorMessage"])
-                        # print(instance["errorDetails"])
+                        print(instance["errorMessage"])
+                        print(instance["errorDetails"])
                     try:
                         if key == "success" and instance[str(key)] is True:
                             # print('{} -> {}'.format(str(key), str(instance[str(key)])))
@@ -113,11 +112,11 @@ def filter_nodes_generated(df):
                     li = extract_tens_place(index)
                     alg = df.iloc[index, df.columns.get_loc("algorithm")]
                     weight = df.iloc[index, df.columns.get_loc("weight")]
-                    print(alg + "@" + str(weight))
-                    print("\tindex: {} | li: {}".format(index, li))
+                    # print(alg + "@" + str(weight))
+                    # print("\tindex: {} | li: {}".format(index, li))
                     upper = index + offset[li]
                     lower = index - offset[-li] - 1
-                    print("\tdropping {}->{}".format(lower, upper))
+                    # print("\tdropping {}->{}".format(lower, upper))
                     for i in range(lower, upper + 1):
                         drop_index.append(i)
                 index = index + 1
@@ -177,14 +176,18 @@ def plot(data_dict):
     # display(df[(df.generatedNodes > 5000000) & (df.success == True) & (df.algorithm == "DPS")]['generatedNodes'])
     over_five_million, drop_index = filter_nodes_generated(df)
     drop_set = set(drop_index)
-    print(drop_set)
 
-    df2 = df.groupby(["weight", "algorithm"]).apply(filter_failed_sets)
-    look_up_in_df(df, 3798)
-    look_up_in_df(df, 3799)
-    look_up_in_df(df, 3800)
-    look_up_in_df(df, 5700)
-    look_up_in_df(df, 7600)
+    # print(drop_set)
+    # df = df[~df.algorithm.str.contains("EECS")]
+    # df = df[~df.algorithm.str.contains("EETS")]
+
+    df2 = df
+    # df2 = df.groupby(["weight", "algorithm"]).apply(filter_failed_sets)
+    # look_up_in_df(df, 3798)
+    # look_up_in_df(df, 3799)
+    # look_up_in_df(df, 3800)
+    # look_up_in_df(df, 5700)
+    # look_up_in_df(df, 7600)
     # unit for paper
     # df.drop(df.index[range(5700, 6100)], inplace=True)
     # df.drop(df.index[range(7200, 7500)], inplace=True)

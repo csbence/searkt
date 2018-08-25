@@ -17,12 +17,12 @@ class VacuumWorldTest {
 
     private val configuration = ExperimentConfiguration(domainName = "VACUUM_WORLD", algorithmName = "WEIGHTED_A_STAR",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
-            expansionLimit = 1000000L, weight = 100.0, errorModel = "path")
+            expansionLimit = 1000000L, weight = 1.0, errorModel = "path")
 
 
     @Test
     fun testGoalChecker() {
-        val world = VacuumWorld(10, 10, emptySet())
+        val world = VacuumWorld(10, 10, emptySet(), 0)
         val l1 = Location(3, 5)
         val l2 = Location(0, 5)
 
@@ -39,7 +39,7 @@ class VacuumWorldTest {
 
     @Test
     fun loadFromFileAndPlan() {
-        val instancePath = "input/vacuum/toy3.vw"
+        val instancePath = "input/vacuum/toy7.vw"
         val stream = VacuumWorldTest::class.java.classLoader.getResourceAsStream(instancePath)
         val instanceIO = VacuumWorldIO.parseFromStream(stream)
         val initialState = instanceIO.initialState
@@ -49,10 +49,13 @@ class VacuumWorldTest {
         val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
         var currentState = initialState
         println(domain.print(currentState))
+        println("heuristic: ${currentState.heuristic}")
         println("plan is ${plan.size} long")
+        domain.calculateHeuristic(currentState.agentLocation, currentState.dirtyCells)
         plan.forEach { action ->
             currentState = domain.successors(currentState).first { it.action == action }.state
             println(action.toString() + "\n" + domain.print(currentState))
+            println("heuristic: ${domain.testHeuristic(currentState.agentLocation, currentState.dirtyCells)}")
         }
         assertTrue { domain.heuristic(currentState) == 0.0 }
 
@@ -71,10 +74,11 @@ class VacuumWorldTest {
         val plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(1000000L))
         var currentState = initialState
         println(domain.print(currentState))
+        println("heuristic: ${currentState.heuristic}")
         println("plan is ${plan.size} long")
         plan.forEach { action ->
             currentState = domain.successors(currentState).first { it.action == action }.state
-            println(action.toString() + "\n" + domain.print(currentState))
+            println("heuristic: ${currentState.heuristic}")
         }
         assertTrue { domain.heuristic(currentState) == 0.0 }
 
@@ -82,7 +86,7 @@ class VacuumWorldTest {
 
     @Test
     fun solveAllInstancesTest() {
-        val startingWeight = 100
+        val startingWeight = 1.01
         val stepSize = 0.00
         for (w in 2..2) {
             val currentWeight = startingWeight + (stepSize * w)

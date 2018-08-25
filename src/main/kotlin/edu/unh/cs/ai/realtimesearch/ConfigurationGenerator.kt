@@ -217,7 +217,7 @@ fun getDomainConfigurations(domain: Domains): MutableList<MutableMap<String, Any
         RACETRACK -> {
             racetrackMaps.mapTo(configurations) { getDomainConfigurationMap(it) }
         }
-        SLIDING_TILE_PUZZLE_4 -> {
+        SLIDING_TILE_PUZZLE_4, SLIDING_TILE_PUZZLE_4_SQRT, SLIDING_TILE_PUZZLE_4_INVERSE -> {
             //            for (instanceName in 1..100) {
             slidingTileSolvableMaps
                     .map { "$slidingTile4MapRoot$it" }

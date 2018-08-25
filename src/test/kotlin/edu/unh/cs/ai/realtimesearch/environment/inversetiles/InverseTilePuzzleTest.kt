@@ -94,10 +94,6 @@ class InverseTilePuzzleTest {
 
     @Test
     fun testSuboptimalBound() {
-        val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45,
-                46, 59, 62, 42, 66, 55, 46, 52, 54, 59, 49, 54, 52, 58, 53, 52, 54, 47, 50, 59, 60, 52, 55, 52, 58, 53, 49, 54, 54,
-                42, 64, 50, 51, 49, 47, 49, 59, 53, 56, 56, 64, 56, 41, 55, 50, 51, 57, 66, 45, 57, 56, 51, 47, 61, 50, 51, 53, 52,
-                44, 56, 49, 56, 48, 57, 54, 53, 42, 57, 53, 62, 49, 55, 44, 45, 52, 65, 54, 50, 57, 57, 46, 53, 50, 49, 44, 54, 57, 54)
         val startingWeight = 15
         val stepSize = 0.0
         for (w in 2..2) {
@@ -121,11 +117,6 @@ class InverseTilePuzzleTest {
                         currentState = slidingTilePuzzle.domain.successors(currentState).first { it.action == action }.state
                     }
                     assertTrue { slidingTilePuzzle.domain.heuristic(currentState) == 0.0 }
-                    // sub-optimality bound check
-                    if (((optimalSolutionLengths[i - 1] * currentWeight).roundToInt()) < pathLength) {
-                        System.err.println("weight: $currentWeight breaks sub-optimality bound on instance $i")
-                        System.err.println("${(optimalSolutionLengths[i - 1] * currentWeight).roundToInt()} >= $pathLength")
-                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     System.err.println(e.message + " on instance $i with weight $currentWeight")

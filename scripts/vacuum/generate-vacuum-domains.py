@@ -23,7 +23,7 @@ if args.verbose:
     print(args.height)
     print(args.width)
 
-obstaclePercentage = 0.15
+obstaclePercentage = 0.25
 numberOfDirtyCells = 10
 
 startX = 1

@@ -18,7 +18,7 @@ import kotlin.math.abs
 class VacuumWorld(val width: Int,
                   val height: Int,
                   val blockedCells: Set<Location>,
-                  val initialAmountDirty: Int = 1) : Domain<VacuumWorldState> {
+                  private val initialAmountDirty: Int) : Domain<VacuumWorldState> {
 
     private val logger = LoggerFactory.getLogger(VacuumWorld::class.java)
 
@@ -163,19 +163,52 @@ class VacuumWorld(val width: Int,
         throw UnsupportedOperationException()
     }
 
-    fun calculateHeuristic(state: Location, dirtyCells: List<Location>): Double {
+    private fun shortestManhattanToDirt(state: Location, dirtyCells: List<Location>): Pair<Double, Location> {
         val agentX = state.x
         val agentY = state.y
 
-        val numberOfDirtyCells = dirtyCells.size
-        var longestPathToDirtyCell = 0
+        var closestDirtyLocation = dirtyCells.first()
+        var shortestPathToDirtyCell = Double.MAX_VALUE
 
         dirtyCells.forEach { dirt ->
             val pathToDirtyCell = abs(dirt.x - agentX) + abs(dirt.y - agentY)
-            if (pathToDirtyCell > longestPathToDirtyCell) longestPathToDirtyCell = pathToDirtyCell
+            if (pathToDirtyCell < shortestPathToDirtyCell) {
+                shortestPathToDirtyCell = pathToDirtyCell.toDouble()
+                closestDirtyLocation = dirt
+            }
         }
 
-        return (longestPathToDirtyCell + numberOfDirtyCells).toDouble()
+        return Pair(shortestPathToDirtyCell, closestDirtyLocation)
+
+    }
+
+    fun calculateHeuristic(state: Location, dirtyCells: List<Location>): Double {
+        val dirtCells = mutableListOf<Location>()
+        dirtyCells.forEach { dirtCells.add(it) }
+        var previousLocation = state
+        var heuristic = 0.0
+        (0 until dirtyCells.size).forEach {
+            val closestDirt = shortestManhattanToDirt(previousLocation, dirtCells)
+            heuristic += closestDirt.first
+            dirtCells.remove(closestDirt.second)
+            previousLocation = closestDirt.second
+        }
+        return heuristic
+    }
+
+    fun testHeuristic(state: Location, dirtyCells: List<Location>): Double {
+        val dirtCells = mutableListOf<Location>()
+        dirtyCells.forEach { dirtCells.add(it) }
+        var previousLocation = state
+        var heuristic = 0.0
+        (0 until dirtyCells.size).forEach {
+            val closestDirt = shortestManhattanToDirt(previousLocation, dirtCells)
+            heuristic += closestDirt.first
+            println(closestDirt)
+            dirtCells.remove(closestDirt.second)
+            previousLocation = closestDirt.second
+        }
+        return heuristic
     }
 }
 

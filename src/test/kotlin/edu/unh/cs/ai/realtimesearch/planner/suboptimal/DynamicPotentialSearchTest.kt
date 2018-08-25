@@ -123,9 +123,10 @@ class DynamicPotentialSearchTest {
 
     @Test
     fun testDPSHardPuzzle() {
-        val weight = 1.5
+        val weight = 1.1
         configuration.weight = weight
-        val instanceNumbers = intArrayOf(1, 3)
+//        val instanceNumbers = intArrayOf(1, 3)
+        val instanceNumbers = intArrayOf(83, 89)
         val optimalSolutionLengths = intArrayOf(57, 59)
 
         for ((experimentNumber, i) in instanceNumbers.withIndex()) {

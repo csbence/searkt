@@ -22,7 +22,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                                              var actionCost: Double, var action: Action,
                                              override var parent: WeightedAStar.Node<StateType>? = null):
             Indexable, SearchQueueElement<Node<StateType>> {
-        private val indexMap = Array(1, {-1})
+        private val indexMap = Array(1) {-1}
         override val g: Double
             get() = cost
         override val depth: Double

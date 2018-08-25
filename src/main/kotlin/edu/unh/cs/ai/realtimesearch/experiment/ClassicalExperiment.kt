@@ -70,6 +70,11 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
             currentState = domain.transition(currentState, it) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with $it")
         }
 
+        if (domain.heuristic(currentState) != 0.0) {
+            return ExperimentResult(experimentConfiguration = configuration, errorMessage =
+            "Found plan does not lead to a goal instead leads to $currentState with heuristic value ${domain.heuristic(currentState)}")
+        }
+
         val experimentResult = ExperimentResult(
                 configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,

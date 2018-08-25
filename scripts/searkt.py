@@ -14,11 +14,12 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import itertools
 import datetime
-import slack_notification
+from . import slack_notification
 
 
 def generate_base_suboptimal_configuration():
     algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS']
+    algorithms_to_run = ['DPS']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -35,6 +36,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
@@ -42,10 +44,9 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    # weight = [3.0]
+    weight = [1.1]
     # weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
-    weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0,
-              3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0]
+    # weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
@@ -156,7 +157,7 @@ def generate_racetrack():
 def generate_vacuum_worlds():
     configurations, tag = generate_base_suboptimal_configuration()
     worlds_to_run = []
-    for world in range(0,50):
+    for world in range(0, 1):
         worlds_to_run.append('vacuum'+str(world)+'.vw')
 
     world_base_path = 'input/vacuum/gen/'
@@ -171,10 +172,10 @@ def generate_vacuum_worlds():
 
 
 def generate_tile_puzzle():
-    configurations = generate_base_suboptimal_configuration()
+    configurations, tag = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 11):
+    for puzzle in range(13, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -183,7 +184,7 @@ def generate_tile_puzzle():
     configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
-    return configurations
+    return configurations, tag+'-SLIDING_TILE_PUZZLE_4'
 
 
 def cartesian_product(base, key, values, filters=None):
@@ -263,7 +264,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json, tag):
-    with open('output/data{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
+    with open('output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -274,7 +275,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations, tag = generate_vacuum_worlds()  # generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
     slack_notification.start_experiment_notification(len(configurations), 'byodoin')
     results = parallel_execution(configurations, 1)

@@ -7,23 +7,20 @@
 import copy
 import datetime
 import getpass
-import itertools
-import time
 import json
 import os
 import sys
+import time
 from os import path
+from queue import Queue, Empty
 from subprocess import run, TimeoutExpired, PIPE
 from threading import Thread
 
 import notify2
 import pandas as pd
 import paramiko
-from concurrent.futures import ThreadPoolExecutor
-from queue import Queue, Empty
-from tqdm import tqdm
-
 import slack_notification
+from tqdm import tqdm
 
 HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 
@@ -87,7 +84,7 @@ def spawn_ssh_client(hostname, password):
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['EES', 'WEIGHTED_A_STAR']
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -113,9 +110,15 @@ def generate_base_suboptimal_configuration():
 
     # Algorithm specific configurations
     # weight = [3.0]
-    weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    # weight = [1.21, 1.31, 1.51, 1.71, 1.91, 2.11, 2.31, 2.51, 2.71, 2.91, 3.11,
+    #           3.31, 3.51, 3.71, 3.91, 4.11, 4.31, 4.51, 4.71, 4.91, 5.11]  # Vacuum world weights
+    # weight = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5,
+    #           11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5, 16.0]  # Heavy Vacuum world weights
+    # weight = [15, 20, 25, 30, 35, 40, 45, 50]  # Inverse tile weights
+    weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]  # EZ weights
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
     # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
+    # weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -130,7 +133,7 @@ def generate_base_suboptimal_configuration():
 
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
-                                                [['algorithmName', 'EETS']])
+                                                [['algorithmName', 'EECS']])
 
     experiment_tag = ""
     for alg in algorithms_to_run:
@@ -225,6 +228,24 @@ def generate_racetrack():
     configurations = cartesian_product(configurations, 'domainSeed', range(10))
 
     return configurations
+
+
+def generate_vacuum_worlds():
+    configurations, tag = generate_base_suboptimal_configuration()
+    worlds_to_run = []
+    puzzle = 'VACUUM_WORLD'
+    for world in range(0, 50):
+        worlds_to_run.append('vacuum' + str(world) + '.vw')
+
+    world_base_path = 'input/vacuum/gen/'
+    full_world_paths = [world_base_path + world for world in worlds_to_run]
+
+    configurations = cartesian_product(configurations, 'domainName', [puzzle])
+    configurations = cartesian_product(configurations, 'domainPath', full_world_paths)
+
+    tag = tag + '-' + puzzle
+
+    return configurations, tag
 
 
 def generate_tile_puzzle():
@@ -326,7 +347,7 @@ def main():
     command_queue = Queue()
     result_queue = Queue()
 
-    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_vacuum_worlds()  # generate_tile_puzzle()  # generate_racetrack()
 
     experiments = create_experiments(configurations)
     for experiment in experiments:
