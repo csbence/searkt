@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.visualizerIsActive
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.planner.realtime.EnvelopeSearch.EnvelopeSearchPhases.*
@@ -326,7 +327,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      */
     fun expandFromNode(sourceNode: EnvelopeSearchNode<StateType>) {
         expandedNodeCount += 1
-//        expandedNodes.add(sourceNode) //for visualizer
+        if (visualizerIsActive) expandedNodes.add(sourceNode) //for visualizer
 
         sourceNode.iteration = iterationCounter
         sourceNode.expanded = expandedNodeCount
@@ -467,7 +468,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun backupNode(sourceNode: EnvelopeSearchNode<StateType>) {
         sourceNode.waveExpanded = true
-//        backedUpNodes.add(sourceNode)
+        if (visualizerIsActive) backedUpNodes.add(sourceNode)
 
         for ((predecessorNode, _, actionCost) in sourceNode.predecessors) {
             val outdated = predecessorNode.waveCounter != sourceNode.waveCounter
