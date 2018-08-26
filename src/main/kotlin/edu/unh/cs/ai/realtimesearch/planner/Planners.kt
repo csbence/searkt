@@ -13,5 +13,6 @@ enum class Planners {
     DPS,
     EES,
     EETS,
-    EECS
+    EECS,
+    TS
 }

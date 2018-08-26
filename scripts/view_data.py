@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-
+from typing import List
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,7 +10,7 @@ import simplejson as json
 from IPython.display import display
 
 
-def process_data():
+def process_data(list_of_files: List[str]):
     data_dict = dict()
     data = []
 
@@ -30,7 +30,7 @@ def process_data():
     failed_experiments = 0
     successful_experiments = 0
 
-    for f in sys.argv[1:]:
+    for f in list_of_files:
         fi = open(f)
         data.append(json.load(fi))
         fi.close()
@@ -167,7 +167,6 @@ def filter_failed_sets(instance_set):
 def plot(data_dict):
     # print(data_dict)
     df = pd.DataFrame(data_dict)
-    display(df)
     # display(df_gen)
     # success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     # plt.title('Success')
@@ -181,7 +180,6 @@ def plot(data_dict):
     # df = df[~df.algorithm.str.contains("EECS")]
     # df = df[~df.algorithm.str.contains("EETS")]
 
-    df2 = df
     # df2 = df.groupby(["weight", "algorithm"]).apply(filter_failed_sets)
     # look_up_in_df(df, 3798)
     # look_up_in_df(df, 3799)
@@ -194,8 +192,6 @@ def plot(data_dict):
     # heavy for paper
     # df.drop(df.index[range(7600, 7900)], inplace=True)
 
-    display(df)
-
     # display(df[(df.generatedNodes > 5000000) & (df.success == True)])
     # display(over_five_million)
 
@@ -205,7 +201,7 @@ def plot(data_dict):
     sns.despine(ax=success_plot)
     plt.figure()
 
-    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df2, capsize=0.1, palette="Set2")
+    success_plot = sns.pointplot(x="weight", y="success", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     plt.title('Success')
     plt.tight_layout()
     sns.despine(ax=success_plot)
@@ -213,20 +209,21 @@ def plot(data_dict):
 
     # axes = success_plot.axes
     # axes.set(ylim=(0, 1.01))
-    success_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df2, capsize=0.1, palette="Set2")
+    success_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     plt.title('Expanded Nodes')
     sns.despine(ax=success_plot)
     plt.ylabel('log10(expandedNodes')
-    plt.savefig('exp-unit.eps', format='eps')
+    # plt.savefig('exp-unit.eps', format='eps')
     plt.figure()
 
-    success_plot = sns.pointplot(x="weight", y="generatedNodes", hue="algorithm", data=df2, capsize=0.1, palette="Set2")
+    success_plot = sns.pointplot(x="weight", y="generatedNodes", hue="algorithm", data=df, capsize=0.1, palette="Set2")
     plt.title('Generated Nodes')
     sns.despine(ax=success_plot)
     plt.ylabel('log10(generatedNodes')
     plt.figure()
 
-    df_gen = df2[df2.success == True]
+    df_gen = df
+    # df_gen = df[df.success == True]
     # df = df[(df.generatedNodes >= 5000000) & (df.success == True)]
     # expand_plot = sns.pointplot(x="weight", y="expandedNodes", hue="algorithm", data=df_gen, capsize=0.1,
     #                             palette="Set2")
@@ -248,19 +245,19 @@ def plot(data_dict):
     plt.title('CPU time')
     plt.ylabel('log10(experimentRunTime)')
     sns.despine(ax=success_plot)
-    plt.savefig('runtime-unit.eps', format='eps')
+    # plt.savefig('runtime-unit.eps', format='eps')
     plt.figure()
 
     success_plot = sns.pointplot(x="weight", y="nodesPerSecond", hue="algorithm", data=df_gen, capsize=0.1,
                                  palette="Set2")
     plt.title('Nodes per Second')
     sns.despine(ax=success_plot)
-    plt.savefig('nps-unit.eps', format='eps')
+    # plt.savefig('nps-unit.eps', format='eps')
     plt.show()
 
 
 def main():
-    plot(process_data())
+    plot(process_data(sys.argv[1:]))
 
 
 if __name__ == '__main__':

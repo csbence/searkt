@@ -25,7 +25,7 @@ import java.util.Comparator
  *
  * @author Matthew Hatem
  */
-class BinHeap<E : SearchQueueElement<E>>(private var queue: ArrayList<E>, private val cmp: Comparator<E>, val key: Int) {
+class BinHeap<E : SearchQueueElement<E>>(private var queue: ArrayList<E>, private var cmp: Comparator<E>, val key: Int) {
 
     val heap: ArrayList<E>
         get() = queue
@@ -168,5 +168,16 @@ class BinHeap<E : SearchQueueElement<E>>(private var queue: ArrayList<E>, privat
         for (item in this.heap) {
             action(item)
         }
+    }
+
+    private fun heapify() {
+        for (i in size().ushr(1) - 1 downTo 0) {
+            pushDown(i)
+        }
+    }
+
+    fun reorder(comparator: Comparator<E>) {
+        cmp = comparator
+        heapify()
     }
 }

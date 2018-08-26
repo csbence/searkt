@@ -263,6 +263,7 @@ object ConfigurationExecutor {
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             EETS -> executeOfflineSearch(ExplicitEstimationTildeSearch(domain, configuration), configuration, domain, sourceState)
             EECS -> executeOfflineSearch(ExplicitEstimationConservativeSearch(domain, configuration), configuration, domain, sourceState)
+            TS -> executeOfflineSearch(TildeSearch(domain, configuration), configuration, domain, sourceState)
         }
     }
 

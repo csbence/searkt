@@ -131,3 +131,5 @@ __pycache__/
 /output/
 /real-time-search.iml
 /venv/
+scripts/.ipynb_checkpoints/
+scripts/*.ipynb

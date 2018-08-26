@@ -84,7 +84,7 @@ def spawn_ssh_client(hostname, password):
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS']
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS', 'TS']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -134,6 +134,10 @@ def generate_base_suboptimal_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'EECS']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'TS']])
 
     experiment_tag = ""
     for alg in algorithms_to_run:
