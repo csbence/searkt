@@ -147,7 +147,8 @@ object ConfigurationExecutor {
         val domainStream: InputStream = when {
             configuration.rawDomain != null -> configuration.rawDomain.byteInputStream()
             dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
-            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath) ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
+            else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath)
+                    ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
         }
 
         val domain = Domains.valueOf(domainName)
@@ -226,6 +227,7 @@ object ConfigurationExecutor {
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain), configuration, domain, sourceState)
+            CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
             RTA_STAR -> executeRealTimeSearch(RealTimeAStarPlanner(domain, configuration), configuration, domain, sourceState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
@@ -233,6 +235,7 @@ object ConfigurationExecutor {
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
+            TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
         }
     }
 

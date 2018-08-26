@@ -1,10 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
+import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -70,8 +70,7 @@ val fValueComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs,
     }
 }
 
-val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
-        = Comparator { lhs, rhs ->
+val heuristicComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs, rhs ->
     when {
         lhs.heuristic < rhs.heuristic -> -1
         lhs.heuristic > rhs.heuristic -> 1
@@ -82,6 +81,29 @@ val heuristicComparator: java.util.Comparator<SearchNode<*, *>>
 
 interface RealTimeSearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : SearchNode<StateType, NodeType> {
     var iteration: Long
+}
+
+class PureRealTimeSearchNode<StateType : State<StateType>>(
+        override val state: StateType,
+        override var heuristic: Double,
+        override var cost: Long,
+        override var actionCost: Long,
+        override var action: Action,
+        override var iteration: Long,
+        parent: PureRealTimeSearchNode<StateType>? = null
+) : RealTimeSearchNode<StateType, PureRealTimeSearchNode<StateType>>, Indexable {
+
+    /** Item index in the open list. */
+    override var index: Int = -1
+
+    /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
+    override var predecessors: MutableList<SearchEdge<PureRealTimeSearchNode<StateType>>> = arrayListOf()
+
+    /** Parent pointer that points to the min cost predecessor. */
+    override var parent: PureRealTimeSearchNode<StateType> = parent ?: this
+
+    override fun toString() =
+            "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 }
 
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
@@ -116,6 +138,45 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
 
     return actions.reversed()
 }
+
+
+fun <StateType : State<StateType>> constructPath(statePath: Collection<StateType>, domain: Domain<StateType>): List<RealTimePlanner.ActionBundle> {
+    if (statePath.isEmpty()) {
+        throw MetronomeException("Cannot construct path from empty list")
+    }
+
+    return statePath
+            .windowed(partialWindows = false, size = 2) {
+                domain.transition(it[0], it[1])
+                        ?: throw MetronomeException("Unable to construct path on the given state sequence")
+            }
+            .map { RealTimePlanner.ActionBundle(it.first, it.second) }
+}
+
+/**
+ * Extracts an node sequence that leads from the boundary state(s) to the target state.
+ * The path follows the parent pointers from the target to the start in reversed order.
+ *
+ * @return path from source to target if exists.
+ */
+fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> extractNodeChain(targetNode: NodeType?, boundaryChecker: (StateType) -> Boolean): List<NodeType> {
+    targetNode ?: return emptyList()
+
+    if (boundaryChecker(targetNode.state)) {
+        return emptyList()
+    }
+
+    var currentNode: NodeType = targetNode
+    val parentChain = mutableListOf(currentNode)
+
+    do {
+        parentChain.add(currentNode.parent)
+        currentNode = currentNode.parent
+    } while (!boundaryChecker(currentNode.state))
+
+    return parentChain.reversed()
+}
+
 
 /**
  * Expands a node and add it to closed list. For each successor

@@ -85,8 +85,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
-//            println(domain.print(currentState))
-//            Thread.sleep(1000)
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime

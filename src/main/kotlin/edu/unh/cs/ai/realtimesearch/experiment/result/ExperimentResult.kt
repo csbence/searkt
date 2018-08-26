@@ -74,19 +74,31 @@ class ExperimentResult {
     var errorDetails: String = ""
 
     // Racetrack domain
-    @Optional var averageVelocity: Double = 0.0
+    @Optional
+    var averageVelocity: Double = 0.0
 
     // Safety stats tracking
-    @Serializable data class TargetDepthRankTriple(val targetDepth: Int, val rankOnOpen: Int, val frontierDepth: Int)
-    @Optional var proofSuccessful: Int = 0
-    @Optional var towardTopNode: Int = 0
-    @Optional var numberOfProofs: Int = 0
-    @Optional var depthRankOfOpen: List<TargetDepthRankTriple>? = null
+    @Serializable
+    data class DepthRankPair(val depth: Int, val rankOnOpen: Int)
+
+    @Optional
+    var proofSuccessful: Int? = null
+    @Optional
+    var towardTopNode: Int? = null
+    @Optional
+    var numberOfProofs: Int? = null
+    @Optional
+    var depthRankOfOpen: List<DepthRankPair>? = null
+    @Optional
+    var frontierNodeDepth: List<Int>? = null
+
+    //Comprehensive Envelope stats
+    @Optional var backupCount: Int = 0
 
 
     init {
         // Initialize the system properties
-        systemProperties = hashMapOf<String, String>()
+        systemProperties = hashMapOf()
 
         val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
         val arguments = runtimeMxBean.inputArguments
