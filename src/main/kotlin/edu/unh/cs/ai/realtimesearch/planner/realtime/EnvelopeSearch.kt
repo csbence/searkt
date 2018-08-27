@@ -332,7 +332,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         sourceNode.iteration = iterationCounter
         sourceNode.expanded = expandedNodeCount
         // We set to infinity because it has not yet been "backed up," so we avoid it until it is backed up
-        sourceNode.heuristic = Double.POSITIVE_INFINITY
+        // or we go greedy until we find backed up states
+//        sourceNode.heuristic = Double.POSITIVE_INFINITY
 
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
