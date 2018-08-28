@@ -10,7 +10,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentCo
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
-//import groovy.json.JsonOutput
 import org.junit.Test
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -79,7 +78,7 @@ class AcrobotTest {
         assertTrue { acrobot.isGoal(state2) }
     }
 
-    @Test
+//    @Test
     fun testAStarDiscretized1() {
 //        val domain = DiscretizedDomain(Acrobot())
 //        val initialState = DiscretizedState(AcrobotState.Companion.defaultInitialState)

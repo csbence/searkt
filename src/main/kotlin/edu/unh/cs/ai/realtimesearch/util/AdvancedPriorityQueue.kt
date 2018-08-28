@@ -1,23 +1,45 @@
 package edu.unh.cs.ai.realtimesearch.util
 
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import java.lang.Integer.max
+import java.lang.Integer.min
 import java.util.*
 
 /**
  * @author Bence Cserna (bence@cserna.net)
  */
-open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, private var comparator: Comparator<in T>, private val setIndex: (T, Int) -> Unit, private val getIndex: (T) -> Int) {
+class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private var comparator: Comparator<in T>) : AbstractAdvancedPriorityQueue<T>(queue, comparator) {
+    override fun getIndex(item: T): Int = item.index
+    override fun setIndex(item: T, index: Int) {
+        item.index = index
+    }
+
+    companion object {
+        inline operator fun <reified T : Indexable> invoke(capacity: Int, comparator: Comparator<in T>): AdvancedPriorityQueue<T> =
+                AdvancedPriorityQueue(arrayOfNulls(capacity), comparator)
+    }
+}
+
+interface Indexable {
+    var index: Int
+    val open
+        get() = index >= 0
+}
+
+abstract class AbstractAdvancedPriorityQueue<T>(
+        private var queue: Array<T?>,
+        private var comparator: Comparator<in T>
+) : PriorityQueue<T> {
+    abstract fun getIndex(item: T): Int
+    abstract fun setIndex(item: T, index: Int)
+
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
     private var resizable = false
-    var size = 0
+    override var size = 0
 
     val backingArray: Array<T?>
         get() = queue
-
-    companion object {
-        inline operator fun <reified T: Indexable> invoke(capacity: Int, comparator: Comparator<in T>) =
-            AdvancedPriorityQueue(arrayOfNulls(capacity), comparator, {item, index -> item.index = index } , {item -> item.index })
-    }
 
     private fun grow(minCapacity: Int) {
         if (!resizable) {
@@ -49,14 +71,14 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
         }
     }
 
-    fun add(item: T) {
+    override fun add(item: T) {
         if (size >= queue.size) {
             grow(size + 1)
         }
 
         if (size == 0) {
             queue[0] = item
-//            item.index = 0
+
             setIndex(item, 0)
         } else {
             siftUp(size, item)
@@ -65,31 +87,32 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
         size += 1
     }
 
-    fun peek(): T? = if (size == 0) null else queue[0]
+    override fun peek(): T? = if (size == 0) null else queue[0]
 
-    operator fun contains(item: T): Boolean = getIndex(item) != -1 //item.index != -1
+    operator fun contains(item: T): Boolean = getIndex(item) != -1
 
-    fun remove(item: T): Boolean = when {
-//        item.index == -1 -> false
+    override fun remove(item: T): Boolean = when {
         getIndex(item) == -1 -> false
         else -> {
-//            removeAt(item.index)
             removeAt(getIndex(item))
+            setIndex(item, -1)
             true
         }
     }
 
-    fun clear() {
+    override fun clear() {
         for (i in 0 until size) {
-//            queue[i]?.index = -1
-            setIndex(queue[i]!!, -1)
+            val item = queue[i]
+            if (item != null) {
+                setIndex(item, -1)
+            }
             queue[i] = null
         }
 
         size = 0
     }
 
-    fun pop(): T? {
+    override fun pop(): T? {
         if (size == 0) {
             return null
         }
@@ -103,15 +126,15 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
             siftDown(0, x!!)
         }
 
-//        result?.index = -1
-        setIndex(result!!, -1)
+        if (result != null) {
+            setIndex(result, -1)
+        }
         return result
     }
 
     private fun removeAt(index: Int): T? {
         --size
         if (size == index) {
-//            queue[index]!!.index = -1
             setIndex(queue[index]!!, -1)
             queue[index] = null
         } else {
@@ -140,13 +163,11 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
 
             // Move parent down and update its index
             queue[currentIndex] = parentNode
-//            parentNode.index = currentIndex
             setIndex(parentNode, currentIndex)
             currentIndex = parentIndex
         }
 
         queue[currentIndex] = item
-//        item.index = currentIndex
         setIndex(item, currentIndex)
         return currentIndex
     }
@@ -170,19 +191,17 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
             }
 
             queue[currentIndex] = childNode
-//            childNode.index = currentIndex
             setIndex(childNode, currentIndex)
             currentIndex = childIndex
         }
 
         queue[currentIndex] = item
-//        item.index = currentIndex
         setIndex(item, currentIndex)
         return currentIndex
     }
 
     fun update(item: T) {
-        val index = getIndex(item) //item.index
+        val index = getIndex(item)
         if (index == -1) throw RuntimeException("Invalid index. Can't update the location of an item that is not on the heap.")
 
         if (siftUp(index) == index) {
@@ -190,8 +209,8 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
         }
     }
 
-    fun reorder(comparator: Comparator<in T>) {
-        this.comparator = comparator
+    fun reorder(comparator: Comparator<in T>? = null) {
+        this.comparator = comparator ?: this.comparator
         heapify()
     }
 
@@ -205,9 +224,9 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
 
     fun siftDown(index: Int) = siftDown(index, queue[index]!!)
 
-    fun isEmpty() = size == 0
+    override fun isEmpty() = size == 0
 
-    fun isNotEmpty() = !isEmpty()
+    override fun isNotEmpty() = !isEmpty()
 
     inline fun forEach(action: (T) -> Unit) {
         for (i in 0 until size) {
@@ -225,12 +244,61 @@ open class AdvancedPriorityQueue<T: Indexable>(private var queue: Array<T?>, pri
         }
         size = 0
     }
-}
 
-interface Indexable {
-    var index: Int
-    val open: Boolean
-        get() = index >= 0
-}
+    /**
+     * Copy elements from other priority queue.
+     *
+     * Notes:
+     *
+     * This function does not clean up the elements currently in the queue. This could lead to invalid queue indices.
+     * The queue must be heapified after initialization.
+     *
+     * Warning: only use this function if you properly understand what it does.
+     *
+     * @return - last copied element of other queue or null if the initialization is complete
+     */
+    fun initializeFromQueue(
+            other: AbstractAdvancedPriorityQueue<T>,
+            terminationChecker: TerminationChecker,
+            startIndex: Int,
+            func: (T) -> Unit = {}): Int? {
+        if (startIndex > size) throw RuntimeException("Initialization must be continuous!")
 
+        size = startIndex
+
+        while (!terminationChecker.reachedTermination()) {
+            val remainingCount = other.size - size
+
+            // Copy the remaining elements but max 800
+            for (i in 1..min(499, remainingCount)) {
+                backingArray[size] = other.backingArray[size]
+                setIndex(backingArray[size]!!, size)
+                func(backingArray[size]!!)
+
+                ++size
+            }
+
+            if (size == other.size) return null
+        }
+
+        return size
+    }
+
+    fun heapify(terminationChecker: TerminationChecker, startIndex: Int = size / 2): Int? {
+        var currentIndex = startIndex
+
+        while (!terminationChecker.reachedTermination()) {
+            for (i in currentIndex downTo max(currentIndex - 499, 0)) {
+                siftDown(currentIndex)
+                --currentIndex
+            }
+//            println(currentIndex)
+
+            if (currentIndex == -1) return null
+        }
+
+        return currentIndex
+    }
+
+}
 

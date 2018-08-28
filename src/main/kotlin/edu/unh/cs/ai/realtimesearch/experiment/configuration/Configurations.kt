@@ -25,6 +25,7 @@ enum class Configurations(val configurationName: String) {
     LOOKAHEAD_TYPE          ("lookaheadType"),
     COMMITMENT_STRATEGY     ("commitmentStrategy"),
     LOOKAHEAD_DEPTH_LIMIT   ("lookaheadDepthLimit"),
+    TERMINATION_EPSILON     ("terminationTimeEpsilon"),
     // Anytime search configurations
     ANYTIME_MAX_COUNT       ("anytimeMaxCount"),
     // Weighted A* configurations

@@ -54,11 +54,11 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
 
         while (!domain.isGoal(currentState)) {
             logger.debug { "Start anytime search" }
-            val startTime = getThreadCpuNanotTime()
+            val startTime = getThreadCpuNanoTime()
 
             val tempActions = ArrayList(planner.selectAction(currentState, FakeTerminationChecker))
 
-            val endTime = getThreadCpuNanotTime()
+            val endTime = getThreadCpuNanoTime()
             totalPlanningTime += endTime - startTime
 
             logger.debug { "time: " + (endTime - startTime) }

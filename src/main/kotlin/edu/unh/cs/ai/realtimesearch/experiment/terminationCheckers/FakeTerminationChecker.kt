@@ -16,5 +16,5 @@ object FakeTerminationChecker : TerminationChecker {
      *
      * @return false
      */
-    override fun reachedTermination() = false
+    override fun reachedTermination(buffer: Long) = false
 }

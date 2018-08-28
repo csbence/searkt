@@ -2,14 +2,14 @@
 
 import os
 
-print "Making Korf instances..."
+print ("Making Korf instances...")
 
 korf_instances = open('master', 'r')
 
 for line in korf_instances:
     instance = line.split(" ")
     instance_number = instance[0]
-    print instance_number
+    print (instance_number)
     instance_file = open(str(instance_number), 'w')
     instance_file.write("4 4\n")
     instance_file.write("starting positions for each tile:\n")
@@ -26,5 +26,5 @@ for line in korf_instances:
     instance_file.close()
 
 korf_instances.close()
-print "Done."
+print ("Done.")
 

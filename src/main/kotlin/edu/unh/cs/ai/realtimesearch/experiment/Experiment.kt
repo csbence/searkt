@@ -18,5 +18,5 @@ abstract class Experiment {
         return threadMXBean.currentThreadCpuTime - start
     }
 
-    fun getThreadCpuNanotTime() = threadMXBean.currentThreadCpuTime
+    fun getThreadCpuNanoTime() = threadMXBean.currentThreadCpuTime
 }

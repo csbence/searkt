@@ -1,7 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.experiment.configuration
 
-//import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.experimentDataFromJson
-//import edu.unh.cs.ai.realtimesearch.experiment.configuration.json.toJson
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -11,29 +9,29 @@ import kotlin.test.assertTrue
  */
 class ExperimentDataTest {
 
-    @Test
+//    @Test
     fun testJsonSerialization1() {
-        val experimentData = ExperimentData()
-        experimentData["timeLimit"] = 4
-        experimentData["actionDuration"] = 10
-        experimentData["list"] = listOf("A", 1, 1)
+//        val experimentData = ExperimentData()
+//        experimentData["timeLimit"] = 4
+//        experimentData["actionDuration"] = 10
+//        experimentData["list"] = listOf("A", 1, 1)
 
 //        val json = experimentData.toJson()
 //        val experimentDataFromJson = experimentDataFromJson(json)
-//
+
 //        assertTrue(experimentDataFromJson["timeLimit"] == 4L)
 //        assertTrue(experimentDataFromJson["actionDuration"] == 10L)
 //        assertTrue(experimentDataFromJson["X"] == null)
     }
 
-    @Test
+//    @Test
     fun testJsonSerialization2() {
-        val experimentData = ExperimentData()
-        experimentData["actions"] = listOf("POSITIVE", "POSITIVE", "NEGATIVE", "NONE")
+//        val experimentData = ExperimentData()
+//        experimentData["actions"] = listOf("POSITIVE", "POSITIVE", "NEGATIVE", "NONE")
 
 //        val json = experimentData.toJson()
 //        val experimentDataFromJson = experimentDataFromJson(json)
-//
+
 //        val experimentResult = ExperimentResult(experimentDataFromJson.valueStore)
 //
 //        assertTrue { experimentResult.actions.size == 4 }

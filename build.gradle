@@ -2,9 +2,9 @@ group 'unh-ai'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'application'
-apply plugin: "org.jetbrains.kotlin.jvm"
 apply plugin: 'excelsiorJet'
 apply plugin: 'kotlinx-serialization'
+apply plugin: "org.jetbrains.kotlin.jvm"
 
 applicationDefaultJvmArgs = [
         "-server", "-XX:+AggressiveOpts", "-ea", //"–XX:+UseG1GC",
@@ -19,8 +19,9 @@ if (project.hasProperty("mainClass")) {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.40'
-    ext.serialization_version = '0.4.2'
+
+    ext.kotlin_version = '1.2.60'
+    ext.serialization_version = '0.6.1'
 
     repositories {
         mavenCentral()
@@ -49,9 +50,15 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'org.slf4j:slf4j-nop:1.7.25'
 
+    // https://mvnrepository.com/artifact/org.apache.thrift/libthrift
+    compile group: 'org.apache.thrift', name: 'libthrift', version: '0.11.0'
+
+    //compile files("libs/libthrift-1.0.0-SNAPSHOT.jar")
+
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
+
 
 sourceSets {
     main.java.srcDirs += file('src/main/kotlin')

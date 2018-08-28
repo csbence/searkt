@@ -53,6 +53,20 @@ interface Domain<State> {
     }
 
     /**
+     * @param sourceState is the start state of the transition.
+     * @param targetState is the end state of the transition.
+     * @return the action that leads to the targetState when applied from the sourceState if exists, else null.
+     */
+    fun transition(sourceState: State, targetState: State): Pair<Action, Long>? {
+        val successorBundles = successors(sourceState)
+
+        val successorBundle = successorBundles.firstOrNull { it.state == targetState }
+
+        successorBundle ?: return null
+        return successorBundle.action to successorBundle.actionCost
+    }
+
+    /**
      * Convert a state to String.
      * It is practical when the state is only meaningful in the context of the domain.
      *

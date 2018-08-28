@@ -4,6 +4,8 @@ enum class Planners {
     A_STAR,
     RTA_STAR,
     LSS_LRTA_STAR,
+    CES,
+    ES,
     ARA_STAR,
     WEIGHTED_A_STAR,
     DYNAMIC_F_HAT,
@@ -15,4 +17,8 @@ enum class Planners {
     EETS,
     EECS,
     TS
+    DPS,
+    TIME_BOUNDED_A_STAR,
+    ENVELOPE,
+    ALT_ENVELOPE
 }

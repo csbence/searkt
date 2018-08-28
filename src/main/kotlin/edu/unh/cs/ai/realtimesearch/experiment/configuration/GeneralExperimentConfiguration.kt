@@ -6,8 +6,11 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
+import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
+import java.util.concurrent.TimeUnit
 
 open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = hashMapOf()) : ExperimentData(values) {
     constructor(domainName: String,
@@ -67,6 +70,8 @@ data class ExperimentConfiguration(
         @Optional
         val commitmentStrategy: CommitmentStrategy? = null,
         @Optional
+        val terminationTimeEpsilon: Long = TimeUnit.NANOSECONDS.convert(2000, TimeUnit.MICROSECONDS),
+        @Optional
         val stepLimit: Long? = null,
 
         // RTA*
@@ -96,5 +101,15 @@ data class ExperimentConfiguration(
         // Error Models
         @Optional val errorModel: String? = null
 
-) {
-}
+        //Envelope-based searching (i.e. not LSS)
+        @Optional
+        val backlogRatio: Double? = null,
+
+        // TBA*
+        @Optional
+        val tbaOptimization: TBAOptimization? = null,
+
+        // Envelope Search
+        @Optional
+        val backupComparator: BackupComparator? = null
+)

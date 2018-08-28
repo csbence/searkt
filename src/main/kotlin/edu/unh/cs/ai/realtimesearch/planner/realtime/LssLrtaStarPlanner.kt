@@ -1,18 +1,24 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.environment.*
+import edu.unh.cs.ai.realtimesearch.environment.Domain
+import edu.unh.cs.ai.realtimesearch.environment.NoOperationAction
+import edu.unh.cs.ai.realtimesearch.environment.State
+import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.ai.realtimesearch.experiment.measure
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.trace
 import edu.unh.cs.ai.realtimesearch.logging.warn
-import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
+import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import kotlin.Long.Companion.MAX_VALUE
+import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 /**
@@ -24,77 +30,48 @@ import kotlin.system.measureTimeMillis
  * - Run A* from the expected destination state
  *
  * This loop continue until the goal has been found
+ *
+ * @history Kevin C. Gall Adding nano-time measurements outside of logger. Logger disabled as it depends on Groovy,
+ * and it is not a good use of my time to reimplement logging when all I need is simple measurements
  */
-class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) : RealTimePlanner<StateType>() {
-    data class Edge<StateType : State<StateType>>(val node: Node<StateType>, val action: Action, val actionCost: Long)
-
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Long,
-                                             var actionCost: Long, var action: Action,
-                                             var iteration: Long,
-                                             parent: Node<StateType>? = null): Indexable {
-
-
-        /** Item index in the open list. */
-        override var index: Int = -1
-
-        /** Nodes that generated this Node as a successor in the current exploration phase. */
-        var predecessors: MutableList<Edge<StateType>> = arrayListOf()
-
-        /** Parent pointer that points to the min cost predecessor. */
-        var parent = parent ?: this
-
-        val f: Double
-            get() = cost + heuristic
-
-        override fun hashCode(): Int = state.hashCode()
-
-        override fun equals(other: Any?): Boolean {
-            if (other != null && other is Node<*>) {
-                return state == other.state
-            }
-            return false
-        }
-
-        override fun toString(): String =
-                "Node: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open ]"
-    }
-
+class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
+        RealTimePlanner<StateType>(),
+        RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
     private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
-    private var iterationCounter = 0L
+    override var iterationCounter = 0L
 
-    private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
-        when {
-            lhs.f < rhs.f -> -1
-            lhs.f > rhs.f -> 1
-            lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
-            lhs.cost < rhs.cost -> 1
-            else -> 0
-        }
-    }
-
-    private val heuristicComparator = Comparator<Node<StateType>> { lhs, rhs ->
-        when {
-            lhs.heuristic < rhs.heuristic -> -1
-            lhs.heuristic > rhs.heuristic -> 1
-            else -> 0
-        }
-    }
-
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap<StateType, Node<StateType>>(100000000, 1.toFloat()).resize()
+    private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000, 1.toFloat()).resize()
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    private var openList = AdvancedPriorityQueue(10000000, fValueComparator)
-
+    override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000, fValueComparator)
     private var rootState: StateType? = null
 
     // Performance measurement
     private var aStarPopCounter = 0
     private var dijkstraPopCounter = 0
     var aStarTimer = 0L
-        get
     var dijkstraTimer = 0L
-        get
+
+    // configuration
+    /** The maximum proportion of each iteration that can be spent on learning. */
+    private val learningMaxFactor = 0.75
+    /** Cost in nanoseconds of following a tree pointer. Used in buffer calculation on when to stop exploring */
+    private val treeFollowingFactor = 100.0
+
+    override fun init(rootState: StateType) {
+        val node = PureRealTimeSearchNode(
+                state = rootState,
+                heuristic = domain.heuristic(rootState),
+                actionCost = 0,
+                action = NoOperationAction,
+                cost = 0,
+                iteration = 0)
+        node.parent = node
+
+        nodes[rootState] = node
+        nodes.remove(rootState)
+    }
 
     /**
      * Selects a action given current sourceState.
@@ -111,7 +88,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
-        println(sourceState)
+        //println(sourceState)
 
         if (rootState == null) {
             rootState = sourceState
@@ -131,20 +108,41 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
 
         // Learning phase
         if (openList.isNotEmpty()) {
-            dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
+            //calculate learning time and get a new termination checker. To satisfy all possible checkers, we need
+            //to reset the bound after we construct the checker
+            val learningTime  = (terminationChecker.remaining() * learningMaxFactor).toLong()
+            val learningTerminationChecker = getTerminationChecker(configuration, learningTime)
+            learningTerminationChecker.resetTo(learningTime)
+
+            dijkstraTimer += measureTimeMillis {
+                //Note that dynamic dijkstra does not notify expansions: expansion-based termination checkers will never "reach termination"
+                val dijkstraNanoTimer = measureNanoTime {
+                    dynamicDijkstra(this, reachedTermination = {open ->
+                        open.isEmpty() || learningTerminationChecker.reachedTermination()
+                    })
+                }
+                printMessage("""Learning: $dijkstraNanoTimer""")
+            }
         }
 
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val targetNode = aStar(sourceState, terminationChecker)
+            val aStarNanoTimer = measureNanoTime {
+                val targetNode = aStar(sourceState, terminationChecker)
 
-            plan = extractPlan(targetNode, sourceState)
-            rootState = targetNode.state
+                /* Execution time accounted for with pathLengthBuffer in aStar operation */
+                plan = extractPath(targetNode, sourceState)
+                rootState = targetNode.state
+            }
+
+            printMessage("""A* Time: $aStarNanoTimer""")
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
+
+        printMessage("""Remaining Time: ${terminationChecker.remaining()}""")
 
         return plan!!
     }
@@ -153,25 +151,31 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(state: StateType, terminationChecker: TerminationChecker): Node<StateType> {
+    private fun aStar(state: StateType, terminationChecker: TerminationChecker): PureRealTimeSearchNode<StateType> {
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+        val node = PureRealTimeSearchNode(state, domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         var currentNode = node
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }
 
+        var pathLengthBuffer = 0L
         val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination()) {
+            while (!terminationChecker.reachedTermination(pathLengthBuffer)) {
                 aStarPopCounter++
 
                 val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
                 if (domain.isGoal(topNode.state)) return topNode
 
                 currentNode = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-                expandFromNode(currentNode)
+                expandFromNode(this, currentNode, {})
+
+                //we only care about path length for time termination limits. Expansion limits get free tree following
+                if (configuration.terminationType == TerminationType.TIME) {
+                    pathLengthBuffer = ((openList.peek()?.minCostPathLength ?: 0).toDouble() * treeFollowingFactor).toLong()
+                }
                 terminationChecker.notifyExpansion()
             }
         }
@@ -196,90 +200,21 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
     }
 
     /**
-     * Expands a node and add it to closed list. For each successor
-     * it will add it to the open list and store it's g value, as long as the
-     * state has not been seen before, or is found with a lower g value
-     */
-    private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount += 1
-
-        val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
-            val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
-
-            val successorNode = getNode(sourceNode, successor)
-
-            if (successorNode.heuristic == Double.POSITIVE_INFINITY
-                    && successorNode.iteration != iterationCounter) {
-                // Ignore this successor as it is a dead end
-                continue
-            }
-
-            // If the node is outdated it should be updated.
-            if (successorNode.iteration != iterationCounter) {
-                successorNode.apply {
-                    iteration = iterationCounter
-                    predecessors.clear()
-                    cost = MAX_VALUE
-                    // parent, action, and actionCost is outdated too, but not relevant.
-                }
-            }
-
-            // Add the current state as the predecessor of the child state
-            successorNode.predecessors.add(Edge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
-
-            // Skip if we got back to the parent
-            if (successorState == sourceNode.parent.state) {
-                continue
-            }
-
-            // only generate those state that are not visited yet or whose cost value are lower than this path
-            val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorNode.cost > successorGValueFromCurrent) {
-                // here we generate a state. We store it's g value and remember how to get here via the treePointers
-                successorNode.apply {
-                    cost = successorGValueFromCurrent.toLong()
-                    parent = sourceNode
-                    action = successor.action
-                    actionCost = successor.actionCost.toLong()
-                }
-
-                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
-                logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
-
-                if (!successorNode.open) {
-                    openList.add(successorNode)
-                    // Fresh node not on the open yet
-                } else {
-                    openList.update(successorNode)
-                }
-            } else {
-                logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
-                }
-            }
-        }
-
-        sourceNode.heuristic = Double.POSITIVE_INFINITY
-    }
-
-    /**
      * Get a node for the state if exists, else create a new node.
      *
      * @return node corresponding to the given state.
      */
-    private fun getNode(parent: Node<StateType>, successor: SuccessorBundle<StateType>): Node<StateType> {
+    override fun getNode(parent: PureRealTimeSearchNode<StateType>, successor: SuccessorBundle<StateType>): PureRealTimeSearchNode<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
 
-            val undiscoveredNode = Node(
+            val undiscoveredNode = PureRealTimeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost.toLong(),
+                    actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
@@ -293,108 +228,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         }
     }
 
-    /**
-     * Performs Dijkstra updates until runs out of resources or done
-     *
-     * Updates the mode to SEARCH if done with DIJKSTRA
-     *
-     * Dijkstra updates repeatedly pop the state s according to their heuristic value, and then update
-     * the cost values for all it's visited successors, based on the heuristic s.
-     *
-     * This increases the stored heuristic values, ensuring that A* won't go in circles, and in general generating
-     * a better table of heuristics.
-     *
-     */
-    private fun dijkstra(terminationChecker: TerminationChecker) {
-        logger.debug { "Start: Dijkstra" }
-        // Invalidate the current heuristic value by incrementing the counter
-        iterationCounter++
-
-        // change openList ordering to heuristic only`
-        openList.reorder(heuristicComparator)
-
-        // LSS-LRTA addition
-        //        openList.toTypedArray().forEach {
-        //            it.iteration = iterationCounter
-        //        }
-
-        while (!terminationChecker.reachedTermination() && openList.isNotEmpty()) {
-            // Closed list should be checked
-            val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-            node.iteration = iterationCounter
-
-            val currentHeuristicValue = node.heuristic
-
-            // update heuristic value for each predecessor
-            for ((predecessorNode, _, actionCost) in node.predecessors) {
-
-                if (predecessorNode.iteration == iterationCounter && !predecessorNode.open) {
-                    // This node was already learned and closed in the current iteration
-                    continue
-                }
-
-                // Update if the node is outdated
-                //                if (predecessorNode.iteration != iterationCounter) {
-                //                    predecessorNode.heuristic = Double.POSITIVE_INFINITY
-                //                    predecessorNode.iteration = iterationCounter
-                //                }
-
-                val predecessorHeuristicValue = predecessorNode.heuristic
-
-                //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
-
-                if (!predecessorNode.open) {
-                    // This node is not open yet, because it was not visited in the current planning iteration
-
-                    predecessorNode.heuristic = currentHeuristicValue + actionCost
-                    assert(predecessorNode.iteration == iterationCounter - 1)
-                    predecessorNode.iteration = iterationCounter
-
-                    openList.add(predecessorNode)
-                } else if (predecessorHeuristicValue > currentHeuristicValue + actionCost) {
-                    // This node was visited in this learning phase, but the current path is better then the previous
-                    predecessorNode.heuristic = currentHeuristicValue + actionCost
-                    openList.update(predecessorNode) // Update priority
-
-                    // Frontier nodes could be also visited TODO
-                    //                    assert(predecessorNode.iteration == iterationCounter) {
-                    //                        "Expected iteration stamp $iterationCounter got ${predecessorNode.iteration}"
-                    //                    }
-                }
-            }
-        }
-
-        // update mode if done
-        if (openList.isEmpty()) {
-            logger.debug { "Done with Dijkstra" }
-        } else {
-            logger.warn { "Incomplete learning step. Lists: Open(${openList.size})" }
-        }
-    }
-
-    /**
-     * Given a state, this function returns the path according to the tree pointers
-     */
-    private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
-        val actions = ArrayList<ActionBundle>(1000)
-        var currentNode = targetNode
-
-        logger.debug { "Extracting plan" }
-
-        if (targetNode.state == sourceState) {
-            return emptyList()
-        }
-
-        // keep on pushing actions to our queue until source state (our root) is reached
-        do {
-            actions.add(ActionBundle(currentNode.action, currentNode.actionCost))
-            currentNode = currentNode.parent
-        } while (currentNode.state != sourceState)
-
-        logger.debug { "Plan extracted" }
-
-        return actions.reversed()
-    }
-
+    //conveniently turn on / off console printing
+    private fun printMessage(message: String) = 0//println(message)
 }
