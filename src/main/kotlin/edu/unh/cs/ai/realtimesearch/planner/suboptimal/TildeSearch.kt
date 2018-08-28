@@ -1,20 +1,19 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
-import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.*
+import edu.unh.cs.ai.realtimesearch.util.BinHeap
+import edu.unh.cs.ai.realtimesearch.util.Indexable
+import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
 import java.util.*
 import kotlin.Comparator
 import kotlin.math.sqrt
 
 class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
-    private val weight: Double = configuration.weight
-            ?: throw MetronomeConfigurationException("Weight for Tilde Search is not specified.")
 
     var terminationChecker: TerminationChecker? = null
 
@@ -47,10 +46,6 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
     private val openList = BinHeap(1000000, openNodeComparator, 0)
 
 
-    private var fMinExpansion = 0
-    private var fHatMinExpansion = 0
-    private var dHatMinExpansion = 0
-
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action, override var d: Double,
                                              override var parent: TildeSearch.Node<StateType>? = null) :
@@ -82,7 +77,7 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
 
         private var sseD = 0.0
 
-        val fHat: Double
+        private val fHat: Double
             get() = cost + hHat
 
         val fTilde: Double
