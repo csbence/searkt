@@ -13,11 +13,12 @@ interface BucketNode {
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val openList = BinHeap(1000000, PotentialComparator<Bucket<T>>(), 0)//AdvancedPriorityQueue(100000000, PotentialComparator<Bucket<T>>())
+    private val openList = AdvancedPriorityQueue(1000000, PotentialComparator<Bucket<T>>())
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(1000000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 
+    @Suppress("unused")
     private val logger = LoggerFactory.getLogger(BucketOpenList::class.java)
 
     private inner class PotentialComparator<T> : Comparator<T> {
@@ -58,8 +59,9 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             get() = h
         override val dHat: Double
             get() = d
+        @Suppress("UNUSED_PARAMETER")
         override var parent: Bucket<T>?
-            get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+            get() = throw NotImplementedError("Buckets don't have a parent")
             set(value) {}
 
         override fun setIndex(key: Int, index: Int) {
@@ -69,7 +71,8 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         override fun getIndex(key: Int): Int {
             return indexMap[key]
         }
-        private val indexMap = Array(1, {-1})
+
+        private val indexMap = Array(1) { -1 }
         override var index: Int = -1
 
         val potential: Double
@@ -122,7 +125,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         get() = lookUpTable.size
 
     val size
-        get() = openList.size()
+        get() = openList.size
 
     fun isNotEmpty(): Boolean = size != 0
 
@@ -133,7 +136,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     override fun toString(): String {
         val stringBuilder = StringBuilder()
                 .appendln("fMin: $fMin")
-                .appendln("OpenList size: ${openList.size()}")
+                .appendln("OpenList size: ${openList.size}")
 
         openList.forEach { stringBuilder.append(it.toString()) }
 
@@ -215,7 +218,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
         topBucketOnOpen.remove(firstElementInTopBucket)
 
         if (topBucketOnOpen.isEmpty()) {
-            openList.poll() // pop the empty bucket
+            openList.pop() // pop the empty bucket
             val nextBucketFValue = openList.peek()?.f ?: Double.MAX_VALUE
             if (firstElementInTopBucket.getFValue() == minFValue && nextBucketFValue > minFValue) {
                 recomputeMinFValue() // recompute the new minimum f value on open

@@ -338,7 +338,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
 
-            val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost)
+            val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong())
             // Having a predecessor set would make this prettier, but probably slower
             if (!successorNode.predecessors.contains(edge)) {
                 successorNode.predecessors.add(edge)
@@ -587,7 +587,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             val undiscoveredNode = EnvelopeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,

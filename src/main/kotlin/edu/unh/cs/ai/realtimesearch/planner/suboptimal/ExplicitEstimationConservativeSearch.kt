@@ -10,7 +10,6 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.*
 import java.util.*
 import kotlin.Comparator
-import kotlin.math.abs
 
 class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
@@ -75,57 +74,23 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
 //    private val getFocalIndex: (node: Node<StateType>) -> (Int) = { node -> node.focalIndex }
 
     private val rbTree = RBTree(openNodeComparator, explicitNodeComparator)
-    private val focal = BinHeap(1000000, focalNodeComparator, 0) //AdvancedPriorityQueue(arrayOfNulls(100000000), focalNodeComparator, setFocalIndex, getFocalIndex)
+
+    inner class FocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+    }
+
+    private val focal = FocalList()
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
-    private val openList = ExplicitQueue(rbTree, focal, explicitNodeComparator)
-    private val cleanup = BinHeap(1000000, cleanupNodeComparator, 1)
+    private val openList = SynchronizedQueue(rbTree, focal, explicitNodeComparator, 0)
 
-    class ExplicitQueue<E>(private val open: RBTree<E, E>, private val focal: BinHeap<E>, private val explicitComparator: Comparator<E>)
-            where E : RBTreeElement<E, E>, E : Indexable, E: SearchQueueElement<E> {
-
-        fun isEmpty(): Boolean = focal.isEmpty
-
-        fun isNotEmpty(): Boolean = !isEmpty()
-
-        fun add(e: E, oldBest: E) {
-//            open[e] = e
-            open.insert(e, e)
-            if (explicitComparator.compare(e, oldBest) <= 0) {
-                focal.add(e)
-            }
-        }
-
-        fun remove(e: E) {
-//            open.remove(e)
-            open.delete(e)
-            if (e.getIndex(0) != -1) {
-                focal.remove(e)
-            }
-        }
-
-        fun pollOpen(): E? {
-//            val e = open.pollFirstEntry().value
-            val e = open.poll()
-            if (e != null && e.getIndex(0) != -1) {
-                focal.remove(e)
-            }
-            return e
-        }
-
-        fun pollFocal(): E? {
-//            val e = focal.pop()
-            val e = focal.poll()
-            if (e != null) {
-//                open.remove(e)
-                open.delete(e)
-            }
-            return e
-        }
-
-        fun peekOpen(): E? =  open.peek() //if (open.firstEntry() != null) open.firstEntry().value else null
-        fun peekFocal(): E? = focal.peek()
+    inner class CleanupList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), cleanupNodeComparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
     }
+
+    private val cleanup = CleanupList()
 
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                                        var actionCost: Double, var action: Action, override var d: Double,
@@ -136,7 +101,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
         override val h: Double
             get() = heuristic
 
-        private val indexMap = Array(2, {-1})
+        private val indexMap = Array(2) { -1 }
         override fun setIndex(key: Int, index: Int) {
             indexMap[key] = index
         }
@@ -293,7 +258,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
                 return chosenNode
             }
             else -> {
-                val chosenNode = cleanup.poll() ?: throw MetronomeException("Clean up is Empty!")
+                val chosenNode = cleanup.pop() ?: throw MetronomeException("Clean up is Empty!")
                 openList.remove(chosenNode)
                 ++aStarExpansions
                 return chosenNode

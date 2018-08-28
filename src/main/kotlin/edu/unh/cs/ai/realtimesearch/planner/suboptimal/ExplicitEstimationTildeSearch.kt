@@ -83,79 +83,44 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    // accessors and setters for the individual indices within each container
-
-//    private val qualifiedSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.qualifiedIndex = index }
-//    private val qualifiedGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.qualifiedIndex }
-
-//    private val promisingSetIndex: (node: Node<StateType>, index: Int) -> (Unit) = { node, index -> node.promisingIndex = index }
-//    private val promisingGetIndex: (node: Node<StateType>) -> (Int) = { node -> node.promisingIndex }
-
     // set up for the containers to store the nodes
 
     private val qualifiedRBTree = RBTree(cleanupNodeComparator, qualifiedComparator)
-    private val qualifiedFocal = BinHeap(1000000, newOpenNodeComparator, 0)
+
+    inner class QualifiedFocalList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), newOpenNodeComparator) {
+        override fun getIndex(item: ExplicitEstimationTildeSearch.Node<StateType>): Int = item.getIndex(0)
+        override fun setIndex(item: ExplicitEstimationTildeSearch.Node<StateType>, index: Int) = item.setIndex(0, index)
+    }
+
+    private val qualifiedFocal = QualifiedFocalList()
+
 
     private val promisingRBTree = RBTree(newOpenNodeComparator, promisingComparator)
-    private val promisingFocal = BinHeap(1000000, focalNodeComparator, 1)
+
+    inner class PromisingFocalList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+    }
+
+    private val promisingFocal = PromisingFocalList()
 
     private val nodes: HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>> = HashMap(100000000, 1.toFloat())
 
     // uses four separate containers to store the nodes during search
 
-    private val qualifiedNodes = ExplicitQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, 0)
-    private val promisingNodes = ExplicitQueue(promisingRBTree, promisingFocal, promisingComparator, 1)
+    private val qualifiedNodes = SynchronizedQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, 0)
+    private val promisingNodes = SynchronizedQueue(promisingRBTree, promisingFocal, promisingComparator, 1)
 
-    private val fHatHeap = BinHeap(1000000, openNodeComparator, 2)
+    inner class FHatList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), openNodeComparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(2)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(2, index)
+    }
+
+    private val fHatHeap = FHatList()
 
     private var fMinExpansion = 0
     private var fHatMinExpansion = 0
     private var dHatMinExpansion = 0
-
-    class ExplicitQueue<E>(val open: RBTree<E, E>, val focal: BinHeap<E>, private val explicitComparator: Comparator<E>,
-                           private val key: Int)
-            where E : RBTreeElement<E, E>, E : Indexable, E: SearchQueueElement<E>{
-
-        fun isEmpty(): Boolean = focal.isEmpty// open.firstEntry() == null || open.firstEntry().value == null
-
-        fun isNotEmpty(): Boolean = !isEmpty()
-
-        // returns true when the element qualifies for left prefix
-        fun add(e: E, oldBest: E): Boolean {
-            open.insert(e, e)
-            if (explicitComparator.compare(e, oldBest) <= 0) {
-                focal.add(e)
-                return true
-            }
-            return false
-        }
-
-        fun remove(e: E) {
-            open.delete(e)
-            if (e.getIndex(key) != -1) {
-                focal.remove(e)
-            }
-        }
-
-        fun pollOpen(): E? {
-            val e = open.poll()
-            if (e != null && e.getIndex(key) != -1) {
-                focal.remove(e)
-            }
-            return e
-        }
-
-        fun pollFocal(): E? {
-            val e = focal.poll()
-            if (e != null) {
-                open.delete(e)
-            }
-            return e
-        }
-
-        fun peekOpen(): E? = open.peek()
-//        fun peekFocal(): E? = focal.peek()
-    }
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action, override var d: Double,
@@ -165,9 +130,9 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         override var node: RBTreeNode<Node<StateType>, Node<StateType>>?
             get() = internalNode
             set(value) { internalNode = value }
-        private val indexMap = Array(3, {-1})
+        private val indexMap = Array(3) { -1 }
         override val g: Double
-            get() = cost.toDouble()
+            get() = cost
         override val h: Double
             get() = heuristic
 
@@ -209,7 +174,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         override var index: Int = -1
 
         init {
-            computePathHats(parent, actionCost.toDouble())
+            computePathHats(parent, actionCost)
         }
 
         private fun calculateDHatMean(): Double {
@@ -275,7 +240,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private fun selectNode(): Node<StateType> {
         when {
-            qualifiedNodes.focal.isEmpty -> {
+            qualifiedNodes.focal.isEmpty() -> {
                 val chosenNode = qualifiedNodes.pollOpen()!!
                 promisingNodes.remove(chosenNode)
                 fHatHeap.remove(chosenNode)
@@ -284,8 +249,8 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 // nothing qualifies [f <= w*fMin]
                 // return fMin
             }
-            promisingNodes.focal.isEmpty -> {
-                val chosenNode = fHatHeap.poll()!!
+            promisingNodes.focal.isEmpty() -> {
+                val chosenNode = fHatHeap.pop()!!
                 promisingNodes.remove(chosenNode)
                 qualifiedNodes.remove(chosenNode)
                 ++fHatMinExpansion
@@ -304,8 +269,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             }
         }
     }
-
-    private fun initializeAStar(): Long = System.currentTimeMillis()
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -394,7 +357,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         promisingNodes.add(node, node)
         generatedNodeCount++
 
-        while (!fHatHeap.isEmpty && !terminationChecker.reachedTermination()) {
+        while (fHatHeap.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.nanoTime() - startTime

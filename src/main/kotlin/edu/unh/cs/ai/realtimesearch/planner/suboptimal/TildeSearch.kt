@@ -6,7 +6,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.BinHeap
+import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
 import java.util.*
@@ -43,8 +43,7 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
 
     private val nodes: HashMap<StateType, TildeSearch.Node<StateType>> = HashMap(100000000, 1.toFloat())
 
-    private val openList = BinHeap(1000000, openNodeComparator, 0)
-
+    private val openList = AdvancedPriorityQueue(1000000, openNodeComparator)
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action, override var d: Double,
@@ -235,8 +234,8 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
             openList.reorder(openNodeComparator)
             return true
         }
-        while(!openList.isEmpty && !terminationChecker.reachedTermination()) {
-            val topNode = openList.poll()
+        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            val topNode = openList.pop()
             if (topNode == null || topNode.f > goalNodeFValue) {
                 openList.reorder(openNodeComparator)
                 return true
@@ -256,8 +255,8 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
         openList.add(node)
         generatedNodeCount++
 
-        while (!openList.isEmpty && !terminationChecker.reachedTermination()) {
-            val topNode = openList.poll() ?: throw GoalNotReachableException("Open list is empty")
+        while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            val topNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
                 if (cleanUpOnF(topNode.f, terminationChecker)) {
                     executionNanoTime = System.nanoTime() - startTime

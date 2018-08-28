@@ -9,7 +9,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
-import kotlin.system.measureNanoTime
 
 /**
  * A planner for real time search environments, where a constraint is placed
@@ -60,7 +59,6 @@ data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCo
     override fun equals(other: Any?): Boolean = when (other) {
         null -> false
         is SearchEdge<*> -> node == other.node
-        is SearchEdge<*> -> node == other.node
         else -> false
     }
 }
@@ -73,10 +71,6 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
     var action: Action
     var parent: NodeType
     val predecessors: MutableList<SearchEdge<NodeType>>
-
-    val setIndex: (node: SearchNode<StateType, NodeType>, index: Int) -> (Unit)
-    val getIndex: (node: SearchNode<StateType, NodeType>) -> (Int)
-
 
     val f: Double
         get() = cost + heuristic
