@@ -112,6 +112,10 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         size = 0
     }
 
+    fun quickClear() {
+        size = 0
+    }
+
     override fun pop(): T? {
         if (size == 0) {
             return null
