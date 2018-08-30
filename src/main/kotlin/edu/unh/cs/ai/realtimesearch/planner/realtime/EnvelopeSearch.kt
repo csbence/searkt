@@ -223,20 +223,26 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         var greedyTimeSlice = (terminationChecker.remaining() * greedyResourceRatio).toLong()
         var pseudoFTimeSlice = (terminationChecker.remaining() * pseudoFResourceRatio).toLong()
+
         if (isWaveInitializationInProgress) {
             greedyTimeSlice = 0
             pseudoFTimeSlice = 0
         }
+
         val wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
 
         val searchTime = measureNanoTime {
             if (foundGoals.isEmpty() && !isWaveInitializationInProgress) {
                 // searchPhase GOAL_SEARCH
 
+                // Timing: number of expansions - no compensation is necessary
                 explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), heuristicOpenList)
+
+                // Timing: number of expansions - no compensation is necessary
                 explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice), pseudoFOpenList)
 
             } else if (searchPhase == PATH_IMPROVEMENT) {
+                // Timing: number of expansions - no compensation is necessary
                 explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice + pseudoFTimeSlice), pseudoFOpenList)
             }
         }
@@ -252,13 +258,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             terminationChecker.notifyExpansion()
         }
 
-
         //If the agent has reached the wave frontier before it has been backed
         //up, start a new frontier backup!
+        // Bence: I'm not sure that this is correct.
+        // Also, we might want to limit the backup to nodes that were discovered before the backup
+        // otherwise the backup might explode (it should implode)
         val safetyWaveClear = measureNanoTime {
             if (agentNode.waveCounter == waveCounter && !isWaveInitializationInProgress) {
                 if (searchPhase == GOAL_BACKUP) searchPhase = PATH_IMPROVEMENT
-                waveFrontier.clear()
+                waveFrontier.quickClear()
             }
         }
         printMessage("""Clear wave time (agent reached wave frontier): $safetyWaveClear""")
@@ -496,7 +504,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             predecessorNode.heuristic = valueFromSource
             predecessorNode.waveHeuristic = valueFromSource
 
-            if (predecessorNode.backupIndex == -1) {
+            if (outdated) {
                 waveFrontier.add(predecessorNode)
             } else {
                 waveFrontier.update(predecessorNode)
