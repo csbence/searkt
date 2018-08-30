@@ -53,13 +53,14 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['CES', 'ES', 'ALT_ENVELOPE', 'TIME_BOUNDED_A_STAR']
+    algorithms_to_run = ['ES']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
-    action_durations = [50, 100, 200, 500]
+    action_durations = [10_000_000,     # 10ms
+                        20_000_000]
     # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
-    termination_types = ['EXPANSION']
+    termination_types = ['TIME']
     step_limits = [100000000]
 
     base_configuration = dict()
@@ -71,6 +72,7 @@ def generate_base_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['terminationTimeEpsilon'] = [3_000_000] # 3ms
 
     compiled_configurations = [{}]
 
@@ -84,16 +86,10 @@ def generate_base_configuration():
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
     # Envelope-based
-    # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
-    backup_ratios = [1.0]
+    # No configurable resource ratio for RES at this time
+
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', backup_ratios,
-                                                [['algorithmName', 'CES']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', backup_ratios,
-                                                [['algorithmName', 'ENVELOPE']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', backup_ratios,
+                                                'backlogRatio', [0.2],
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # TBA*
@@ -101,39 +97,6 @@ def generate_base_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
-
-    # S-RTS specific attributes
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'targetSelection', ['SAFE_TO_BEST'],
-                                                [['algorithmName', 'SAFE_RTS']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                # 'safetyProof', ['LOW_D_LOW_H_OPEN'],
-                                                'safetyProof', ['TOP_OF_OPEN'],
-                                                # 'safetyProof', ['LOW_D_LOW_H'],
-                                                # 'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
-                                                # 'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
-                                                [['algorithmName', 'SAFE_RTS']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_WINDOW']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'],
-                                                 ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [0],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H_OPEN']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [0],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'TOP_OF_OPEN']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyExplorationRatio', [1],
-                                                [['algorithmName', 'SAFE_RTS']])
 
     return compiled_configurations
 
@@ -173,15 +136,31 @@ def generate_tile_puzzle():
 def generate_grid_world():
     configurations = generate_base_configuration()
 
-    grids = []
-    for scenario in range(0, 50):
-        grids.append(str(scenario))
+    domain_paths = []
 
-    scenario_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
-    full_grid_paths = [scenario_base_path + scenario for scenario in grids]
+    # Build all domain paths
+    dao_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
+    dao_paths = []
+    minima1500_base_path = 'input/vacuum/minima1500/minima1500_1500-'
+    minima1500_paths = []
+    minima3000_base_path = 'input/vacuum/minima3k_300/minima3000_300-'
+    minima3000_paths = []
+    uniform1500_base_path = 'input/vacuum/uniform1500/uniform1500_1500-'
+    uniform1500_paths = []
+    for scenario_num in range(0, 50):
+        n = str(scenario_num)
+        dao_paths.append(dao_base_path + n)
+        minima1500_paths.append(minima1500_base_path + n + '.vw')
+        minima3000_paths.append(minima3000_base_path + n + '.vw')
+        uniform1500_paths.append(uniform1500_base_path + n + '.vw')
+
+    domain_paths.extend(dao_paths)
+    domain_paths.extend(minima1500_paths)
+    domain_paths.extend(minima3000_paths)
+    domain_paths.extend(uniform1500_paths)
 
     configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
-    configurations = cartesian_product(configurations, 'domainPath', full_grid_paths)
+    configurations = cartesian_product(configurations, 'domainPath', domain_paths)
 
     return configurations
 
@@ -205,7 +184,17 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    # OpenJ9 Command
+    # Metronome configuration allocates maximum of 2ms out of every 10ms
+    # to gc. When all configurations tested have time limits that are divisible by 10,
+    # this allows us to split the time spent on garbage collecting throughout the algorithm,
+    # which allows for more even breaking. Additionally, we do not need to manage different
+    # configurations for termination epsilon since all GC ops can only take 2ms at any given
+    # time which falls within the ability of the termination checker to guard against.
+    command = ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G', '-jar',
+               '-Xgcpolicy:metronome', '-Xgc:targetPauseTime=2', '-Xgc:targetUtilization=80',
+               '-server', '-Xgc:nosynchronousGCOnOOM', '-Xdisableexplicitgc',
+               '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -251,6 +240,75 @@ def parallel_execution(configurations, threads=1):
     result_lists = [future.result() for future in futures]
     return list(itertools.chain.from_iterable(result_lists))
 
+def distributed_execution(configurations):
+    from slack_notification import start_experiment_notification, end_experiment_notification
+    from distlre.distlre import DistLRE, Task, RemoteHost
+    import getpass
+
+    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1]]
+
+    print('Executing configurations on the following ai servers: ')
+    print(HOSTS)
+
+    # I would recommend setting up public key auth for your ssh
+    # password = getpass.getpass("Password to connect to [ai.cs.unh.edu]")
+    password = None
+
+    remote_hosts = [RemoteHost(host, port=22, password=password) for host in HOSTS]
+    executor = DistLRE(remote_hosts=remote_hosts)
+
+    futures = []
+    for configuration in [configurations[0]]:
+        # TODO remove hardcoded java home
+        command = ' '.join(
+            ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G', '-Xgcpolicy:metronome',
+             '-Xgc:targetPauseTime=2', '-Xgc:targetUtilization=80',
+             '-Xdisableexplicitgc', '-Xgc:nosynchronousGCOnOOM',
+             '-jar', '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
+
+        print(command)
+        json_configuration = json.dumps(configuration)
+
+        task = Task(command=command, meta='META', time_limit=10, memory_limit=10)
+        task.input = json_configuration
+
+        futures.append(executor.submit(task))
+
+    executor.execute_tasks()
+    start_experiment_notification(experiment_count=len(configurations))
+    executor.wait()
+    end_experiment_notification()
+
+    results = []
+    for future in futures:
+        exception = future.exception()
+        if exception:
+            results.append({
+                'configuration': configuration,
+                'success': False,
+                'errorMessage': 'unknown error ::' + str(exception)
+            })
+            continue
+
+        result = future.result()
+
+        if result.error:
+            results.append({
+                'configuration': configuration,
+                'success': False,
+                'errorMessage': 'unknown error ::' + str(result.error)
+            })
+            continue
+
+        raw_output = result.decode('utf-8').splitlines()
+        result_offset = raw_output.index('#') + 1
+        output = json.loads(raw_output[result_offset])
+        results += output
+
+    for result in results:
+        print(result)
+
+    return results
 
 def build_searkt():
     return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
@@ -263,7 +321,7 @@ def print_summary(results_json):
 
 
 def save_results(results_json):
-    with open('output/results_test.json', 'w') as outfile:
+    with open('output/results_res.json', 'w') as outfile:
         json.dump(results_json, outfile)
 
 
@@ -277,16 +335,18 @@ def main():
     configurations = generate_grid_world()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
 
-    results = parallel_execution(configurations, 1)
+    distributed_execution(configurations)
 
-    for result in results:
-        result.pop('actions', None)
-        result.pop('systemProperties', None)
-
-    save_results(results)
-    print_summary(results)
-
-    print('{} results has been received.'.format(len(results)))
+    # results = parallel_execution(configurations, 1)
+    #
+    # for result in results:
+    #     result.pop('actions', None)
+    #     result.pop('systemProperties', None)
+    #
+    # save_results(results)
+    # print_summary(results)
+    #
+    # print('{} results has been received.'.format(len(results)))
 
 
 if __name__ == '__main__':

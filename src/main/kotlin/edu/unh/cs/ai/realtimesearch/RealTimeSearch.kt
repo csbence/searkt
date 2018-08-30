@@ -40,14 +40,14 @@ fun main(args: Array<String>) {
         val fileNameIndex = outputPath.lastIndexOf("\\")
     }
 
-//    println("Please provide a JSON list of configurations to execute:")
-//    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
-//    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+    println("Please provide a JSON list of configurations to execute:")
+    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
+    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 //    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
 //    println(rawConfiguration)
 
     // Manually override
-    val rawConfiguration = generateConfigurations()
+//    val rawConfiguration = generateConfigurations()
 
     val loader = ExperimentConfiguration.serializer().list
     val parsedConfigurations = JSON.parse(loader, rawConfiguration)
@@ -60,9 +60,10 @@ fun main(args: Array<String>) {
 //    System.err.println("\nResult has been saved to $outputPath")
     System.err.println(results.summary())
 
+    results.forEach { println(it.goalAchievementTime) }
+
     println('#') // Indicator for the parser
     println(rawResults) // This should be the last printed line
-    results.forEach { println(it.goalAchievementTime) }
 
 //    runVisualizer(result = results.first())
 }
@@ -77,7 +78,7 @@ private fun generateConfigurations(): String {
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-1.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-2.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-3.vw",
-//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-4.vw"
+//                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-4.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-5.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-6.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-7.vw",
@@ -90,7 +91,7 @@ private fun generateConfigurations(): String {
 //                    Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw",
 //                    Domains.GRID_WORLD to "input/vacuum/random5k.vw"
             ),
-            planners = listOf(ES),
+            planners = listOf(LSS_LRTA_STAR),
             actionDurations = listOf(10_000_000L),// 250L, 400L, 800L, 1600L, 3200L, 6400L, 12800L),100_000_000L
             terminationType = TIME,
             lookaheadType = DYNAMIC,

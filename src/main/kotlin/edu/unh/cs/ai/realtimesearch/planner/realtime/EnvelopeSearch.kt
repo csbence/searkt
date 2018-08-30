@@ -515,7 +515,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         var checkTerm = 1L
         while (true) {
-            if (checkTerm.rem(1000L) == 0L && terminationChecker.reachedTermination()) return currentTrace
+            if (checkTerm.rem(100L) == 0L && terminationChecker.reachedTermination()) return currentTrace
 
             val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
 
