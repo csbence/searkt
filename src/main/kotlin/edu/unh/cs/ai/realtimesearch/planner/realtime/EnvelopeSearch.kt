@@ -376,12 +376,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             if (waveFront == agentState) {
                 if (searchPhase == GOAL_BACKUP) searchPhase = PATH_IMPROVEMENT
 
-                waveFrontier.clear()
+                waveFrontier.quickClear()
                 break
             }
 
             if (searchPhase == GOAL_SEARCH && waveFront.state in agentPath) {
-                waveFrontier.clear()
+                waveFrontier.quickClear()
                 break
             }
 
