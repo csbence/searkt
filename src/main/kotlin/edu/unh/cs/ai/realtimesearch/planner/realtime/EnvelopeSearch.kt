@@ -456,6 +456,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             clearPreviousBackup = true
 
             printMessage("""Open list size: ${pseudoFOpenList.size}""")
+
             initializationIndex = 0
             initializeWaveFrontier(terminationChecker)
         } else if (!waveInProgress && searchPhase == PATH_IMPROVEMENT) {
@@ -485,6 +486,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         if (beginHeapify) heapifyIndex = waveFrontier.heapify(terminationChecker)
         else if (heapifyIndex != null) heapifyIndex = waveFrontier.heapify(terminationChecker, heapifyIndex!!)
+
+        waveFrontier.keepTopK()
 
         //once init process is done, add / remove nodes from the pseudoFOpenList as necessary
         if (initializationIndex == null && heapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {

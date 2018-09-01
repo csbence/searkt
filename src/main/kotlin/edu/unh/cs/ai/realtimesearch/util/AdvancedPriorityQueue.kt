@@ -265,7 +265,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
             other: AbstractAdvancedPriorityQueue<T>,
             terminationChecker: TerminationChecker,
             startIndex: Int,
-            func: (T) -> Boolean = {false}): Int? {
+            func: (T) -> Boolean = { false }): Int? {
         if (startIndex > size) throw RuntimeException("Initialization must be continuous!")
 
         size = startIndex
@@ -302,6 +302,18 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         }
 
         return currentIndex
+    }
+
+    fun keepTopK() {
+        val topK = mutableListOf<T>()
+
+        for (i in 0 until min(size, 10)) {
+            topK.add(pop()!!)
+        }
+
+        quickClear()
+
+        topK.forEach { add(it) }
     }
 
 }
