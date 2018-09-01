@@ -274,7 +274,7 @@ def distributed_execution(configurations):
              '-Xdisableexplicitgc', '-Xgc:nosynchronousGCOnOOM',
              '-jar', '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
 
-        json_configuration = f'{json.dumps(configuration)}\n'
+        json_configuration = f'[{json.dumps(configuration)}]\n'
 
         task = Task(command=command, meta='META', time_limit=10, memory_limit=10)
         task.input = json_configuration
@@ -317,6 +317,7 @@ def distributed_execution(configurations):
         #     continue
 
         raw_output = result.output.splitlines()
+        print(raw_output)
         result_offset = raw_output.index('#') + 1
         output = json.loads(raw_output[result_offset])
         results += output
@@ -360,9 +361,10 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/results_res_policy_changes.json', 'w') as outfile:
+def save_results(results_json, file_name):
+    with open(file_name, 'w') as outfile:
         json.dump(results_json, outfile)
+    print(f'Results saved to {file_name}')
 
 
 def main():
@@ -396,7 +398,8 @@ def main():
     for result in results:
         result['configuration']['algorithmName'] = 'ES_policy'
 
-    save_results(results)
+    file_name = 'output/results_res_policy_changes.json'
+    save_results(results, file_name)
     print_summary(results)
 
     print('{} results has been received.'.format(len(results)))
