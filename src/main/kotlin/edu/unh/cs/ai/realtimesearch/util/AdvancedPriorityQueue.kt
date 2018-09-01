@@ -265,7 +265,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
             other: AbstractAdvancedPriorityQueue<T>,
             terminationChecker: TerminationChecker,
             startIndex: Int,
-            func: (T) -> Unit = {}): Int? {
+            func: (T) -> Boolean = {false}): Int? {
         if (startIndex > size) throw RuntimeException("Initialization must be continuous!")
 
         size = startIndex
@@ -277,7 +277,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
             for (i in 1..min(499, remainingCount)) {
                 backingArray[size] = other.backingArray[size]
                 setIndex(backingArray[size]!!, size)
-                func(backingArray[size]!!)
+                if (func(backingArray[size]!!)) return null
 
                 ++size
             }
