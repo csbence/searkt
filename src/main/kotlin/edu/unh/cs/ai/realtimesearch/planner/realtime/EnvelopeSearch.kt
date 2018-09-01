@@ -104,6 +104,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
+    private val waveGComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsWaveG = domain.heuristic(lhs.state, currentAgentState)
+        val rhsWaveG = domain.heuristic(rhs.state, currentAgentState)
+
+        when {
+            lhsWaveG < rhsWaveG -> -1
+            lhsWaveG > rhsWaveG -> 1
+            lhs.waveHeuristic < rhs.waveHeuristic -> -1
+            lhs.waveHeuristic > rhs.waveHeuristic -> 1
+            else -> 0
+        }
+    }
+
     private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
         val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
@@ -169,7 +182,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
     override var openList = AdvancedPriorityQueue(1000000, pseudoFComparator)
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveFComparator) {
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveGComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
@@ -279,8 +292,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         // otherwise the backup might explode (it should implode)
         val safetyWaveClear = measureNanoTime {
             if (agentNode.waveCounter == waveCounter && !isWaveInitializationInProgress) {
-                if (searchPhase == GOAL_BACKUP) searchPhase = PATH_IMPROVEMENT
                 waveFrontier.quickClear()
+                if (searchPhase == GOAL_BACKUP) {
+                    searchPhase = PATH_IMPROVEMENT
+                    waveFrontier.reorder(waveFComparator)
+                }
             }
         }
         printMessage("""Clear wave time (agent reached wave frontier): $safetyWaveClear""")
