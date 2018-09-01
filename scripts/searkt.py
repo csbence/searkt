@@ -18,7 +18,7 @@ def generate_base_suboptimal_configuration():
     algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
+    time_limit = [1000000000000]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -53,12 +53,14 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
+    # algorithms_to_run = ['A_STAR']
     algorithms_to_run = ['ES']
+    # algorithms_to_run = ['ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
-    action_durations = [10_000_000,     # 10ms
-                        20_000_000]
+    time_limit = [300000000000]
+    # action_durations = [1]
+    action_durations = [10000000, 20000000, 40000000]
     # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['TIME']
     step_limits = [100000000]
@@ -72,7 +74,7 @@ def generate_base_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['terminationTimeEpsilon'] = [3_000_000] # 3ms
+    base_configuration['terminationTimeEpsilon'] = [4000000]  # 4ms
 
     compiled_configurations = [{}]
 
@@ -93,7 +95,7 @@ def generate_base_configuration():
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # TBA*
-    optimizations = ['NONE', 'THRESHOLD']
+    optimizations = ['THRESHOLD']
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
@@ -213,6 +215,10 @@ def execute_configurations(configurations, timeout=100000):
                 for configuration in configurations]
 
     raw_output = completed_process.stdout.decode('utf-8').splitlines()
+    # Below is for debugging with console outputs
+    # with open('scripts/raw.log', 'w') as f:
+    #     for line in raw_output:
+    #         f.write(line+'\n')
 
     result_offset = raw_output.index('#') + 1
     results = json.loads(raw_output[result_offset])
@@ -240,14 +246,16 @@ def parallel_execution(configurations, threads=1):
     result_lists = [future.result() for future in futures]
     return list(itertools.chain.from_iterable(result_lists))
 
+
 def distributed_execution(configurations):
     from slack_notification import start_experiment_notification, end_experiment_notification
     from distlre.distlre import DistLRE, Task, RemoteHost
     import getpass
 
-    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1]]
+    progress_bar = tqdm(total=len(configurations))
+    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 
-    print('Executing configurations on the following ai servers: ')
+    print('\nExecuting configurations on the following ai servers: ')
     print(HOSTS)
 
     # I would recommend setting up public key auth for your ssh
@@ -258,7 +266,7 @@ def distributed_execution(configurations):
     executor = DistLRE(remote_hosts=remote_hosts)
 
     futures = []
-    for configuration in [configurations[0]]:
+    for configuration in configurations:
         # TODO remove hardcoded java home
         command = ' '.join(
             ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G', '-Xgcpolicy:metronome',
@@ -266,49 +274,82 @@ def distributed_execution(configurations):
              '-Xdisableexplicitgc', '-Xgc:nosynchronousGCOnOOM',
              '-jar', '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
 
-        print(command)
-        json_configuration = json.dumps(configuration)
+        json_configuration = f'[{json.dumps(configuration)}]\n'
 
         task = Task(command=command, meta='META', time_limit=10, memory_limit=10)
         task.input = json_configuration
 
-        futures.append(executor.submit(task))
+        future = executor.submit(task)
+        future.add_done_callback(lambda _: progress_bar.update())
 
-    executor.execute_tasks()
+        futures.append(future)
+
     start_experiment_notification(experiment_count=len(configurations))
+    print('Experiments started')
+    executor.execute_tasks()
+
     executor.wait()
+
+    print('Experiments finished')
     end_experiment_notification()
 
     results = []
+
     for future in futures:
         exception = future.exception()
         if exception:
             results.append({
                 'configuration': configuration,
                 'success': False,
-                'errorMessage': 'unknown error ::' + str(exception)
+                'errorMessage': 'exception ::' + str(exception)
             })
             continue
 
         result = future.result()
+        # print(f'output: {result.output}')
 
-        if result.error:
-            results.append({
-                'configuration': configuration,
-                'success': False,
-                'errorMessage': 'unknown error ::' + str(result.error)
-            })
-            continue
+        # if result.error:
+        #     results.append({
+        #         'configuration': configuration,
+        #         'success': False,
+        #         'errorMessage': 'unknown error ::' + str(result.error)
+        #     })
+        #     continue
 
-        raw_output = result.decode('utf-8').splitlines()
+        raw_output = result.output.splitlines()
+        print(raw_output)
         result_offset = raw_output.index('#') + 1
         output = json.loads(raw_output[result_offset])
         results += output
 
-    for result in results:
-        print(result)
-
     return results
+
+
+def read_results_from_file(file_name):
+    if file_name.endswith('.gz'):
+        with gzip.open("input.json.gz", "rb") as file:
+            return json.loads(file.read().decode("utf-8"))
+
+    with open(file_name) as file:
+        return json.load(file)
+
+
+def inplace_merge_experiments(old_results, new_results):
+    for new_result in new_results:
+        replaced = False
+        for i, old_result in enumerate(old_results):
+            if old_result['configuration'] == new_result['configuration']:
+                old_results[i] = new_result
+                replaced = True
+                break
+
+        if not replaced:
+            old_results.append(new_result)
+
+
+def extract_configurations_from_failed_results(results):
+    return [result['configuration'] for result in results if not result['success']]
+
 
 def build_searkt():
     return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
@@ -320,9 +361,10 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/results_res.json', 'w') as outfile:
+def save_results(results_json, file_name):
+    with open(file_name, 'w') as outfile:
         json.dump(results_json, outfile)
+    print(f'Results saved to {file_name}')
 
 
 def main():
@@ -333,20 +375,34 @@ def main():
     print('Build complete!')
 
     configurations = generate_grid_world()  # generate_racetrack()
+    # old_results = read_results_from_file('output/results_res.json')
+
+    # for result in old_results:
+    #     result['configuration']['timeLimit'] = 1000000000000
+
+    # configurations = extract_configurations_from_failed_results(old_results)
+
     print('{} configurations has been generated '.format(len(configurations)))
 
-    distributed_execution(configurations)
+    results = distributed_execution(configurations)
+
+    # inplace_merge_experiments(old_results, results)
+    # results = old_results
 
     # results = parallel_execution(configurations, 1)
-    #
-    # for result in results:
-    #     result.pop('actions', None)
-    #     result.pop('systemProperties', None)
-    #
-    # save_results(results)
-    # print_summary(results)
-    #
-    # print('{} results has been received.'.format(len(results)))
+
+    for result in results:
+        result.pop('actions', None)
+        result.pop('systemProperties', None)
+
+    for result in results:
+        result['configuration']['algorithmName'] = 'ES_policy'
+
+    file_name = 'output/results_res_policy_changes.json'
+    save_results(results, file_name)
+    print_summary(results)
+
+    print('{} results has been received.'.format(len(results)))
 
 
 if __name__ == '__main__':
