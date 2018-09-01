@@ -51,7 +51,7 @@ def add_row(df, values):
 
 
 def plot_domain_instances(data):
-    #Each domain configuration
+    # Each domain configuration
     for domain_path, domain_group in data.groupby(["domainPath"]):
         domain_name = re.search("[^/]+$", domain_path).group(0).rstrip(".vw")
 
@@ -81,56 +81,48 @@ def plot_domain_instances(data):
 
 def plot_all_experiments(data, plot_title):
     results = DataFrame(columns="actionDuration withinOpt algorithmName lbound rbound".split())
-    cpu_time_results = DataFrame(columns="algorithm cpu_per_iteration_ms, planning_time, iteration_count".split())
 
     # for testing against self!
     # data = data[data.algorithmName != 'LSS_LRTA_STAR']
 
+    # rescale action durations to ms
+    data['actionDuration'] = data['actionDuration'] / 1000000
+
     # Change data structure such that goal achievement time is averaged,
     # grouped by action duration and algorithm
-    for fields, duration_group in data.groupby(['algorithmName', 'backlogRatio', 'actionDuration']):
-        alg_name = alg_map[fields[0]]
-        if fields[0] == "CES" or fields[0] == "ENVELOPE":
-            alg_name += " Backup Ratio: " + str(fields[1])
+    for fields, duration_group in data.groupby(['algorithmName', 'actionDuration']):
+        alg_name = fields[0]
+        if (alg_name in alg_map):
+            alg_name = alg_map[alg_name]
 
         # Get mean of within optimal calculation, add row to results dataframe
         mean_within_opt = duration_group['withinOpt'].mean()
         within_opt_list = list(duration_group['withinOpt'])
         bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
         results = add_row(results,
-                          [fields[2], mean_within_opt, alg_name, abs(mean_within_opt - bound[0]), abs(mean_within_opt - bound[1])])
+                          [fields[1], mean_within_opt, alg_name, abs(mean_within_opt - bound[0]), abs(mean_within_opt - bound[1])])
 
     errors = []
     for alg, alg_group in results.groupby('algorithmName'):
         errors.append([alg_group['lbound'].values, alg_group['rbound'].values])
 
-    # Output cpu / iteration to .csv
-    for fields, alg_group in data.groupby(['algorithmName', 'backlogRatio']):
-        alg_name = fields[0]
-        if fields[0] == "CES":
-            alg_name += " Backup Ratio: " + str(fields[1])
-
-        mean_planning_time = alg_group['planningTime'].mean()
-        mean_iteration_count = alg_group['iterationCount'].mean()
-        mean_cpu_time = (alg_group['planningTime'] / alg_group['iterationCount']).mean() / 1000000
-        cpu_time_results = add_row(cpu_time_results, [alg_name, mean_cpu_time, mean_planning_time, mean_iteration_count])
-
     pivot = results.pivot(index="actionDuration", columns="algorithmName", values="withinOpt")
     pivot = pivot[~pivot.index.duplicated(keep='first')]
-
 
     palette = sns.color_palette(n_colors=10)
     plot = pivot.plot(color=palette, title=plot_title, legend=True, yerr=errors, ecolor='black', elinewidth=1,
                       capsize=4, capthick=1)
 
-    plot.set_xscale('log')
-    plot.set_yscale('log')
+    # plot.set_xscale('log')
+    # plot.set_yscale('log')
 
-    plot.set_xticks([50, 100, 150, 250, 500, 1000, 2000, 3200])
+    # plot.set_xticks([50, 100, 150, 250, 500, 1000, 2000, 3200])
+    plot.set_xticks([10, 20, 40])
     plot.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+
     plot.get_yaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
-    plot.set_xlabel('Expansion Limit (Per Iteration)')
+    plot.set_xlabel('Planning Time per Iteration (milliseconds)')
     plot.set_ylabel('Goal Achievement Time (Factor of Optimal)')
     plot.legend(title="")
 
@@ -138,23 +130,48 @@ def plot_all_experiments(data, plot_title):
     plt.savefig(pdf, format='pdf')
     pdf.close()
 
-    cpu_time_results.to_csv("../output/" + plot_title + "_cpu.csv")
-
 
 def main(individual_plots, paths_to_base, paths, title, domain_token):
     set_rc()
-
 
     results = []
     for path_name in paths:
         results += read_data(path_name)
 
+    base_results = []
     if paths_to_base is not None:
         for base_path_name in paths_to_base:
-            results += read_data(base_path_name)
+            base_results += read_data(base_path_name)
 
     data = construct_data_frame(results)
+    compact_base_data = construct_data_frame(base_results)
 
+    remove_unused_columns(data)
+    remove_unused_columns(compact_base_data)
+
+    base_data = extrapolate_a_star_results(compact_base_data)
+
+    data = pd.concat([data, base_data])
+
+    data = data[~data['errorMessage'].notnull()]
+
+    # drop certain rows for brevity
+    # dropped_ratios = [0.0, 10.0, 2.0]
+    # data = data[~data['backlogRatio'].isin(dropped_ratios)]
+    data = data[~(data['tbaOptimization'] == 'NONE')]
+    if domain_token is not None:
+        data = data[data['domainPath'].str.contains(domain_token)]
+
+    data = extrapolate_within_optimal(data)
+    data = data[~(data.algorithmName == 'A_STAR')]
+
+    if individual_plots:
+        plot_domain_instances(data)
+    else:
+        plot_all_experiments(data, title)
+
+
+def remove_unused_columns(data):
     data.drop(['actions', 'commitmentType', "success", "timeLimit",
                "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
                'firstIterationDuration', 'generatedNodes', 'expandedNodes',
@@ -165,31 +182,33 @@ def main(individual_plots, paths_to_base, paths, title, domain_token):
               inplace=True,
               errors='ignore')
 
-    data = data[~data['errorMessage'].notnull()]
 
-    # drop certain rows for brevity
-    dropped_ratios = [0.0, 10.0, 2.0]
-    data = data[~data['backlogRatio'].isin(dropped_ratios)]
-    data = data[~(data['tbaOptimization'] == 'NONE')]
-    if domain_token is not None:
-        data = data[data['domainPath'].str.contains(domain_token)]
-
-    # Need to default backlogRatio so it is groupable later
-    for i, row in data.iterrows():
-        if row['backlogRatio'] is None or np.isnan(row['backlogRatio']):
-            data.at[i, 'backlogRatio'] = 1.0
-
+def extrapolate_within_optimal(data):
     astar = data[data["algorithmName"] == "A_STAR"]
-    astar["opt"] = astar["actionDuration"] * astar["pathLength"]
-    astar = astar[["domainPath", "opt", "actionDuration"]]
-    data = pd.merge(data, astar, how='inner', on=["domainPath", 'actionDuration'])
-    data["withinOpt"] = data["goalAchievementTime"] / data["opt"]
 
-    if individual_plots:
-        plot_domain_instances(data)
-    else:
-        plot_all_experiments(data, title)
+    astar["optimalPathLength"] = astar["pathLength"]
+    astar = astar[["domainPath", "optimalPathLength"]]
 
+    data = pd.merge(data, astar, how='inner', on=["domainPath"])
+    data["withinOpt"] = data["goalAchievementTime"] / (data["actionDuration"] * data["optimalPathLength"])
+
+    return data
+
+
+def extrapolate_a_star_results(data):
+    action_durations = [10000000, 20000000, 40000000]
+
+    extrapolated_data = []
+
+    for action_duration in action_durations:
+        modified_data = data.copy()
+
+        modified_data.actionDuration = action_duration
+        modified_data.goalAchievementTime = modified_data.goalAchievementTime * action_duration + modified_data.planningTime
+
+        extrapolated_data.append(modified_data)
+
+    return pd.concat(extrapolated_data)
 
 
 # define command line usage
