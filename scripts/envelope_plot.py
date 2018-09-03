@@ -33,7 +33,7 @@ def construct_data_frame(data):
 
 def read_data(file_name):
     if file_name.endswith('.gz'):
-        with gzip.open("input.json.gz", "rb") as file:
+        with gzip.open(file_name, "rb") as file:
             return json.loads(file.read().decode("utf-8"))
 
     with open(file_name) as file:
