@@ -60,6 +60,8 @@ data class ExperimentConfiguration(
         var domainSeed: Long? = null,
         @Optional
         val domainSizeMultiplier: Int = 1,
+        @Optional
+        val expansionDelay: Long = 0,
 
         // AStar
         @Optional

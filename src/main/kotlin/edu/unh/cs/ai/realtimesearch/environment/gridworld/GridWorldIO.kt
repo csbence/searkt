@@ -5,11 +5,11 @@ import java.io.InputStream
 
 object GridWorldIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long): GridWorldInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long, expansionDelay: Int): GridWorldInstance {
         val vacuumWorldInstance = VacuumWorldIO.parseFromStream(input)
 
         val gridWorld = vacuumWorldInstance.domain.run {
-            GridWorld(width, height, blockedCells, vacuumWorldInstance.initialState.dirtyCells[0], actionDuration)
+            GridWorld(width, height, blockedCells, vacuumWorldInstance.initialState.dirtyCells[0], actionDuration, expansionDelay)
         }
 
         val worldState = vacuumWorldInstance.initialState.run {

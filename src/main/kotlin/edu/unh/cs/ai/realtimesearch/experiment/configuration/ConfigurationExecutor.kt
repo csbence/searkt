@@ -199,7 +199,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeGridWorld(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, configuration.actionDuration)
+        val gridWorldInstance = GridWorldIO.parseFromStream(domainStream, configuration.actionDuration, configuration.expansionDelay.toInt())
         return executeDomain(configuration, gridWorldInstance.domain, gridWorldInstance.initialState)
     }
 
