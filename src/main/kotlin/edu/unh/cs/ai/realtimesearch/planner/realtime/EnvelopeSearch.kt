@@ -262,12 +262,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var greedyTimeSlice = (terminationChecker.remaining() * greedyResourceRatio).toLong()
         var pseudoFTimeSlice = (terminationChecker.remaining() * pseudoFResourceRatio).toLong()
 
-        if (isWaveInitializationInProgress) {
+        if (isWaveInitializationInProgress || searchPhase == GOAL_BACKUP) {
             greedyTimeSlice = 0
             pseudoFTimeSlice = 0
-        }
+        } 
 
-        val wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
+        var wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
 
         iterationCounter++
         val searchTime = measureNanoTime {
@@ -295,6 +295,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         if (agentNode.expanded == -1) {
             expandFromNode(agentNode)
             terminationChecker.notifyExpansion()
+            wavePropagationTimeSlice--
         }
 
         // If the agent has reached the wave frontier before it has been backed
