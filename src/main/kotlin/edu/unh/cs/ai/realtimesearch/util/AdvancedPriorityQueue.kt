@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
+import kotlin.math.max
 
 /**
  * @author Bence Cserna (bence@cserna.net)
@@ -307,7 +308,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
     fun keepTopK(percent: Double) {
         val topK = mutableListOf<T>()
 
-        for (i in 0 until (size * percent).toLong()) {
+        for (i in 0 until max(1, (size * percent).toLong())) {
             topK.add(pop()!!)
         }
 
