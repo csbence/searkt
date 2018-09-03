@@ -127,7 +127,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             expandFromNode(currentNode)
             terminationChecker.notifyExpansion()
         }
-        throw GoalNotReachableException()
+        throw GoalNotReachableException("Goal not reachable")
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {

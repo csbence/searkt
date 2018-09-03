@@ -304,10 +304,10 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         return currentIndex
     }
 
-    fun keepTopK() {
+    fun keepTopK(percent: Double) {
         val topK = mutableListOf<T>()
 
-        for (i in 0 until min(size, 10)) {
+        for (i in 0 until (size * percent).toLong()) {
             topK.add(pop()!!)
         }
 

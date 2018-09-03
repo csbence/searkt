@@ -24,6 +24,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
 
+    private val backupInit = configuration.backupInit ?: BACKUP_INIT.ALL
+    init {
+        print(backupInit)
+    }
+
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
 
@@ -131,21 +136,28 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 
     private val waveComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        if (agentLastWaveFrontier < max(lhs.waveCounter, rhs.waveCounter)) {
-            when {
-                lhs.waveCounter > rhs.waveCounter -> -1
-                lhs.waveCounter < rhs.waveCounter -> 1
-                lhs.heuristic < rhs.heuristic -> -1
-                lhs.heuristic > rhs.heuristic -> 1
-                else -> 0
-            }
-        } else {
-            when {
-                lhs.heuristic < rhs.heuristic -> -1
-                lhs.heuristic > rhs.heuristic -> 1
-                else -> 0
-            }
+        when {
+            lhs.waveCounter > rhs.waveCounter -> -1
+            lhs.waveCounter < rhs.waveCounter -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
         }
+//        if (agentLastWaveFrontier < max(lhs.waveCounter, rhs.waveCounter)) {
+//            when {
+//                lhs.waveCounter > rhs.waveCounter -> -1
+//                lhs.waveCounter < rhs.waveCounter -> 1
+//                lhs.heuristic < rhs.heuristic -> -1
+//                lhs.heuristic > rhs.heuristic -> 1
+//                else -> 0
+//            }
+//        } else {
+//            when {
+//                lhs.heuristic < rhs.heuristic -> -1
+//                lhs.heuristic > rhs.heuristic -> 1
+//                else -> 0
+//            }
+//        }
     }
 
     /* SPECIALIZED PRIORITY QUEUES */
@@ -479,15 +491,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             initializationIndex = waveFrontier.initializeFromQueue(heuristicOpenList, terminationChecker, initializationIndex!!) {
                 initWaveNode(it)
                 count++
-                count + (initializationIndex ?: 0) > currentK
+                false
             }
-            beginHeapify = initializationIndex == null
         }
 
         if (beginHeapify) heapifyIndex = waveFrontier.heapify(terminationChecker)
         else if (heapifyIndex != null) heapifyIndex = waveFrontier.heapify(terminationChecker, heapifyIndex!!)
 
-        waveFrontier.keepTopK()
+        if (backupInit == BACKUP_INIT.TOP_K) waveFrontier.keepTopK(0.15)
 
         //once init process is done, add / remove nodes from the pseudoFOpenList as necessary
         if (initializationIndex == null && heapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {
@@ -710,8 +721,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 }
 
-enum class ExpansionStrategy {
-    H_VALUE, PSEUDO_F
+enum class BACKUP_INIT {
+    ALL, TOP_K
 }
 
 enum class UpdateStrategy {
@@ -723,7 +734,7 @@ enum class BackupComparator {
 }
 
 enum class EnvelopeConfigurations(private val configurationName: String) {
-    BACKLOG_RATIO("backlogRatio"),
+    BACKUP_INIT("backupInit"),
     COMPARATOR("backupComparator");
 
     override fun toString() = configurationName

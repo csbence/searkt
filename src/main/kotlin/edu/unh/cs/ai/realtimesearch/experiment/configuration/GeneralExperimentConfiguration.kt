@@ -6,6 +6,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
+import edu.unh.cs.ai.realtimesearch.planner.realtime.BACKUP_INIT
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
 import kotlinx.serialization.Optional
@@ -108,5 +109,8 @@ data class ExperimentConfiguration(
 
         // Envelope Search
         @Optional
-        val backupComparator: BackupComparator? = null
+        val backupComparator: BackupComparator? = null,
+
+        @Optional
+        val backupInit: BACKUP_INIT? = null
 )
