@@ -6,9 +6,10 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
-import edu.unh.cs.ai.realtimesearch.planner.realtime.BACKUP_INIT
+import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupFrontierInitialization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
+import edu.unh.cs.ai.realtimesearch.planner.realtime.OpenList
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
@@ -114,5 +115,8 @@ data class ExperimentConfiguration(
         val backupComparator: BackupComparator? = null,
 
         @Optional
-        val backupInit: BACKUP_INIT? = null
+        val backupFrontierInitialization: BackupFrontierInitialization? = null,
+
+        @Optional
+        val openList: OpenList? = null
 )

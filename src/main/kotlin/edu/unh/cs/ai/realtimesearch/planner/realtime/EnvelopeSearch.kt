@@ -14,7 +14,6 @@ import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import java.lang.Long.max
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.max
@@ -24,7 +23,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
 
-    private val backupInit = configuration.backupInit ?: BACKUP_INIT.ALL
+    private val backupInit = configuration.backupFrontierInitialization ?: BackupFrontierInitialization.ALL
+    private val openListStructure = configuration.openList ?: OpenList.H_AND_PSEUDO_F
+
     init {
         println(backupInit)
     }
@@ -85,7 +86,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         override fun toString() =
                 "RTSNode: [State: $state h: $heuristic, wave:$waveCounter, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
-
     }
 
     /* COMPARATORS */
@@ -116,15 +116,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         when {
             lhsWaveG < rhsWaveG -> -1
             lhsWaveG > rhsWaveG -> 1
-            lhs.waveHeuristic < rhs.waveHeuristic -> -1
-            lhs.waveHeuristic > rhs.waveHeuristic -> 1
-            else -> 0
-        }
-    }
-
-
-    private val waveHComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        when {
             lhs.waveHeuristic < rhs.waveHeuristic -> -1
             lhs.waveHeuristic > rhs.waveHeuristic -> 1
             else -> 0
@@ -202,8 +193,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
-    override var openList = AdvancedPriorityQueue(1000000, pseudoFComparator)
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveHComparator) {
+    override var openList = AdvancedPriorityQueue(0, pseudoFComparator)
+
+    private val backupComparator = when (configuration.backupComparator) {
+        BackupComparator.F -> waveFComparator
+        BackupComparator.PSEUDO_F -> waveGComparator
+        null -> waveGComparator
+    }
+
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backupComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
@@ -510,7 +508,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         //once init process is done, add / remove nodes from the pseudoFOpenList as necessary
         if (initializationIndex == null && heapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {
-            if (backupInit == BACKUP_INIT.TOP_K) waveFrontier.keepTopK(0.15)
+            if (backupInit == BackupFrontierInitialization.TOP_K) waveFrontier.keepTopK(0.15)
 
             while (!terminationChecker.reachedTermination()) {
                 if (nodesToRemove.size > 0) {
@@ -731,7 +729,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 }
 
-enum class BACKUP_INIT {
+enum class BackupFrontierInitialization {
     ALL, TOP_K
 }
 
@@ -740,12 +738,17 @@ enum class UpdateStrategy {
 }
 
 enum class BackupComparator {
-    H_VALUE, PSEUDO_F;
+    F, PSEUDO_F;
+}
+
+enum class OpenList {
+    H, H_AND_PSEUDO_F;
 }
 
 enum class EnvelopeConfigurations(private val configurationName: String) {
-    BACKUP_INIT("backupInit"),
-    COMPARATOR("backupComparator");
+    BACKUP_FRONTIER_INITIALIZATION("backupFrontierInitialization"),
+    BACKUP_COMPARATOR("backupComparator"),
+    OPEN_LIST("openList");
 
     override fun toString() = configurationName
 }
