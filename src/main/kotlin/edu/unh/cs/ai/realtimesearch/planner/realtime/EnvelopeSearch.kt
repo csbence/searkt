@@ -26,7 +26,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val backupInit = configuration.backupInit ?: BACKUP_INIT.ALL
     init {
-        print(backupInit)
+        println(backupInit)
     }
 
     // Configuration - Hard Coded
@@ -122,6 +122,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
+
+    private val waveHComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+        when {
+            lhs.waveHeuristic < rhs.waveHeuristic -> -1
+            lhs.waveHeuristic > rhs.waveHeuristic -> 1
+            else -> 0
+        }
+    }
+
     private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
         val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
@@ -194,7 +203,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
     override var openList = AdvancedPriorityQueue(1000000, pseudoFComparator)
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveGComparator) {
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveHComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
@@ -499,10 +508,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         if (beginHeapify) heapifyIndex = waveFrontier.heapify(terminationChecker)
         else if (heapifyIndex != null) heapifyIndex = waveFrontier.heapify(terminationChecker, heapifyIndex!!)
 
-        if (backupInit == BACKUP_INIT.TOP_K) waveFrontier.keepTopK(0.15)
-
         //once init process is done, add / remove nodes from the pseudoFOpenList as necessary
         if (initializationIndex == null && heapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {
+            if (backupInit == BACKUP_INIT.TOP_K) waveFrontier.keepTopK(0.15)
+
             while (!terminationChecker.reachedTermination()) {
                 if (nodesToRemove.size > 0) {
                     heuristicOpenList.remove(nodesToRemove.first())
