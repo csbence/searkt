@@ -1,10 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.util
 
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import java.lang.Integer.max
-import java.lang.Integer.min
 import java.util.*
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * @author Bence Cserna (bence@cserna.net)
