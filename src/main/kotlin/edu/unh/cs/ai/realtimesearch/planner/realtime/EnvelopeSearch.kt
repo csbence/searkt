@@ -14,7 +14,6 @@ import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import java.lang.Long.max
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.max
@@ -32,8 +31,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
 
-    private val greedyResourceRatio = 7.0 / 9.0 //r1
-    private val pseudoFResourceRatio = 1.0 / 9.0 //r2
+    private val greedyResourceRatio = 6.0 / 9.0 //r1
+    private val pseudoFResourceRatio = 2.0 / 9.0 //r2
     //r3 is the remainder of the time
 
     //Top k nodes for backup initialization
@@ -73,6 +72,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         var expanded = -1
         var generated = -1
+        
+        /** LSS properties */
+        var lssIteration: Long = 0L
+        var lssParent = this
 
         override fun hashCode(): Int = state.hashCode()
 
@@ -143,21 +146,21 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             lhs.heuristic > rhs.heuristic -> 1
             else -> 0
         }
-//        if (agentLastWaveFrontier < max(lhs.waveCounter, rhs.waveCounter)) {
-//            when {
-//                lhs.waveCounter > rhs.waveCounter -> -1
-//                lhs.waveCounter < rhs.waveCounter -> 1
-//                lhs.heuristic < rhs.heuristic -> -1
-//                lhs.heuristic > rhs.heuristic -> 1
-//                else -> 0
-//            }
-//        } else {
-//            when {
-//                lhs.heuristic < rhs.heuristic -> -1
-//                lhs.heuristic > rhs.heuristic -> 1
-//                else -> 0
-//            }
-//        }
+    }
+    
+    private val lssComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsLocalF = lhs.heuristic + lhs.cost
+        val rhsLocalF = rhs.heuristic + rhs.cost
+        
+        when {
+            lhs.waveCounter > rhs.waveCounter -> -1
+            lhs.waveCounter < rhs.waveCounter -> 1
+            lhsLocalF < rhsLocalF -> -1
+            lhsLocalF > rhsLocalF -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
     }
 
     /* SPECIALIZED PRIORITY QUEUES */
@@ -167,29 +170,24 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.heuristicOpenIndex = index
         }
-
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.pseudoFOpenIndex > -1) pseudoFOpenList.remove(node)
-            return node
-        }
     }
 
-    inner class PseudoFOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), pseudoFComparator) {
+    inner class LssOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), lssComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.pseudoFOpenIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.pseudoFOpenIndex = index
         }
 
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.heuristicOpenIndex > -1) heuristicOpenList.remove(node)
+        override fun pop(): EnvelopeSearchNode<StateType> {
+            val node = super.pop() ?: throw GoalNotReachableException("Goal not reachable")
+            if (isOpen(node)) heuristicOpenList.remove(node)
+
             return node
         }
     }
 
     private var heuristicOpenList = HeuristicOpenList()
-    private var pseudoFOpenList = PseudoFOpenList()
+    private var lssOpenList = LssOpenList()
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
@@ -262,12 +260,15 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var greedyTimeSlice = (terminationChecker.remaining() * greedyResourceRatio).toLong()
         var pseudoFTimeSlice = (terminationChecker.remaining() * pseudoFResourceRatio).toLong()
 
-        if (isWaveInitializationInProgress || searchPhase == GOAL_BACKUP) {
+        if (isWaveInitializationInProgress) {
             greedyTimeSlice = 0
             pseudoFTimeSlice = 0
-        } 
+        } else if (searchPhase == GOAL_BACKUP) {
+            greedyTimeSlice = 0
+        }
 
         var wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
+        var nextState = currentAgentState
 
         iterationCounter++
         val searchTime = measureNanoTime {
@@ -276,33 +277,32 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
                 // Timing: number of expansions - no compensation is necessary
                 explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), heuristicOpenList)
-
-                // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice), pseudoFOpenList)
-
-            } else if (searchPhase == PATH_IMPROVEMENT) {
-                // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice + pseudoFTimeSlice), pseudoFOpenList)
             }
+
+            if (configuration.terminationType == TerminationType.TIME &&  pseudoFTimeSlice < configuration.terminationTimeEpsilon) {
+                pseudoFTimeSlice += configuration.terminationTimeEpsilon
+            }
+            
+            val targetNode = if (searchPhase == PATH_IMPROVEMENT) {
+                exploreLss(sourceState, getTerminationChecker(configuration, greedyTimeSlice + pseudoFTimeSlice))
+            } else {
+                exploreLss(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice))
+            }
+
+            val projectPathTime = measureNanoTime {
+                projectPath(sourceState, targetNode).apply {
+                    nextState = this.first
+                    lastPlannedPath = this.second
+                }
+            }
+            printMessage("""Project path time: $projectPathTime""")
         }
         printMessage("""Search Time: $searchTime""")
 
         val agentNode = nodes[currentAgentState]!!
-        /* Agent state might still not be expanded if:
-         *  -we've found goals but not backed up the goal yet
-         *  -we are in the middle of wave initialization and no exploration is executed
-         */
-        if (agentNode.expanded == -1) {
-            expandFromNode(agentNode)
-            terminationChecker.notifyExpansion()
-            wavePropagationTimeSlice--
-        }
 
         // If the agent has reached the wave frontier before it has been backed
         // up, start a new frontier backup!
-        // Bence: I'm not sure that this is correct.
-        // Also, we might want to limit the backup to nodes that were discovered before the backup
-        // otherwise the backup might explode (it should implode)
         val safetyWaveClear = measureNanoTime {
             if (agentNode.waveCounter == waveCounter && !isWaveInitializationInProgress) {
                 waveFrontier.quickClear()
@@ -318,36 +318,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val backupTerminationChecker = if (configuration.terminationType == TerminationType.TIME) terminationChecker
         else getTerminationChecker(configuration, wavePropagationTimeSlice)
 
-        if (agentNode.waveParent == agentNode) agentLastWaveFrontier = max(agentLastWaveFrontier, agentNode.waveCounter)
-
-        val projectPathTime = measureNanoTime {
-            lastPlannedPath = projectPath(currentAgentState, backupTerminationChecker)
-        }
-        printMessage("""Project path time: $projectPathTime""")
-
         val wavePropagationTime = measureNanoTime {
             wavePropagation(currentAgentState, backupTerminationChecker, lastPlannedPath)
         }
         printMessage("""Wave Propagation Time: $wavePropagationTime""")
 
-        val agentNextNode = if (agentNode.waveParent == agentNode || agentLastWaveFrontier >= agentNode.waveCounter) {
-            agentLastWaveFrontier = max(agentLastWaveFrontier, agentNode.waveCounter)
-
-            updateLocalHeuristic(agentNode)
-            bestWaveSuccessor()
-        } else {
-            agentNode.waveParent
-        }
-
         //Don't use constructPath here! That method uses Kotlin collections which become bottlenecks
-        val transition = domain.transition(sourceState, agentNextNode.state)
+        val transition = domain.transition(sourceState, nextState)
                 ?: throw GoalNotReachableException("Dead end found")
         return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
     }
 
     private fun explore(state: StateType, terminationChecker: TerminationChecker, explorationQueue: AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>): EnvelopeSearchNode<StateType> {
         val sourceNode = nodes[state]!!
-        // TODO: Use a buffer in the termination checker based on the size of the open list since we will initialize the wave frontier from the open list(?)
         while (!terminationChecker.reachedTermination()) {
             // Must expand current node if not already expanded, meaning it is likely on the envelope frontier.
             // If we expand it now, we must remove from the open list rather than expand it again later (which doesn't make sense)
@@ -371,6 +354,30 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         return explorationQueue.peek() ?: if (foundGoals.size > 0) foundGoals[0] else null
                 ?: throw GoalNotReachableException("Open list is empty.")
+    }
+    
+    private fun exploreLss(root: StateType, terminationChecker: TerminationChecker): EnvelopeSearchNode<StateType> {
+        lssOpenList.quickClear()
+        
+        lssOpenList.add(nodes[root]!!)
+        var currentNode = nodes[root]!!
+        
+        //reset cost now
+        currentNode.cost = 0L
+        currentNode.lssParent = currentNode
+
+        do {
+            val topNode = lssOpenList.peek() ?: throw GoalNotReachableException("No reachable goals from the agent's current location")
+            if (domain.isGoal(topNode.state)) return topNode
+
+            currentNode = lssOpenList.pop()
+            expandLssNode(currentNode)
+
+            terminationChecker.notifyExpansion()
+        }
+        while (!terminationChecker.reachedTermination())
+        
+        return lssOpenList.peek() ?: throw GoalNotReachableException("No reachable goals from the agent's current location")
     }
 
     /**
@@ -403,6 +410,62 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         removeFromOpen(sourceNode)
+    }
+    
+    private fun expandLssNode(sourceNode: EnvelopeSearchNode<StateType>) {
+        expandedNodeCount += 1
+        sourceNode.expanded = expandedNodeCount
+        
+        sourceNode.lssIteration = iterationCounter
+        
+        domain.successors(sourceNode.state).forEach { successor -> 
+            val successorNode = getNode(sourceNode, successor)
+            if (successorNode.heuristic == Double.POSITIVE_INFINITY) {
+                // Ignore this successor as it is a dead end
+                return@forEach
+            }
+
+            val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost)
+            // Having a predecessor set would make this prettier, but probably slower
+            if (!successorNode.predecessors.contains(edge)) {
+                successorNode.predecessors.add(edge)
+            }
+            
+            if (successorNode.lssIteration != iterationCounter) {
+                successorNode.apply{
+                    lssIteration = iterationCounter
+                    cost = MAX_VALUE
+                    pseudoFOpenIndex = -1 //reset open list index
+                }
+            }
+            // Skip if we got back to the parent
+            if (successor.state == sourceNode.lssParent.state) {
+                return@forEach
+            }
+
+            val successorGValueFromCurrent = sourceNode.cost + successor.actionCost
+            if (successorNode.cost > successorGValueFromCurrent) {
+                // here we generate a state. We store it's g value and remember how to get here via the treePointers
+                successorNode.apply {
+                    cost = successorGValueFromCurrent
+                    lssParent = sourceNode
+                    minCostPathLength = sourceNode.minCostPathLength + 1
+                    action = successor.action
+                    actionCost = successor.actionCost
+                }
+
+                if (successorNode.pseudoFOpenIndex == -1) {
+                    lssOpenList.add(successorNode)
+                } else {
+                    lssOpenList.update(successorNode)
+                }
+                
+                //add to the h open list
+                if (!isOpen(successorNode) && successorNode.expanded == -1) {
+                    addToOpen(successorNode)
+                }
+            }
+        }
     }
 
     private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, agentPath: Set<StateType>) {
@@ -468,7 +531,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveCounter++
             clearPreviousBackup = true
 
-            printMessage("""Open list size: ${pseudoFOpenList.size}""")
+            printMessage("""Open list size: ${heuristicOpenList.size}""")
 
             initializationIndex = 0
             initializeWaveFrontier(terminationChecker)
@@ -563,38 +626,19 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     /**
      * @return The set of states in the agent's current intended path
      */
-    private fun projectPath(sourceState: StateType, terminationChecker: TerminationChecker): MutableSet<StateType> {
+    private fun projectPath(sourceState: StateType, targetNode: EnvelopeSearchNode<StateType>): Pair<StateType, MutableSet<StateType>> {
         val currentTrace = mutableSetOf<StateType>()
 
-        var currentState = sourceState
+        var currentNode = targetNode
+        var prevState = targetNode.state
 
-        var checkTerm = 1L
-        while (true) {
-            if (checkTerm.rem(100L) == 0L && terminationChecker.reachedTermination()) return currentTrace
-
-            val currentNode = nodes[currentState] ?: throw MetronomeException("Projection exited the envelope")
-
-            if (currentNode.open || domain.isGoal(currentNode.state)) {
-                currentTrace.add(currentState)
-                return currentTrace
-            }
-
-            if (currentState in currentTrace) {
-                return currentTrace
-//                if (firstIteration) return sourceToCurrentTrace
-//                else throw MetronomeException("Policy does not lead to the frontier.")
-            }
-
-            currentTrace.add(currentState)
-
-            currentState = if (currentState != currentNode.waveParent.state) {
-                currentNode.waveParent.state
-            } else {
-                bestWaveSuccessor(currentState).state
-            }
-
-            checkTerm++
+        while (currentNode.state != sourceState) {
+            currentTrace.add(currentNode.state)
+            prevState = currentNode.state
+            currentNode = currentNode.lssParent
         }
+        
+        return Pair(prevState, currentTrace)
     }
 
     /**
@@ -621,14 +665,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         return bestNode
     }
-
-    //Wait...isn't this an expansion? TODO Bookkeeping
-    private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successors(sourceNode.state)
-            .map { getNode(sourceNode, it) }
-            .filter { it.expanded == -1 && !it.open } // Outside of envelope
-            .map { it.heuristic + it.actionCost }
-            .min() ?: Double.POSITIVE_INFINITY
-
 
     /**
      * Get a node for the state if exists, else create a new node.
@@ -669,15 +705,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             if (isWaveInitializationInProgress) nodesToAdd.add(successorNode)
             else heuristicOpenList.add(successorNode)
         }
-        pseudoFOpenList.add(successorNode)
     }
 
-    private fun isOpen(node: EnvelopeSearchNode<StateType>): Boolean = node.pseudoFOpenIndex > -1 || node.heuristicOpenIndex > -1
+    private fun isOpen(node: EnvelopeSearchNode<StateType>): Boolean = node.heuristicOpenIndex > -1
 
     private fun removeFromOpen(node: EnvelopeSearchNode<StateType>) {
-        if (node.pseudoFOpenIndex > -1) {
-            pseudoFOpenList.remove(node)
-        }
         if (node.heuristicOpenIndex > -1) {
             if (isWaveInitializationInProgress) {
                 nodesToRemove.add(node)
