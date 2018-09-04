@@ -14,6 +14,7 @@ interface Domain<State> {
      * the successor state.
      */
     fun successors(state: State): List<SuccessorBundle<State>>
+    fun successorsCached(state: State): List<SuccessorBundle<State>> = TODO()
 
     /**
      * Heuristic value of a given state.

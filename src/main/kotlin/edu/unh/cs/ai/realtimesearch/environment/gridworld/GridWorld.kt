@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldAction
 import org.slf4j.LoggerFactory
+import kotlin.system.measureNanoTime
 
 /**
  * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
@@ -37,7 +38,29 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
             }
         }
 
-        Thread.sleep(0, expansionDelay)
+        if (expansionDelay != 0) {
+            // Busy wait; but note that Thread.sleep does not work
+            val startTime = System.nanoTime()
+            while (System.nanoTime() - startTime < expansionDelay) {}
+        }
+
+        return successors
+    }
+
+    override fun successorsCached(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
+        val successors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
+
+        for (action in GridWorldAction.values()) {
+            val newLocation = state.agentLocation + action.getRelativeLocation()
+
+            if (isLegalLocation(newLocation)) {
+                successors.add(SuccessorBundle(
+                        GridWorldState(newLocation),
+                        action,
+                        actionCost = actionDuration))
+            }
+        }
+
         return successors
     }
 
