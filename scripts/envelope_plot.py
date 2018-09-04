@@ -166,6 +166,13 @@ def main(individual_plots, paths_to_base, paths, title, domain_token):
     data = extrapolate_within_optimal(data)
     data = data[~(data.algorithmName == 'A_STAR')]
 
+    df = data.groupby(['algorithmName', 'expansionDelay'], as_index=False).mean()
+
+    print(df)
+    df.plot(x='expansionDelay', y='withinOpt')
+    plt.show()
+
+    return
     if individual_plots:
         plot_domain_instances(data)
     else:

@@ -33,8 +33,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
 
-    private val greedyResourceRatio = 7.0 / 9.0 //r1
-    private val pseudoFResourceRatio = 1.0 / 9.0 //r2
+    private val greedyResourceRatio = 8.0 / 9.0 //r1
+    private val pseudoFResourceRatio = 0.0 / 9.0 //r2
     //r3 is the remainder of the time
 
     //Top k nodes for backup initialization
@@ -285,7 +285,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), heuristicOpenList)
 
                 // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice), pseudoFOpenList)
+                // explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice), pseudoFOpenList)
 
             } else if (searchPhase == PATH_IMPROVEMENT) {
                 // Timing: number of expansions - no compensation is necessary
@@ -609,7 +609,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      *  Can only be called on an expanded node
      */
     private fun updateLocalHeuristic(currentNode: EnvelopeSearchNode<StateType>): EnvelopeSearchNode<StateType> {
-        val bestNode = domain.successors(currentNode.state)
+        val bestNode = domain.successorsCached(currentNode.state)
                 .map { nodes[it.state]!! }
                 .minWith(Comparator { lhs, rhs ->
                     val lhsH = lhs.heuristic + lhs.actionCost
@@ -630,7 +630,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 
     //Wait...isn't this an expansion? TODO Bookkeeping
-    private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successors(sourceNode.state)
+    private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successorsCached(sourceNode.state)
             .map { getNode(sourceNode, it) }
             .filter { it.expanded == -1 && !it.open } // Outside of envelope
             .map { it.heuristic + it.actionCost }

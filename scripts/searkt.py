@@ -13,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import itertools
 
+__author__ = 'Bence Cserna, William Doyle, Kevin C. Gall'
+
 
 def generate_base_suboptimal_configuration():
     algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
@@ -56,11 +58,17 @@ def generate_base_configuration():
     # algorithms_to_run = ['A_STAR']
     algorithms_to_run = ['ES']
     # algorithms_to_run = ['ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
+    # algorithms_to_run = ['ES', 'TIME_BOUNDED_A_STAR']
+    # algorithms_to_run = ['LSS_LRTA_STAR']
+    # algorithms_to_run = ['LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
+    #algorithms_to_run = ['TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [300000000000]
-    # action_durations = [1]
-    action_durations = [10000000, 20000000, 40000000]
+    #action_durations = [1] # Use this for A*
+    action_durations = [10000000]
+    #action_durations = [10000000,12000000,16000000,20000000,25000000,32000000]
+    # action_durations = [40000000]
     # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['TIME']
     step_limits = [100000000]
@@ -74,7 +82,10 @@ def generate_base_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['terminationTimeEpsilon'] = [4000000]  # 4ms
+    base_configuration['terminationTimeEpsilon'] = [5000000]  # 4ms
+
+    # base_configuration['expansionDelay'] = [0, 200, 400, 600, 800, 1000]
+    base_configuration['expansionDelay'] = [0, 10000, 50000]
 
     compiled_configurations = [{}]
 
@@ -100,6 +111,9 @@ def generate_base_configuration():
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backupComparator', ['F'],#, 'PSEUDO_F'],
+                                                [['algorithmName', 'ES']])
     return compiled_configurations
 
 
@@ -149,17 +163,17 @@ def generate_grid_world():
     minima3000_paths = []
     uniform1500_base_path = 'input/vacuum/uniform1500/uniform1500_1500-'
     uniform1500_paths = []
-    for scenario_num in range(0, 50):
+    for scenario_num in range(0, 20):
         n = str(scenario_num)
         dao_paths.append(dao_base_path + n)
         minima1500_paths.append(minima1500_base_path + n + '.vw')
         minima3000_paths.append(minima3000_base_path + n + '.vw')
         uniform1500_paths.append(uniform1500_base_path + n + '.vw')
 
-    domain_paths.extend(dao_paths)
-    domain_paths.extend(minima1500_paths)
+    #domain_paths.extend(dao_paths)
+    # domain_paths.extend(minima1500_paths)
     domain_paths.extend(minima3000_paths)
-    domain_paths.extend(uniform1500_paths)
+    #domain_paths.extend(uniform1500_paths)
 
     configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
     configurations = cartesian_product(configurations, 'domainPath', domain_paths)
@@ -254,6 +268,8 @@ def distributed_execution(configurations):
 
     progress_bar = tqdm(total=len(configurations))
     HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
+    #HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8]]
+    #HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [9, 10, 11, 12, 13, 14, 15]]
 
     print('\nExecuting configurations on the following ai servers: ')
     print(HOSTS)
@@ -317,7 +333,6 @@ def distributed_execution(configurations):
         #     continue
 
         raw_output = result.output.splitlines()
-        print(raw_output)
         result_offset = raw_output.index('#') + 1
         output = json.loads(raw_output[result_offset])
         results += output
@@ -352,7 +367,10 @@ def extract_configurations_from_failed_results(results):
 
 
 def build_searkt():
-    return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
+    env = os.environ.copy()
+    env['JAVA_HOME'] = '/home/aifs2/group/jvms/jdk8u181-b13'
+
+    return_code = run(['./gradlew', 'jar', '-x', 'test'], env=env).returncode
     return return_code == 0
 
 
@@ -375,7 +393,7 @@ def main():
     print('Build complete!')
 
     configurations = generate_grid_world()  # generate_racetrack()
-    # old_results = read_results_from_file('output/results_res.json')
+    # old_results = read_results_from_file('output/results_tba_es_delay_m3000.json')
 
     # for result in old_results:
     #     result['configuration']['timeLimit'] = 1000000000000
@@ -395,10 +413,13 @@ def main():
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    for result in results:
-        result['configuration']['algorithmName'] = 'ES_policy'
+    save_results(results, 'output/results_temp.json')
 
-    file_name = 'output/results_res_policy_changes.json'
+    #for result in results:
+    #    result['configuration']['algorithmName'] = result['configuration']['algorithmName'] + '_single_open_' + '_delay_' + \
+    #                                               str(result['configuration']['expansionDelay'])
+
+    file_name = 'output/results_tba_es_delay_m3000_2.json'
     save_results(results, file_name)
     print_summary(results)
 
