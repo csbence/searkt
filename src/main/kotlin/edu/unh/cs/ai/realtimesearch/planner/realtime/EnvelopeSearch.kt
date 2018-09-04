@@ -143,21 +143,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             lhs.heuristic > rhs.heuristic -> 1
             else -> 0
         }
-//        if (agentLastWaveFrontier < max(lhs.waveCounter, rhs.waveCounter)) {
-//            when {
-//                lhs.waveCounter > rhs.waveCounter -> -1
-//                lhs.waveCounter < rhs.waveCounter -> 1
-//                lhs.heuristic < rhs.heuristic -> -1
-//                lhs.heuristic > rhs.heuristic -> 1
-//                else -> 0
-//            }
-//        } else {
-//            when {
-//                lhs.heuristic < rhs.heuristic -> -1
-//                lhs.heuristic > rhs.heuristic -> 1
-//                else -> 0
-//            }
-//        }
     }
 
     /* SPECIALIZED PRIORITY QUEUES */
@@ -524,7 +509,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successors(state)
+    private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successorsCached(state)
             .mapNotNull { nodes[it.state] }
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
@@ -628,14 +613,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         return bestNode
     }
-
-    //Wait...isn't this an expansion? TODO Bookkeeping
-    private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successorsCached(sourceNode.state)
-            .map { getNode(sourceNode, it) }
-            .filter { it.expanded == -1 && !it.open } // Outside of envelope
-            .map { it.heuristic + it.actionCost }
-            .min() ?: Double.POSITIVE_INFINITY
-
 
     /**
      * Get a node for the state if exists, else create a new node.
