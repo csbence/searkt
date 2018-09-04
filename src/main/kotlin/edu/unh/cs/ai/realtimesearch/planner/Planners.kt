@@ -14,6 +14,5 @@ enum class Planners {
     SIMPLE_SAFE,
     DPS,
     TIME_BOUNDED_A_STAR,
-    ENVELOPE,
-    ALT_ENVELOPE
+    ENVELOPE
 }

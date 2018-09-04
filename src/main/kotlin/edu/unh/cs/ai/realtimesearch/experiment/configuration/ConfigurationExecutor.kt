@@ -238,7 +238,6 @@ object ConfigurationExecutor {
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
-            ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
         }
     }
