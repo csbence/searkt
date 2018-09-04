@@ -213,9 +213,13 @@ abstract class AbstractAdvancedPriorityQueue<T>(
         }
     }
 
-    fun reorder(comparator: Comparator<in T>? = null) {
+    fun reorder(comparator: Comparator<in T>? = null, terminationChecker: TerminationChecker? = null, startIndex: Int = size/2): Int? {
         this.comparator = comparator ?: this.comparator
-        heapify()
+        return if (terminationChecker == null) {
+            heapify()
+            null
+        }
+        else heapify(terminationChecker, startIndex)
     }
 
     private fun heapify() {
@@ -296,7 +300,6 @@ abstract class AbstractAdvancedPriorityQueue<T>(
                 siftDown(currentIndex)
                 --currentIndex
             }
-//            println(currentIndex)
 
             if (currentIndex == -1) return null
         }
