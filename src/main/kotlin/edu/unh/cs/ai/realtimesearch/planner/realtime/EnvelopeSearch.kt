@@ -153,14 +153,17 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     //Wave initialization properties
     private var initializationIndex: Int? = null
-    private var heapifyIndex: Int? = null
+    private var waveHeapifyIndex: Int? = null
     private val nodesToAdd: MutableSet<EnvelopeSearchNode<StateType>> = mutableSetOf()
     private val nodesToRemove: MutableSet<EnvelopeSearchNode<StateType>> = mutableSetOf()
     //convenience function to determine if initialization is in progress
     private val isWaveInitializationInProgress
-        get() = initializationIndex != null || heapifyIndex != null || nodesToAdd.size > 0 || nodesToRemove.size > 0
+        get() = initializationIndex != null || waveHeapifyIndex != null || nodesToAdd.size > 0 || nodesToRemove.size > 0
 
     private var agentLastWaveFrontier = -1
+
+    private var initOpenReorder = false
+    private var openReorderHeapifyIndex: Int? = null
 
     // Phase state
     private var searchPhase = GOAL_SEARCH
@@ -203,15 +206,21 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         iterationCounter++
         val searchTime = measureNanoTime {
-            if (foundGoals.isEmpty() && !isWaveInitializationInProgress) {
+            if (initOpenReorder || openReorderHeapifyIndex != null) {
+                val reorderOpenTermChecker = getTerminationChecker(configuration, greedyTimeSlice)
+                if (initOpenReorder) {
+                    initOpenReorder = false
+                    openReorderHeapifyIndex = openList.heapify(reorderOpenTermChecker)
+                } else {
+                    openReorderHeapifyIndex = openList.heapify(reorderOpenTermChecker, openReorderHeapifyIndex!!)
+                }
+
+            } else if ((foundGoals.isEmpty() && !isWaveInitializationInProgress) || searchPhase == PATH_IMPROVEMENT) {
                 // searchPhase GOAL_SEARCH
 
                 // Timing: number of expansions - no compensation is necessary
                 explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), openList)
 
-            } else if (searchPhase == PATH_IMPROVEMENT) {
-                // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), openList)
             }
         }
         printMessage("""Search Time: $searchTime""")
@@ -237,6 +246,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 waveFrontier.quickClear()
                 if (searchPhase == GOAL_BACKUP) {
                     searchPhase = PATH_IMPROVEMENT
+                    initOpenReorder = true
                 }
             }
         }
@@ -349,7 +359,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             // TODO: Reconsider wiping the frontier immediately. Need to profile cpu time to find out if this sucks
             if (waveFront == agentState) {
-                if (searchPhase == GOAL_BACKUP) searchPhase = PATH_IMPROVEMENT
+                if (searchPhase == GOAL_BACKUP) {
+                    searchPhase = PATH_IMPROVEMENT
+                    initOpenReorder = true
+                }
 
                 waveFrontier.quickClear()
                 break
@@ -417,19 +430,26 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var beginHeapify = false
 
         if (initializationIndex != null) {
-            var count = 0
             initializationIndex = waveFrontier.initializeFromQueue(openList, terminationChecker, initializationIndex!!) {
                 initWaveNode(it)
-                count++
                 false
+            }
+
+            beginHeapify = initializationIndex == null
+        }
+
+        if (beginHeapify) {
+            waveHeapifyIndex = waveFrontier.heapify(terminationChecker)
+        } else if (waveHeapifyIndex != null) {
+            waveHeapifyIndex = if (waveFrontier.size == 0){ //ensure we don't continue heapifying when the wave frontier is reset
+                null
+            } else {
+                waveFrontier.heapify(terminationChecker, waveHeapifyIndex!!)
             }
         }
 
-        if (beginHeapify) heapifyIndex = waveFrontier.heapify(terminationChecker)
-        else if (heapifyIndex != null) heapifyIndex = waveFrontier.heapify(terminationChecker, heapifyIndex!!)
-
         //once init process is done, add / remove nodes from the pseudoFOpenList as necessary
-        if (initializationIndex == null && heapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {
+        if (initializationIndex == null && waveHeapifyIndex == null && (nodesToAdd.size > 0 || nodesToRemove.size > 0)) {
             if (backupInit == BackupFrontierInitialization.TOP_K) waveFrontier.keepTopK(0.15)
 
             while (!terminationChecker.reachedTermination()) {
