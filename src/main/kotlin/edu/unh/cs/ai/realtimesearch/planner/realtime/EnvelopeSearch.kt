@@ -49,6 +49,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
         override var predecessors: MutableList<SearchEdge<EnvelopeSearchNode<StateType>>> = arrayListOf()
+        val successors: MutableList<EnvelopeSearchNode<StateType>> = arrayListOf()
 
         /** Parent pointer that points to the min cost predecessor. */
         override var parent: EnvelopeSearchNode<StateType> = parent ?: this
@@ -122,8 +123,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             else -> 0
         }
     }
-
-    /* SPECIALIZED PRIORITY QUEUES */
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
@@ -319,6 +318,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         domain.successors(sourceNode.state).forEach { successor ->
             val successorNode = getNode(sourceNode, successor)
+            if (sourceNode.successors.contains(successorNode)) throw MetronomeException("Node reexpansion and duplicate!")
+            sourceNode.successors.add(successorNode)
 
             val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost)
             // Having a predecessor set would make this prettier, but probably slower
@@ -445,8 +446,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private fun bestWaveSuccessor(state: StateType = currentAgentState) = domain.successorsCached(state)
-            .mapNotNull { nodes[it.state] }
+    private fun bestWaveSuccessor(node: EnvelopeSearchNode<StateType>) = node.successors
             .minWith(waveComparator)
             ?: throw MetronomeException("No successors available from the agent's current location.")
 
@@ -518,7 +518,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             currentState = if (currentState != currentNode.waveParent.state) {
                 currentNode.waveParent.state
             } else {
-                bestWaveSuccessor(currentState).state
+                bestWaveSuccessor(currentNode).state
             }
 
             checkTerm++
@@ -530,8 +530,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      *  Can only be called on an expanded node
      */
     private fun updateLocalHeuristic(currentNode: EnvelopeSearchNode<StateType>): EnvelopeSearchNode<StateType> {
-        val bestNode = domain.successorsCached(currentNode.state)
-                .map { nodes[it.state]!! }
+        val bestNode = currentNode.successors
                 .minWith(Comparator { lhs, rhs ->
                     val lhsH = lhs.heuristic + lhs.actionCost
                     val rhsH = rhs.heuristic + rhs.actionCost
