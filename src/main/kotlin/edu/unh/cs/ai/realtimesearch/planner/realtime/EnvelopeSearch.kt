@@ -180,13 +180,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
     override var openList = AdvancedPriorityQueue(0, pseudoFComparator)
 
-    private val backupComparator = when (configuration.backupComparator) {
-        BackupComparator.F -> waveFComparator
-        BackupComparator.PSEUDO_F -> waveGComparator
-        null -> waveGComparator
-    }
-
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backupComparator) {
+    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveFComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
