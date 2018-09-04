@@ -32,13 +32,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
-
     private val greedyResourceRatio = 8.0 / 9.0 //r1
-    private val pseudoFResourceRatio = 0.0 / 9.0 //r2
-    //r3 is the remainder of the time
-
-    //Top k nodes for backup initialization
-    private val k = 0.15
 
     class EnvelopeSearchNode<StateType : State<StateType>>(
             override val state: StateType,
@@ -68,9 +62,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var waveExpanded = false
         lateinit var frontierPointer: EnvelopeSearchNode<StateType>
         var backupIndex = -1
-
-        var pseudoFOpenIndex = -1
-        var heuristicOpenIndex = -1
 
         var expanded = -1
         var generated = -1
@@ -109,19 +100,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private val waveGComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsWaveG = domain.heuristic(lhs.state, currentAgentState)
-        val rhsWaveG = domain.heuristic(rhs.state, currentAgentState)
-
-        when {
-            lhsWaveG < rhsWaveG -> -1
-            lhsWaveG > rhsWaveG -> 1
-            lhs.waveHeuristic < rhs.waveHeuristic -> -1
-            lhs.waveHeuristic > rhs.waveHeuristic -> 1
-            else -> 0
-        }
-    }
-
     private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
         val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
@@ -147,38 +125,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     /* SPECIALIZED PRIORITY QUEUES */
 
-    inner class HeuristicOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), heuristicComparator) {
-        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.heuristicOpenIndex
-        override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
-            item.heuristicOpenIndex = index
-        }
-
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.pseudoFOpenIndex > -1) pseudoFOpenList.remove(node)
-            return node
-        }
-    }
-
-    inner class PseudoFOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), pseudoFComparator) {
-        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.pseudoFOpenIndex
-        override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
-            item.pseudoFOpenIndex = index
-        }
-
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.heuristicOpenIndex > -1) heuristicOpenList.remove(node)
-            return node
-        }
-    }
-
-    private var heuristicOpenList = HeuristicOpenList()
-    private var pseudoFOpenList = PseudoFOpenList()
-
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
-    override var openList = AdvancedPriorityQueue(0, pseudoFComparator)
+    override var openList = AdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(1000000, heuristicComparator)
 
     private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveFComparator) {
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
@@ -246,14 +195,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         var greedyTimeSlice = (terminationChecker.remaining() * greedyResourceRatio).toLong()
-        var pseudoFTimeSlice = (terminationChecker.remaining() * pseudoFResourceRatio).toLong()
 
         if (isWaveInitializationInProgress || searchPhase == GOAL_BACKUP) {
             greedyTimeSlice = 0
-            pseudoFTimeSlice = 0
-        } 
+        }
 
-        var wavePropagationTimeSlice = terminationChecker.remaining() - (greedyTimeSlice + pseudoFTimeSlice)
+        var wavePropagationTimeSlice = terminationChecker.remaining() - greedyTimeSlice
 
         iterationCounter++
         val searchTime = measureNanoTime {
@@ -261,14 +208,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 // searchPhase GOAL_SEARCH
 
                 // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), heuristicOpenList)
-
-                // Timing: number of expansions - no compensation is necessary
-                // explore(sourceState, getTerminationChecker(configuration, pseudoFTimeSlice), pseudoFOpenList)
+                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), openList)
 
             } else if (searchPhase == PATH_IMPROVEMENT) {
                 // Timing: number of expansions - no compensation is necessary
-                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice + pseudoFTimeSlice), pseudoFOpenList)
+                explore(sourceState, getTerminationChecker(configuration, greedyTimeSlice), openList)
             }
         }
         printMessage("""Search Time: $searchTime""")
@@ -294,7 +238,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 waveFrontier.quickClear()
                 if (searchPhase == GOAL_BACKUP) {
                     searchPhase = PATH_IMPROVEMENT
-                    waveFrontier.reorder(waveFComparator)
                 }
             }
         }
@@ -454,7 +397,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveCounter++
             clearPreviousBackup = true
 
-            printMessage("""Open list size: ${pseudoFOpenList.size}""")
+            printMessage("""Open list size: ${openList.size}""")
 
             initializationIndex = 0
             initializeWaveFrontier(terminationChecker)
@@ -473,9 +416,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var beginHeapify = false
 
         if (initializationIndex != null) {
-            val currentK = heuristicOpenList.size * k
             var count = 0
-            initializationIndex = waveFrontier.initializeFromQueue(heuristicOpenList, terminationChecker, initializationIndex!!) {
+            initializationIndex = waveFrontier.initializeFromQueue(openList, terminationChecker, initializationIndex!!) {
                 initWaveNode(it)
                 count++
                 false
@@ -491,10 +433,10 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             while (!terminationChecker.reachedTermination()) {
                 if (nodesToRemove.size > 0) {
-                    heuristicOpenList.remove(nodesToRemove.first())
+                    openList.remove(nodesToRemove.first())
                     nodesToRemove.remove(nodesToRemove.first())
                 } else if (nodesToAdd.size > 0) {
-                    heuristicOpenList.add(nodesToAdd.first())
+                    openList.add(nodesToAdd.first())
                     nodesToAdd.remove(nodesToAdd.first())
                 } else {
                     break
@@ -643,25 +585,18 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun addToOpen(successorNode: EnvelopeSearchNode<StateType>) {
         // During path improvement the heuristic open list is not used
-        if (searchPhase != PATH_IMPROVEMENT) {
-            if (isWaveInitializationInProgress) nodesToAdd.add(successorNode)
-            else heuristicOpenList.add(successorNode)
-        }
-        pseudoFOpenList.add(successorNode)
+        if (isWaveInitializationInProgress) nodesToAdd.add(successorNode)
+        else openList.add(successorNode)
     }
 
-    private fun isOpen(node: EnvelopeSearchNode<StateType>): Boolean = node.pseudoFOpenIndex > -1 || node.heuristicOpenIndex > -1
+    private fun isOpen(node: EnvelopeSearchNode<StateType>): Boolean = node.index > -1
 
     private fun removeFromOpen(node: EnvelopeSearchNode<StateType>) {
-        if (node.pseudoFOpenIndex > -1) {
-            pseudoFOpenList.remove(node)
-        }
-        if (node.heuristicOpenIndex > -1) {
+        if (node.index > -1) {
             if (isWaveInitializationInProgress) {
                 nodesToRemove.add(node)
                 nodesToAdd.remove(node)
-            }
-            else heuristicOpenList.remove(node)
+            } else openList.remove(node)
         }
     }
 
@@ -677,12 +612,12 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         val expandedNodeMap = mutableMapOf<StateType, Map<String, String>>()
         val backedUpNodeMap = mutableMapOf<StateType, Map<String, String>>()
 
-        expandedNodes.forEach{
+        expandedNodes.forEach {
             expandedNodeMap[it.state] = mapOf("h" to it.heuristic.toString())
         }
         expandedNodes.clear() //reset
 
-        backedUpNodes.forEach{
+        backedUpNodes.forEach {
 
             backedUpNodeMap[it.state] = mapOf(
                     "h" to it.heuristic.toString(),
