@@ -149,7 +149,8 @@ def main(individual_plots, paths_to_base, paths, title, domain_token):
     remove_unused_columns(data)
     remove_unused_columns(compact_base_data)
 
-    base_data = extrapolate_a_star_results(compact_base_data)
+    action_durations = data.actionDuration.unique()
+    base_data = extrapolate_a_star_results(compact_base_data, action_durations)
 
     data = pd.concat([data, base_data])
 
@@ -195,9 +196,7 @@ def extrapolate_within_optimal(data):
     return data
 
 
-def extrapolate_a_star_results(data):
-    action_durations = [10000000, 20000000, 40000000]
-
+def extrapolate_a_star_results(data, action_durations):
     extrapolated_data = []
 
     for action_duration in action_durations:
