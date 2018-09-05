@@ -144,6 +144,12 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
             base_results += read_data(base_path_name)
 
     data = construct_data_frame(results)
+
+    # Filter out any domains that do not meet our expansion delay
+    if expansion_delay is not None:
+        data = data[data.expansionDelay == int(expansion_delay)]
+        print(f'size after expansion delay filtering: {len(data)}')
+
     compact_base_data = construct_data_frame(base_results)
 
     remove_unused_columns(data)
@@ -160,17 +166,11 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
     print(f'original size with baseline: {len(data)}')
 
     # drop certain rows for brevity
-    # dropped_ratios = [0.0, 10.0, 2.0]
-    # data = data[~data['backlogRatio'].isin(dropped_ratios)]
     data = data[~(data['tbaOptimization'] == 'NONE')]
     
     if domain_token is not None:
         data = data[data['domainPath'].str.contains(domain_token)]
         print(f'size after domain name filtering: {len(data)}')
-
-    if expansion_delay is not None:
-        data = data[data.expansionDelay == int(expansion_delay)]
-        print(f'size after expansion delay filtering: {len(data)}')
     
     data = extrapolate_within_optimal(data)
     data = data[~(data.algorithmName == 'A_STAR')]
