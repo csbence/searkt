@@ -5,25 +5,40 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains.RACETRACK
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations.COMMITMENT_STRATEGY
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.result.summary
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
-import edu.unh.cs.ai.realtimesearch.planner.realtime.ComprehensiveEnvelopeSearch
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration
 import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration.TBA_OPTIMIZATION
 import kotlinx.serialization.json.JSON
 import kotlinx.serialization.list
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.NANOSECONDS
-import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAStarConfiguration
-import edu.unh.cs.ai.realtimesearch.util.BinomialHeapPriorityQueue
-import edu.unh.cs.ai.realtimesearch.visualizer.thrift.ThriftVisualizerClient
 
 fun main(args: Array<String>) {
+    val rawConfiguration: String = readLine() ?: throw MetronomeException("Missing configuration on stdin.")
+    if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
+//    val rawConfiguration = if (rawConfigurations != null && rawConfigurations.isNotBlank()) rawConfigurations else generateConfigurations()
+//    println(rawConfiguration)
+
+    val loader = ExperimentConfiguration.serializer().list
+    val parsedConfigurations = JSON.parse(loader, rawConfiguration)
+//    println(parsedConfigurations)
+
+    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
+
+    val rawResults = JSON.stringify(ExperimentResult.serializer().list, results)
+//    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+//    System.err.println("\nResult has been saved to $outputPath")
+//    System.err.println(results.summary())
+
+    println('#') // Indicator for the parser
+    println(rawResults) // This should be the last printed line
+
 //    val client = ThriftVisualizerClient.clientFactory()
 //
 //    if (client != null) {
@@ -32,13 +47,13 @@ fun main(args: Array<String>) {
 //    }
 
 
-    var outputPath: String?
-    var basePath: String?
-    if (args.isNotEmpty()) {
-        outputPath = args[0]
-
-        val fileNameIndex = outputPath.lastIndexOf("\\")
-    }
+//    var outputPath: String?
+//    var basePath: String?
+//    if (args.isNotEmpty()) {
+//        outputPath = args[0]
+//
+//        val fileNameIndex = outputPath.lastIndexOf("\\")
+//    }
 
 //    println("Please provide a JSON list of configurations to execute:")
 //    var rawConfiguration: String = readLine() ?: throw MetronomeException("Mission configuration on stdin.")
@@ -47,22 +62,22 @@ fun main(args: Array<String>) {
 //    println(rawConfiguration)
 
     // Manually override
-    val rawConfiguration = generateConfigurations()
-
-    val loader = ExperimentConfiguration.serializer().list
-    val parsedConfigurations = JSON.parse(loader, rawConfiguration)
-    println(parsedConfigurations)
-
-    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
-
-    val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
-//    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
-//    System.err.println("\nResult has been saved to $outputPath")
-    System.err.println(results.summary())
-
-    println('#') // Indicator for the parser
-    println(rawResults) // This should be the last printed line
-    results.forEach { println(it.goalAchievementTime) }
+//    val rawConfiguration = generateConfigurations()
+//
+//    val loader = ExperimentConfiguration.serializer().list
+//    val parsedConfigurations = JSON.parse(loader, rawConfiguration)
+//    println(parsedConfigurations)
+//
+//    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 1)
+//
+//    val rawResults = JSON.Companion.stringify(ExperimentResult.serializer().list, results)
+////    PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+////    System.err.println("\nResult has been saved to $outputPath")
+//    System.err.println(results.summary())
+//
+//    println('#') // Indicator for the parser
+//    println(rawResults) // This should be the last printed line
+//    results.forEach { println(it.goalAchievementTime) }
 
 //    runVisualizer(result = results.first())
 }

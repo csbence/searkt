@@ -44,11 +44,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         /** Item index in the open list. */
         override var index: Int = -1
 
-        override val getIndex: (node: SearchNode<StateType, Node<StateType>>) -> Int = { node -> node.index }
-        override val setIndex: (node: SearchNode<StateType, Node<StateType>>, index: Int) -> Unit = { node, index ->
-            node.index = index
-        }
-
         /** Nodes that generated this Node as a successor in the current exploration phase. */
         override var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
 

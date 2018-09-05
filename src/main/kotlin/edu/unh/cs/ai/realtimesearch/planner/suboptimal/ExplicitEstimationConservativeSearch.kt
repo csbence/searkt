@@ -14,15 +14,10 @@ import kotlin.Comparator
 class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
-    private val errorModel: String = configuration.errorModel
-            ?: throw MetronomeException("Error model for Explicit Estimation Search is not specified.")
-    private val actionDuration: Long = configuration.actionDuration
+
+    val errorEstimator = ErrorEstimator<Node<StateType>>()
 
     var terminationChecker: TerminationChecker? = null
-
-    private var heuristicErrorGlobalSum: Double = 0.0
-    private var globalSamples: Double = 17.0 // start as if we have already seen some (perfect) samples
-    private var distanceErrorGlobalSum: Double = 0.0
 
     private var aStarExpansions = 0
     private var dHatExpansions = 0
@@ -95,7 +90,8 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                                        var actionCost: Double, var action: Action, override var d: Double,
                                                        override var parent: Node<StateType>? = null) :
-            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>> {
+            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>, Comparable<Node<StateType>>,
+            SearchQueueElement<Node<StateType>>, ErrorTraceable {
         override val g: Double
             get() = cost
         override val h: Double
@@ -115,121 +111,36 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
             set(value) { redBlackNode = value}
 
         override fun toString(): String {
-            return "EES.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
+            return "EECS.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
         }
 
         override val open: Boolean
             get() = indexMap[1] >= 0
 
-//        var focalIndex: Int = -1
-
         private var redBlackNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 
         override val f: Double
-            get() = cost + heuristic
+            get() = g + h
 
-        private val artificialDepth: Int = parent?.artificialDepth?.plus(1) ?: 17
         override val depth: Double = parent?.depth?.plus(1) ?: 0.0
 
-        private var sseH = 0.0
-
-        private var sseD = 0.0
-
         val fHat: Double
-            get() = cost + hHat
+            get() = g + hHat
 
-        override var hHat = 0.0
+        override var hHat = h
+            get() = h + (dHat * errorEstimator.meanErrorHeuristic)
 
-        override var dHat = 0.0
-
-        private var dHatMean: Double = 0.0
-        private var dHatVariance: Double = 0.0
+        override var dHat = d
+            get() = d / (1.0 - errorEstimator.meanErrorDistance)
 
         override var index: Int = -1
-
-        fun computeHats() {
-            when (errorModel) {
-                "path" -> computePathHats(parent, actionCost)
-                "global" -> computeGlobalHats()
-                else -> throw MetronomeException("Unknown and unsupported error model $errorModel, supported models" +
-                        ": \"path\" or \"global\"")
-            }
-            dHatMean = if (parent == null) {
-                dHat
-            } else {
-                calculateDHatMean()
-            }
-
-            dHatVariance = if (parent == null) {
-                0.0
-            } else {
-                calculateDHatVariance()
-            }
-        }
-
-        private fun calculateDHatMean(): Double {
-            return parent!!.dHatMean + ((dHat - parent!!.dHatMean) / artificialDepth)
-        }
-
-        private fun calculateDHatVariance(): Double {
-            val sampleVariance = parent!!.dHatVariance + ((dHat - parent!!.dHatMean) * (dHat - dHatMean))
-            return sampleVariance / (artificialDepth - 1)
-        }
-
-        private fun computeGlobalHats() {
-            val currentGlobalHeuristicError = heuristicErrorGlobalSum / globalSamples
-            val currentGlobalDistanceError = distanceErrorGlobalSum / globalSamples
-            this.hHat = heuristic + ((this.d / (actionDuration - currentGlobalDistanceError)) * currentGlobalHeuristicError)
-            this.dHat = this.d / (1 - currentGlobalDistanceError)
-            assert(fHat >= f)
-            assert(dHat >= 0)
-        }
-
-        private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
-            if (parent != null) {
-                this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
-                this.sseD = parent.sseD + ((1 + d) - parent.d)
-            }
-            this.hHat = computeHHat()
-            this.dHat = computeDHat()
-            assert(fHat >= f)
-            assert(dHat >= 0)
-        }
-
-        private fun computeHHat(): Double {
-            var hHat = Double.MAX_VALUE
-            val sseMean = if (cost == 0.0) sseH else sseH / artificialDepth
-            val dMean = if (cost == 0.0) sseD else sseD / artificialDepth
-            if (dMean < 1) {
-                hHat = heuristic + ((d / (1 - dMean)) * sseMean)
-            }
-            return hHat
-        }
-
-        private fun computeDHat(): Double {
-            var dHat = Double.MAX_VALUE
-            val dMean = if (cost == 0.0) sseD else sseD / artificialDepth
-            if (dMean < 1) {
-                dHat = d / (1 - dMean)
-            }
-            return dHat
-        }
 
         override fun compareTo(other: Node<StateType>): Int {
             val diff = (this.f - other.f).toInt()
             if (diff == 0) return (other.cost - this.cost).toInt()
             return diff
         }
-
-//        override fun getNode(): RedBlackTreeNode<Node<StateType>, Node<StateType>>? {
-//            return redBlackNode
-//        }
-//
-//        override fun setNode(node: RedBlackTreeNode<Node<StateType>, Node<StateType>>?) {
-//            this.redBlackNode = node
-//        }
-
     }
 
     private fun insertNode(node: Node<StateType>) {
@@ -288,40 +199,14 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
         }
     }
 
-    private fun calculateGlobalErrors(sourceNode: Node<StateType>) {
-        val currentGValue = sourceNode.cost
-        val successors = domain.successors(sourceNode.state)
-        val currentDepthValue = sourceNode.depth
-        // calculate global heuristic error based off of the best child
-        var bestChild = successors.first()
-        successors.forEach { successor ->
-            val successorF = currentGValue + successor.actionCost + domain.heuristic(successor.state)
-            val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
-            // if the successor has a better f value make it the new best child
-            if (successorF < bestChildF) {
-                bestChild = successor
-            }
-            // if the successor has the same f and lower d make it the new best child
-            if (successorF == bestChildF && domain.distance(successor.state) < domain.distance(bestChild.state)) {
-                bestChild = successor
-            }
-        }
-        // bestChild will be the successor of the source with the lowest f (ties broken on d)
-        // calculate the global errors
-        val bestChildF = currentGValue + bestChild.actionCost + domain.heuristic(bestChild.state)
-        val parentF = sourceNode.f // currentGValue + domain.heuristic(sourceNode.state)
-        heuristicErrorGlobalSum += bestChildF - parentF // should be equal if not record the error
-        val bestChildL = currentDepthValue + 1 + domain.distance(bestChild.state)
-        val parentL = currentDepthValue + domain.distance(sourceNode.state)
-        distanceErrorGlobalSum += bestChildL - parentL // should be equal if not record the error
-        globalSamples += 1 // tally how many samples we have seen
+    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>) {
+        errorEstimator.addSample(sourceNode, successorNode)
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
         val currentGValue = sourceNode.cost
         val successors = domain.successors(sourceNode.state)
-        calculateGlobalErrors(sourceNode)
         for (successor in successors) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
@@ -329,6 +214,8 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
             if (successorState == sourceNode.parent?.state) {
                 continue
             }
+            // update the statistics
+            calculateStatistics(sourceNode, successorNode)
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -340,7 +227,6 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
                     action = successor.action
                     actionCost = successor.actionCost
                 }
-                successorNode.computeHats() // set the inadmissible estimates after setting the cost
                 if (!successorNode.open) {
                     insertNode(successorNode)
                 } else {
@@ -372,7 +258,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
         generatedNodeCount++
 
         while (cleanup.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            val topNode = selectNode() // openList.peek() ?: throw GoalNotReachableException("Open list is empty")
+            val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(topNode, state)

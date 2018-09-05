@@ -99,7 +99,7 @@ data class ExperimentConfiguration(
         val anytimeMaxCount: Long? = null,
 
         // Error Models
-        @Optional val errorModel: String? = null
+        @Optional val errorModel: String? = null,
 
         //Envelope-based searching (i.e. not LSS)
         @Optional

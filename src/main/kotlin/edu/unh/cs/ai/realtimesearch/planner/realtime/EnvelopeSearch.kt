@@ -287,7 +287,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         //Don't use constructPath here! That method uses Kotlin collections which become bottlenecks
         val transition = domain.transition(sourceState, agentNextNode.state)
                 ?: throw GoalNotReachableException("Dead end found")
-        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
+        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second.toLong()))
     }
 
     private fun explore(state: StateType, terminationChecker: TerminationChecker, explorationQueue: AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>): EnvelopeSearchNode<StateType> {

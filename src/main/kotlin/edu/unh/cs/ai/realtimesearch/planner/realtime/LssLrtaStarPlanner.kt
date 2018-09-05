@@ -214,7 +214,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
             val undiscoveredNode = PureRealTimeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,

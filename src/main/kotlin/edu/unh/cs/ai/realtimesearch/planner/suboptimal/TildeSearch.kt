@@ -1,23 +1,27 @@
 package edu.unh.cs.ai.realtimesearch.planner.suboptimal
 
+import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
 import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
-import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
+import edu.unh.cs.ai.realtimesearch.util.*
+import java.io.File
 import java.util.*
 import kotlin.Comparator
 import kotlin.math.sqrt
 
 class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
+    private val weight: Double = configuration.weight
+            ?: throw MetronomeConfigurationException("Weight for Tilde Search is not specified.")
+
+    val errorEstimator = ErrorEstimator<Node<StateType>>()
 
     var terminationChecker: TerminationChecker? = null
 
-    private val cleanupNodeComparator = Comparator<TildeSearch.Node<StateType>> { lhs, rhs ->
+    private val cleanupNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -27,7 +31,7 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
         }
     }
 
-    private val openNodeComparator = Comparator<TildeSearch.Node<StateType>> { lhs, rhs ->
+    private val openNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde < rhs.fTilde -> -1
             lhs.fTilde > rhs.fTilde -> 1
@@ -41,119 +45,48 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
 
     // set up for the containers to store the nodes
 
-    private val nodes: HashMap<StateType, TildeSearch.Node<StateType>> = HashMap(100000000, 1.toFloat())
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000000, 1.toFloat())
 
     private val openList = AdvancedPriorityQueue(1000000, openNodeComparator)
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action, override var d: Double,
-                                             override var parent: TildeSearch.Node<StateType>? = null) :
-            Indexable, Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>>{
+                                             var parent: Node<StateType>? = null) :
+            Indexable, ErrorTraceable{
 
-        private val indexMap = Array(1) {-1}
+        private val indexMap = Array(2) {-1}
         override val g: Double
             get() = cost
         override val h: Double
             get() = heuristic
 
-        override fun setIndex(key: Int, index: Int) {
+        fun setIndex(key: Int, index: Int) {
             indexMap[key] = index
         }
 
-        override fun getIndex(key: Int): Int {
+        fun getIndex(key: Int): Int {
             return indexMap[key]
         }
 
         override val open: Boolean
             get() = indexMap[0] >= 0
 
-        override val f: Double
+        val f: Double
             get() = cost + heuristic
 
-        override val depth: Double = parent?.depth?.plus(1) ?: 17.0
-
-        private var sseH = 0.0
-
-        private var sseD = 0.0
+        val depth: Double = parent?.depth?.plus(1) ?: 0.0
 
         private val fHat: Double
             get() = cost + hHat
 
         val fTilde: Double
-            get() = fHat + (1.96 * sqrt(dHat * dHatVariance))
+            get() = fHat + (1.96 * sqrt(dHat * errorEstimator.varianceDistance))
 
-        override var hHat = 0.0
+        var dHat = d / (1.0 - errorEstimator.meanErrorDistance)
+        var hHat = h + (dHat * errorEstimator.meanErrorHeuristic)
 
-        override var dHat = 0.0
-
-        private var dHatMean: Double = 0.0
-        private var dHatVariance: Double = 0.0
 
         override var index: Int = -1
-
-        init {
-            computePathHats(parent, actionCost)
-        }
-
-        private fun calculateDHatMean(): Double {
-            return parent!!.dHatMean + ((dHat - parent!!.dHatMean) / depth)
-        }
-
-        private fun calculateDHatVariance(): Double {
-            val sampleVariance = parent!!.dHatVariance + ((dHat - parent!!.dHatMean) * (dHat - dHatMean))
-            return sampleVariance / (depth - 1)
-        }
-
-        private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
-            if (parent != null) {
-                this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
-                this.sseD = parent.sseD + ((1 + d) - parent.d)
-            }
-
-            this.hHat = computeHHat()
-            this.dHat = computeDHat()
-
-            dHatMean = if (parent == null) {
-                dHat
-            } else {
-                calculateDHatMean()
-            }
-
-            dHatVariance = if (parent == null) {
-                0.0
-            } else {
-                calculateDHatVariance()
-            }
-
-            assert(fHat >= f)
-            assert(dHat >= 0)
-        }
-
-        private fun computeHHat(): Double {
-            var hHat = Double.MAX_VALUE
-            val sseMean = if (cost == 0.0) sseH else sseH / depth
-            val dMean = if (cost == 0.0) sseD else sseD / depth
-            if (dMean < 1) {
-                hHat = heuristic + ((d / (1 - dMean)) * sseMean)
-            }
-            return hHat
-        }
-
-        private fun computeDHat(): Double {
-            var dHat = Double.MAX_VALUE
-            val dMean = if (cost == 0.0) sseD else sseD / depth
-            if (dMean < 1) {
-                dHat = d / (1 - dMean)
-            }
-            return dHat
-        }
-
-        override fun compareTo(other: Node<StateType>): Int {
-            val diff = (this.f - other.f).toInt()
-            if (diff == 0) return (other.cost - this.cost).toInt()
-            return diff
-        }
-
     }
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
@@ -178,9 +111,13 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
         }
     }
 
+    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>) {
+        errorEstimator.addSample(sourceNode, successorNode)
+    }
+
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
+
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
@@ -205,6 +142,9 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
                     openList.update(successorNode)
                 }
             }
+
+            //update the statistics
+            calculateStatistics(sourceNode, successorNode)
         }
     }
 
@@ -227,21 +167,18 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
         return actions
     }
 
-    private fun cleanUpOnF(goalNodeFValue: Double, terminationChecker: TerminationChecker): Boolean {
+    private fun cleanUpOnF(goalNodeFValue: Double, terminationChecker: TerminationChecker): Node<StateType>? {
         openList.reorder(cleanupNodeComparator)
-        val lowestFNode = openList.peek()
-        if (lowestFNode == null || lowestFNode.f > goalNodeFValue){
-            openList.reorder(openNodeComparator)
-            return true
-        }
+        var stepsToProveBound = 0
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            val topNode = openList.pop()
-            if (topNode == null || topNode.f > goalNodeFValue) {
-                openList.reorder(openNodeComparator)
-                return true
+            val topNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
+            if (domain.isGoal(topNode.state)) return topNode
+            if ((weight * topNode.f) >= goalNodeFValue) {
+                return null
             } else {
                 expandFromNode(topNode)
             }
+            stepsToProveBound++
         }
         checkTermination(terminationChecker)
         throw GoalNotReachableException()
@@ -254,16 +191,35 @@ class TildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, v
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
-
+        var times = 0
+        val varianceFile = File("/home/aifs2/doylew/variance.out").bufferedWriter()
+        val meanHFile= File("/home/aifs2/doylew/meanH.out").bufferedWriter()
+        val meanDFile = File("/home/aifs2/doylew/meanD.out").bufferedWriter()
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            times++
+            varianceFile.write(errorEstimator.varianceDistance.toString() + "\n")
+            meanHFile.write(errorEstimator.meanErrorHeuristic.toString() + "\n")
+            meanDFile.write(errorEstimator.meanErrorDistance.toString() + "\n")
             val topNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
-                if (cleanUpOnF(topNode.f, terminationChecker)) {
-                    executionNanoTime = System.nanoTime() - startTime
-                    return extractPlan(topNode, state)
+                println(times)
+                varianceFile.close()
+                meanHFile.close()
+                meanDFile.close()
+                val proveSolution = cleanUpOnF(topNode.f, terminationChecker)
+                executionNanoTime = System.nanoTime() - startTime
+                return if (proveSolution == null) {
+                    errorEstimator.close()
+                    extractPlan(topNode, state)
+                } else {
+                    errorEstimator.close()
+                    extractPlan(proveSolution, state)
                 }
+                //val file = File('variance.out')
+
             }
             expandFromNode(topNode)
+            expandedNodeCount++
 
         }
         checkTermination(terminationChecker)

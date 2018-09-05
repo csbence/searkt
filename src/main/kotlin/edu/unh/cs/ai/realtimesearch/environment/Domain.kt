@@ -57,7 +57,7 @@ interface Domain<State> {
      * @param targetState is the end state of the transition.
      * @return the action that leads to the targetState when applied from the sourceState if exists, else null.
      */
-    fun transition(sourceState: State, targetState: State): Pair<Action, Long>? {
+    fun transition(sourceState: State, targetState: State): Pair<Action, Double>? {
         val successorBundles = successors(sourceState)
 
         val successorBundle = successorBundles.firstOrNull { it.state == targetState }

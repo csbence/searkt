@@ -194,7 +194,7 @@ fun <StateType : State<StateType>> constructPath(statePath: Collection<StateType
                 domain.transition(it[0], it[1])
                         ?: throw MetronomeException("Unable to construct path on the given state sequence")
             }
-            .map { RealTimePlanner.ActionBundle(it.first, it.second) }
+            .map { RealTimePlanner.ActionBundle(it.first, it.second.toLong()) }
 }
 
 /**

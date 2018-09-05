@@ -34,14 +34,6 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
     override val open: Boolean
         get() = index >= 0
 
-    override val setIndex: (node: SearchNode<StateType, SafeRealTimeSearchNode<StateType>>, index: Int) -> Unit = { node, index ->
-        node.index = index
-    }
-
-    override val getIndex: (node: SearchNode<StateType, SafeRealTimeSearchNode<StateType>>) -> Int = { node ->
-        node.index
-    }
-
     override var safe = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */

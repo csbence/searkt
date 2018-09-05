@@ -406,7 +406,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             val undiscoveredNode = PureRealTimeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = Long.MAX_VALUE,
@@ -425,7 +425,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                           nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<RealTimePlanner.ActionBundle> {
         val transition = domain.transition(currentNode.state, nextNode.state)
                 ?: throw GoalNotReachableException("Cannot backtrack in this domain")
-        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
+        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second.toLong()))
     }
 }
 

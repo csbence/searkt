@@ -16,8 +16,7 @@ enum class Planners {
     EES,
     EETS,
     EECS,
-    TS
-    DPS,
+    TS,
     TIME_BOUNDED_A_STAR,
     ENVELOPE,
     ALT_ENVELOPE

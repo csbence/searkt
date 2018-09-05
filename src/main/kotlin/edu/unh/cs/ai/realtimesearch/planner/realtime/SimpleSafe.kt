@@ -65,12 +65,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         override val open: Boolean
             get() = index >= 0
 
-
-        override val getIndex: (node: SearchNode<StateType, Node<StateType>>) -> Int = { node -> node.index }
-        override val setIndex: (node: SearchNode<StateType, Node<StateType>>, index: Int) -> Unit = { node, index ->
-            node.index = index
-        }
-
         /** Nodes that generated this Node as a successor in the current exploration phase */
         override var predecessors: MutableList<SearchEdge<Node<StateType>>> = arrayListOf()
 

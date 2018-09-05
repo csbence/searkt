@@ -56,7 +56,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var proofSuccessful: Int = 0
     private var towardTopNode: Int = 0
     private var numberOfProofs: Int = 0
-    private var targetDepthRankOfOpenFrontierDepth = ArrayList<ExperimentResult.TargetDepthRankTriple>()
+    private var targetDepthRankOfOpenFrontierDepth = ArrayList<ExperimentResult.DepthRankPair>()
 
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.proofSuccessful = this.proofSuccessful
@@ -167,7 +167,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             val targetRank = nodeRankTarget
             val frontierDepth = costToFrontier / actionDuration
 
-            targetDepthRankOfOpenFrontierDepth.add(ExperimentResult.TargetDepthRankTriple(targetDepth.toInt(), targetRank, frontierDepth.toInt()))
+            targetDepthRankOfOpenFrontierDepth.add(ExperimentResult.DepthRankPair(targetRank, frontierDepth.toInt()))
 
             plan = extractPath(targetSafeNode, sourceState)
             rootState = targetSafeNode.state

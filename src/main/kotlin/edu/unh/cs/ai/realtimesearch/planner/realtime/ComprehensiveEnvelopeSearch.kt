@@ -345,7 +345,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
                     successorNode ?: throw NullPointerException("Closed list has State Key which points to Null")
                 }
 
-                Node.createEdge(frontierNode, successorNode, it.actionCost, it.action)
+                Node.createEdge(frontierNode, successorNode, it.actionCost.toLong(), it.action)
 
                 val tempH = successorNode.heuristic + it.actionCost
                 if (tempH < bestH) {
@@ -414,7 +414,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
             }
 
             //Add edge now
-            Node.createEdge(ancestorNode, goalPathNode, it.actionCost, it.action)
+            Node.createEdge(ancestorNode, goalPathNode, it.actionCost.toLong(), it.action)
 
             //we only want to update nodes that are not already on the goal path. If already on goal path, that means
             //its heuristic is already perfect

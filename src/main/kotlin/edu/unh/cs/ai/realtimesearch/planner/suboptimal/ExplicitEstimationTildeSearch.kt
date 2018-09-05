@@ -15,13 +15,12 @@ import kotlin.math.sqrt
 class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Tilde Search is not specified.")
-    private val errorModel: String = configuration.errorModel
-            ?: throw MetronomeConfigurationException("Error model for Explicit Estimation Tilde Search is not specified")
-    private val actionDuration = configuration.actionDuration
+
+    val errorEstimator = ErrorEstimator<Node<StateType>>()
 
     var terminationChecker: TerminationChecker? = null
 
-    private val cleanupNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val cleanupNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -31,7 +30,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val focalNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val focalNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.dHat < rhs.dHat -> -1
             lhs.dHat > rhs.dHat -> 1
@@ -43,7 +42,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val openNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val openNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fHat < rhs.fHat -> -1
             lhs.fHat > rhs.fHat -> 1
@@ -55,7 +54,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val newOpenNodeComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val newOpenNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde < rhs.fTilde -> -1
             lhs.fTilde > rhs.fTilde -> 1
@@ -67,7 +66,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val promisingComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val promisingComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fTilde <= weight * rhs.fHat -> -1
             lhs.fTilde > weight * rhs.fHat -> 1
@@ -75,7 +74,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
-    private val qualifiedComparator = Comparator<ExplicitEstimationTildeSearch.Node<StateType>> { lhs, rhs ->
+    private val qualifiedComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f <= weight * rhs.f -> -1
             lhs.f > weight * rhs.f -> 1
@@ -87,9 +86,9 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private val qualifiedRBTree = RBTree(cleanupNodeComparator, qualifiedComparator)
 
-    inner class QualifiedFocalList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), newOpenNodeComparator) {
-        override fun getIndex(item: ExplicitEstimationTildeSearch.Node<StateType>): Int = item.getIndex(0)
-        override fun setIndex(item: ExplicitEstimationTildeSearch.Node<StateType>, index: Int) = item.setIndex(0, index)
+    inner class QualifiedFocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), newOpenNodeComparator) {
+        override fun getIndex(item:Node<StateType>): Int = item.getIndex(0)
+        override fun setIndex(item:Node<StateType>, index: Int) = item.setIndex(0, index)
     }
 
     private val qualifiedFocal = QualifiedFocalList()
@@ -97,21 +96,21 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
     private val promisingRBTree = RBTree(newOpenNodeComparator, promisingComparator)
 
-    inner class PromisingFocalList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
+    inner class PromisingFocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
     }
 
     private val promisingFocal = PromisingFocalList()
 
-    private val nodes: HashMap<StateType, ExplicitEstimationTildeSearch.Node<StateType>> = HashMap(100000000, 1.toFloat())
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000000, 1.toFloat())
 
     // uses four separate containers to store the nodes during search
 
     private val qualifiedNodes = SynchronizedQueue(qualifiedRBTree, qualifiedFocal, qualifiedComparator, 0)
     private val promisingNodes = SynchronizedQueue(promisingRBTree, promisingFocal, promisingComparator, 1)
 
-    inner class FHatList : AbstractAdvancedPriorityQueue<ExplicitEstimationTildeSearch.Node<StateType>>(arrayOfNulls(1000000), openNodeComparator) {
+    inner class FHatList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), openNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(2)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(2, index)
     }
@@ -122,11 +121,11 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     private var fHatMinExpansion = 0
     private var dHatMinExpansion = 0
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action, override var d: Double,
-                                             override var parent: ExplicitEstimationTildeSearch.Node<StateType>? = null) :
+                                             override var parent: Node<StateType>? = null) :
             Indexable, RBTreeElement<Node<StateType>, Node<StateType>>,
-            Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>>{
+            Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>>, ErrorTraceable{
         override var node: RBTreeNode<Node<StateType>, Node<StateType>>?
             get() = internalNode
             set(value) { internalNode = value }
@@ -150,85 +149,23 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         private var internalNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 
         override val f: Double
-            get() = cost + heuristic
+            get() = g + h
 
-        override val depth: Double = parent?.depth?.plus(1) ?: 17.0
-
-        private var sseH = 0.0
-
-        private var sseD = 0.0
+        override val depth: Double = parent?.depth?.plus(1) ?: 0.0
 
         val fHat: Double
-            get() = cost + hHat
+            get() = g + hHat
 
         val fTilde: Double
-            get() = fHat + (1.96 * sqrt(dHat * dHatVariance))
+            get() = fHat + (1.96 * sqrt(dHat * errorEstimator.varianceDistance))
 
-        override var hHat = 0.0
+        override var hHat = h
+            get() = h + (dHat * errorEstimator.meanErrorHeuristic)
 
-        override var dHat = 0.0
-
-        private var dHatMean: Double = 0.0
-        private var dHatVariance: Double = 0.0
+        override var dHat = d
+            get() = d / (1.0 - errorEstimator.meanErrorDistance)
 
         override var index: Int = -1
-
-        init {
-            computePathHats(parent, actionCost)
-        }
-
-        private fun calculateDHatMean(): Double {
-            return parent!!.dHatMean + ((dHat - parent!!.dHatMean) / depth)
-        }
-
-        private fun calculateDHatVariance(): Double {
-            val sampleVariance = parent!!.dHatVariance + ((dHat - parent!!.dHatMean) * (dHat - dHatMean))
-            return sampleVariance / (depth - 1)
-        }
-
-        private fun computePathHats(parent: Node<StateType>?, edgeCost: Double) {
-            if (parent != null) {
-                this.sseH = parent.sseH + ((edgeCost + heuristic) - parent.heuristic)
-                this.sseD = parent.sseD + ((1 + d) - parent.d)
-            }
-
-            this.hHat = computeHHat()
-            this.dHat = computeDHat()
-
-            dHatMean = if (parent == null) {
-                dHat
-            } else {
-                calculateDHatMean()
-            }
-
-            dHatVariance = if (parent == null) {
-                0.0
-            } else {
-                calculateDHatVariance()
-            }
-
-            assert(fHat >= f)
-            assert(dHat >= 0)
-        }
-
-        private fun computeHHat(): Double {
-            var hHat = Double.MAX_VALUE
-            val sseMean = if (cost == 0.0) sseH else sseH / depth
-            val dMean = if (cost == 0.0) sseD else sseD / depth
-            if (dMean < 1) {
-                hHat = heuristic + ((d / (1 - dMean)) * sseMean)
-            }
-            return hHat
-        }
-
-        private fun computeDHat(): Double {
-            var dHat = Double.MAX_VALUE
-            val dMean = if (cost == 0.0) sseD else sseD / depth
-            if (dMean < 1) {
-                dHat = d / (1 - dMean)
-            }
-            return dHat
-        }
 
         override fun compareTo(other: Node<StateType>): Int {
             val diff = (this.f - other.f).toInt()

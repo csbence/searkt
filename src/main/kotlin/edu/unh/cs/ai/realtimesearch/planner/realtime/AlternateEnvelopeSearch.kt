@@ -293,7 +293,7 @@ class AlternateEnvelopeSearch<StateType : State<StateType>>(override val domain:
             val successorNode = getNode(sourceNode, successor)
             // The parent is random (last caller)
 
-            val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost)
+            val edge = SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong())
             // Having a predecessor set would make this prettier, but probably slower
             if (!successorNode.predecessors.contains(edge)) {
                 successorNode.predecessors.add(edge)
@@ -305,7 +305,7 @@ class AlternateEnvelopeSearch<StateType : State<StateType>>(override val domain:
 
             rhsHeuristic = min(successorNode.heuristic + successor.actionCost, rhsHeuristic)
 
-            sourceNode.successors.add(SearchEdge(node = successorNode, action = successor.action, actionCost = successor.actionCost))
+            sourceNode.successors.add(SearchEdge(node = successorNode, action = successor.action, actionCost = successor.actionCost.toLong()))
 
             //if successor has been touched by goal, take the top iteration (i.e. priority) from it
             sourceNode.iteration = max(sourceNode.iteration, successorNode.iteration)
@@ -331,7 +331,7 @@ class AlternateEnvelopeSearch<StateType : State<StateType>>(override val domain:
             val undiscoveredNode = EnvelopeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
