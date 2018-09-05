@@ -80,6 +80,7 @@ def plot_domain_instances(data):
 
 
 def plot_all_experiments(data, plot_title):
+    print(f'Data to plot: {data}')
     results = DataFrame(columns="actionDuration withinOpt algorithmName lbound rbound".split())
 
     # for testing against self!
@@ -146,19 +147,28 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
     data = construct_data_frame(results)
     compact_base_data = construct_data_frame(base_results)
 
+    print(len(base_results))
+    print(f'Compact base size: {len(compact_base_data)}')
+
     remove_unused_columns(data)
     remove_unused_columns(compact_base_data)
 
     action_durations = data.actionDuration.unique()
     print(f'action duration used: {action_durations}')
     base_data = extrapolate_a_star_results(compact_base_data, action_durations)
-
-    data = pd.concat([data, base_data], sort=False)
+    
+    print(len(data))
+    print(len(compact_base_data))
+    data = pd.concat([data, compact_base_data], ignore_index=True, sort=False)
+    
+    print(f'original size with baseline: {len(data)}')
     
     data = data[~data['errorMessage'].notnull()]
     
-    print(f'original size with baseline: {len(data)}')
+    print(len(data[data.algorithmName == 'A_STAR']))
 
+    print(f'size after removing erros: {len(data)}')
+    
     # drop certain rows for brevity
     # dropped_ratios = [0.0, 10.0, 2.0]
     # data = data[~data['backlogRatio'].isin(dropped_ratios)]
@@ -173,6 +183,8 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
         print(f'size after expansion delay filtering: {len(data)}')
     
     data = extrapolate_within_optimal(data)
+    print(f'size after adding "withinOptimal" - this should not change anything: {len(data)}')
+
     data = data[~(data.algorithmName == 'A_STAR')]
 
     # df = data.groupby(['algorithmName', 'expansionDelay'], as_index=False).mean()
@@ -201,6 +213,7 @@ def remove_unused_columns(data):
 
 def extrapolate_within_optimal(data):
     astar = data[data["algorithmName"] == "A_STAR"]
+    print(f'ASTAR len: {len(astar)}')
 
     astar["optimalPathLength"] = astar["pathLength"]
     astar = astar[["domainPath", "optimalPathLength"]]
