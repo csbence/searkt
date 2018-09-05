@@ -80,7 +80,6 @@ def plot_domain_instances(data):
 
 
 def plot_all_experiments(data, plot_title):
-    print(f'Data to plot: {data}')
     results = DataFrame(columns="actionDuration withinOpt algorithmName lbound rbound".split())
 
     # for testing against self!
@@ -149,12 +148,10 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
     # Filter out any domains that do not meet our expansion delay
     if expansion_delay is not None:
         data = data[data.expansionDelay == int(expansion_delay)]
-        print(f'size after expansion delay filtering: {len(data)}')
 
     compact_base_data = construct_data_frame(base_results)
 
     print(len(base_results))
-    print(f'Compact base size: {len(compact_base_data)}')
 
     remove_unused_columns(data)
     remove_unused_columns(compact_base_data)
@@ -162,28 +159,22 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
     action_durations = data.actionDuration.unique()
     print(f'action duration used: {action_durations}')
     base_data = extrapolate_a_star_results(compact_base_data, action_durations)
-    
-    print(len(data))
-    print(len(compact_base_data))
-    data = pd.concat([data, compact_base_data], ignore_index=True, sort=False)
-    
-    print(f'original size with baseline: {len(data)}')
+
+    data = pd.concat([data, compact_base_data], sort=False)
+
     
     data = data[~data['errorMessage'].notnull()]
     
     print(len(data[data.algorithmName == 'A_STAR']))
 
-    print(f'size after removing erros: {len(data)}')
     
     # drop certain rows for brevity
     data = data[~(data['tbaOptimization'] == 'NONE')]
     
     if domain_token is not None:
         data = data[data['domainPath'].str.contains(domain_token)]
-        print(f'size after domain name filtering: {len(data)}')
     
     data = extrapolate_within_optimal(data)
-    print(f'size after adding "withinOptimal" - this should not change anything: {len(data)}')
 
     data = data[~(data.algorithmName == 'A_STAR')]
 
@@ -213,7 +204,6 @@ def remove_unused_columns(data):
 
 def extrapolate_within_optimal(data):
     astar = data[data["algorithmName"] == "A_STAR"]
-    print(f'ASTAR len: {len(astar)}')
 
     astar["optimalPathLength"] = astar["pathLength"]
     astar = astar[["domainPath", "optimalPathLength"]]
