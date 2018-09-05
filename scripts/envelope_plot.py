@@ -131,7 +131,7 @@ def plot_all_experiments(data, plot_title):
     pdf.close()
 
 
-def main(individual_plots, paths_to_base, paths, title, domain_token):
+def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_delay):
     set_rc()
 
     results = []
@@ -150,29 +150,37 @@ def main(individual_plots, paths_to_base, paths, title, domain_token):
     remove_unused_columns(compact_base_data)
 
     action_durations = data.actionDuration.unique()
+    print(f'action duration used: {action_durations}')
     base_data = extrapolate_a_star_results(compact_base_data, action_durations)
 
-    data = pd.concat([data, base_data])
-
+    data = pd.concat([data, base_data], sort=False)
+    
     data = data[~data['errorMessage'].notnull()]
+    
+    print(f'original size with baseline: {len(data)}')
 
     # drop certain rows for brevity
     # dropped_ratios = [0.0, 10.0, 2.0]
     # data = data[~data['backlogRatio'].isin(dropped_ratios)]
     data = data[~(data['tbaOptimization'] == 'NONE')]
+    
     if domain_token is not None:
         data = data[data['domainPath'].str.contains(domain_token)]
+        print(f'size after domain name filtering: {len(data)}')
 
+    if expansion_delay is not None:
+        data = data[data.expansionDelay == int(expansion_delay)]
+        print(f'size after expansion delay filtering: {len(data)}')
+    
     data = extrapolate_within_optimal(data)
     data = data[~(data.algorithmName == 'A_STAR')]
 
-    df = data.groupby(['algorithmName', 'expansionDelay'], as_index=False).mean()
+    # df = data.groupby(['algorithmName', 'expansionDelay'], as_index=False).mean()
 
-    print(df)
-    df.plot(x='expansionDelay', y='withinOpt')
-    plt.show()
+    # print(df)
+    # df.plot(x='expansionDelay', y='withinOpt')
+    # plt.show()
 
-    return
     if individual_plots:
         plot_domain_instances(data)
     else:
@@ -217,24 +225,27 @@ def extrapolate_a_star_results(data, action_durations):
     return pd.concat(extrapolated_data)
 
 
-# define command line usage
-parser = argparse.ArgumentParser()
-
-parser.add_argument("-b", "--paths_to_base", nargs="*", help="Path to base results JSON")
-parser.add_argument("-p", "--paths", nargs="*", help="Path to experiment results JSON",
-                    default=["../output/results.json"])
-parser.add_argument("-i", "--individual",
-                    help="Should plots be generated for each domain individually? (Primarily for debugging)",
-                    action="store_true")
-parser.add_argument("-t", "--title", help="Title for plot (ignored for individual plots)", default="Experiments")
-parser.add_argument("-d", "--domain_token", help="Domain token for filtering")
-
-args = parser.parse_args()
-individual_plots = args.individual
-paths_to_base = args.paths_to_base
-paths = args.paths
-title = args.title
-domain_token = args.domain_token
 
 if __name__ == "__main__":
-    main(individual_plots, paths_to_base, paths, title, domain_token)
+    # define command line usage
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-b", "--paths_to_base", nargs="*", help="Path to base results JSON")
+    parser.add_argument("-p", "--paths", nargs="*", help="Path to experiment results JSON",
+                        default=["../output/results.json"])
+    parser.add_argument("-i", "--individual",
+                        help="Should plots be generated for each domain individually? (Primarily for debugging)",
+                        action="store_true")
+    parser.add_argument("-t", "--title", help="Title for plot (ignored for individual plots)", default="Experiments")
+    parser.add_argument("-d", "--domain_token", help="Domain token for filtering")
+    parser.add_argument("-e", "--expansion_delay", help="Expansion delay for filtering")
+
+    args = parser.parse_args()
+    individual_plots = args.individual
+    paths_to_base = args.paths_to_base
+    paths = args.paths
+    title = args.title
+    domain_token = args.domain_token
+    expansion_delay = args.expansion_delay
+    
+    main(individual_plots, paths_to_base, paths, title, domain_token, expansion_delay)

@@ -68,7 +68,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
 
-        visualizer = initializeVisualizer()
+//        visualizer = initializeVisualizer()
         if (visualizer != null) visualizerIsActive = true
         visualizer?.initialize(initialState)
 
