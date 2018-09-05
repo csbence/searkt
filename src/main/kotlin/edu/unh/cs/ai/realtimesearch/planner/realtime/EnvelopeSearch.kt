@@ -285,7 +285,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private fun explore(state: StateType, terminationChecker: TerminationChecker, explorationQueue: AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>): EnvelopeSearchNode<StateType> {
         val sourceNode = nodes[state]!!
-        // TODO: Use a buffer in the termination checker based on the size of the open list since we will initialize the wave frontier from the open list(?)
         while (!terminationChecker.reachedTermination()) {
             // Must expand current node if not already expanded, meaning it is likely on the envelope frontier.
             // If we expand it now, we must remove from the open list rather than expand it again later (which doesn't make sense)
@@ -357,7 +356,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             backupNode(waveFront)
             terminationChecker.notifyExpansion()
 
-            // TODO: Reconsider wiping the frontier immediately. Need to profile cpu time to find out if this sucks
             if (waveFront == agentState) {
                 if (searchPhase == GOAL_BACKUP) {
                     searchPhase = PATH_IMPROVEMENT
@@ -398,7 +396,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             searchPhase = GOAL_BACKUP
 
             waveCounter++
-            waveFrontier.clear()
+            waveFrontier.quickClear()
             clearPreviousBackup = true
 
             foundGoals.forEach {
