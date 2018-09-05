@@ -396,7 +396,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             searchPhase = GOAL_BACKUP
 
             waveCounter++
-            waveFrontier.clear()
+            waveFrontier.quickClear()
             clearPreviousBackup = true
 
             foundGoals.forEach {
