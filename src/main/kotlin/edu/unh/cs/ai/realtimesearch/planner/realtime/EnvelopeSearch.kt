@@ -210,7 +210,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 val reorderOpenTermChecker = getTerminationChecker(configuration, greedyTimeSlice)
                 if (initOpenReorder) {
                     initOpenReorder = false
-                    openReorderHeapifyIndex = openList.heapify(reorderOpenTermChecker)
+                    openReorderHeapifyIndex = openList.reorder(pseudoFComparator, reorderOpenTermChecker)
                 } else {
                     openReorderHeapifyIndex = openList.heapify(reorderOpenTermChecker, openReorderHeapifyIndex!!)
                 }
@@ -272,7 +272,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             agentLastWaveFrontier = max(agentLastWaveFrontier, agentNode.waveCounter)
 
             updateLocalHeuristic(agentNode)
-            bestWaveSuccessor()
+            bestWaveSuccessor(agentNode)
         } else {
             agentNode.waveParent
         }
