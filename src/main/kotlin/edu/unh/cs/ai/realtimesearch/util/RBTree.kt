@@ -16,8 +16,8 @@
  */
 package edu.unh.cs.ai.realtimesearch.util
 
-import java.util.ArrayList
-import java.util.Comparator
+import edu.unh.cs.ai.realtimesearch.util.RBTreeNode.Color
+import java.util.*
 
 
 class RBTree<K : RBTreeElement<K, V>, V>(private val sComp: Comparator<K>, private val vComp: Comparator<K>) {
@@ -118,11 +118,11 @@ class RBTree<K : RBTreeElement<K, V>, V>(private val sComp: Comparator<K>, priva
         }
     }
 
-    fun visit(l: K?, u: K, op: Int, visitor: RBTreeVisitor<K>) {
+    fun visit(l: K?, u: K?, op: Int, visitor: RBTreeVisitor<K>) {
         visit(l, u, root, op, visitor)
     }
 
-    private fun visit(l: K?, u: K, n: RBTreeNode<K, V>?, op: Int, visitor: RBTreeVisitor<K>) {
+    private fun visit(l: K?, u: K?, n: RBTreeNode<K, V>?, op: Int, visitor: RBTreeVisitor<K>) {
         if (n == null) return
         if (l == null || vComp.compare(n.key, l) > 0) {
             visit(l, u, n.left, op, visitor)

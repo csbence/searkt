@@ -19,9 +19,9 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     var terminationChecker: TerminationChecker? = null
 
-    private var aStarExpansions = 0
-    private var dHatExpansions = 0
-    private var fHatExpansions = 0
+    var aStarExpansions = 0
+    var dHatExpansions = 0
+    var fHatExpansions = 0
 
     private val cleanupNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
@@ -57,9 +57,17 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
+    private val openNodeIgnoreTiesComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.fHat < rhs.fHat -> -1
+            lhs.fHat > rhs.fHat -> 1
+            else -> 0
+        }
+    }
+
     private val explicitNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fHat <= weight * rhs.fHat -> -1
+            lhs.fHat < weight * rhs.fHat -> -1
             lhs.fHat > weight * rhs.fHat -> 1
             else -> 0
         }
@@ -108,7 +116,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             set(value) { redBlackNode = value}
 
         override fun toString(): String {
-            return "EES.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
+            return "ExplicitEstimationSearchH.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
         }
 
@@ -126,10 +134,10 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             get() = g + hHat
 
         override var hHat = h
-            get() = h + (dHat * errorEstimator.meanErrorHeuristic)
+            get() = h + (dHat * errorEstimator.meanHeuristicError)
 
         override var dHat = d
-            get() = d / (1.0 - errorEstimator.meanErrorDistance)
+            get() = d / (1.0 - errorEstimator.meanDistanceError)
 
         override var index: Int = -1
 
@@ -146,6 +154,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         openList.add(node, bestFHat)
         cleanup.add(node)
         nodes[node.state] = node
+    }
+
+    private fun updateFocal(oldBest: Node<StateType>?, newBest: Node<StateType>?, fHatChange: Int) {
+        assert(newBest?.node != null)
+        openList.update(oldBest, newBest, fHatChange)
     }
 
     private fun selectNode(): Node<StateType> {
@@ -197,13 +210,16 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>) {
-        errorEstimator.addSample(sourceNode, successorNode)
+    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>?) {
+        if (successorNode != null) {
+            errorEstimator.addSample(sourceNode, successorNode)
+        }
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
+        var bestChild: Node<StateType>? = null
+
         val successors = domain.successors(sourceNode.state)
         for (successor in successors) {
             val successorState = successor.state
@@ -212,8 +228,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             if (successorState == sourceNode.parent?.state) {
                 continue
             }
-            //update the statistics
-            calculateStatistics(sourceNode, successorNode)
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -231,7 +245,20 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                     nodes[successorState] = successorNode
                 }
             }
+
+            // keep track of the best child for statistics calculation
+            if (bestChild != null) {
+                val previousLowestError = (bestChild.h - sourceNode.h) + (bestChild.g - sourceNode.g)
+                val currentError = (successorNode.h - sourceNode.h) + (successorNode.g - sourceNode.g)
+                if (currentError < previousLowestError) {
+                    bestChild = successorNode
+                }
+            } else {
+                bestChild = successorNode
+            }
         }
+        //update the statistics
+        calculateStatistics(sourceNode, bestChild)
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
@@ -254,16 +281,23 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         cleanup.add(node)
         openList.add(node, node)
         generatedNodeCount++
+        openList.update(null, node, 0)
 
         while (cleanup.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            val oldBest = openList.peekOpen()
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)
+            expandedNodeCount++
+            val newBest = openList.peekOpen()
+            val fHatChange = openNodeIgnoreTiesComparator.compare(newBest, oldBest)
+            updateFocal(oldBest, newBest, fHatChange)
         }
         if (terminationChecker.reachedTermination()) {
+            System.err.println("Used all ${terminationChecker.elapsed()} expansions")
             throw MetronomeException("Reached termination condition, " +
                     "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }

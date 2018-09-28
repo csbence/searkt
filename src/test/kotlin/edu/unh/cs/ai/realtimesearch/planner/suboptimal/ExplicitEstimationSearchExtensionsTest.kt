@@ -13,16 +13,15 @@ import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
 import kotlin.math.roundToInt
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ExplicitEstimationSearchExtensionsTest {
 
-//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "ExplicitEstimationSearchH", TerminationType.EXPANSION,
 //            null, 1L, 1000L, 1000000L, null, 1.0, null, null, null, null,
 //            null, null, null, null, null, null, errorModel = "path")
 
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "EES",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "ExplicitEstimationSearchH",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
             expansionLimit = 1000000L, errorModel = "path")
 
@@ -190,7 +189,7 @@ class ExplicitEstimationSearchExtensionsTest {
 //    @Test
 //    fun testEETSHardPuzzle() {
 //        val weight = 1.25
-//        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+//        val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "ExplicitEstimationSearchH", TerminationType.EXPANSION,
 //                null, 1L, 1000L, 1000000L, null, weight, null, null, null, null,
 //                null, null, null, null, null, null)
 //

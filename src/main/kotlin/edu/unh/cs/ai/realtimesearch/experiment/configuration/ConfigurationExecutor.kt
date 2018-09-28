@@ -22,12 +22,8 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.experiment.AnytimeExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
 import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.DYNAMIC
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.LookaheadType.STATIC
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.*
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.*
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.Planners.*
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
@@ -264,7 +260,7 @@ object ConfigurationExecutor {
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
-            EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
+            EES -> executeOfflineSearch(ExplicitEstimationSearchH(domain, configuration), configuration, domain, sourceState)
             EETS -> executeOfflineSearch(ExplicitEstimationTildeSearch(domain, configuration), configuration, domain, sourceState)
             EECS -> executeOfflineSearch(ExplicitEstimationConservativeSearch(domain, configuration), configuration, domain, sourceState)
             TS -> executeOfflineSearch(TildeSearch(domain, configuration), configuration, domain, sourceState)

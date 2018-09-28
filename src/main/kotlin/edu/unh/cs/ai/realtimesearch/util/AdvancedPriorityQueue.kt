@@ -35,7 +35,7 @@ abstract class AbstractAdvancedPriorityQueue<T>(
 
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
-    private var resizable = false
+    private var resizable = true
     override var size = 0
 
     val backingArray: Array<T?>

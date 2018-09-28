@@ -18,11 +18,11 @@ import kotlin.system.measureNanoTime
 import kotlin.test.assertTrue
 
 class ExplicitEstimationSearchTest {
-//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "EES", TerminationType.EXPANSION,
+//    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "ExplicitEstimationSearchH", TerminationType.EXPANSION,
 //            null, 100000L, 1000L, Long.MAX_VALUE, null, 1.0, null, null, null, null,
 //            null, null, null, null, null, null, errorModel = "path")
 
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "EES",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "ExplicitEstimationSearchH",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 1000L,
             errorModel = "path")
 
@@ -40,7 +40,6 @@ class ExplicitEstimationSearchTest {
         fileWriter.close()
         return temp.inputStream()
     }
-
 
     @Test
     fun testEES() {

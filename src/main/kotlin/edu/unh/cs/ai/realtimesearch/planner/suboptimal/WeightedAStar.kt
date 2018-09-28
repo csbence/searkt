@@ -103,7 +103,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -150,6 +149,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
+            expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +

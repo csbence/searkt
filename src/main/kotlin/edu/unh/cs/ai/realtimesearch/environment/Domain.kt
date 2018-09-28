@@ -115,7 +115,38 @@ interface Domain<State> {
     fun randomizedStartState(state: State, seed: Long): State = TODO("This function is not implemented for the domain")
 
     fun appendDomainSpecificResults(results: ExperimentResult) {}
+
+    /**
+     * Packs the state into a long for faster heuristic search
+     */
+    fun pack(state: State): Long = TODO()
+
+    /**
+     * Unpacks the long back into the state representation
+     */
+    fun unpack(state: Long): State = TODO()
+
+    /**
+     * Gets the number of possible operators from a state
+     */
+    fun getNumOperators(state: State): Int = TODO()
+
+    /**
+     * Gets the ith operator for a specified state of the domain
+     */
+    fun getOperator(state: State, i: Int): Operator<State> = TODO()
+
+    /**
+     * Applies the operator to the specified state
+     */
+    fun applyOperator(state: State, op: Operator<State>): State = TODO()
 }
 
+
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Double)
+
+interface Operator<in State> : Action {
+    fun getCost(state: State): Double
+    fun reverse(state: State): Operator<State>
+}
 

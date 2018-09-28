@@ -11,7 +11,7 @@ data class VacuumWorldState(val agentLocation: Location, val dirtyCells: List<Lo
     private val hashCode: Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
-        var hashCode: Int = dirtyCells.size
+        val hashCode: Int = dirtyCells.size
         return agentLocation.hashCode() xor hashCode
     }
 
@@ -31,6 +31,10 @@ data class VacuumWorldState(val agentLocation: Location, val dirtyCells: List<Lo
 
     override fun toString(): String {
         return "Agent location: " + agentLocation.toString() + ", dirty: " + dirtyCells.toString()
+    }
+
+    override fun hashCode(): Int {
+        return hashCode
     }
 
 }

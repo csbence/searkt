@@ -5,21 +5,20 @@
 # Run searkt with the configs
 
 import copy
+import datetime
+import itertools
 import json
-import sys
 import os
+import pandas as pd
+import slack_notification
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
-import itertools
-import datetime
-from . import slack_notification
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES', 'EECS']
-    algorithms_to_run = ['DPS']
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES']
     expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
     time_limit = [sys.maxsize]
@@ -44,7 +43,7 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [1.1]
+    weight = [1.1, 1.3, 1.5]
     # weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     # weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
     # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights

@@ -69,6 +69,22 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     override fun heuristic(state: SlidingTilePuzzle4State): Double = state.heuristic
 
+    private fun calculateHeuristic(tiles: ByteArray): Double {
+        var manhattanSum = 0.0
+        val zero: Byte = 0
+
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                val value = tiles[4 * y + x]
+                if (value == zero) continue
+
+                manhattanSum += abs(value / size - y) + abs(value % size - x)
+            }
+        }
+
+        return manhattanSum
+    }
+
     override fun heuristic(startState: SlidingTilePuzzle4State, endState: SlidingTilePuzzle4State): Double {
         var manhattanSum = 0.0
         val zero: Byte = 0
@@ -117,4 +133,29 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
     override fun getGoals(): List<SlidingTilePuzzle4State> = listOf(goalState)
 
     override fun predecessors(state: SlidingTilePuzzle4State) = successors(state)
+
+    override fun pack(state: SlidingTilePuzzle4State): Long {
+        var word = 0L
+        state.tiles[state.zeroIndex] = 0
+        state.tiles.forEach { tile ->
+            word = (word shl 4) or tile.toLong()
+        }
+        return word
+    }
+
+    override fun unpack(state: Long): SlidingTilePuzzle4State {
+        var word = state
+        var zeroIndex = -1
+        val tiles = ByteArray(16)
+        for (i in 15 downTo 0) {
+            val t = word and 0xF
+            word = word shr 4
+//            tiles[i] = t.toByte()
+            tiles[i] = t.toByte()
+            if (t == 0L) {
+                zeroIndex = i
+            }
+        }
+        return SlidingTilePuzzle4State(zeroIndex, tiles, calculateHeuristic(tiles), calculateHashCode(tiles))
+    }
 }

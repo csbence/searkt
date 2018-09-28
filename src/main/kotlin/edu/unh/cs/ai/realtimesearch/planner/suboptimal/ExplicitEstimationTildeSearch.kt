@@ -157,13 +157,13 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
             get() = g + hHat
 
         val fTilde: Double
-            get() = fHat + (1.96 * sqrt(dHat * errorEstimator.varianceDistance))
+            get() = fHat + (1.96 * sqrt(dHat * errorEstimator.varianceHeuristicError))
 
         override var hHat = h
-            get() = h + (dHat * errorEstimator.meanErrorHeuristic)
+            get() = h + (dHat * errorEstimator.meanHeuristicError)
 
         override var dHat = d
-            get() = d / (1.0 - errorEstimator.meanErrorDistance)
+            get() = d / (1.0 - errorEstimator.meanDistanceError)
 
         override var index: Int = -1
 
@@ -229,9 +229,16 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
     }
 
+    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>?) {
+        if (successorNode != null) {
+            errorEstimator.addSample(sourceNode, successorNode)
+        }
+    }
+
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
+        var bestChild: Node<StateType>? = null
+
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
@@ -256,7 +263,20 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                     nodes[successorState] = successorNode
                 }
             }
+
+            // keep track of the best child for statistics calculation
+            if (bestChild != null) {
+                val previousLowestError = (bestChild.h - sourceNode.h) + (bestChild.g - sourceNode.g)
+                val currentError = (successorNode.h - sourceNode.h) + (successorNode.g - sourceNode.g)
+                if (currentError < previousLowestError) {
+                    bestChild = successorNode
+                }
+            } else {
+                bestChild = successorNode
+            }
         }
+        //update the statistics using best child
+        calculateStatistics(sourceNode, bestChild)
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
@@ -268,7 +288,6 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
         }
         assert(startState == iterationNode.state)
         actions.reverse()
-//        println("fMinNodesExpanded: $fMinExpansion | fHatNodesExpanded: $fHatMinExpansion | dHatNodesExpanded $dHatMinExpansion")
         return actions
     }
 
@@ -301,6 +320,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)
+            expandedNodeCount++
 
         }
         if (terminationChecker.reachedTermination()) {

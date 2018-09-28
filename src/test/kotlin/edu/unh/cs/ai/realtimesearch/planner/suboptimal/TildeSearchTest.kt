@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 class TildeSearchTest {
 
-    private val configuration = ExperimentConfiguration(domainName = "VACUUM_WORLD", algorithmName = "TS",
+    private val configuration = ExperimentConfiguration(domainName = "GRID_WORLD", algorithmName = "TS",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
             expansionLimit = 1000000L, weight = 1.1, errorModel = "path")
 
@@ -26,5 +26,6 @@ class TildeSearchTest {
         println("timeTaken:${convertNanoUpDouble(tsAgent.executionNanoTime, TimeUnit.SECONDS)}")
         println("expansions:${tsAgent.expandedNodeCount}")
         println("costOfSolution:${plan.size}")
+        println("stepsToProveBound:${tsAgent.stepsToProveBound}")
     }
 }

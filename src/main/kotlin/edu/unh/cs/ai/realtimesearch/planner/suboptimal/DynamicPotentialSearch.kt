@@ -7,7 +7,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.*
+import edu.unh.cs.ai.realtimesearch.util.BucketNode
+import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
+import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -109,7 +111,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
         val successors = domain.successors(sourceNode.state)
         for (successor in successors) {
@@ -159,6 +160,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             }
             currentNode = topNode
             expandFromNode(currentNode)
+            expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +

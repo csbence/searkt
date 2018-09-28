@@ -129,10 +129,10 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
             get() = g + hHat
 
         override var hHat = h
-            get() = h + (dHat * errorEstimator.meanErrorHeuristic)
+            get() = h + (dHat * errorEstimator.meanHeuristicError)
 
         override var dHat = d
-            get() = d / (1.0 - errorEstimator.meanErrorDistance)
+            get() = d / (1.0 - errorEstimator.meanDistanceError)
 
         override var index: Int = -1
 
@@ -199,13 +199,16 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
         }
     }
 
-    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>) {
-        errorEstimator.addSample(sourceNode, successorNode)
+    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>?) {
+        if (successorNode != null) {
+            errorEstimator.addSample(sourceNode, successorNode)
+        }
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        expandedNodeCount++
         val currentGValue = sourceNode.cost
+        var bestChild: Node<StateType>? = null
+
         val successors = domain.successors(sourceNode.state)
         for (successor in successors) {
             val successorState = successor.state
@@ -214,8 +217,6 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
             if (successorState == sourceNode.parent?.state) {
                 continue
             }
-            // update the statistics
-            calculateStatistics(sourceNode, successorNode)
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
@@ -233,7 +234,20 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
                     nodes[successorState] = successorNode
                 }
             }
+
+            // keep track of the best child for statistics calculation
+            if (bestChild != null) {
+                val previousLowestError = (bestChild.h - sourceNode.h) + (bestChild.g - sourceNode.g)
+                val currentError = (successorNode.h - sourceNode.h) + (successorNode.g - sourceNode.g)
+                if (currentError < previousLowestError) {
+                    bestChild = successorNode
+                }
+            } else {
+                bestChild = successorNode
+            }
         }
+        // update the statistics
+        calculateStatistics(sourceNode, bestChild)
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
@@ -264,6 +278,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode)
+            expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +

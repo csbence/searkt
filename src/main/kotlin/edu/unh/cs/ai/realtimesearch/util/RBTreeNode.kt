@@ -16,14 +16,16 @@
  */
 package edu.unh.cs.ai.realtimesearch.util
 
-internal enum class Color {
-    RED, BLACK
-}
 
 class RBTreeNode<K : RBTreeElement<K, V>, V> internal constructor(var key: K, var value: V, var color: Color, var left: RBTreeNode<K, V>?, var right: RBTreeNode<K, V>?) {
+    internal enum class Color {
+        RED, BLACK
+    }
+
     override fun toString(): String {
         return "(key=$key,value=$value)"
     }
+
     var parent: RBTreeNode<K, V>? = null
 
     init {

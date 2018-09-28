@@ -41,6 +41,8 @@ repositories {
 }
 
 dependencies {
+    compile group: 'com.carrotsearch', name: 'hppc', version: '0.5.0'
+
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
