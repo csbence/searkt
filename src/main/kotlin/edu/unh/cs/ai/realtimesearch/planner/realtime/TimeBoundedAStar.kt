@@ -78,21 +78,18 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         get() = generateSequence {
             var currentNode : PureRealTimeSearchNode<StateType>? = null
 
-            val sequenceGeneratorTime = measureNanoTime{
+            printTime("A* Node Expansion total:"){
                 aStarPopCounter++
 
-                val popOpenExecutionTime = measureNanoTime {
+                printTime("Pop execution time") {
                     currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
                 }
-                printMessage("""Pop execution time: $popOpenExecutionTime""")
 
                 expandedNodes.add(currentNode!!)
-                val expandFromNodeExecutionTime = measureNanoTime {
+                printTime("Expand Node Execution Time") {
                     expandFromNode(this, currentNode!!){}
                 }
-                printMessage("""Expand Node Execution Time: $expandFromNodeExecutionTime""")
             }
-            printMessage("""A* Node Expansion total: $sequenceGeneratorTime""")
 
             currentNode!!
         }
@@ -130,10 +127,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
         // Initiate for the first search
-        printMessage("""Initial: ${terminationChecker.remaining()}""")
+        printTime("""Initial: ${terminationChecker.remaining()}"""){}
         if (rootState == null) {
             rootState = sourceState
-            printMessage("""Getting root: ${terminationChecker.remaining()}""")
+            printTime("""Getting root: ${terminationChecker.remaining()}"""){}
             val rootNode = getRootNode(sourceState)
             openList.add(rootNode)
         }
@@ -151,7 +148,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             val currentTargetPath = getCurrentPath(sourceState, terminationChecker)
 
             //checking if agent is on what is identified as the current target path
-            val findPathExecutionTime = measureNanoTime {
+            printTime("Find Path Execution Time") {
                 plan = if (currentTargetPath.pathHead.state == sourceState) {
                     if (currentTargetPath.pathHead == currentTargetPath.pathEnd) {
                         /* First handle the edge case where the agent has reached the end of its
@@ -195,7 +192,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                     }
                 }
             }
-            printMessage("""Find Path Execution Time: ${findPathExecutionTime}; Remaining Time: ${terminationChecker.remaining()}""")
 
         }
 
@@ -232,29 +228,15 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val expansions = aStarPopCounter
         while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
                         ?: throw GoalNotReachableException("Open list is empty."))) {
-            val iterationExecutionTime = measureNanoTime {
-                aStarPopCounter++
+            aStarPopCounter++
 
-                val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+            val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
-//                val listAddExTime = measureNanoTime {
-//                    expandedNodes.add(currentNode)
-//                }
-//                printMessage("""Adding to List Execution Time: $listAddExTime""")
+            expandFromNode(this, currentNode){}
 
-                val expandExecutionTime = measureNanoTime {
-                    expandFromNode(this, currentNode){}
-                }
-                //printMessage("""Expand Node Execution Time: $expandExecutionTime""")
-
-                terminationChecker.notifyExpansion()
-                currentExpansionDuration++
-            }
-
-            //printMessage("""Iteration execution time: $iterationExecutionTime""")
+            terminationChecker.notifyExpansion()
+            currentExpansionDuration++
         }
-
-        printMessage("""Expanded ${aStarPopCounter - expansions} Nodes""")
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
@@ -287,7 +269,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val aStarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
 
         var bestNode : PureRealTimeSearchNode<StateType>? = null
-        val aStarExecutionTime = measureNanoTime {
+        printTime("A* Execution Time") {
             bestNode = if (domain.isGoal(topOfOpen.state)) {
                 foundGoal = true
                 topOfOpen
@@ -295,7 +277,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 aStar(aStarTermChecker)
             }
         }
-        printMessage("""A* Execution Time: ${aStarExecutionTime}; Time Remaining: ${terminationChecker.remaining()}""")
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
         val targetNode = traceInProgress?.pathHead ?: bestNode!!
@@ -322,22 +303,17 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val currentBacktrace = traceInProgress!!
         var currentNode = targetNode
 
-        var traceCount = 0L
-        printMessage("""Before Trace: ${terminationChecker.remaining()}""")
-        while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
-            currentBacktrace.pathHead = currentNode.parent
-            currentBacktrace.states.add(currentNode.parent)
-            currentNode.parent.next = currentNode
-            currentNode = currentNode.parent
-
-            traceCount++
+        printTime("Trace execution time") {
+            while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
+                currentBacktrace.pathHead = currentNode.parent
+                currentBacktrace.states.add(currentNode.parent)
+                currentNode.parent.next = currentNode
+                currentNode = currentNode.parent
+            }
         }
-        printMessage("""After Trace: ${terminationChecker.remaining()}; Trace Count: $traceCount""")
-
 
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
         return if (currentBacktrace.pathHead.state == rootState || currentBacktrace.pathHead.state == sourceState) {
-            printMessage("Finished Trace")
             traceInProgress = null
             currentBacktrace
         } else {
@@ -356,10 +332,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // Find common ancestor
         val sourceState = currentAgentNode.state
         var sourceOnPath = false
-        val hashMapContainsTime = measureNanoTime {
+        printTime("Contains Execution Time"){
             sourceOnPath = bestPath.states.contains(currentAgentNode)
         }
-        printMessage("""Contains Execution Time: $hashMapContainsTime""")
 
         targetPath = bestPath
 
@@ -384,10 +359,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 iteration = 0)
         node.parent = node
 
-        val hashPutExecutionTime = measureNanoTime {
+        printTime("Hash table execution") {
             nodes[state] = node
         }
-        printMessage("""Hash Table Execution Time: ${hashPutExecutionTime}""")
         return node
     }
 
@@ -427,9 +401,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 ?: throw GoalNotReachableException("Cannot backtrack in this domain")
         return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
     }
-}
 
-inline fun printMessage(msg : String) = 0//println(msg)
+    private inline fun printTime(msg: String, noinline fn: () -> Unit){
+        fn()
+//        printNanoTime(msg, fn)
+    }
+}
 
 enum class TBAOptimization {
     NONE, SHORTCUT, THRESHOLD

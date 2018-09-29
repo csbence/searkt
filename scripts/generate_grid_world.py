@@ -86,7 +86,7 @@ endY = height
 path = args.path
 
 # hard code size bound for now
-sizeBound = int(endY / 30)
+sizeBound = int(endY / 20)
 # sizeBound = 10
 
 if type(path) == type(None):

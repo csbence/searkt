@@ -223,6 +223,11 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
     return parentChain.reversed()
 }
 
+fun printNanoTime(msg: String, fn: ()->Unit) {
+    val time = measureNanoTime(fn)
+    println("""$msg Nanoseconds: $time""")
+}
+
 
 /**
  * Expands a node and add it to closed list. For each successor

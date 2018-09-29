@@ -116,33 +116,28 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
             dijkstraTimer += measureTimeMillis {
                 //Note that dynamic dijkstra does not notify expansions: expansion-based termination checkers will never "reach termination"
-                val dijkstraNanoTimer = measureNanoTime {
+                printTime("Learning") {
                     dynamicDijkstra(this, reachedTermination = {open ->
                         open.isEmpty() || learningTerminationChecker.reachedTermination()
                     })
                 }
-                printMessage("""Learning: $dijkstraNanoTimer""")
             }
         }
 
         // Exploration phase
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val aStarNanoTimer = measureNanoTime {
+            printTime("A* Time") {
                 val targetNode = aStar(sourceState, terminationChecker)
 
                 /* Execution time accounted for with pathLengthBuffer in aStar operation */
                 plan = extractPath(targetNode, sourceState)
                 rootState = targetNode.state
             }
-
-            printMessage("""A* Time: $aStarNanoTimer""")
         }
 
         logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
         logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
-
-        printMessage("""Remaining Time: ${terminationChecker.remaining()}""")
 
         return plan!!
     }
@@ -228,6 +223,8 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
         }
     }
 
-    //conveniently turn on / off console printing
-    private fun printMessage(message: String) = 0//println(message)
+    private inline fun printTime(msg: String, noinline fn: () -> Unit){
+        fn()
+//        printNanoTime(msg, fn)
+    }
 }

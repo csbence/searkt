@@ -26,10 +26,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     private val backupInit = configuration.backupFrontierInitialization ?: BackupFrontierInitialization.ALL
     private val openListStructure = configuration.openList ?: OpenList.H_AND_PSEUDO_F
 
-    init {
-        println(backupInit)
-    }
-
     // Configuration - Hard Coded
     private val pseudoGWeight = 2.0
     private val greedyResourceRatio = 8.0 / 9.0 //r1
@@ -205,7 +201,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         var wavePropagationTimeSlice = terminationChecker.remaining() - greedyTimeSlice
 
         iterationCounter++
-        val searchTime = measureNanoTime {
+        printTime("Search Time") {
             if (initOpenReorder || openReorderHeapifyIndex != null) {
                 val reorderOpenTermChecker = getTerminationChecker(configuration, greedyTimeSlice)
                 if (initOpenReorder) {
@@ -223,7 +219,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
             }
         }
-        printMessage("""Search Time: $searchTime""")
 
         val agentNode = nodes[currentAgentState]!!
         /* Agent state might still not be expanded if:
@@ -241,7 +236,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         // Bence: I'm not sure that this is correct.
         // Also, we might want to limit the backup to nodes that were discovered before the backup
         // otherwise the backup might explode (it should implode)
-        val safetyWaveClear = measureNanoTime {
+        printTime("Clear wave time (agent reached wave frontier)") {
             if (agentNode.waveCounter == waveCounter && !isWaveInitializationInProgress) {
                 waveFrontier.quickClear()
                 if (searchPhase == GOAL_BACKUP) {
@@ -250,7 +245,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                 }
             }
         }
-        printMessage("""Clear wave time (agent reached wave frontier): $safetyWaveClear""")
 
         //To appease expansion termination checkers, we need to instantiate a final checker from the calculated remaining time
         val backupTerminationChecker = if (configuration.terminationType == TerminationType.TIME) terminationChecker
@@ -258,15 +252,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
         if (agentNode.waveParent == agentNode) agentLastWaveFrontier = max(agentLastWaveFrontier, agentNode.waveCounter)
 
-        val projectPathTime = measureNanoTime {
+        printTime("Project path time") {
             lastPlannedPath = projectPath(currentAgentState, backupTerminationChecker)
         }
-        printMessage("""Project path time: $projectPathTime""")
 
-        val wavePropagationTime = measureNanoTime {
+        printTime("Wave Propagation Time") {
             wavePropagation(currentAgentState, backupTerminationChecker, lastPlannedPath)
         }
-        printMessage("""Wave Propagation Time: $wavePropagationTime""")
 
         val agentNextNode = if (agentNode.waveParent == agentNode || agentLastWaveFrontier >= agentNode.waveCounter) {
             agentLastWaveFrontier = max(agentLastWaveFrontier, agentNode.waveCounter)
@@ -345,10 +337,9 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     }
 
     private fun wavePropagation(agentState: StateType, terminationChecker: TerminationChecker, agentPath: Set<StateType>) {
-        val initFrontierTime = measureNanoTime {
+        printTime("Initialize wave frontier") {
             checkForWaveRefresh(terminationChecker)
         }
-        printMessage("""Initialize wave frontier: $initFrontierTime""")
 
         while (waveFrontier.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val waveFront = waveFrontier.pop()!!
@@ -409,8 +400,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             waveCounter++
             clearPreviousBackup = true
 
-            printMessage("""Open list size: ${openList.size}""")
-
             initializationIndex = 0
             initializeWaveFrontier(terminationChecker)
         } else if (!waveInProgress && searchPhase == PATH_IMPROVEMENT) {
@@ -439,7 +428,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         if (beginHeapify) {
             waveHeapifyIndex = waveFrontier.heapify(terminationChecker)
         } else if (waveHeapifyIndex != null) {
-            waveHeapifyIndex = if (waveFrontier.size == 0){ //ensure we don't continue heapifying when the wave frontier is reset
+            waveHeapifyIndex = if (waveFrontier.size == 0) { //ensure we don't continue heapifying when the wave frontier is reset
                 null
             } else {
                 waveFrontier.heapify(terminationChecker, waveHeapifyIndex!!)
@@ -623,7 +612,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         PATH_IMPROVEMENT
     }
 
-    private fun printMessage(msg: String) = 0//println(msg)
+    /**
+     * Quickly turn on and off the nano time checking
+     */
+    private inline fun printTime(msg: String, noinline fn: () -> Unit){
+        fn()
+//        printNanoTime(msg, fn)
+    }
 
     override fun getIterationSummary(): IterationSummary<StateType> {
         val expandedNodeMap = mutableMapOf<StateType, Map<String, String>>()
@@ -654,10 +649,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
 enum class BackupFrontierInitialization {
     ALL, TOP_K
-}
-
-enum class UpdateStrategy {
-    PSEUDO, RTDP
 }
 
 enum class BackupComparator {
