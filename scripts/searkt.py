@@ -55,18 +55,18 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['A_STAR']
+    # algorithms_to_run = ['A_STAR']
     # algorithms_to_run = ['ES']
-    # algorithms_to_run = ['ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
+    algorithms_to_run = ['TIME_BOUNDED_A_STAR']
     # algorithms_to_run = ['ES', 'TIME_BOUNDED_A_STAR']
     # algorithms_to_run = ['LSS_LRTA_STAR']
     # algorithms_to_run = ['LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
     #algorithms_to_run = ['TIME_BOUNDED_A_STAR']
-    expansion_limit = [100000000]
+    expansion_limit = [10000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [300000000000]
-    action_durations = [1] # Use this for A*
-    #action_durations = [10000000, 12000000, 16000000, 20000000, 25000000, 32000000]
+    #action_durations = [1] # Use this for A*
+    action_durations = [10000000, 13000000, 17000000, 22000000, 28000000]
     termination_types = ['TIME']
     step_limits = [100000000]
 
@@ -82,7 +82,7 @@ def generate_base_configuration():
     base_configuration['terminationTimeEpsilon'] = [5000000]  # 4ms
 
     # base_configuration['expansionDelay'] = [0, 200, 400, 600, 800, 1000]
-    # base_configuration['expansionDelay'] = [1000, 10000, 50000]
+    base_configuration['expansionDelay'] = [0, 1000, 10000, 25000, 50000]
 
     compiled_configurations = [{}]
 
@@ -107,6 +107,18 @@ def generate_base_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
+    tbaStrategies = ['A_STAR', 'GBFS']
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'timeBoundedSearchStrategy', tbaStrategies,
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
+
+    tbaWeights = [1.0, 1.4, 1.8, 2.2, 2.6, 3.0]
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', tbaWeights,
+                                                [
+                                                    ['algorithmName', 'TIME_BOUNDED_A_STAR'],
+                                                    ['timeBoundedSearchStrategy', 'A_STAR']
+                                                ])
 
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'backupComparator', ['F'],#, 'PSEUDO_F'],
@@ -160,7 +172,7 @@ def generate_grid_world():
     minima3000_paths = []
     uniform1500_base_path = 'input/vacuum/uniform1500/uniform1500_1500-'
     uniform1500_paths = []
-    for scenario_num in range(0, 50): # large set 25
+    for scenario_num in range(0, 30): # large set 30
         n = str(scenario_num)
         dao_paths.append(dao_base_path + n)
         minima1500_paths.append(minima1500_base_path + n + '.vw')
@@ -389,19 +401,18 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_grid_world()  # generate_racetrack()
-    #file_name = 'output/results_es_m15_15_dur_10_12_16_20_25_32_delay_1_10_50.json'
-    file_name = 'output/results_res_base.json'
-    #old_results = read_results_from_file(file_name)
+    # configurations = generate_grid_world()  # generate_racetrack()
+    file_name = 'output/results_all_seed30_dur_10_13_17_22_28_delay_1_10_25_50.json'
+    old_results = read_results_from_file(file_name)
 
-    #configurations = extract_configurations_from_failed_results(old_results)
+    configurations = extract_configurations_from_failed_results(old_results)
 
     print('{} configurations has been generated '.format(len(configurations)))
 
     results = distributed_execution(configurations)
 
-    #inplace_merge_experiments(old_results, results)
-    #results = old_results
+    inplace_merge_experiments(old_results, results)
+    results = old_results
 
     for result in results:
         result.pop('actions', None)
