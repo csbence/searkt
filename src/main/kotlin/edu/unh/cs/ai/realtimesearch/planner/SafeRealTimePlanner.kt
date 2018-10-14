@@ -32,6 +32,7 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
     /** Item index in the open list. */
     override var index: Int = -1
     override var safe = false
+    override var closed = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
     override var predecessors: MutableList<SearchEdge<SafeRealTimeSearchNode<StateType>>> = arrayListOf()

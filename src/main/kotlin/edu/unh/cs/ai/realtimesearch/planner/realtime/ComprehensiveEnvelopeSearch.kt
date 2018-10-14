@@ -55,6 +55,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         override val predecessors: MutableList<SearchEdge<Node<StateType>>>
             get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 
+        override  var closed = false
         override var index: Int = -1
 
         val ancestors = HashMap<StateType, DiEdge<StateType>>()

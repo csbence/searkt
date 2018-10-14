@@ -36,6 +36,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
+    private val strategy = configuration.timeBoundedSearchStrategy ?: TBStrategy.A_STAR
+    private val weight = configuration.weight ?: 1.0
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
@@ -49,7 +51,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
     // The cost values are initialized to infinity
-    override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000, fValueComparator)
+    override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000,
+            when (strategy){
+                TBStrategy.GBFS -> heuristicComparator
+                else -> fValueComparator
+            })
 
     private var rootState: StateType? = null
     private var lastAgentState: StateType? = null
@@ -58,12 +64,15 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var aStarPopCounter = 0
     private var expansionLimit = 0L
 
-    // Basically a Linked List Deque implementation with a hash map of states registered in the chain
+    data class PathEdge<StateType : State<StateType>>(
+            val node: PureRealTimeSearchNode<StateType>, val next: PathEdge<StateType>?, val action: Action = node.action, val cost: Long = node.actionCost
+    )
     data class PathTrace<StateType : State<StateType>>(
-            var pathEnd: PureRealTimeSearchNode<StateType>,
-            val states : MutableSet<PureRealTimeSearchNode<StateType>> = mutableSetOf()) {
+            val goal: PureRealTimeSearchNode<StateType>,
+            val edges : MutableMap<PureRealTimeSearchNode<StateType>, PathEdge<StateType>> = mutableMapOf()) {
+        val pathEnd = PathEdge(goal, null)
         var pathHead = pathEnd
-        init {states.add(pathEnd)}
+        init {edges[pathEnd.node] = pathEnd}
     }
 
     private var traceInProgress : PathTrace<StateType>? = null
@@ -74,42 +83,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     // SearchEnvelope for visualizer
     private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
 
-    private val aStarSequence
-        get() = generateSequence {
-            var currentNode : PureRealTimeSearchNode<StateType>? = null
-
-            printTime("A* Node Expansion total:"){
-                aStarPopCounter++
-
-                printTime("Pop execution time") {
-                    currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
-                }
-
-                expandedNodes.add(currentNode!!)
-                printTime("Expand Node Execution Time") {
-                    expandFromNode(this, currentNode!!){}
-                }
-            }
-
-            currentNode!!
-        }
-
     //"Priming" the hash table with the initial state so that the first iteration does not spend time initializing
     //the HashMap. We remove the initial state so that we don't cheat on first iteration planning time
     override fun init(initialState : StateType) {
         val node = PureRealTimeSearchNode(
                 state = initialState,
-                heuristic = domain.heuristic(initialState),
+                heuristic = domain.heuristic(initialState) * weight,
                 actionCost = 0,
                 action = NoOperationAction,
                 cost = 0,
                 iteration = 0)
         node.parent = node
 
-        val hashPutExecutionTime = measureNanoTime {
-            nodes[initialState] = node
-        }
-        println("""Init put execution time: $hashPutExecutionTime""")
+        nodes[initialState] = node
         nodes.remove(initialState)
     }
 
@@ -145,11 +131,27 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         var plan: List<RealTimePlanner.ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            val currentTargetPath = getCurrentPath(sourceState, terminationChecker)
+            var currentTargetPath = getCurrentPath(sourceState, terminationChecker)
+            currentTargetPath = when(tbaOptimization) {
+                NONE -> currentTargetPath
+                SHORTCUT -> TODO()
+                TBAOptimization.THRESHOLD -> {
+                    when {
+                        targetPath == null -> currentTargetPath
+                        //check if the new path has at least as high a g value as the current path.
+                        //Exception is if the agent is currently backtracing: make the new current
+                        //best the target path
+                        currentTargetPath.pathEnd.cost >= targetPath!!.pathEnd.cost -> currentTargetPath
+                        targetPath!!.pathEnd == targetPath!!.pathHead
+                                && targetPath!!.pathHead.node == currentAgentNode -> currentTargetPath
+                        else -> targetPath!!
+                    }
+                }
+            }
 
             //checking if agent is on what is identified as the current target path
             printTime("Find Path Execution Time") {
-                plan = if (currentTargetPath.pathHead.state == sourceState) {
+                plan = if (currentTargetPath.pathHead.node.state == sourceState) {
                     if (currentTargetPath.pathHead == currentTargetPath.pathEnd) {
                         /* First handle the edge case where the agent has reached the end of its
                          * path while another path is being traced. Begin backtracing to root
@@ -163,33 +165,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                          * Move agent to current best target
                          * Remove current state from the target path for the next iteration
                          */
-                        currentTargetPath.pathHead = currentTargetPath.pathHead.next!!
                         targetPath = currentTargetPath
+                        currentTargetPath.pathHead = currentTargetPath.pathHead.next ?:
+                                throw MetronomeException("Bug - attempted to get the next path node when one does not exist")
                         //TODO: Add support for multiple commit
-                        extractPath(currentTargetPath.pathHead, sourceState)
+                        listOf(RealTimePlanner.ActionBundle(currentTargetPath.pathHead.action, currentTargetPath.pathHead.cost))
                     }
                 } else {
-                    when (tbaOptimization) {
-                    //Will always follow the currentTargetPath
-                        NONE -> findNewPath(currentTargetPath, currentAgentNode)
-                        SHORTCUT -> TODO()
-                    //Will check to see if the currentTargetPath has g-value >= targetPath
-                    //If so, switch targets. (Could be refs to the same list. That's fine)
-                        TBAOptimization.THRESHOLD -> {
-                            val priorTargetPath = targetPath ?:
-                            throw MetronomeException("Target path is empty at movement phase!")
-                            //check if the new path has at least as high a g value as the current path.
-                            //Exception is if the agent is currently backtracing: make the new current
-                            //best the target path
-                            if (currentTargetPath.pathEnd.cost >= priorTargetPath.pathEnd.cost
-                                    || (priorTargetPath.pathEnd == priorTargetPath.pathHead
-                                            && priorTargetPath.pathHead == currentAgentNode)) {
-                                findNewPath(currentTargetPath, currentAgentNode)
-                            } else {
-                                findNewPath(priorTargetPath, currentAgentNode)
-                            }
-                        }
-                    }
+                    findNewPath(currentTargetPath, currentAgentNode)
                 }
             }
 
@@ -279,7 +262,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
 
         //if no traceback in progress, trace from best node. Otherwise pick up where we left off
-        val targetNode = traceInProgress?.pathHead ?: bestNode!!
+        val targetNode = traceInProgress?.pathHead?.node ?: bestNode!!
 
         /*  if using real time bound, we will use the termination checker instead of
          *  a numeric trace limit
@@ -305,15 +288,15 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         printTime("Trace execution time") {
             while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
-                currentBacktrace.pathHead = currentNode.parent
-                currentBacktrace.states.add(currentNode.parent)
-                currentNode.parent.next = currentNode
+                currentBacktrace.pathHead =
+                        PathEdge(currentNode.parent, currentBacktrace.pathHead)
+                currentBacktrace.edges[currentNode.parent] = currentBacktrace.pathHead
                 currentNode = currentNode.parent
             }
         }
 
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
-        return if (currentBacktrace.pathHead.state == rootState || currentBacktrace.pathHead.state == sourceState) {
+        return if (currentBacktrace.pathHead.node.state == rootState || currentBacktrace.pathHead.node.state == sourceState) {
             traceInProgress = null
             currentBacktrace
         } else {
@@ -330,18 +313,23 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : PureRealTimeSearchNode<StateType>)
             : List<RealTimePlanner.ActionBundle>? {
         // Find common ancestor
-        val sourceState = currentAgentNode.state
-        var sourceOnPath = false
-        printTime("Contains Execution Time"){
-            sourceOnPath = bestPath.states.contains(currentAgentNode)
-        }
+        var sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
 
         targetPath = bestPath
 
         return when {
             sourceOnPath -> {
-                targetPath = bestPath
-                extractPath(currentAgentNode.next, sourceState)
+                val edge = bestPath.edges[currentAgentNode]!!
+
+                if(edge.next == null) {
+                    //reset trace and start backtracking
+                    traceInProgress = null
+                    targetPath = PathTrace(currentAgentNode.parent)
+                    backtrack(currentAgentNode)
+                } else {
+                    bestPath.pathHead = edge.next
+                    listOf(RealTimePlanner.ActionBundle(bestPath.pathHead.action, bestPath.pathHead.cost))
+                }
             }
             currentAgentNode.state == rootState -> null
             else -> backtrack(currentAgentNode)
@@ -352,7 +340,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         generatedNodeCount++
         val node = PureRealTimeSearchNode(
                 state = state,
-                heuristic = domain.heuristic(state),
+                heuristic = domain.heuristic(state) * weight,
                 actionCost = 0,
                 action = NoOperationAction,
                 cost = 0,
@@ -379,7 +367,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
             val undiscoveredNode = PureRealTimeSearchNode(
                     state = successorState,
-                    heuristic = domain.heuristic(successorState),
+                    heuristic = domain.heuristic(successorState) * weight,
                     actionCost = successor.actionCost,
                     action = successor.action,
                     parent = parent,
@@ -412,9 +400,14 @@ enum class TBAOptimization {
     NONE, SHORTCUT, THRESHOLD
 }
 
+enum class TBStrategy {
+    A_STAR, GBFS
+}
+
 enum class TBAStarConfiguration(val key: String) {
     TBA_OPTIMIZATION("tbaOptimization"),
-    BACKLOG_RATIO("backlogRatio");
+    BACKLOG_RATIO("backlogRatio"),
+    TB_STRATEGY("timeBoundedSearchStrategy");
 
     override fun toString(): String = key
 }

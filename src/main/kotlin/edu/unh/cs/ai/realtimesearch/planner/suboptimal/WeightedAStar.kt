@@ -22,6 +22,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                                              var parent: WeightedAStar.Node<StateType>? = null) : Indexable {
 
         override var index: Int = -1
+        var closed = false
 
         val f: Double
             get() = cost + heuristic
@@ -78,6 +79,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
         expandedNodeCount++
+        sourceNode.closed = true
         logger.debug("Expanding $sourceNode.")
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -91,7 +93,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorNode.cost > successorGValueFromCurrent) {
+            if (successorNode.cost > successorGValueFromCurrent && !successorNode.closed) {
                 assert(successorNode.state == successor.state)
                 successorNode.apply {
                     cost = successorGValueFromCurrent

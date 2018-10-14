@@ -73,6 +73,7 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
     var action: Action
     var parent: NodeType
     val predecessors: MutableList<SearchEdge<NodeType>>
+    var closed: Boolean
 
     val f: Double
         get() = cost + heuristic
@@ -123,6 +124,7 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
 
     /** Item index in the open list. */
     override var index: Int = -1
+    override var closed = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
     override var predecessors: MutableList<SearchEdge<PureRealTimeSearchNode<StateType>>> = arrayListOf()
@@ -240,6 +242,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
         nodeFound: ((NodeType) -> Unit)) {
 
     context.expandedNodeCount += 1
+    sourceNode.closed = true
 
     var successorCount = 0
     for (successor in context.domain.successors(sourceNode.state)) {
@@ -274,7 +277,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
 
         // only generate those state that are not visited yet or whose cost value are lower than this path
         val successorGValueFromCurrent = sourceNode.cost + successor.actionCost
-        if (successorNode.cost > successorGValueFromCurrent) {
+        if (successorNode.cost > successorGValueFromCurrent && !successorNode.closed) {
             // here we generate a state. We store it's g value and remember how to get here via the treePointers
             successorNode.apply {
                 cost = successorGValueFromCurrent
