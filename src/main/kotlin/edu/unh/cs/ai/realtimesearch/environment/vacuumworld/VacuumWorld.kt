@@ -210,5 +210,6 @@ class VacuumWorld(val width: Int,
         }
         return heuristic
     }
+
 }
 

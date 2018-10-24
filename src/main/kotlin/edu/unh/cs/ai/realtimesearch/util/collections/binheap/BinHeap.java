@@ -51,6 +51,11 @@ public class BinHeap<E extends SearchQueueElement> implements SearchQueue<E> {
     }
 
     @Override
+    public boolean isNotEmpty() {
+        return !isEmpty();
+    }
+
+    @Override
     public int size() {
         return heap.size();
     }

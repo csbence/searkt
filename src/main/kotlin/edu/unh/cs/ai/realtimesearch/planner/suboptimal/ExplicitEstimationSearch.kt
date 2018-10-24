@@ -7,7 +7,11 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.util.*
+import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
+import edu.unh.cs.ai.realtimesearch.util.collections.binheap.BinHeap
+import edu.unh.cs.ai.realtimesearch.util.collections.gequeue.GEQueue
+import edu.unh.cs.ai.realtimesearch.util.collections.rbtree.RBTreeElement
+import edu.unh.cs.ai.realtimesearch.util.collections.rbtree.RBTreeNode
 import java.util.*
 import kotlin.Comparator
 
@@ -15,7 +19,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
 
-    val errorEstimator = ErrorEstimator<Node<StateType>>()
+    val CLEANUP_ID = 0
+    val FOCAL_ID = 1
 
     var terminationChecker: TerminationChecker? = null
 
@@ -27,8 +32,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
-            lhs.cost > rhs.cost -> -1
-            lhs.cost < rhs.cost -> 1
+            rhs.g < lhs.g -> -1
+            rhs.g > lhs.g -> 1
             else -> 0
         }
     }
@@ -51,8 +56,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             lhs.fHat > rhs.fHat -> 1
             lhs.d < rhs.d -> -1
             lhs.d > rhs.d -> 1
-            lhs.cost > rhs.cost -> -1
-            lhs.cost < rhs.cost -> 1
+            lhs.g > rhs.g -> -1
+            lhs.g < rhs.g -> 1
             else -> 0
         }
     }
@@ -65,7 +70,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val explicitNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
+    private val geNodeComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.fHat < weight * rhs.fHat -> -1
             lhs.fHat > weight * rhs.fHat -> 1
@@ -73,30 +78,76 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val rbTree = RBTree(openNodeComparator, explicitNodeComparator)
+    // cleanup is implemented as a binary heap
+    private val cleanup = BinHeap(cleanupNodeComparator, CLEANUP_ID)
 
-    inner class FocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
-        override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
-        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
-    }
+    // open is implemented as a red-black tree
+    private val gequeue = GEQueue<Node<StateType>>(openNodeComparator, geNodeComparator, focalNodeComparator, FOCAL_ID)
 
-    private val focal = FocalList()
-
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
-    private val openList = SynchronizedQueue(rbTree, focal, explicitNodeComparator, 0)
-
-    inner class CleanupList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), cleanupNodeComparator) {
-        override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
-        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
-    }
-
-    private val cleanup = CleanupList()
+    private val closed = HashMap<StateType, Node<StateType>>(1000000, 1.toFloat())
 
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                                        var actionCost: Double, var action: Action, override var d: Double,
-                                                       override var parent: Node<StateType>? = null) :
-            Indexable, RBTreeElement<Node<StateType>, Node<StateType>>,
-            Comparable<Node<StateType>>, SearchQueueElement<Node<StateType>>, ErrorTraceable {
+                                                       override var parent: Node<StateType>? = null,
+                                                       override val depth: Double = 0.0) :
+            RBTreeElement<Node<StateType>, Node<StateType>>, SearchQueueElement<Node<StateType>>, Comparable<Node<StateType>> {
+        override val f: Double
+            get() = g + h
+        val fHat: Double
+            get() = g + hHat
+
+        private var sseH: Double = 0.0
+        private var sseD: Double = 0.0
+
+        override var hHat: Double = h
+        override var dHat: Double = d
+
+        init {
+            computePathHats()
+        }
+
+        private fun computePathHats() {
+            if (parent != null) {
+                sseH = parent!!.sseH + ((actionCost + h) - parent!!.h)
+                sseD = parent!!.sseD + ((1 + d) - parent!!.d)
+            }
+
+            hHat = computeHHat()
+            dHat = computeDHat()
+
+            assert(fHat >= f)
+            assert(dHat >= 0)
+        }
+
+        private fun computeDHat(): Double {
+            var dHat = Double.MAX_VALUE
+            val dMean = if (g == 0.0) sseD else sseD / depth
+            if (dMean < 1) {
+                dHat = d / (1 - dMean)
+            }
+            return dHat
+        }
+
+        private fun computeHHat(): Double {
+            var hHat = Double.MAX_VALUE
+            val sseMean = if (g == 0.0) sseH else sseH / depth
+            val dMean = if (g == 0.0) sseD else sseD / depth
+            if (dMean < 1) {
+                hHat = h + ((d / (1 - dMean)) * sseMean)
+            }
+            return hHat
+        }
+
+        private var rbTreeNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
+
+        override fun setNode(node: RBTreeNode<Node<StateType>, Node<StateType>>?) {
+            rbTreeNode = node
+        }
+
+        override fun getNode(): RBTreeNode<Node<StateType>, Node<StateType>>? {
+            return rbTreeNode
+        }
+
         override val g: Double
             get() = cost
         override val h: Double
@@ -111,35 +162,10 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return indexMap[key]
         }
 
-        override var node: RBTreeNode<Node<StateType>, Node<StateType>>?
-            get() = redBlackNode
-            set(value) { redBlackNode = value}
-
         override fun toString(): String {
             return "ExplicitEstimationSearchH.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
         }
-
-        override val open: Boolean
-            get() = indexMap[1] >= 0
-
-        private var redBlackNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
-
-        override val f: Double
-            get() = g + h
-
-        override val depth: Double = parent?.depth?.plus(1) ?: 0.0
-
-        val fHat: Double
-            get() = g + hHat
-
-        override var hHat = h
-            get() = h + (dHat * errorEstimator.meanHeuristicError)
-
-        override var dHat = d
-            get() = d / (1.0 - errorEstimator.meanDistanceError)
-
-        override var index: Int = -1
 
         override fun compareTo(other: Node<StateType>): Int {
             val diff = (this.f - other.f).toInt()
@@ -149,48 +175,39 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     }
 
-    private fun insertNode(node: Node<StateType>) {
-        val bestFHat = openList.peekOpen() ?: node
-        openList.add(node, bestFHat)
+    private fun insertNode(node: Node<StateType>, oldBest: Node<StateType>) {
+        gequeue.add(node, oldBest)
         cleanup.add(node)
-        nodes[node.state] = node
-    }
-
-    private fun updateFocal(oldBest: Node<StateType>?, newBest: Node<StateType>?, fHatChange: Int) {
-        assert(newBest?.node != null)
-        openList.update(oldBest, newBest, fHatChange)
+        closed[node.state] = node
     }
 
     private fun selectNode(): Node<StateType> {
-        val bestDHat = openList.peekFocal()
-        val bestFHat = openList.peekOpen()
-        val bestF = cleanup.peek() ?: throw MetronomeException("Cleanup is Empty!")
+        val value: Node<StateType>?
+        val bestDHat = gequeue.peekFocal()
+        val bestFHat = gequeue.peekOpen()
+        val bestF = cleanup.peek()
 
         when {
-            bestDHat != null && bestDHat.fHat <= weight * bestF.f -> {
-                val chosenNode = openList.pollFocal() ?: throw MetronomeException("Focal is Empty!")
-                cleanup.remove(chosenNode)
-                ++dHatExpansions
-                return chosenNode
+            bestDHat.fHat <= weight * bestF.f -> {
+                value = gequeue.pollFocal()
+                cleanup.remove(value)
             }
-            bestFHat != null && bestFHat.fHat <= weight * bestF.f -> {
-                val chosenNode = openList.pollOpen() ?: throw MetronomeException("Open is Empty!")
-                cleanup.remove(chosenNode)
-                ++fHatExpansions
-                return chosenNode
+            bestFHat.fHat <= weight * bestF.f -> {
+                value = gequeue.pollOpen()
+                cleanup.remove(value)
             }
             else -> {
-                val chosenNode = cleanup.pop() ?: throw MetronomeException("Clean up is Empty!")
-                openList.remove(chosenNode)
-                ++aStarExpansions
-                return chosenNode
+                value = cleanup.poll()
+                gequeue.remove(value)
             }
         }
+
+        return value
     }
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
-        val tempSuccessorNode = nodes[successorState]
+        val tempSuccessorNode = closed[successorState]
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
             terminationChecker!!.notifyExpansion()
@@ -201,28 +218,23 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                     action = successorBundle.action,
                     parent = sourceNode,
                     cost = Double.MAX_VALUE,
-                    d = domain.distance(successorState)
+                    d = domain.distance(successorState),
+                    depth = sourceNode.depth + 1
             )
-            nodes[successorState] = undiscoveredNode
+            closed[successorState] = undiscoveredNode
             undiscoveredNode
         } else {
             tempSuccessorNode
         }
     }
 
-    private fun calculateStatistics(sourceNode: Node<StateType>, successorNode: Node<StateType>?) {
-        if (successorNode != null) {
-            errorEstimator.addSample(sourceNode, successorNode)
-        }
-    }
-
-    private fun expandFromNode(sourceNode: Node<StateType>) {
+    private fun expandFromNode(sourceNode: Node<StateType>, oldBest: Node<StateType>) {
         val currentGValue = sourceNode.cost
-        var bestChild: Node<StateType>? = null
 
         val successors = domain.successors(sourceNode.state)
         for (successor in successors) {
             val successorState = successor.state
+            val isDuplicateNode = closed.containsKey(successorState)
             val successorNode = getNode(sourceNode, successor)
             // skip if we have our parent as a successor
             if (successorState == sourceNode.parent?.state) {
@@ -231,34 +243,34 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
-            if (successorNode.cost > successorGValueFromCurrent) {
-                assert(successorNode.state == successor.state)
-                successorNode.apply {
-                    cost = successorGValueFromCurrent
-                    parent = sourceNode
-                    action = successor.action
-                    actionCost = successor.actionCost
-                }
-                if (!successorNode.open) {
-                    insertNode(successorNode)
-                } else {
-                    nodes[successorState] = successorNode
-                }
-            }
 
-            // keep track of the best child for statistics calculation
-            if (bestChild != null) {
-                val previousLowestError = (bestChild.h - sourceNode.h) + (bestChild.g - sourceNode.g)
-                val currentError = (successorNode.h - sourceNode.h) + (successorNode.g - sourceNode.g)
-                if (currentError < previousLowestError) {
-                    bestChild = successorNode
+            if (isDuplicateNode) {
+                if (successorNode.cost > successorGValueFromCurrent) {
+                    successorNode.apply {
+                        cost = successorGValueFromCurrent
+                        parent = sourceNode
+                        action = successor.action
+                        actionCost = successor.actionCost
+                    }
+                    if (successorNode.getIndex(CLEANUP_ID) != -1) {
+                        gequeue.remove(successorNode)
+                        cleanup.remove(successorNode)
+                        closed.remove(successorNode.state)
+                    }
+                    insertNode(successorNode, oldBest)
                 }
             } else {
-                bestChild = successorNode
+                if (successorNode.cost > successorGValueFromCurrent) {
+                    successorNode.apply {
+                        cost = successorGValueFromCurrent
+                        parent = sourceNode
+                        action = successor.action
+                        actionCost = successor.actionCost
+                    }
+                }
+                insertNode(successorNode, oldBest)
             }
         }
-        //update the statistics
-        calculateStatistics(sourceNode, bestChild)
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
@@ -276,25 +288,25 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, d = domain.distance(state))
-        val startTime = System.nanoTime()
-        nodes[state] = node
-        cleanup.add(node)
-        openList.add(node, node)
-        generatedNodeCount++
-        openList.update(null, node, 0)
 
-        while (cleanup.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            val oldBest = openList.peekOpen()
+        closed[state] = node
+        cleanup.add(node)
+        gequeue.add(node, node)
+        generatedNodeCount++
+        gequeue.updateFocal(null, node, 0)
+
+        while (cleanup.isNotEmpty && !terminationChecker.reachedTermination()) {
+            val oldBest = gequeue.peekOpen()
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
-                executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(topNode, state)
             }
-            expandFromNode(topNode)
+            expandFromNode(topNode, oldBest)
             expandedNodeCount++
-            val newBest = openList.peekOpen()
+
+            val newBest = gequeue.peekOpen()
             val fHatChange = openNodeIgnoreTiesComparator.compare(newBest, oldBest)
-            updateFocal(oldBest, newBest, fHatChange)
+            gequeue.updateFocal(oldBest, newBest, fHatChange)
         }
         if (terminationChecker.reachedTermination()) {
             System.err.println("Used all ${terminationChecker.elapsed()} expansions")

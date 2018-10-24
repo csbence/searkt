@@ -34,6 +34,8 @@ public interface SearchQueue<E> {
 
     boolean isEmpty();
 
+    boolean isNotEmpty();
+
     int size();
 
     void clear();

@@ -4,9 +4,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.lazyData
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.EXPANSION
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
@@ -86,7 +84,7 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                 idlePlanningTime = planningTime,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
-                experimentRunTime = convertNanoUpDouble(planner.executionNanoTime, TimeUnit.SECONDS)
+                experimentRunTime = convertNanoUpDouble(experimentRunTime, TimeUnit.SECONDS)
         )
 
         domain.appendDomainSpecificResults(experimentResult)
