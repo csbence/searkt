@@ -191,14 +191,17 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             bestDHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
+                dHatExpansions++
             }
             bestFHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
+                fHatExpansions++
             }
             else -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
+                aStarExpansions++
             }
         }
 

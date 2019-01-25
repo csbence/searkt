@@ -25,6 +25,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
 
     var terminationChecker: TerminationChecker? = null
 
+    var allowedPrimeExpansions = 3000
     var aStarPrimeExpansions = 0
     var aStarExpansions = 0
     var dHatExpansions = 0
@@ -190,7 +191,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
         val bestF = cleanup.peek()
 
         when {
-            bestFHat.fHat < weight * bestF.f -> {
+            bestFHat.fHat < weight * bestF.f && aStarPrimeExpansions < allowedPrimeExpansions -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
                 aStarPrimeExpansions++
@@ -198,17 +199,17 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
             bestDHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
-                aStarExpansions++
+                dHatExpansions++
             }
             bestFHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
-                dHatExpansions++
+                fHatExpansions++
             }
             else -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
-                fHatExpansions++
+                aStarExpansions++
             }
         }
 

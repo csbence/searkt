@@ -15,7 +15,7 @@ class ExplicitEstimationSearchVacuumTest {
     @Test
     fun testEESVacuum() {
         val num = "34"
-        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/tiles/korf/4/real/$num"
+        val file = "/home/doylew/IdeaProjects/real-time-search/src/main/resources/input/tiles/korf/4/real/$num"
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/vacuum/gen/vacuum0.vw"
         println("File -> $file")
         val instance = File(file).inputStream()
@@ -31,7 +31,7 @@ class ExplicitEstimationSearchVacuumTest {
         println(num)
         println("expansions:${tsAgent.expandedNodeCount}")
         println("costOfSolution:${plan.size}")
-        println("aStarPrimeExpansions:${tsAgent.aStarPrimeExpansions}")
+       // println("aStarPrimeExpansions:${tsAgent.aStarPrimeExpansions}")
         println("dHatExpansions:${tsAgent.dHatExpansions}")
         println("fHatExpansions:${tsAgent.fHatExpansions}")
         println("aStarExpansions:${tsAgent.aStarExpansions}")
