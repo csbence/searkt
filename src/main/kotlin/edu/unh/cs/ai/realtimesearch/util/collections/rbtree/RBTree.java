@@ -36,7 +36,7 @@ public class RBTree<K extends RBTreeElement<K, V>, V> {
         this.root = null;
         this.sComp = sComp;
         this.vComp = vComp;
-        verifyProperties();
+        //verifyProperties();
     }
 
     private static void verifyProperty1(RBTreeNode<?, ?> n) {
@@ -244,7 +244,7 @@ public class RBTree<K extends RBTreeElement<K, V>, V> {
             insertedNode.parent = n;
         }
         insertCase1(insertedNode);
-        verifyProperties();
+        //verifyProperties();
     }
 
     private void insertCase1(RBTreeNode<K, V> n) {
@@ -302,7 +302,7 @@ public class RBTree<K extends RBTreeElement<K, V>, V> {
         RBTreeNode<K, V> n = lookup(key);
         delete(n);
         key.setNode(null);
-        verifyProperties();
+        //verifyProperties();
     }
 
     private void delete(RBTreeNode<K, V> n) {
@@ -329,7 +329,7 @@ public class RBTree<K extends RBTreeElement<K, V>, V> {
             root.color = Color.BLACK;
         }
 
-        verifyProperties();
+        //verifyProperties();
     }
 
     private RBTreeNode<K, V> maximumNode(RBTreeNode<K, V> n) {

@@ -22,4 +22,7 @@ public abstract class SearchQueueElementImpl implements SearchQueueElement {
         return indexMap[key];
     }
 
+    public abstract double gethHat();
+
+    public abstract double getdHat();
 }

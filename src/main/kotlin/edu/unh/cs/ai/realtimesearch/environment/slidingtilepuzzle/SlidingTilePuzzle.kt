@@ -8,12 +8,12 @@ import java.util.*
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
 
-    private val randomIntegerTable = Array(256, { Random(Random().nextLong()).nextInt() })
+    private val randomIntegerTable = Array(256) { Random(Random().nextLong()).nextInt() }
 
     val logger = LoggerFactory.getLogger(SlidingTilePuzzle::class.java)!!
 
     private val goalState: SlidingTilePuzzle4State by lazy {
-        val tiles = ByteArray(16, { it.toByte() })
+        val tiles = ByteArray(16) { it.toByte() }
         val state = SlidingTilePuzzle4State(0, tiles, 0.0, calculateHashCode(tiles))
         assert(initialHeuristic(state) == 0.0)
         state

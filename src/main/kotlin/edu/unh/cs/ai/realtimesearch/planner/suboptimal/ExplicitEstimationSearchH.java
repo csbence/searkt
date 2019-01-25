@@ -370,6 +370,16 @@ public class ExplicitEstimationSearchH<StateType extends State<StateType>> exten
                 throw new MetronomeException();
             }
         }
+
+        @Override
+        public double gethHat() {
+            return this.hHat;
+        }
+
+        @Override
+        public double getdHat() {
+            return this.dHat;
+        }
     }
 
     /*

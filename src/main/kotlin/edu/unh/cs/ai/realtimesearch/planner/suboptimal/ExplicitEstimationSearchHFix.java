@@ -352,6 +352,16 @@ public class ExplicitEstimationSearchHFix<StateType extends State<StateType>> ex
         }
 
         @Override
+        public double gethHat() {
+            return this.hHat;
+        }
+
+        @Override
+        public double getdHat() {
+            return this.dHat;
+        }
+
+        @Override
         public double getDHat() {
             return this.dHat;
         }
