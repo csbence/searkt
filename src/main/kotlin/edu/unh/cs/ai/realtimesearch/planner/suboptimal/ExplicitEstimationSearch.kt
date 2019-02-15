@@ -19,11 +19,15 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for Explicit Estimation Search is not specified.")
 
+    private val variant: String = configuration.variant
+            ?: throw MetronomeConfigurationException("Variant for Explicit Estimation Search is not specified: O, F, T")
+
     val CLEANUP_ID = 0
     val FOCAL_ID = 1
 
     var terminationChecker: TerminationChecker? = null
 
+    var aStarPrimeExpansions = 0
     var aStarExpansions = 0
     var dHatExpansions = 0
     var fHatExpansions = 0
@@ -96,6 +100,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         val fHat: Double
             get() = g + hHat
 
+        var isClosed: Boolean = false
+
         private var sseH: Double = 0.0
         private var sseD: Double = 0.0
 
@@ -104,6 +110,10 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         init {
             computePathHats()
+        }
+
+        fun closeNode() {
+            isClosed = true
         }
 
         private fun computePathHats() {
@@ -163,7 +173,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         }
 
         override fun toString(): String {
-            return "ExplicitEstimationSearchH.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
+            return "ExplicitEstimationSearch.Node(state=$state, heuristic=$heuristic, cost=$cost, actionCost=$actionCost, " +
                     "action=$action, f=$f, d=$d, fHat=$fHat, dHat=$dHat)"
         }
 
@@ -208,6 +218,62 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         return value
     }
 
+    private fun fixedSelectNode(): Node<StateType> {
+        val value: Node<StateType>?
+        val bestDHat = gequeue.peekFocal()
+        val bestFHat = gequeue.peekOpen()
+        val bestF = cleanup.peek()
+
+        when {
+            bestDHat.f <= weight * bestF.f -> {
+                value = gequeue.pollFocal()
+                cleanup.remove(value)
+            }
+            bestFHat.f <= weight * bestF.f -> {
+                value = gequeue.pollOpen()
+                cleanup.remove(value)
+            }
+            else -> {
+                value = cleanup.poll()
+                gequeue.remove(value)
+            }
+        }
+
+        return value
+    }
+
+    private fun tentacleSelectNode(): Node<StateType> {
+        val value: Node<StateType>?
+        val bestDHat = gequeue.peekFocal()
+        val bestFHat = gequeue.peekOpen()
+        val bestF = cleanup.peek()
+
+        when {
+            expandedNodeCount < 1000 || bestFHat.fHat > weight * bestF.f -> {
+                value = cleanup.poll()
+                gequeue.remove(value)
+                aStarPrimeExpansions++
+            }
+            bestDHat.f <= weight * bestF.f -> {
+                value = gequeue.pollFocal()
+                cleanup.remove(value)
+                dHatExpansions++
+            }
+            bestFHat.f <= weight * bestF.f -> {
+                value = gequeue.pollOpen()
+                cleanup.remove(value)
+                fHatExpansions++
+            }
+            else -> {
+                value = cleanup.poll()
+                gequeue.remove(value)
+                aStarExpansions++
+            }
+        }
+
+        return value
+    }
+
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
         val tempSuccessorNode = closed[successorState]
@@ -232,9 +298,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>, oldBest: Node<StateType>) {
-        val currentGValue = sourceNode.cost
+        if (sourceNode.isClosed) reexpansions++
 
+        val currentGValue = sourceNode.cost
         val successors = domain.successors(sourceNode.state)
+
         for (successor in successors) {
             val successorState = successor.state
             val isDuplicateNode = closed.containsKey(successorState)
@@ -248,6 +316,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             val successorGValueFromCurrent = currentGValue + successor.actionCost
 
             if (isDuplicateNode) {
+                reexpansions++
                 if (successorNode.cost > successorGValueFromCurrent) {
                     successorNode.apply {
                         cost = successorGValueFromCurrent
@@ -274,6 +343,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                 insertNode(successorNode, oldBest)
             }
         }
+        sourceNode.closeNode()
     }
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
@@ -300,7 +370,14 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
         while (cleanup.isNotEmpty && !terminationChecker.reachedTermination()) {
             val oldBest = gequeue.peekOpen()
-            val topNode = selectNode()
+
+            val topNode = when (variant) {
+                "O" -> selectNode()
+                "F" -> fixedSelectNode()
+                "T" -> tentacleSelectNode()
+                else -> selectNode()
+            }
+
             if (domain.isGoal(topNode.state)) {
                 return extractPlan(topNode, state)
             }

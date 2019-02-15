@@ -24,6 +24,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                                              var actionCost: Double, var action: Action,
                                              override var parent: WeightedAStar.Node<StateType>? = null):
             Indexable, SearchQueueElement<Node<StateType>> {
+        var isClosed = false
         private val indexMap = Array(1) {-1}
         override val g: Double
             get() = cost
@@ -103,6 +104,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
+        if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -149,6 +151,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
+            currentNode.isClosed = true
             expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {

@@ -87,6 +87,8 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                 experimentRunTime = convertNanoUpDouble(experimentRunTime, TimeUnit.SECONDS)
         )
 
+        experimentResult.reexpansions = planner.reexpansions
+
         domain.appendDomainSpecificResults(experimentResult)
         return experimentResult
     }

@@ -13,8 +13,8 @@ interface BucketNode {
 
 class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin: Double = Double.MAX_VALUE) {
 
-    private val openList = AdvancedPriorityQueue(1000000, PotentialComparator<Bucket<T>>())
-    private val lookUpTable = HashMap<GHPair, Bucket<T>>(1000000, 1.toFloat())
+    private val openList = AdvancedPriorityQueue(100000, PotentialComparator<Bucket<T>>())
+    private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
 

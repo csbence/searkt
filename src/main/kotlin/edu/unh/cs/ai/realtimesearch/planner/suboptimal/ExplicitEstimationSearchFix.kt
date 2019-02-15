@@ -22,6 +22,9 @@ class ExplicitEstimationSearchFix<StateType : State<StateType>>(val domain: Doma
     val CLEANUP_ID = 0
     val FOCAL_ID = 1
 
+//    val output = File("/home/aifs2/doylew/IdeaProjects/real-time-search/scripts/output.eesf")
+//    var outputString = ""
+
     var terminationChecker: TerminationChecker? = null
 
     var aStarExpansions = 0
@@ -245,6 +248,7 @@ class ExplicitEstimationSearchFix<StateType : State<StateType>>(val domain: Doma
             val successorGValueFromCurrent = currentGValue + successor.actionCost
 
             if (isDuplicateNode) {
+                reexpansions++
                 if (successorNode.cost > successorGValueFromCurrent) {
                     successorNode.apply {
                         cost = successorGValueFromCurrent
@@ -299,9 +303,11 @@ class ExplicitEstimationSearchFix<StateType : State<StateType>>(val domain: Doma
             val oldBest = gequeue.peekOpen()
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
+//                output.writeText(outputString)
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode, oldBest)
+//            outputString += "${topNode.state} $expandedNodeCount\n"
             expandedNodeCount++
 
             val newBest = gequeue.peekOpen()

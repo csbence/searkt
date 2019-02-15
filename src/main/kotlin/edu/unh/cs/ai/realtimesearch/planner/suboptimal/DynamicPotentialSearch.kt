@@ -86,7 +86,7 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
 
     private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
-    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000000, 1.toFloat())
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000, 1.toFloat())
     private var openList = BucketOpenList<Node<StateType>>(weight) //BucketOpenList<Node<StateType>>(weight)
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {

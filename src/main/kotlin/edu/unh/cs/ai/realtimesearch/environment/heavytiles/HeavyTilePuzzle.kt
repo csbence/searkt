@@ -135,4 +135,61 @@ class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTil
     override fun getGoals(): List<HeavyTilePuzzle4State> = listOf(goalState)
 
     override fun predecessors(state: HeavyTilePuzzle4State) = successors(state)
+
+    private fun calculateHeuristic(tiles: ByteArray): Double {
+        var manhattanSum = 0.0
+        val zero: Byte = 0
+
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                val value = tiles[4 * y + x]
+                if (value == zero) continue
+
+                manhattanSum += (abs(value / size - y) + abs(value % size - x)) * value
+            }
+        }
+
+        return manhattanSum
+    }
+
+    private fun calculateDistance(tiles: ByteArray): Double {
+        var manhattanSum = 0.0
+        val zero: Byte = 0
+
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                val value = tiles[4 * y + x]
+                if (value == zero) continue
+
+                manhattanSum += (abs(value / size - y) + abs(value % size - x))
+            }
+        }
+
+        return manhattanSum
+    }
+
+    override fun pack(state: HeavyTilePuzzle4State): Long {
+        var word = 0L
+        state.tiles[state.zeroIndex] = 0
+        state.tiles.forEach { tile ->
+            word = (word shl 4) or tile.toLong()
+        }
+        return word
+    }
+
+    override fun unpack(state: Long): HeavyTilePuzzle4State {
+        var word = state
+        var zeroIndex = -1
+        val tiles = ByteArray(16)
+        for (i in 15 downTo 0) {
+            val t = word and 0xF
+            word = word shr 4
+//            tiles[i] = t.toByte()
+            tiles[i] = t.toByte()
+            if (t == 0L) {
+                zeroIndex = i
+            }
+        }
+        return HeavyTilePuzzle4State(zeroIndex, tiles, calculateHeuristic(tiles), calculateDistance(tiles), calculateHashCode(tiles))
+    }
 }

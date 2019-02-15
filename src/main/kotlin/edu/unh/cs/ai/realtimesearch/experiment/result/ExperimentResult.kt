@@ -74,6 +74,9 @@ class ExperimentResult {
     var experimentRunTime: Double = 0.0
 
     @Optional
+    var reexpansions: Int = 0
+
+    @Optional
     var errorDetails: String = ""
 
     // Racetrack domain

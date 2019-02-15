@@ -7,11 +7,10 @@ import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldAction
 import org.slf4j.LoggerFactory
 
 /**
- * The VacuumWorld is a problem where the agent, a vacuum cleaner, is supposed to clean
+ * The GridWorld is a problem where the agent, a robot, is supposed to reach
  * a specific area (grid of width by height) with possibly blocked cells. The actions are movement to each of
- * the four directions, or to vacuum.
+ * the four direction.
  *
- * @param initialAmountDirty is used whenever a random state is generated to determine the amount of dirty cells
  */
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
     private val logger = LoggerFactory.getLogger(GridWorld::class.java)
@@ -57,7 +56,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      * @param state is the state to provide a heuristic for
      * @return the # of dirty cells
      */
-    override fun heuristic(state: GridWorldState) = distance(state) * actionDuration
+    override fun heuristic(state: GridWorldState) = state.agentLocation.manhattanDistance(targetLocation).toDouble()
 
     override fun heuristic(startState: GridWorldState, endState: GridWorldState) =
             startState.agentLocation.manhattanDistance(endState.agentLocation) * actionDuration.toDouble()

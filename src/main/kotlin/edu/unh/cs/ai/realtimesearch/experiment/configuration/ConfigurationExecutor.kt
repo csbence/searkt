@@ -31,7 +31,10 @@ import edu.unh.cs.ai.realtimesearch.planner.anytime.AnytimeRepairingAStar
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.*
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearchG
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.ExplicitEstimationSearch
+import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -260,17 +263,14 @@ object ConfigurationExecutor {
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
-            DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState);
+            DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
-            EESF -> executeOfflineSearch(ExplicitEstimationSearchFix(domain, configuration), configuration, domain, sourceState)
-            EEST -> executeOfflineSearch(ExplicitEstimationSearchT(domain, configuration), configuration, domain, sourceState)
-            EETS -> executeOfflineSearch(ExplicitEstimationTildeSearch(domain, configuration), configuration, domain, sourceState)
-            EECS -> executeOfflineSearch(ExplicitEstimationConservativeSearch(domain, configuration), configuration, domain, sourceState)
-            TC -> executeOfflineSearch(TentacleSearch(domain, configuration), configuration, domain, sourceState)
-            TS -> executeOfflineSearch(TildeSearch(domain, configuration), configuration, domain, sourceState)
+            EESF -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
+            EEST -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
             ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
+            else -> throw MetronomeException("Planner not specified or unrecognized: $algorithmName")
         }
     }
 

@@ -8,7 +8,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  * and the location of all dirty cells. The blocked cells are global.
  */
 data class GridWorldState(val agentLocation: Location) : State<GridWorldState> {
-    private val hashCode: Int = calculateHashCode()
+    override fun hashCode(): Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
         return agentLocation.hashCode()
@@ -27,5 +27,10 @@ data class GridWorldState(val agentLocation: Location) : State<GridWorldState> {
      * Copy simply calls the data class implemented copy
      */
     override fun copy() = copy(agentLocation)
+
+    override fun toString(): String {
+        return "" + agentLocation.x + " " + agentLocation.y
+    }
+
 }
 

@@ -6,8 +6,8 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof
-import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import edu.unh.cs.ai.realtimesearch.planner.realtime.BackupComparator
+import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
@@ -89,6 +89,9 @@ data class ExperimentConfiguration(
         val safetyProof: SafetyProof? = null,
         @Optional
         val safetyWindowSize: Long? = null,
+
+        @Optional
+        val variant: String? = null,
 
         // SZero
         @Optional

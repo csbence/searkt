@@ -22,10 +22,11 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
     val CLEANUP_ID = 0
     val FOCAL_ID = 1
 
+//    val output = File("/home/aifs2/doylew/IdeaProjects/real-time-search/scripts/output.eest")
+//    var outputString = ""
 
     var terminationChecker: TerminationChecker? = null
 
-    var allowedPrimeExpansions = 3000
     var aStarPrimeExpansions = 0
     var aStarExpansions = 0
     var dHatExpansions = 0
@@ -35,8 +36,8 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
-            rhs.g < lhs.g -> -1
-            rhs.g > lhs.g -> 1
+            rhs.cost < lhs.cost -> -1
+            rhs.cost > lhs.cost -> 1
             else -> 0
         }
     }
@@ -87,7 +88,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
     // open is implemented as a red-black tree
     private val gequeue = GEQueue<Node<StateType>>(openNodeComparator, geNodeComparator, focalNodeComparator, FOCAL_ID)
 
-    private val closed = HashMap<StateType, Node<StateType>>(1000000, 1.toFloat())
+    private val nodes = HashMap<StateType, Node<StateType>>(1000000, 1.toFloat())
 
     inner class Node<out StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                                        var actionCost: Double, var action: Action, override var d: Double,
@@ -104,6 +105,8 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
 
         override var hHat: Double = h
         override var dHat: Double = d
+
+        var isClosed = false
 
         init {
             computePathHats()
@@ -181,7 +184,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
     private fun insertNode(node: Node<StateType>, oldBest: Node<StateType>) {
         gequeue.add(node, oldBest)
         cleanup.add(node)
-        closed[node.state] = node
+        nodes[node.state] = node
     }
 
     private fun selectNode(): Node<StateType> {
@@ -191,17 +194,17 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
         val bestF = cleanup.peek()
 
         when {
-            bestFHat.fHat < weight * bestF.f && aStarPrimeExpansions < allowedPrimeExpansions -> {
+            expandedNodeCount < 1000 || bestFHat.fHat > weight * bestF.f -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
                 aStarPrimeExpansions++
             }
-            bestDHat.fHat <= weight * bestF.f -> {
+            bestDHat.f <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
                 dHatExpansions++
             }
-            bestFHat.fHat <= weight * bestF.f -> {
+            bestFHat.f <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
                 fHatExpansions++
@@ -218,7 +221,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
-        val tempSuccessorNode = closed[successorState]
+        val tempSuccessorNode = nodes[successorState]
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
             terminationChecker!!.notifyExpansion()
@@ -232,7 +235,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
                     d = domain.distance(successorState),
                     depth = sourceNode.depth + 1
             )
-            closed[successorState] = undiscoveredNode
+            nodes[successorState] = undiscoveredNode
             undiscoveredNode
         } else {
             tempSuccessorNode
@@ -240,13 +243,17 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>, oldBest: Node<StateType>) {
+        if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
-
         val successors = domain.successors(sourceNode.state)
+
         for (successor in successors) {
             val successorState = successor.state
-            val isDuplicateNode = closed.containsKey(successorState)
             val successorNode = getNode(sourceNode, successor)
+
+            val isDuplicateNode = successorNode.isClosed
+            val alreadyInTree = successorNode.node != null
+
             // skip if we have our parent as a successor
             if (successorState == sourceNode.parent?.state) {
                 continue
@@ -255,7 +262,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
 
-            if (isDuplicateNode) {
+            if (isDuplicateNode || alreadyInTree) {
                 if (successorNode.cost > successorGValueFromCurrent) {
                     successorNode.apply {
                         cost = successorGValueFromCurrent
@@ -266,7 +273,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
                     if (successorNode.getIndex(CLEANUP_ID) != -1) {
                         gequeue.remove(successorNode)
                         cleanup.remove(successorNode)
-                        closed.remove(successorNode.state)
+                        nodes.remove(successorNode.state)
                     }
                     insertNode(successorNode, oldBest)
                 }
@@ -300,7 +307,7 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, d = domain.distance(state))
 
-        closed[state] = node
+        nodes[state] = node
         cleanup.add(node)
         gequeue.add(node, node)
         generatedNodeCount++
@@ -310,9 +317,12 @@ class ExplicitEstimationSearchT<StateType : State<StateType>>(val domain: Domain
             val oldBest = gequeue.peekOpen()
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
+//                output.writeText(outputString)
                 return extractPlan(topNode, state)
             }
             expandFromNode(topNode, oldBest)
+            nodes[topNode.state]!!.isClosed = true
+//            outputString += "${topNode.state} $expandedNodeCount\n"
             expandedNodeCount++
 
             val newBest = gequeue.peekOpen()

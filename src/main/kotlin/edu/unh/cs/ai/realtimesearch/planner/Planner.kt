@@ -9,6 +9,7 @@ abstract class Planner<StateType: State<StateType>> {
 
     var generatedNodeCount: Int = 0
     var expandedNodeCount: Int = 0
+    var reexpansions: Int = 0
 
     open fun appendPlannerSpecificResults(results: ExperimentResult) {}
 }
