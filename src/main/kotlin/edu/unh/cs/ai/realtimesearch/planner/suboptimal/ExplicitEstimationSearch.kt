@@ -249,7 +249,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         val bestF = cleanup.peek()
 
         when {
-            expandedNodeCount < 1000 || bestFHat.fHat > weight * bestF.f -> {
+            minOf(bestDHat.f, bestFHat.f) > weight * bestF.f -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
                 aStarPrimeExpansions++
