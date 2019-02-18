@@ -55,18 +55,18 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    # algorithms_to_run = ['A_STAR']
+    algorithms_to_run = ['A_STAR']
     # algorithms_to_run = ['ES']
-    algorithms_to_run = ['TIME_BOUNDED_A_STAR']
+    # algorithms_to_run = ['ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
     # algorithms_to_run = ['ES', 'TIME_BOUNDED_A_STAR']
     # algorithms_to_run = ['LSS_LRTA_STAR']
     # algorithms_to_run = ['LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
     #algorithms_to_run = ['TIME_BOUNDED_A_STAR']
-    expansion_limit = [10000000]
+    expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [300000000000]
-    #action_durations = [1] # Use this for A*
-    action_durations = [10000000, 13000000, 17000000, 22000000, 28000000]
+    action_durations = [1] # Use this for A*
+    #action_durations = [10000000, 12000000, 16000000, 20000000, 25000000, 32000000]
     termination_types = ['TIME']
     step_limits = [100000000]
 
@@ -82,7 +82,7 @@ def generate_base_configuration():
     base_configuration['terminationTimeEpsilon'] = [5000000]  # 4ms
 
     # base_configuration['expansionDelay'] = [0, 200, 400, 600, 800, 1000]
-    base_configuration['expansionDelay'] = [0, 1000, 10000, 25000, 50000]
+    # base_configuration['expansionDelay'] = [1000, 10000, 50000]
 
     compiled_configurations = [{}]
 
@@ -172,7 +172,7 @@ def generate_grid_world():
     minima3000_paths = []
     uniform1500_base_path = 'input/vacuum/uniform1500/uniform1500_1500-'
     uniform1500_paths = []
-    for scenario_num in range(0, 30): # large set 30
+    for scenario_num in range(0, 50): # large set 25
         n = str(scenario_num)
         dao_paths.append(dao_base_path + n)
         minima1500_paths.append(minima1500_base_path + n + '.vw')
@@ -271,37 +271,25 @@ def parallel_execution(configurations, threads=1):
 
 
 def distributed_execution(configurations):
-    from slack_notification import start_experiment_notification, end_experiment_notification
-    from distlre.distlre import DistLRE, Task, RemoteHost
-    import getpass
-
-    progress_bar = tqdm(total=len(configurations))
-    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
-    #HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8]]
-    #HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [9, 10, 11, 12, 13, 14, 15]]
-
-    print('\nExecuting configurations on the following ai servers: ')
-    print(HOSTS)
-
-    # I would recommend setting up public key auth for your ssh
-    # password = getpass.getpass("Password to connect to [ai.cs.unh.edu]")
-    password = None
-
-    remote_hosts = [RemoteHost(host, port=22, password=password) for host in HOSTS]
-    executor = DistLRE(remote_hosts=remote_hosts)
+    executor = create_distlre_executor()
 
     futures = []
+    progress_bar = tqdm(total=len(configurations))
+
     for configuration in configurations:
         # TODO remove hardcoded java home
         command = ' '.join(
-            ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G', '-Xgcpolicy:metronome',
+            ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G',
+             '-Xgcpolicy:metronome',
              '-Xgc:targetPauseTime=2', '-Xgc:targetUtilization=80',
              '-Xdisableexplicitgc', '-Xgc:nosynchronousGCOnOOM',
-             '-jar', '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
+             '-jar',
+             '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
 
         json_configuration = f'[{json.dumps(configuration)}]\n'
 
-        task = Task(command=command, meta='META', time_limit=10, memory_limit=10)
+        task = Task(command=command, meta='META', time_limit=10,
+                    memory_limit=10)
         task.input = json_configuration
 
         future = executor.submit(task)
@@ -318,8 +306,13 @@ def distributed_execution(configurations):
     print('Experiments finished')
     end_experiment_notification()
 
-    results = []
+    results = parse_result_futures(futures)
 
+    return results
+
+
+def parse_result_futures(futures):
+    results = []
     for future in futures:
         exception = future.exception()
         if exception:
@@ -345,8 +338,25 @@ def distributed_execution(configurations):
         result_offset = raw_output.index('#') + 1
         output = json.loads(raw_output[result_offset])
         results += output
-
     return results
+
+
+def create_distlre_executor():
+    from slack_notification import start_experiment_notification, \
+        end_experiment_notification
+    from distlre.distlre import DistLRE, Task, RemoteHost
+    import getpass
+    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in
+             [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
+    print('\nExecuting configurations on the following ai servers: ')
+    print(HOSTS)
+    # I would recommend setting up public key auth for your ssh
+    # password = getpass.getpass("Password to connect to [ai.cs.unh.edu]")
+    password = None
+    remote_hosts = [RemoteHost(host, port=22, password=password) for host in
+                    HOSTS]
+    executor = DistLRE(remote_hosts=remote_hosts)
+    return executor
 
 
 def read_results_from_file(file_name):
@@ -397,22 +407,30 @@ def save_results(results_json, file_name):
 def main():
     os.chdir('..')
 
-    if not build_searkt():
-        raise Exception('Build failed. Make sure the jar generation is functioning. ')
+    recycle = False
+
+    if not build_metronome():
+        raise Exception(
+            'Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    # configurations = generate_grid_world()  # generate_racetrack()
-    file_name = 'output/results_all_seed30_dur_10_13_17_22_28_delay_1_10_25_50.json'
-    old_results = read_results_from_file(file_name)
+    file_name = 'output/results.json'
 
-    configurations = extract_configurations_from_failed_results(old_results)
+    if recycle:
+        # Load previous configurations
+        old_results = read_results_from_file(file_name)
+        configurations = extract_configurations_from_failed_results(old_results)
+    else:
+        # Generate new domain configurations
+        configurations = generate_grid_world()
 
     print('{} configurations has been generated '.format(len(configurations)))
 
     results = distributed_execution(configurations)
 
-    inplace_merge_experiments(old_results, results)
-    results = old_results
+    if recycle:
+        inplace_merge_experiments(old_results, results)
+        results = old_results
 
     for result in results:
         result.pop('actions', None)

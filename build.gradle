@@ -57,6 +57,7 @@ dependencies {
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib"
 }
 
 
@@ -103,4 +104,7 @@ task clientJar(type: Jar) {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
     }
     with jar
+}
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.2.71'
 }
