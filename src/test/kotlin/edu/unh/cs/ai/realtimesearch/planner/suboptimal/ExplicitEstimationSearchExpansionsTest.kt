@@ -10,7 +10,7 @@ import java.io.File
 class ExplicitEstimationSearchVacuumTest {
     private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "EES",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
-            errorModel = "path", weight = 1.0)
+            errorModel = "path", weight = 1.1)
 
     @Test
     fun testEESVacuum() {
@@ -28,7 +28,7 @@ class ExplicitEstimationSearchVacuumTest {
 //        val tsAgent = TentacleSearch(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearchH(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearch(vacuumWorld.domain, configuration)
-        val tsAgent = WeightedAStar(vacuumWorld.domain, configuration)
+        val tsAgent = OptimisticSearch(vacuumWorld.domain, configuration)
         val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit))
         println(num)
         println("expansions:${tsAgent.expandedNodeCount}")

@@ -8,11 +8,9 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 import java.util.HashMap
 import kotlin.Comparator
 
@@ -181,15 +179,17 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     private fun selectNode(): Node<StateType> {
         val selectedNode: Node<StateType>
 
-        val bestFhat = fHatOpenList.peek() ?: throw MetronomeException("Open list is empty")
+        val bestFHat = fHatOpenList.peek() ?: throw MetronomeException("Open list is empty")
         val bestF = fOpenList.peek() ?: throw MetronomeException("Open list is empty")
         val incumbentFHat = incumbentSolution?.fHat ?: Double.MAX_VALUE
 
-        if (bestFhat.fHat < incumbentFHat) {
-            selectedNode = bestFhat
-            fOpenList.remove(bestFhat)
+        if (bestFHat.fHat < incumbentFHat) {
+            selectedNode = bestFHat
+            fHatOpenList.pop()
+            fOpenList.remove(bestFHat)
         } else {
             selectedNode = bestF
+            fOpenList.pop()
             fHatOpenList.remove(bestF)
         }
 
@@ -206,16 +206,21 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
         generatedNodeCount++
 
         while (fOpenList.isNotEmpty() && !terminationChecker.reachedTermination()) {
+            if (weight * fOpenList.peek()!!.f >= incumbentSolution?.f ?: Double.MAX_VALUE) {
+                executionNanoTime = System.nanoTime() - startTime
+                return extractPlan(incumbentSolution!!, state)
+            }
+
             val topNode = selectNode()
-            topNode.isClosed = true
             if (domain.isGoal(topNode.state)) {
                 incumbentSolution = topNode
-                if (fOpenList.peek()!!.f >= incumbentSolution!!.f) {
+                if (weight * fOpenList.peek()!!.f >= incumbentSolution!!.f) {
                     executionNanoTime = System.nanoTime() - startTime
-                    return extractPlan(topNode, state)
+                    return extractPlan(incumbentSolution!!, state)
                 }
             }
             expandFromNode(topNode)
+            topNode.isClosed = true
             expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {
