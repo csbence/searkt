@@ -255,6 +255,7 @@ object ConfigurationExecutor {
         val sourceState = seed?.run { domain.randomizedStartState(initialState, this) } ?: initialState
 
         return when (Planners.valueOf(algorithmName)) {
+            A_A_STAR -> executeOfflineSearch(AnalyticAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)

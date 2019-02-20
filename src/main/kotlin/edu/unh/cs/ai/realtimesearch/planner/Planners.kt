@@ -1,6 +1,7 @@
 package edu.unh.cs.ai.realtimesearch.planner
 
 enum class Planners {
+    A_A_STAR,
     A_STAR,
     RTA_STAR,
     LSS_LRTA_STAR,

@@ -238,8 +238,8 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 if (reach) {
                     if (upperBound >= currentBound) greedyOpen.clear()
                     currentBound = upperBound
-                    println(expandedNodeCount)
-                    println("A*       error: $stepErrorAvg bound: $upperBound expanded: $expanded")
+//                    println(expandedNodeCount)
+//                    println("A*       error: $stepErrorAvg bound: $upperBound expanded: $expanded")
 
                     rampupDelay = 10000
                     return null
@@ -256,8 +256,8 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
             while (greedyOpen.isNotEmpty()) {
                 if (greedyOpen.peek()!!.f >= currentBound) {
-                    println(expandedNodeCount)
-                    println("Bound reached.  error: $greedyStepErrorAvg bound: $currentBound minVisitedH: $minVisitedH expanded: $expanded")
+//                    println(expandedNodeCount)
+//                    println("Bound reached.  error: $greedyStepErrorAvg bound: $currentBound minVisitedH: $minVisitedH expanded: $expanded")
 
                     suboptimalMinDistance.add(minVisitedH)
                     return null
@@ -304,11 +304,11 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             topK.forEach { greedyOpen.add(it!!) }
 
             expansionPhase = SUBOPTIMAL_NEW
-            println("Populate greedy queue")
+//            println("Populate greedy queue")
         }
 
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            println("+++\n")
+//            println("+++\n")
 
             var startExpansionCount = expandedNodeCount
 
@@ -341,7 +341,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     .filter { it != 0.0 && it != Double.POSITIVE_INFINITY }
                     .fold(0.0) { avg, current -> avg * 0.4 + current * 0.6 }
 
-            println("  estimatedExpansions: $expansionBound")
+//            println("  estimatedExpansions: $expansionBound")
             rampupDelay = max(expansionBound.toInt(), 10000)
         }
 

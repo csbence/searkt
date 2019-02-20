@@ -29,7 +29,7 @@ class ExplicitEstimationSearchVacuumTest {
 //        val tsAgent = TentacleSearch(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearchH(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearch(vacuumWorld.domain, configuration)
-        val tsAgent = OptimisticSearch(vacuumWorld.domain, configuration)
+        val tsAgent = AnalyticAStar(vacuumWorld.domain, configuration)
         val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit))
         println(num)
         println("expansions:${tsAgent.expandedNodeCount}")
