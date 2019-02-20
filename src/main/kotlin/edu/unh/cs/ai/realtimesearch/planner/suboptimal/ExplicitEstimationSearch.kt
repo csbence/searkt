@@ -316,7 +316,6 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             val successorGValueFromCurrent = currentGValue + successor.actionCost
 
             if (isDuplicateNode) {
-                reexpansions++
                 if (successorNode.cost > successorGValueFromCurrent) {
                     successorNode.apply {
                         cost = successorGValueFromCurrent
