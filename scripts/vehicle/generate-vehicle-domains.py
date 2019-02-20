@@ -26,11 +26,11 @@ if args.verbose:
 
 obstaclePercentage = float(args.obstacles)
 bunkerPercentage = float(args.bunkers)
-startX = 1 + int(width * 0.1)
-startY = 1 + int(height / 2)
+startX = 1
+startY = (height - 1)
 
-endX = (width - 1) - int(width * 0.1)
-endY = (height - 1) - int(height / 2)
+endX = (width - 1)
+endY = (height - 1)
 
 print("start:" + str(startX) + ", " + str(startY))
 print("end: " + str(endX) + ", " + str(endY))
@@ -38,16 +38,16 @@ print("end: " + str(endX) + ", " + str(endY))
 path = args.path
 
 if type(path) == type(None):
-  path = "../../src/main/resources/input/gridworld"
+    path = "../../src/main/resources/input/lifegrids"
 
 for iteration in range(0,number):
-  newDomain = "gridworld" + str(iteration)
+    newDomain = "lifegrids" + str(iteration)
 
-  completeFile = os.path.join(path, newDomain + ".gw")
+    completeFile = os.path.join(path, newDomain + ".lg")
 
   aFile = open(completeFile, "w")
 
-preamble = args.width + "\n" + args.height + "\n"
+    preamble = args.width + "\n" + args.height + "\n"
   world = ""
 
   for y in range(1,height):

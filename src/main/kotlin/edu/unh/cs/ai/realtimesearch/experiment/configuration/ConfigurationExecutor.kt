@@ -12,6 +12,7 @@ import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.heavyvacuumworld.HeavyVacuumWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.inversetiles.InverseTilePuzzleIO
+import edu.unh.cs.ai.realtimesearch.environment.lifegrids.LifegridsIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
@@ -164,10 +165,16 @@ object ConfigurationExecutor {
             POINT_ROBOT -> executePointRobot(configuration, domainStream)
             POINT_ROBOT_LOST -> executePointRobotLOST(configuration, domainStream)
 //            POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(configuration, domainStream)
+            LIFE_GRIDS -> executeLifegrids(configuration, domainStream)
             RACETRACK -> executeRaceTrack(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
             else -> throw MetronomeException("Unknown or deactivated globalDomain: $domain")
         }
+    }
+
+    private fun executeLifegrids(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val lifeGridsInstance = LifegridsIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, lifeGridsInstance.domain, lifeGridsInstance.initialState)
     }
 
     private fun executePointRobot(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
@@ -265,6 +272,7 @@ object ConfigurationExecutor {
             EESF -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             EEST -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             OPTIMISTIC -> executeOfflineSearch(OptimisticSearch(domain, configuration), configuration, domain, sourceState)
+            OPTIMISTIC_DD -> executeOfflineSearch(OptimisticSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
             ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")

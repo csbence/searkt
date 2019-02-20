@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
@@ -17,6 +18,8 @@ import kotlin.Comparator
 class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for optimistic search is not specified.")
+
+    private val algorithmName: String = configuration.algorithmName
 
     var terminationChecker: TerminationChecker? = null
 
@@ -162,7 +165,10 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                 if (isDuplicate && successorNode.isClosed) {
                     // if duplicate and is closed add back to open
                     fOpenList.add(successorNode)
-                    fHatOpenList.add(successorNode)
+                    // only add duplicates back in with original optimistic search
+                    if (algorithmName == Planners.OPTIMISTIC.toString()) {
+                        fHatOpenList.add(successorNode)
+                    }
                 } else if (isDuplicate && !successorNode.isClosed){
                     // if duplicate and is open update within open
                     fOpenList.update(successorNode)

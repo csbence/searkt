@@ -16,6 +16,7 @@ enum class Planners {
     DPSG,
     TC,
     OPTIMISTIC,
+    OPTIMISTIC_DD,
     EES,
     EESF,
     EEST,

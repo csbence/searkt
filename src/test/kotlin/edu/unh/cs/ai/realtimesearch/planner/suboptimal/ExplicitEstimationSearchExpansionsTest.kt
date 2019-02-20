@@ -8,9 +8,9 @@ import org.junit.Test
 import java.io.File
 
 class ExplicitEstimationSearchVacuumTest {
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "EES",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "OPTIMISTIC_DD",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
-            errorModel = "path", weight = 1.1)
+            errorModel = "path", weight = 1.8, variant = "O")
 
     @Test
     fun testEESVacuum() {
@@ -19,6 +19,7 @@ class ExplicitEstimationSearchVacuumTest {
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/vacuum/gen/vacuum0.vw"
         val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/gridworld/gridworld0.gw"
 //        val file = "/home/aifs2/doylew/uniform40/1k8k/uniform1000_8000-0"
+//        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/lifegrids/lifegrids0.lg"
         println("File -> $file")
         val instance = File(file).inputStream()
 //        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, actionDuration = configuration.actionDuration)
@@ -39,7 +40,6 @@ class ExplicitEstimationSearchVacuumTest {
 //        println("fHatExpansions:${tsAgent.fHatExpansions}")
 //        println("aStarExpansions:${tsAgent.aStarExpansions}")
 //        println("tentacleExpansions: ${tsAgent.tentacleExpansions}")
-        println()
 //        println("dHatExpansions:${tsAgent.dHatExpansions}")
 //        println("fHatExpansions:${tsAgent.fHatExpansions}")
 //        println("aStarExpansions:${tsAgent.aStarExpansions}")
