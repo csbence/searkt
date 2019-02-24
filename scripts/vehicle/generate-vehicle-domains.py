@@ -19,18 +19,17 @@ height = int(args.height) + 1
 width = int(args.width) + 1
 number = int(args.number)
 
-
 if args.verbose:
-  print(args.height)
-  print(args.width)
+    print(args.height)
+    print(args.width)
 
 obstaclePercentage = float(args.obstacles)
 bunkerPercentage = float(args.bunkers)
 startX = 1
-startY = (height - 1)
+startY = int((height - 1) / 2.0)
 
 endX = (width - 1)
-endY = (height - 1)
+endY = int((height - 1) / 2.0)
 
 print("start:" + str(startX) + ", " + str(startY))
 print("end: " + str(endX) + ", " + str(endY))
@@ -38,37 +37,37 @@ print("end: " + str(endX) + ", " + str(endY))
 path = args.path
 
 if type(path) == type(None):
-    path = "../../src/main/resources/input/lifegrids"
+    path = "../../src/main/resources/input/gridworld/"
 
-for iteration in range(0,number):
-    newDomain = "lifegrids" + str(iteration)
+for iteration in range(0, number):
+    newDomain = "gridworld" + str(iteration)
 
-    completeFile = os.path.join(path, newDomain + ".lg")
+    completeFile = os.path.join(path, newDomain + ".gw")
 
-  aFile = open(completeFile, "w")
+    aFile = open(completeFile, "w")
 
     preamble = args.width + "\n" + args.height + "\n"
-  world = ""
+    world = ""
 
-  for y in range(1,height):
-    for x in range(1,width):
-      flipObstacle = random.random()
-      flipBunker = random.random()
-      if x == startX and y == startY:
-        world += "@"
-      elif flipObstacle < obstaclePercentage and x != width-1:
-        world += "#"
-      elif flipBunker < bunkerPercentage and x != width-1:
-        world += "$"
-      elif y == endY and x == endX:
-        world += "*"
-      else:
-        world += "_"
-    world += "\n"
+    for y in range(1, height):
+        for x in range(1, width):
+            flipObstacle = random.random()
+            flipBunker = random.random()
+            if x == startX and y == startY:
+                world += "@"
+            elif flipObstacle < obstaclePercentage and x != width - 1:
+                world += "#"
+            elif flipBunker < bunkerPercentage and x != width - 1:
+                world += "$"
+            elif y == endY and x == endX:
+                world += "*"
+            else:
+                world += "_"
+        world += "\n"
 
-  if args.verbose:
-    print(world)
-    
-  aFile.write(preamble + world)
+    if args.verbose:
+        print(world)
 
-  aFile.close()
+    aFile.write(preamble + world)
+
+    aFile.close()

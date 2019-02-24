@@ -18,7 +18,7 @@ class AnalyticAStarTest {
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/tiles/korf/4/real/$num"
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/vacuum/gen/vacuum0.vw"
         val file = "/Users/bencecserna/Documents/Development/projects/ai/real-time-search/src/main/resources/input/gridworld/gridworld0.gw"
-//        val file = "/home/aifs2/doylew/uniform40/1k8k/uniform1000_8000-0"
+//        val file = "/home/aifs2/doylew/uniform40/1k8000/uniform1000_8000-0"
         println("File -> $file")
         val instance = File(file).inputStream()
 //        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, actionDuration = configuration.actionDuration)

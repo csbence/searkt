@@ -8,18 +8,18 @@ import org.junit.Test
 import java.io.File
 
 class ExplicitEstimationSearchVacuumTest {
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "OPTIMISTIC_DD",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "WEIGHTED_A_STAR_DD",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
-            errorModel = "path", weight = 1.2, variant = "O")
+            errorModel = "path", weight = 2.0, variant = "O")
 
     @Test
     fun testEESVacuum() {
-        val num = "34"
+        val num = "67"
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/tiles/korf/4/real/$num"
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/vacuum/gen/vacuum0.vw"
-        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/gridworld/gridworld1.gw"
-//        val file = "/home/aifs2/doylew/uniform40/1k8k/uniform1000_8000-0"
+//        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/gridworld/gridworld1.gw"
 //        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/lifegrids/lifegrids0.lg"
+        val file = "/home/aifs2/doylew/IdeaProjects/real-time-search/src/main/resources/input/uniform40/1k4000/uniform1000_4000-0"
         println("File -> $file")
         val instance = File(file).inputStream()
 //        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(instance, actionDuration = configuration.actionDuration)
@@ -29,9 +29,8 @@ class ExplicitEstimationSearchVacuumTest {
 //        val tsAgent = TentacleSearch(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearchH(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearch(vacuumWorld.domain, configuration)
-        val tsAgent = ExplicitEstimationSearch(vacuumWorld.domain, configuration)
+        val tsAgent = AnalyticAStar(vacuumWorld.domain, configuration)
         val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit))
-
         println(num)
         println("expansions:${tsAgent.expandedNodeCount}")
         println("costOfSolution:${plan.size}")
@@ -39,6 +38,7 @@ class ExplicitEstimationSearchVacuumTest {
        // println("aStarPrimeExpansions:${tsAgent.aStarPrimeExpansions}")
 //        println("dHatExpansions:${tsAgent.dHatExpansions}")
 //        println("fHatExpansions:${tsAgent.fHatExpansions}")
+//        println("greedyExpansions:${tsAgent.greedyExpansions}")
 //        println("aStarExpansions:${tsAgent.aStarExpansions}")
 //        println("tentacleExpansions: ${tsAgent.tentacleExpansions}")
 //        println("dHatExpansions:${tsAgent.dHatExpansions}")

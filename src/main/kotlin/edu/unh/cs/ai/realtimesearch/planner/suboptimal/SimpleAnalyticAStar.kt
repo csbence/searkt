@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -15,20 +14,18 @@ import org.slf4j.LoggerFactory
 import java.util.HashMap
 import kotlin.Comparator
 
-class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
+class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
-
-    private val algorithmName = configuration.algorithmName
 
     var terminationChecker: TerminationChecker? = null
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
-                                             override var parent: WeightedAStar.Node<StateType>? = null):
+                                             override var parent: SimpleAnalyticAStar.Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
         var isClosed = false
-        private val indexMap = Array(1) {-1}
+        private val indexMap = Array(1) { -1 }
         override val g: Double
             get() = cost
         override val depth: Double
@@ -43,7 +40,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             get() = heuristic
 
         override fun setIndex(key: Int, index: Int) {
-           indexMap[key] = index
+            indexMap[key] = index
         }
 
         override fun getIndex(key: Int): Int {
@@ -69,9 +66,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     @Suppress("unused")
-    private val logger = LoggerFactory.getLogger(WeightedAStar::class.java)
+    private val logger = LoggerFactory.getLogger(SimpleAnalyticAStar::class.java)
 
-    private val fValueComparator = Comparator<WeightedAStar.Node<StateType>> { lhs, rhs ->
+    private val fValueComparator = Comparator<SimpleAnalyticAStar.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -81,7 +78,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap(1000000, 1.toFloat())
+    private val nodes: HashMap<StateType, SimpleAnalyticAStar.Node<StateType>> = HashMap(1000000, 1.toFloat())
 
     private var openList = AdvancedPriorityQueue(1000000, fValueComparator)
 
@@ -118,8 +115,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 continue
             }
 
-            val isDuplicate = successorNode.cost < Double.MAX_VALUE
-
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost > successorGValueFromCurrent) {
@@ -130,14 +125,10 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     action = successor.action
                     actionCost = successor.actionCost
                 }
-                if (isDuplicate && !successorNode.open) {
-                    if (algorithmName == Planners.WEIGHTED_A_STAR.toString()) {
-                        openList.add(successorNode)
-                    }
-                } else if (isDuplicate && successorNode.open) {
-                    openList.update(successorNode)
-                } else {
+                if (!successorNode.open) {
                     openList.add(successorNode)
+                } else {
+                    openList.update(successorNode)
                 }
             }
         }

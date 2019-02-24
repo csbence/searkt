@@ -257,6 +257,7 @@ object ConfigurationExecutor {
         return when (Planners.valueOf(algorithmName)) {
             A_A_STAR -> executeOfflineSearch(AnalyticAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            WEIGHTED_A_STAR_DD -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(AStarPlanner(domain), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)

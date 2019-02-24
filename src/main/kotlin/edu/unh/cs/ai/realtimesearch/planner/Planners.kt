@@ -9,6 +9,7 @@ enum class Planners {
     ES,
     ARA_STAR,
     WEIGHTED_A_STAR,
+    WEIGHTED_A_STAR_DD,
     DYNAMIC_F_HAT,
     SAFE_RTS,
     S_ZERO,

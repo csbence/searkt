@@ -25,6 +25,9 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
 
     private var incumbentSolution: Node<StateType>? = null
 
+    var aStarExpansions = 0
+    var greedyExpansions = 0
+
     inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              override var parent: Node<StateType>? = null):
@@ -162,20 +165,27 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                     action = successor.action
                     actionCost = successor.actionCost
                 }
+
                 if (isDuplicate && successorNode.isClosed) {
                     // if duplicate and is closed add back to open
-                    fOpenList.add(successorNode)
+                    if (aStarExpansions > 0) {
+                        fOpenList.add(successorNode)
+                    }
                     // only add duplicates back in with original optimistic search
                     if (algorithmName == Planners.OPTIMISTIC.toString()) {
                         fHatOpenList.add(successorNode)
                     }
                 } else if (isDuplicate && !successorNode.isClosed){
                     // if duplicate and is open update within open
-                    fOpenList.update(successorNode)
+                    if (aStarExpansions > 0) {
+                        fOpenList.update(successorNode)
+                    }
                     fHatOpenList.update(successorNode)
                 } else {
                     // if a brand new node just add
-                    fOpenList.add(successorNode)
+                    if (aStarExpansions > 0) {
+                        fOpenList.add(successorNode)
+                    }
                     fHatOpenList.add(successorNode)
                 }
             }
@@ -190,10 +200,16 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
         val incumbentFHat = incumbentSolution?.fHat ?: Double.MAX_VALUE
 
         if (bestFHat.fHat < incumbentFHat) {
+            greedyExpansions++
             selectedNode = bestFHat
             fHatOpenList.pop()
             fOpenList.remove(bestFHat)
         } else {
+            // only create f open list when we first expand
+            if (aStarExpansions == 0) {
+                fHatOpenList.forEach { node -> fOpenList.add(node) }
+            }
+            aStarExpansions++
             selectedNode = bestF
             fOpenList.pop()
             fHatOpenList.remove(bestF)

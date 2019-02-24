@@ -25,6 +25,9 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     var terminationChecker: TerminationChecker? = null
 
+    var aStarExpansions = 0
+    var greedyExpansions = 0
+
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              override var parent: AnalyticAStar.Node<StateType>? = null) :
@@ -155,6 +158,8 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 continue
             }
 
+            val isDuplicate = successorNode.cost < Double.MAX_VALUE
+
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost >= successorGValueFromCurrent) {
@@ -182,14 +187,15 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         return null
     }
 
-    override fun plan(startState: StateType, terminationChecker: TerminationChecker): List<Action> {
+    override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val node = Node(startState, domain.heuristic(startState), 0.0, 0.0, NoOperationAction)
-        nodes[startState] = node
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
+        nodes[state] = node
         openList.add(node)
         generatedNodeCount++
 
-        var rampupDelay = 10000
+        val maxRam = 10000
+        var rampupDelay = maxRam
         var currentBound = 0.0
         var stepErrorAvg = 0.0
         var greedyStepErrorAvg = 0.0
@@ -209,6 +215,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
                 expandNode(currentNode, openList)?.let { return it }
                 expanded++
+                aStarExpansions++
 
                 val hDiff = node.h - currentNode.h
                 val totalError = currentNode.g - hDiff
@@ -216,7 +223,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 val stepError = if (currentNode.g == 0.0) 0.0
                 else abs(totalError / currentNode.g)
 
-                val learningRate = 0.001 + (rampupDelay + 1) / 998
+                val learningRate = 0.001 + (rampupDelay - 1) / maxRam
                 stepErrorAvg = stepErrorAvg * (1 - learningRate) + stepError * learningRate
 
                 if (rampupDelay > 0) {
@@ -226,22 +233,22 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
 
                 val pessimisticStepError = max(stepErrorAvg, greedyStepErrorAvg)
-                val costEstimate = currentNode.h * pessimisticStepError + currentNode.f
+                val costEstimate = currentNode.h * pessimisticStepError + currentNode.f // estimate
                 val upperBound = weight * currentNode.f
 
-                val reach = true // costEstimate < upperBound
-                // println("reach: $reach stepError: $stepError costEstimate: $costEstimate upperBound: $upperBound g: ${currentNode.g}")
+                val reach = costEstimate < upperBound
+//                 println("reach: $reach stepError: $stepError costEstimate: $costEstimate upperBound: $upperBound g: ${currentNode.g}")
 
                 if (upperBound == currentBound) continue
 
 
                 if (reach) {
-                    if (upperBound >= currentBound) greedyOpen.clear()
+                    if (upperBound > currentBound) greedyOpen.clear()
                     currentBound = upperBound
 //                    println(expandedNodeCount)
 //                    println("A*       error: $stepErrorAvg bound: $upperBound expanded: $expanded")
 
-                    rampupDelay = 10000
+                    rampupDelay = maxRam
                     return null
                 }
             }
@@ -264,6 +271,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 }
 
                 expanded++
+                greedyExpansions++
                 val currentNode = greedyOpen.pop()!!
 
 
@@ -272,9 +280,12 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 }
 
                 val goalNode = expandNode(currentNode, greedyOpen)
-                if (goalNode != null) return goalNode
+                if (goalNode != null) {
+                    suboptimalMinDistance.add(minVisitedH)
+                    return goalNode
+                }
 
-                if (currentNode.h < minVisitedH) {
+                if (currentNode.h <= minVisitedH) {
                     minVisitedH = currentNode.h
 
                     val hDiff = node.h - currentNode.h
@@ -284,13 +295,14 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     else abs(totalError / currentNode.g)
 
                     greedyStepErrorAvg = stepError
-//
+
 //                    val learningRate = 0.001
 //                    greedyStepErrorAvg = greedyStepErrorAvg * (1 - learningRate) + stepError * learningRate
                 }
 
             }
 
+            suboptimalMinDistance.add(minVisitedH)
             return null
         }
 
@@ -312,7 +324,8 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
             var startExpansionCount = expandedNodeCount
 
-            expandOptimal()?.let { return extractPlan(it, startState) }
+            expansionPhase = OPTIMAL
+            expandOptimal()?.let { return extractPlan(it, state) }
 
             optimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
 
@@ -324,10 +337,9 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             startExpansionCount = expandedNodeCount
 
             populateGreedyQueue()
-            expandSuboptimal()?.let { return extractPlan(it, startState) }
+            expandSuboptimal()?.let { return extractPlan(it, state) }
 
             suboptimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
-
 
             val expansionBound = (1 until suboptimalExpansionCounts.size)
                     .map { i ->
@@ -342,7 +354,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     .fold(0.0) { avg, current -> avg * 0.4 + current * 0.6 }
 
 //            println("  estimatedExpansions: $expansionBound")
-            rampupDelay = max(expansionBound.toInt(), 10000)
+            rampupDelay = max(expansionBound.toInt(), maxRam)
         }
 
         if (terminationChecker.reachedTermination()) {
