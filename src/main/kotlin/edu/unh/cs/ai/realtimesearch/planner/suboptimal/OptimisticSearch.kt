@@ -165,27 +165,20 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                     action = successor.action
                     actionCost = successor.actionCost
                 }
-
                 if (isDuplicate && successorNode.isClosed) {
                     // if duplicate and is closed add back to open
-                    if (aStarExpansions > 0) {
-                        fOpenList.add(successorNode)
-                    }
+                    fOpenList.add(successorNode)
                     // only add duplicates back in with original optimistic search
                     if (algorithmName == Planners.OPTIMISTIC.toString()) {
                         fHatOpenList.add(successorNode)
                     }
                 } else if (isDuplicate && !successorNode.isClosed){
                     // if duplicate and is open update within open
-                    if (aStarExpansions > 0) {
-                        fOpenList.update(successorNode)
-                    }
+                    fOpenList.update(successorNode)
                     fHatOpenList.update(successorNode)
                 } else {
                     // if a brand new node just add
-                    if (aStarExpansions > 0) {
-                        fOpenList.add(successorNode)
-                    }
+                    fOpenList.add(successorNode)
                     fHatOpenList.add(successorNode)
                 }
             }
@@ -205,10 +198,6 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
             fHatOpenList.pop()
             fOpenList.remove(bestFHat)
         } else {
-            // only create f open list when we first expand
-            if (aStarExpansions == 0) {
-                fHatOpenList.forEach { node -> fOpenList.add(node) }
-            }
             aStarExpansions++
             selectedNode = bestF
             fOpenList.pop()
