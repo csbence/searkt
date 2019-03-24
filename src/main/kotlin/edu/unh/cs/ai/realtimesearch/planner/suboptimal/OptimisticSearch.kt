@@ -23,6 +23,8 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
 
     var terminationChecker: TerminationChecker? = null
 
+    var iteration = 0
+
     private var incumbentSolution: Node<StateType>? = null
 
     var aStarExpansions = 0
@@ -33,6 +35,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                                              override var parent: Node<StateType>? = null):
             Indexable, SearchQueueElement<Node<StateType>> {
         var isClosed = false
+        var expansionIteration = -1
         private val indexMap = Array(2) {-1}
         override val g: Double
             get() = cost
@@ -48,7 +51,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
             get() = heuristic
 
         val fHat: Double
-            get() = cost + (2*(weight - 1) + 1)*heuristic
+            get() = if (weight < 1.8) cost + (weight * heuristic) else cost + (2*(weight - 1) + 1)*heuristic
 
         override fun setIndex(key: Int, index: Int) {
            indexMap[key] = index
@@ -66,11 +69,11 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
         override fun hashCode(): Int = state.hashCode()
 
         override fun equals(other: Any?): Boolean {
-            try {
+            return try {
                 val otherCast = other as Node<*>
-                return otherCast.hashCode() == this.hashCode()
+                otherCast.hashCode() == this.hashCode()
             } catch (exp: ClassCastException) {
-                return false
+                false
             }
         }
 
@@ -225,12 +228,16 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
             val topNode = selectNode()
             if (domain.isGoal(topNode.state)) {
                 incumbentSolution = topNode
+                if (weight < 1.8) {
+                    return extractPlan(incumbentSolution!!, state)
+                }
                 if (weight * fOpenList.peek()!!.f >= incumbentSolution!!.f) {
                     executionNanoTime = System.nanoTime() - startTime
                     return extractPlan(incumbentSolution!!, state)
                 }
             }
             expandFromNode(topNode)
+            iteration++
             topNode.isClosed = true
             expandedNodeCount++
         }
