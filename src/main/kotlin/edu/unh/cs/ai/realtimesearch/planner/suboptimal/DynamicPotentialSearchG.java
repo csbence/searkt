@@ -9,14 +9,14 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker;
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner;
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement;
-import edu.unh.cs.ai.realtimesearch.util.search.*;
+import edu.unh.cs.ai.realtimesearch.util.collections.ghheap.GH_heap;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchQueueElementImpl;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchResult;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchResultImpl;
+import kotlin.NotImplementedError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-import edu.unh.cs.ai.realtimesearch.util.collections.ghheap.GH_heap;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -309,7 +309,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
                 break;
             }
             default: {
-                throw new NotImplementedException();
+                throw new NotImplementedError();
             }
         }
     }
