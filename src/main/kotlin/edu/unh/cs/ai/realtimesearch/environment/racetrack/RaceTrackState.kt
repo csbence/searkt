@@ -26,5 +26,9 @@ data class RaceTrackState(val x: Int, val y: Int, val dX: Int, val dY: Int) : St
     }
 
     override fun copy() = RaceTrackState(x, y, dX, dY)
+
+    override fun projectX() = x
+    override fun projectY() = y
+    override fun projectZ() = dX * dX + dY * dY
 }
 
