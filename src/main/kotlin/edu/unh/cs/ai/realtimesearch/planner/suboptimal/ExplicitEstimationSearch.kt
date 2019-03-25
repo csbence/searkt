@@ -5,6 +5,7 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
@@ -21,6 +22,8 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     private val variant: String = configuration.variant
             ?: throw MetronomeConfigurationException("Variant for Explicit Estimation Search is not specified: O, F, T")
+
+    private val algorithmName: String = configuration.algorithmName
 
     val CLEANUP_ID = 0
     val FOCAL_ID = 1
@@ -185,8 +188,14 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
 
     }
 
-    private fun insertNode(node: Node<StateType>, oldBest: Node<StateType>) {
-        gequeue.add(node, oldBest)
+    private fun insertNode(node: Node<StateType>, oldBest: Node<StateType>, duplicateInsertion: Boolean = false) {
+        if (duplicateInsertion) {
+            if (algorithmName == Planners.EES.toString()) {
+                gequeue.add(node, oldBest)
+            }
+        } else {
+            gequeue.add(node, oldBest)
+        }
         cleanup.add(node)
         closed[node.state] = node
     }
@@ -328,7 +337,7 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
                         cleanup.remove(successorNode)
                         closed.remove(successorNode.state)
                     }
-                    insertNode(successorNode, oldBest)
+                    insertNode(successorNode, oldBest, duplicateInsertion = true)
                 }
             } else {
                 if (successorNode.cost > successorGValueFromCurrent) {
