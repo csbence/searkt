@@ -82,7 +82,6 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
                     }
                     existingSuccessorNode.open && existingSuccessorNode.cost > newCost -> {
                         // Rediscover with a better cost
-                        println("Rediscover better cost")
                         val newSuccessorNode = Node(node, successor.state, successor.action, newCost, newCost + domain.heuristic(successor.state), true)
                         nodes.put(newSuccessorNode.state, newSuccessorNode) // Override the previous node for the state
                         openList.add(newSuccessorNode)

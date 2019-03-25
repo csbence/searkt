@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
-import java.lang.management.ManagementFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +34,7 @@ class ExperimentResult {
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
                 systemProperties: HashMap<String, String> = HashMap(),
-                experimentRunTime: Double){
+                experimentRunTime: Double) {
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -72,6 +71,7 @@ class ExperimentResult {
     var success: Boolean = false
     var systemProperties: MutableMap<String, String>
     var experimentRunTime: Double = 0.0
+    var attributes = mutableMapOf<String, Collection<Int>>()
 
     @Optional
     var reexpansions: Int = 0
@@ -99,21 +99,22 @@ class ExperimentResult {
     var frontierNodeDepth: List<Int>? = null
 
     //Comprehensive Envelope stats
-    @Optional var backupCount: Int = 0
+    @Optional
+    var backupCount: Int = 0
 
 
     init {
         // Initialize the system properties
         systemProperties = hashMapOf()
 
-        val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
-        val arguments = runtimeMxBean.inputArguments
-
-        systemProperties.put("java_vm_info", System.getProperties()["java.vm.info"].toString())
-        systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
-        systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
-        systemProperties.put("java_version", System.getProperties()["java.version"].toString())
-        systemProperties.put("java_vm_input_args", arguments.toString())
+//        val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
+//        val arguments = runtimeMxBean.inputArguments
+//
+//        systemProperties.put("java_vm_info", System.getProperties()["java.vm.info"].toString())
+//        systemProperties.put("java_vm_name", System.getProperties()["java.vm.name"].toString())
+//        systemProperties.put("java_vm_vendor", System.getProperties()["java.vm.vendor"].toString())
+//        systemProperties.put("java_version", System.getProperties()["java.version"].toString())
+//        systemProperties.put("java_vm_input_args", arguments.toString())
     }
 
     override fun toString(): String {
@@ -156,7 +157,13 @@ fun Collection<ExperimentResult>.summary(): String {
         val domain = it.configuration.domainPath
         val GAT = it.goalAchievementTime
 
-        builder.appendln("Algorithm: $algorithm domain: $domain GAT: $GAT error: ${it.errorMessage ?: "None"}")
+        builder.appendln(
+                " GAT: $GAT" +
+                " path:${it.pathLength}" +
+                " dur:${it.configuration.actionDuration}" +
+                " algorithm: $algorithm" +
+                " domain: $domain" +
+                " error: ${it.errorMessage ?: "None"}")
     }
 
     return builder.toString()

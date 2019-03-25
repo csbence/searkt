@@ -239,6 +239,13 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
         val successorState = successor.state
         val successorNode = context.getNode(sourceNode, successor)
 
+        // begin This makes LSS-LRTA* safe
+//        val proofStatus = isComfortable(successorState, FakeTerminationChecker, context.domain)
+//        if (proofStatus.status == SafetyProofStatus.UNSAFE) {
+//            continue
+//        }
+        // end This makes LSS-LRTA* safe
+
         if (successorNode.heuristic == Double.POSITIVE_INFINITY) {
             // Ignore this successor as it is a dead end
             continue

@@ -51,9 +51,13 @@ object ConfigurationExecutor {
             var currentProgress = 0
             var lock = Object()
             val startTime = System.currentTimeMillis()
+            var successCount = 0
 
-            fun updateProgress() = synchronized(lock) {
+            fun updateProgress(success: Boolean) = synchronized(lock) {
                 currentProgress++
+                if (success) {
+                    successCount++
+                }
                 val ratio = currentProgress.toDouble() / maxProgress
                 val millisecondPerExperiment = (System.currentTimeMillis() - startTime) / currentProgress
                 val remainingProgress = maxProgress - currentProgress
@@ -68,7 +72,7 @@ object ConfigurationExecutor {
                 (1..28).forEach {
                     builder.append(if (it / 28.0 > ratio) "" else "\u2588")
                 }
-                builder.append("\r|                            | $currentProgress/$maxProgress | ${Math.round(ratio * 100)}% | avg: $millisecondPerExperiment ms/exp | rem: ${hours}h ${minutes}m ${seconds}s |")
+                builder.append("\r|                            | $currentProgress\t/$maxProgress\t| s/f $successCount\t/${currentProgress - successCount}\t| ${Math.round(ratio * 100)}%\t| avg: $millisecondPerExperiment ms/exp\t| rem: ${hours}h ${minutes}m ${seconds}s |")
 //                println(builder.toString())
                 System.err.println(builder.toString())
                 System.err.flush()
@@ -82,7 +86,7 @@ object ConfigurationExecutor {
                 .map { executor.submit(Callable<ExperimentResult> { executeConfiguration(it, dataRootPath) }) }
                 .map {
                     val experimentResult = it.get()
-                    progressBar.updateProgress()
+                    progressBar.updateProgress(experimentResult.success)
                     experimentResult
                 }.also { executor.shutdown() }
     }
@@ -93,9 +97,9 @@ object ConfigurationExecutor {
         var experimentResult: ExperimentResult? = null
         var executionException: Throwable? = null
 
-        val thread = Thread({
+        val thread = Thread {
             experimentResult = unsafeConfigurationExecution(configuration, dataRootPath)
-        })
+        }
 
         thread.setUncaughtExceptionHandler { _, throwable ->
             executionException = throwable
@@ -114,7 +118,7 @@ object ConfigurationExecutor {
         thread.join(MILLISECONDS.convert(configuration.timeLimit, NANOSECONDS))
 
         if (executionException != null) {
-            collectAndWait()
+//            collectAndWait()
 
             logger.info("Experiment failed. ${executionException!!.message}")
             val failedExperimentResult = ExperimentResult(configuration, "${executionException!!.message}")
@@ -127,7 +131,7 @@ object ConfigurationExecutor {
             thread.stop() // This should be replaced with a graceful stop
             thread.join()
 
-            collectAndWait()
+//            collectAndWait()
 
             return ExperimentResult(configuration, "Timeout")
         }

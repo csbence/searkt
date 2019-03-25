@@ -17,10 +17,7 @@ import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import edu.unh.cs.ai.realtimesearch.visualizer.thrift.ThriftVisualizerClient
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,7 +42,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
     private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-    private var visualizer: ThriftVisualizerClient<StateType, Domain<StateType>>? = null
 
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
@@ -67,10 +63,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
+        val stateList = mutableListOf(currentState)
 
-        visualizer = initializeVisualizer()
-        if (visualizer != null) visualizerIsActive = true
-        visualizer?.initialize(initialState)
+//        visualizer = initializeVisualizer()
+//        if (visualizer != null) visualizerIsActive = true
+//        visualizer?.initialize(initialState)
 
         planner.init(initialState)
 
@@ -89,22 +86,23 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             timeBound = 0
             actionList.forEach {
                 currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                stateList.add(currentState)
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
 
             //send iteration data to visualizer
-            if (visualizerIsActive) {
-                val itSummary = planner.getIterationSummary()
-                visualizer?.publishIteration(
-                        currentState,
-                        itSummary.envelopeIsFresh,
-                        itSummary.expandedNodes,
-                        itSummary.backupIsFresh,
-                        itSummary.backedUpNodes,
-                        itSummary.projectedPath,
-                        domain.isGoal(currentState))
-            }
+//            if (visualizerIsActive) {
+//                val itSummary = planner.getIterationSummary()
+//                visualizer?.publishIteration(
+//                        currentState,
+//                        itSummary.envelopeIsFresh,
+//                        itSummary.expandedNodes,
+//                        itSummary.backupIsFresh,
+//                        itSummary.backedUpNodes,
+//                        itSummary.projectedPath,
+//                        domain.isGoal(currentState))
+//            }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
             validateIteration(actionList, iterationNanoTime)
@@ -175,12 +173,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         domain.appendDomainSpecificResults(experimentResult)
         planner.appendPlannerSpecificResults(experimentResult)
 
-        visualizer?.close()
         return experimentResult
-    }
-
-    private fun initializeVisualizer() : ThriftVisualizerClient<StateType, Domain<StateType>>? {
-        return ThriftVisualizerClient.clientFactory(domain)
     }
 
     private fun validateIteration(actionList: List<RealTimePlanner.ActionBundle>, iterationNanoTime: Long) {

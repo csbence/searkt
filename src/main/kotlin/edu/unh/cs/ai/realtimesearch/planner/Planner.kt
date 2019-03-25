@@ -6,10 +6,18 @@ import edu.unh.cs.ai.realtimesearch.logging.EventLogger
 
 abstract class Planner<StateType: State<StateType>> {
     val eventLogger: EventLogger<StateType> = EventLogger()
+    val attributes = mutableMapOf<String, MutableCollection<Int>>()
 
     var generatedNodeCount: Int = 0
     var expandedNodeCount: Int = 0
     var reexpansions: Int = 0
 
     open fun appendPlannerSpecificResults(results: ExperimentResult) {}
+
+    fun appendAttribute(key: String, value: Int) {
+        val collection = attributes[key] ?: mutableListOf()
+        collection.add(value)
+
+        attributes[key] = collection
+    }
 }
