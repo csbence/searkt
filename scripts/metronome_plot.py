@@ -11,6 +11,7 @@ import seaborn as sns
 import statistics
 import statsmodels.stats.api as sms
 from pandas import DataFrame
+from matplotlib.backends.backend_pdf import PdfPages
 from statsmodels.stats.proportion import proportion_confint
 
 __author__ = 'Bence Cserna'
@@ -152,67 +153,115 @@ def set_rc():
     # pylab.rcParams['font.family'] = 'Serif'
 
 
+def label_domain(row):
+    domain_labels = ['uniform', 'quad', 'octa', 'wide', 'traffic']
+    for domain_label in domain_labels:
+        if domain_label in row.domainPath:
+            row['domainLabel'] = domain_label
+            break
+
+    return row
+
+
+def rename(row):
+    # print(row)
+
+    # if row.tbaStrategy == 'GBFS':
+    #     row.algorithmLabel = 'TB-GBFS'
+
+    if row.algorithmName == 'TIME_BOUNDED_A_STAR':
+        if (row.weight != 1):
+            row.algorithmLabel = 'TBwA* weight: ' + str(row.weight)
+
+    return row
+
+
+def plot_gat(data, plot_title, file_name):
+    # print(data.algorithmLabel.unique())
+    #
+    data = data.apply(label_domain, axis=1)
+
+    print(data.algorithmLabel.unique())
+
+    # rescale action durations to ms
+    # data['actionDuration'] = data['actionDuration'] / 1000000
+    # data['goalAchievementTime'] = data['goalAchievementTime'] / 10e9
+
+    flatui = sns.color_palette()
+
+    color_palette = {
+        'TBA*': flatui[4],
+        'TBwA* weight: 1.5': flatui[1],
+        'TBwA* weight: 2.0': flatui[3],
+        'TBwA* weight: 2.5': flatui[6],
+        'TB-GBFS': flatui[5],
+        'Cluster-RTS': flatui[0]
+    }
+
+    data.sort_values(['algorithmLabel'], inplace=True)
+
+    grid = sns.FacetGrid(data, col='domainLabel', hue='algorithmLabel', col_wrap=2)
+    grid.map(sns.lineplot, 'actionDuration', 'goalAchievementTime').add_legend()
+
+    # data.backtrack = data.backtrack.fillna(0.1)
+    # plot = sns.lineplot(x="actionDuration", y="pathLength",
+    #                     hue="algorithmLabel", data=data,
+    #                     )
+
+    # plot.set_xscale('log')
+    # plot.set_yscale('log')
+
+    # plot.set_xticks([50, 100, 150, 250, 500, 1000, 2000, 3200])
+    # plot.set_xticks([1, 3.2, 6.4, 12.8, 25.6])
+    # plot.set_yticks([1, 2, 3])
+    # plot.set_ylim([1.1, 2.8])
+    # plot.set_xlim([1000, 10000])
+
+    # plot.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+    # plot.get_yaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+    #
+    # plot.set_xlabel('Expansion Count per Iteration')
+    # plot.set_ylabel('Path length')
+    # plot.legend(title="")
+    #
+    # handles, labels = plot.get_legend_handles_labels()
+    # plot.legend(handles=handles[1:], labels=labels[1:])
+
+    pdf = PdfPages("../results/plots/" + file_name + ".pdf")
+    plt.savefig(pdf, format='pdf')
+    pdf.close()
+    plt.show()
+
+
 def main():
+    results_paths = [
+        "../results/d_filter_unsafe_1.json",
+        "../results/d_filter_unsafe_2.json",
+        # "../results/d_t_new.json",
+        # "../results/d_t_oracle.json",
+    ]
 
-    results = read_data("../output/results.json")
-    baseline_results = read_data('../baseline/racetrack/fixed_A_STAR_single.json')
+    raw_results = []
+    for result_path in results_paths:
+        raw_results += read_data(result_path)
 
-    results += baseline_results
-
-    data = construct_data_frame(results)
+    data = construct_data_frame(raw_results)
 
     set_rc()
-
-    data.drop(['commitmentType', "success", "timeLimit",
-               "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
-               'firstIterationDuration', 'generatedNodes', 'expandedNodes', 'domainInstanceName', 'domain_name',
-               'planningTime'],
-              axis=1,
-              inplace=True,
-              errors='ignore')
 
     # this is a fix for the traffic domain which does not have domainSeed values, so I have to fake it
     if 'domainSeed' not in data:
         data['domainSeed'] = data['domainPath']
         data['domainPath'] = 'vehicle'
 
-    # get min and max ranges for actionDuration for plotting later
-    min_range = data.min()['actionDuration']
-    max_range = data.max()['actionDuration']
-
     sns.set_style("white")
 
-    # print_survival_rate(data)
     data = data[~data['errorMessage'].notnull()]
-    data.sort_values(['domainPath', 'actionDuration'], ascending=True, inplace=True)
+    data = data[~data['errorMessage'].notnull()]
 
-    astar = data[data["algorithmName"] == "A_STAR"]
-    astar["opt"] = astar["actionDuration"] * astar["pathLength"]
-    astar = astar[["domainPath", "domainSeed", "opt", "actionDuration"]]
-    data = pd.merge(data, astar, how='inner', on=['domainPath', 'domainSeed', 'actionDuration'])
-    data["withinOpt"] = data["goalAchievementTime"] / data["opt"]
-
-    for domain_path, domain_group in data.groupby(["domainPath"]):
-        results = DataFrame(columns="actionDuration algorithmName withinOpt lbound rbound".split())
-        domain_name = re.search("[^/]+$", domain_path).group(0).rstrip(".track")
-
-        for fields, action_group in domain_group.groupby(['algorithmName', 'actionDuration']):
-            bound = sms.DescrStatsW(action_group["withinOpt"]).tconfint_mean()
-            mean = action_group["withinOpt"].mean()
-            results = add_row(results, [fields[1], fields[0], mean, abs(mean - bound[0]), abs(mean - bound[1])])
-
-        fig, ax = plt.subplots()
-        errors = []
-        for alg, alg_group in results.groupby('algorithmName'):
-            errors.append([alg_group['lbound'].values, alg_group['rbound'].values])
-
-        pivot = results.pivot(index='actionDuration', columns='algorithmName', values='withinOpt')
-        plot = pivot.plot(ax=ax, yerr=errors,
-                          capsize=4, capthick=1, ecolor='black', cmap=plt.get_cmap("rainbow"), elinewidth=1)
-        plot.legend(title="Planners", shadow=True, frameon=True, framealpha=1.0, facecolor='lightgrey')
-
-        format_plot(plot)
-        plt.savefig(domain_name + ".png", format='png')
+    data['algorithmLabel'] = data.algorithmName + ' ' + data.safetyProof + ' ' + data.safetyExplorationRatio.astype(str) + ' ' + data.filterUnsafe.astype(str)
+    # data['algorithmLabel'] = data.algorithmName
+    plot_gat(data, 'racetracks', 'd_filter_unsafe_1')
 
 
 if __name__ == "__main__":
