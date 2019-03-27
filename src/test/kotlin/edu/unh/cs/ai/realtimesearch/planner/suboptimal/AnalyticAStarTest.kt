@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 
 class AnalyticAStarTest {
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "EES",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "EESO",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 2.5)
 

@@ -21,6 +21,7 @@ enum class Planners {
     OPTIMISTIC_DD,
     OPTIMISTIC_ST,
     SXDP,
+    OSXDP,
     EES,
     EES_DD,
     EESF,

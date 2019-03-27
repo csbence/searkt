@@ -33,7 +33,6 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.*
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.XDP
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -282,6 +281,7 @@ object ConfigurationExecutor {
             ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
             SXDP -> executeOfflineSearch(XDP(domain, configuration), configuration, domain, sourceState)
+            OSXDP -> executeOfflineSearch(XDP(domain, configuration), configuration, domain, sourceState)
             else -> throw MetronomeException("Planner not specified or unrecognized: $algorithmName")
         }
     }

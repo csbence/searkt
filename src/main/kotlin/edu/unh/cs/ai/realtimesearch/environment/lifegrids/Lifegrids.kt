@@ -29,7 +29,7 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
 
             if (isLegalLocation(newLocation)) {
                 successors.add(SuccessorBundle(
-                        LifegridsState(newLocation),
+                        LifegridsState(newLocation, calculateHeuristic(newLocation)),
                         action,
                         actionCost = state.agentLocation.y.toDouble()))
             }
@@ -56,18 +56,22 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
      * @return the # of dirty cells
      */
     override fun heuristic(state: LifegridsState): Double {
-        val xManhattan = Math.abs(state.agentLocation.x - targetLocation.x)
-        val yManhattan = Math.abs(state.agentLocation.y - targetLocation.y)
+        return state.heuristic
+    }
+
+    fun calculateHeuristic(location: Location): Double {
+        val xManhattan = Math.abs(location.x - targetLocation.x)
+        val yManhattan = Math.abs(location.y - targetLocation.y)
 
         var yManhattanCost = 0.0
         for (y in yManhattan downTo 0) {
             yManhattanCost += y
         }
 
-        val lShapeDistance = ((xManhattan * state.agentLocation.y) + yManhattanCost)
+        val lShapeDistance = ((xManhattan * location.y) + yManhattanCost)
 
         var yLocUp = 0.0
-        for (y in state.agentLocation.y downTo 0) {
+        for (y in location.y downTo 0) {
             yLocUp += y
         }
         var yLocDown = 0.0
@@ -85,7 +89,15 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
     /**
      * Goal distance estimate. Equal to the cost when the cost of each edge is one.
      */
-    override fun distance(state: LifegridsState) = state.run { agentLocation.manhattanDistance(targetLocation).toDouble() }
+    override fun distance(state: LifegridsState): Double {
+        val xManhattan = Math.abs(state.agentLocation.x - targetLocation.x)
+        val yManhattan = Math.abs(state.agentLocation.y - targetLocation.y)
+
+        val lShapeDistance = xManhattan + yManhattan
+        val nShapeDistance = state.agentLocation.y + targetLocation.y
+
+        return minOf(lShapeDistance, nShapeDistance).toDouble()
+    }
 
     /**
      * Returns whether the current state is a goal state.
@@ -103,7 +115,7 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
      *
      * @ == agent
      * # == blocked
-     * $ == dirty
+     * * == goal
      */
     override fun print(state: LifegridsState): String {
         val description = StringBuilder()
@@ -123,16 +135,12 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
         return description.toString()
     }
 
-    /**
-     * Creates a state with a random initial location for the agent and
-     * initialAmountDirty number of random dirty cells
-     */
     fun randomState(): LifegridsState {
         throw UnsupportedOperationException("not implemented")
     }
 
     override fun getGoals(): List<LifegridsState> {
-        return listOf(LifegridsState(targetLocation))
+        return listOf(LifegridsState(targetLocation, calculateHeuristic(targetLocation)))
     }
 
     override fun predecessors(state: LifegridsState): List<SuccessorBundle<LifegridsState>> {
@@ -143,9 +151,9 @@ class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>
 
             if (isLegalLocation(newLocation)) {
                 predecessors.add(SuccessorBundle(
-                        LifegridsState(newLocation),
+                        LifegridsState(newLocation, calculateHeuristic(newLocation)),
                         action,
-                        actionCost = actionDuration.toDouble()))
+                        actionCost = state.agentLocation.y.toDouble()))
             }
         }
 

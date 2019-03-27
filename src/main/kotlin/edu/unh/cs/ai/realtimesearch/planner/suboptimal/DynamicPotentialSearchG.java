@@ -9,15 +9,17 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfigura
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker;
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner;
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement;
-import edu.unh.cs.ai.realtimesearch.util.search.*;
+import edu.unh.cs.ai.realtimesearch.util.collections.ghheap.GH_heap;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchQueueElementImpl;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchResult;
+import edu.unh.cs.ai.realtimesearch.util.search.SearchResultImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-import edu.unh.cs.ai.realtimesearch.util.collections.ghheap.GH_heap;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
+
+//import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+//import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by Daniel on 21/12/2015.
@@ -155,7 +157,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
 
                 // Extract the state from the packed value of the node
 //                currentState = unpackDomain(currentNode);
-                currentState = domain.unpack(currentNode.packed);
+                currentState = currentNode.state; // .unpack(currentNode.packed);
 
                 // Check for goal condition
                 if (checkIfGoal(currentState, currentNode))
@@ -242,14 +244,14 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
                 double currentCost = 0;
                 //DO NOT set the current cost to currentNode.g! it causes floating point errors in GH_heap
                 //here we trace back the node, maybe the because the cost might be better than currentNode.g in case we have found a shortcut
-                StateType currentPacked = domain.unpack(currentNode.packed);
+                StateType currentPacked = currentNode.state; // domain.unpack(currentNode.packed);
                 StateType currentParentPacked = null;
                 for (Node node = currentNode;
                      node != null;
                      node = node.parent, currentPacked = currentParentPacked) {
                     // If op of current node is not null that means that p has a parent
                     if (node.op != null) {
-                        currentParentPacked = domain.unpack(node.parent.packed);
+                        currentParentPacked = node.parent.state; //.unpack(node.parent.packed);
                         currentCost += node.actionCost;
 //                        currentCost += node.op.getCost(currentPacked, currentParentPacked);
                     }
@@ -283,7 +285,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
         return DynamicPotentialSearchG.DPPossibleParameters;
     }
 
-    public void setAdditionalParameter(String parameterName, String value) {
+    public void setAdditionalParameter(String parameterName, String value) throws Exception {
         switch (parameterName) {
             case "weight": {
                 this.weight = Double.parseDouble(value);
@@ -309,7 +311,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
                 break;
             }
             default: {
-                throw new NotImplementedException();
+                throw new Exception("Not implemented");
             }
         }
     }
@@ -506,7 +508,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
 
             // Parent node
             this.parent = parent;
-            this.packed = domain.pack(state);
+            this.packed = state.hashCode(); //.pack(state);
             this.pop = pop;
             this.op = op;
 
@@ -609,7 +611,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
 
         @Override
         public String toString() {
-            StateType state = domain.unpack(this.packed);
+            StateType state = this.state; //domain.unpack(this.packed);
             StringBuilder sb = new StringBuilder();
 //            sb.append("State:"+state.dumpStateShort());
             sb.append(", h: "+this.h);//h

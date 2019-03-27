@@ -45,7 +45,7 @@ class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) 
 
         val startNode = Node(null, state, null, 0.0, 0.0, true)
         openList.add(startNode)
-        nodes.put(state, startNode)
+        nodes[state] = startNode
         generatedNodeCount++
 
         while (openList.isNotEmpty()) {

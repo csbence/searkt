@@ -17,7 +17,7 @@ object LifegridsIO {
                 throw InvalidLifegridsException("Grid world should have exactly one goal. ${dirtyCells.size} found. ")
             }
 
-            LifegridsState(agentLocation)
+            LifegridsState(agentLocation, gridWorld.calculateHeuristic(agentLocation))
         }
 
         return LifegridsInstance(gridWorld, worldState)

@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -136,9 +135,7 @@ class XDP<StateType : State<StateType>>(val domain: Domain<StateType>, val confi
                     actionCost = successor.actionCost
                 }
                 if (isDuplicate && !successorNode.open) {
-                    if (algorithmName == Planners.WEIGHTED_A_STAR.toString()) {
-                        openList.add(successorNode)
-                    }
+                    // never need to re-expand only update
                 } else if (isDuplicate && successorNode.open) {
                     openList.update(successorNode)
                 } else {

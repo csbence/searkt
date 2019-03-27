@@ -7,7 +7,7 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
  * A state in the vacuumworld is simply the current location of the agent,
  * and the location of all dirty cells. The blocked cells are global.
  */
-data class LifegridsState(val agentLocation: Location) : State<LifegridsState> {
+data class LifegridsState(val agentLocation: Location, val heuristic: Double) : State<LifegridsState> {
     override fun hashCode(): Int = calculateHashCode()
 
     private fun calculateHashCode(): Int {
