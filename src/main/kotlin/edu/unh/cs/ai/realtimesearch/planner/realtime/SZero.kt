@@ -11,7 +11,6 @@ import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -30,8 +29,10 @@ import kotlin.system.measureTimeMillis
  * This loop continue until the goal has been found
  */
 class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
-    private val safetyBackup = configuration.safetyBackup ?: throw MetronomeConfigurationException("Safety backup strategy is not specified.")
-    private val targetSelection = configuration.targetSelection ?:  throw MetronomeConfigurationException("Target selection strategy is not specified.")
+    private val safetyBackup = configuration.safetyBackup
+            ?: throw MetronomeConfigurationException("Safety backup strategy is not specified.")
+    private val targetSelection = configuration.targetSelection
+            ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
 
     class Node<StateType : State<StateType>>(override val state: StateType,
                                              override var heuristic: Double,
@@ -40,7 +41,8 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                                              override var action: Action,
                                              var iteration: Long,
                                              parent: Node<StateType>? = null,
-                                             override var safe: Boolean = false) : Safe, SearchNode<StateType, Node<StateType>> {
+                                             override var safe: Boolean = false,
+                                             override var unsafe: Boolean = false) : Safe, SearchNode<StateType, Node<StateType>> {
         /** Item index in the open list. */
         override var index: Int = -1
 
@@ -176,7 +178,8 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         // actual core steps of A*, building the tree
         initializeAStar()
 
-        val node = Node(state, nodes[state]?.heuristic ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
+        val node = Node(state, nodes[state]?.heuristic
+                ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         openList.add(node)
         logger.debug { "Starting A* from state: $state" }

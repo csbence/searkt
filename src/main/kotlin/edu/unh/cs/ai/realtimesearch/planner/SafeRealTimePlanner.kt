@@ -4,6 +4,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.ai.realtimesearch.planner.SafetyProofStatus.*
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import java.util.*
 
@@ -13,6 +14,7 @@ import java.util.*
 
 interface Safe {
     var safe: Boolean
+    var unsafe: Boolean
 }
 
 interface Depth {
@@ -35,6 +37,7 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
         get() = index >= 0
 
     override var safe = false
+    override var unsafe = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
     override var predecessors: MutableList<SearchEdge<SafeRealTimeSearchNode<StateType>>> = arrayListOf()
@@ -44,6 +47,7 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
 
     override var lastLearnedHeuristic = heuristic
     override var minCostPathLength = 0L
+    var safetyProof: Collection<StateType>? = null
 
     override fun hashCode(): Int = state.hashCode()
 
@@ -57,6 +61,14 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
     override fun toString(): String =
             "SafeRealTimeSearchNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open safe: $safe]"
 }
+
+
+enum class SafetyProofStatus {
+    SAFE, UNKNOWN, UNSAFE
+}
+
+
+data class SafetyProofResult<StateType : State<StateType>>(val status: SafetyProofStatus, val discoveredStates: Collection<StateType> = listOf(), val safetyProof: Collection<StateType> = listOf())
 
 /**
  * Prove the safety of a given state. A state is safe (more precisely comfortable) if the state itself is safe or a
@@ -74,11 +86,11 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
  * @return null if the given state is not safe, else a list of states that are proven to be safe.
  * Empty list if the state itself is safe.
  */
-fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>, isSafe: ((StateType) -> Boolean)? = null): List<StateType>? {
+fun <StateType : State<StateType>> isComfortable(state: StateType, terminationChecker: TerminationChecker, domain: Domain<StateType>, filterUnsafe: Boolean, safetyStatus: ((StateType) -> SafetyProofStatus)? = null): SafetyProofResult<StateType> {
     data class Node(val state: StateType, val safeDistance: Pair<Int, Int>, val parent: Node? = null)
 
     // Return empty list if the original state is safe
-    if (domain.isSafe(state) || (isSafe != null && isSafe(state))) return emptyList()
+    if (domain.isSafe(state) || (safetyStatus != null && safetyStatus(state) == SAFE)) return SafetyProofResult(SAFE)
 
     val nodeComparator = java.util.Comparator<Node> { (_, lhsDistance), (_, rhsDistance) ->
         when {
@@ -92,14 +104,14 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 
     val priorityQueue = PriorityQueue<Node>(nodeComparator)
     val discoveredStates = hashSetOf<StateType>()
-    val comfortableStates = mutableListOf<StateType>()
+    val safeStates = mutableListOf<StateType>()
 
     priorityQueue.add(Node(state, domain.safeDistance(state)))
 
-    while (priorityQueue.isNotEmpty() && !terminationChecker.reachedTermination()) {
-        val currentNode = priorityQueue.poll() ?: return null
+    while (!terminationChecker.reachedTermination()) {
+        val currentNode = priorityQueue.poll() ?: return SafetyProofResult(UNSAFE, discoveredStates = discoveredStates)
 
-        if (domain.isSafe(currentNode.state) || (isSafe != null && isSafe(currentNode.state))) {
+        if (domain.isSafe(currentNode.state) || (safetyStatus != null && safetyStatus(currentNode.state) == SAFE)) {
 
             // Backtrack to the root and return all safe states
             // The parent of the safe state is comfortable
@@ -107,21 +119,32 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 //            println("Safe: ${backTrackNode!!.state} explicit: ${domain.isSafe(currentNode.state)}")
             while (backTrackNode != null) {
 //                println("   Prove safety: ${backTrackNode.state}")
-                comfortableStates.add(backTrackNode.state)
+                safeStates.add(backTrackNode.state)
                 backTrackNode = backTrackNode.parent
             }
 
-            return comfortableStates
+            return SafetyProofResult(SAFE, safetyProof = safeStates)
         }
 
         terminationChecker.notifyExpansion()
-        domain.successors(currentNode.state)
-                .filter { it.state !in discoveredStates } // Do not add add an item twice to the list
-                .onEach { discoveredStates += it.state }
-                .mapTo(priorityQueue, { Node(it.state, domain.safeDistance(it.state), currentNode) }) // Add successors to the queue
+        val successors = domain.successors(currentNode.state)
+        for (successor in successors) {
+            if (successor.state in discoveredStates) continue
+            if (filterUnsafe && safetyStatus != null && safetyStatus(successor.state) == UNSAFE) continue
+
+            discoveredStates += successor.state
+
+            priorityQueue += Node(successor.state, domain.safeDistance(successor.state), currentNode)
+        }
+
+//        domain.successors(currentNode.state)
+//                .filter { it.state !in discoveredStates} // Do not add add an item twice to the list
+////                .filter { it.state !in discoveredStates && (safetyStatus == null || safetyStatus(currentNode.state) != UNSAFE) } // Do not add add an item twice to the list
+//                .onEach { discoveredStates += it.state }
+//                .mapTo(priorityQueue) { Node(it.state, domain.safeDistance(it.state), currentNode) } // Add successors to the queue
     }
 
-    return null
+    return SafetyProofResult(UNKNOWN, discoveredStates = discoveredStates)
 }
 
 /**
@@ -161,7 +184,7 @@ fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNo
     }
 }
 
-fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int, Int) -> (Unit) = { _: Int, _: Int -> } ): Node?
+fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int, Int) -> (Unit) = { _: Int, _: Int -> }): Node?
         where Node : SearchNode<StateType, Node>, Node : Safe {
     val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
     nodes.sortBy { it.cost + it.heuristic }
@@ -172,7 +195,7 @@ fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorit
         var currentNode = frontierNode
         while (currentNode.parent != currentNode) {
             if (currentNode.safe) {
-                recordRank(rank, frontierNode.cost.toInt() )
+                recordRank(rank, frontierNode.cost.toInt())
                 return currentNode
             }
             currentNode = currentNode.parent
@@ -194,6 +217,7 @@ enum class SafeRealTimeSearchTargetSelection {
 }
 
 enum class SafetyProof {
+    A_STAR_FIRST,
     TOP_OF_OPEN,
     LOW_D_WINDOW,
     LOW_D_TOP_PREDECESSOR,
@@ -203,8 +227,10 @@ enum class SafetyProof {
 
 enum class SafeRealTimeSearchConfiguration(val key: String) {
     TARGET_SELECTION("targetSelection"),
+    FILTER_UNSAFE("filterUnsafe"),
     SAFETY_EXPLORATION_RATIO("safetyExplorationRatio"),
-    SAFETY_PROOF("safetyProof");
+    SAFETY_PROOF("safetyProof"),
+    SAFETY_WINDOW_SIZE("safetyWindowSize");
 
     override fun toString() = key
 }

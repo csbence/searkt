@@ -63,6 +63,11 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
+        val stateList = mutableListOf(currentState)
+
+//        visualizer = initializeVisualizer()
+//        if (visualizer != null) visualizerIsActive = true
+//        visualizer?.initialize(initialState)
 
         planner.init(initialState)
 
@@ -81,9 +86,23 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             timeBound = 0
             actionList.forEach {
                 currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                stateList.add(currentState)
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
             }
+
+            //send iteration data to visualizer
+//            if (visualizerIsActive) {
+//                val itSummary = planner.getIterationSummary()
+//                visualizer?.publishIteration(
+//                        currentState,
+//                        itSummary.envelopeIsFresh,
+//                        itSummary.expandedNodes,
+//                        itSummary.backupIsFresh,
+//                        itSummary.backedUpNodes,
+//                        itSummary.projectedPath,
+//                        domain.isGoal(currentState))
+//            }
 
             logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
             validateIteration(actionList, iterationNanoTime)

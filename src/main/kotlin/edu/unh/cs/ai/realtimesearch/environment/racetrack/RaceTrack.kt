@@ -150,7 +150,7 @@ class RaceTrack(val width: Int,
             xRunnung += stepX
             yRunning += stepY
 
-            if (!isLegalLocation(xRunnung, yRunning)) {
+            if (!isLegalLocation(Math.round(xRunnung).toInt(), Math.round(yRunning).toInt())) {
                 valid = false
                 break
             }
@@ -163,9 +163,9 @@ class RaceTrack(val width: Int,
      *
      * @return true if location is legal, else false.
      */
-    private fun isLegalLocation(x: Double, y: Double): Boolean {
+    private fun isLegalLocation(x: Int, y: Int): Boolean {
         return x >= 0 && y >= 0 && x < width &&
-                y < height && Location(Math.round(x).toInt(), Math.round(y).toInt()) !in obstacles
+                y < height && Location(x, y) !in obstacles
     }
 
     /*
@@ -266,7 +266,7 @@ class RaceTrack(val width: Int,
                 ?: throw MetronomeException("Goal is not reachable from initial state.")
         val locations = ArrayList<Location>()
         heuristicMap.filter { (_, dist) -> dist in (goalDistance * 0.9)..(goalDistance) }
-                .mapTo(locations, { it.key })
+                .mapTo(locations) { it.key }
 
         locations[Random(seed).nextInt(locations.size)].let {
             return RaceTrackState(it.x, it.y, 0, 0)

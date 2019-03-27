@@ -12,6 +12,7 @@ import os
 import pandas as pd
 import slack_notification
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
@@ -299,8 +300,14 @@ def print_summary(results_json):
 
 
 def save_results(results_json, tag):
-    with open('output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now()), 'w') as outfile:
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
+    file_name = 'output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now())
+    with open(file_name, 'w') as outfile:
         json.dump(results_json, outfile)
+
+    print(f'Results saved to {file_name}')
 
 
 def main():
@@ -312,18 +319,24 @@ def main():
 
     configurations, tag = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
-    slack_notification.start_experiment_notification(len(configurations), 'byodoin')
+    # slack_notification.start_experiment_notification(len(configurations), 'byodoin')
+
+    start_time = time.perf_counter()
     results = parallel_execution(configurations, 1)
+    end_time = time.perf_counter()
+
+    print(f"Experiment time: {end_time - start_time}s")
+
 
     for result in results:
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
     save_results(results, tag)
-    # print_summary(results)
+    print_summary(results)
 
     print('{} results has been received.'.format(len(results)))
-    slack_notification.end_experiment_notification()
+    # slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':
