@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.Planners
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
@@ -27,6 +26,8 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
     var iteration = 0
 
     private val optimisticWeight: Double = (2.0 * weight) - 1.0
+
+    private var fWMax = Double.MIN_VALUE
 
     private var incumbentSolution: Node<StateType>? = null
 
@@ -61,6 +62,9 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
 
         override var index: Int = -1
+
+        val fW: Double
+            get() = (g / weight) + h
 
         override val f: Double
             get() = cost + heuristic
@@ -201,6 +205,8 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
                     fHatOpenList.add(successorNode)
                 }
             }
+            // update fWMax if the successor has larger fW
+            fWMax = if (successorNode.fW > fWMax) successorNode.fW else fWMax
         }
     }
 
@@ -266,7 +272,6 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
     }
 
 
-
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
@@ -277,7 +282,7 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
         generatedNodeCount++
 
         while (fOpenList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            if (weight * fOpenList.peek()!!.f >= incumbentSolution?.f ?: Double.MAX_VALUE) {
+            if (weight * fWMax >= incumbentSolution?.f ?: Double.MAX_VALUE) {
                 executionNanoTime = System.nanoTime() - startTime
                 return extractPlan(incumbentSolution!!, state)
             }
@@ -290,7 +295,7 @@ class ConvexSearch<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
             if (domain.isGoal(topNode.state)) {
                 incumbentSolution = topNode
-                if (weight * fOpenList.peek()!!.f >= incumbentSolution!!.f) {
+                if (weight * fWMax >= incumbentSolution!!.f) {
                     executionNanoTime = System.nanoTime() - startTime
                     return extractPlan(incumbentSolution!!, state)
                 }
