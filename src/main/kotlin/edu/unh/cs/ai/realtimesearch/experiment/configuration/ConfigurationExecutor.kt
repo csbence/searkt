@@ -272,6 +272,8 @@ object ConfigurationExecutor {
             SAFE_RTS -> executeRealTimeSearch(SafeRealTimeSearch(domain, configuration), configuration, domain, sourceState)
             S_ZERO -> executeRealTimeSearch(SZeroPlanner(domain, configuration), configuration, domain, sourceState)
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
+            SXDP -> executeOfflineSearch(ConvexSearch(domain, configuration), configuration, domain, sourceState)
+            SXUP -> executeOfflineSearch(ConvexSearch(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
@@ -284,8 +286,6 @@ object ConfigurationExecutor {
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
             ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
-            SXDP -> executeOfflineSearch(XDP(domain, configuration), configuration, domain, sourceState)
-            OSXDP -> executeOfflineSearch(XDP(domain, configuration), configuration, domain, sourceState)
             else -> throw MetronomeException("Planner not specified or unrecognized: $algorithmName")
         }
     }
