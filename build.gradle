@@ -7,7 +7,7 @@ apply plugin: 'kotlinx-serialization'
 apply plugin: "org.jetbrains.kotlin.jvm"
 
 applicationDefaultJvmArgs = [
-        "-server", "-XX:+AggressiveOpts", "-ea", //"–XX:+UseG1GC",
+        "-server", "-ea", //"–XX:+UseG1GC",
         "-Xms10g",
         "-Xmx10g"
 ]

@@ -16,9 +16,9 @@ object RaceTrackIO {
             columnCount = inputScanner.nextLine().toInt()
             rowCount = inputScanner.nextLine().toInt()
         } catch (e: NoSuchElementException) {
-            throw InvalidRaceTrackException("DoubleIntegrator's first or second line is missing.", e)
+            throw InvalidRaceTrackException("RaceTracks's first or second line is missing.", e)
         } catch (e: NumberFormatException) {
-            throw InvalidRaceTrackException("DoubleIntegrator's first and second line must be a number.", e)
+            throw InvalidRaceTrackException("RaceTrack's first and second line must be a number.", e)
         }
 
         val blockedCells = arrayListOf<Location>()
@@ -43,7 +43,7 @@ object RaceTrackIO {
                 }
             }
         } catch (e: NoSuchElementException) {
-            throw InvalidRaceTrackException("DoubleIntegrator is not complete.", e)
+            throw InvalidRaceTrackException("RaceTrack is not complete.", e)
         }
 
         if (startLocation == null) {

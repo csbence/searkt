@@ -88,8 +88,6 @@ data class ExperimentConfiguration(
         @Optional
         val safetyProof: SafetyProof? = null,
         @Optional
-        val safetyWindowSize: Long? = null,
-        @Optional
         val filterUnsafe: Boolean = false,
 
         @Optional

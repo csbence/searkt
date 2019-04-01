@@ -1,8 +1,10 @@
 package edu.unh.cs.ai.realtimesearch.experiment.result
 
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.SimpleSerializer
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
+import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.*
@@ -71,7 +73,10 @@ class ExperimentResult {
     var success: Boolean = false
     var systemProperties: MutableMap<String, String>
     var experimentRunTime: Double = 0.0
-    var attributes = mutableMapOf<String, Collection<Int>>()
+
+    @ImplicitReflectionSerializer
+    @Serializable(with = SimpleSerializer::class)
+    var attributes = mutableMapOf<String, Any>()
 
     @Optional
     var reexpansions: Int = 0

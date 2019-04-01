@@ -79,7 +79,6 @@ class VacuumWorld(val width: Int,
 
     override fun heuristic(startState: VacuumWorldState, endState: VacuumWorldState): Double {
         TODO()
-        return 0.0
     }
 
     /**
