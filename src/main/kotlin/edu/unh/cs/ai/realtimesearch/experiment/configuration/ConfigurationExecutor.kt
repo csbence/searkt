@@ -277,7 +277,7 @@ object ConfigurationExecutor {
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
-            EES_DD -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
+            EES_DD -> executeOfflineSearch(ExplicitEstimationSearchDD(domain, configuration), configuration, domain, sourceState)
             EESF -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             EEST -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)
             OPTIMISTIC -> executeOfflineSearch(OptimisticSearch(domain, configuration), configuration, domain, sourceState)
