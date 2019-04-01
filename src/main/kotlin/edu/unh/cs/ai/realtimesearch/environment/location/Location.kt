@@ -18,13 +18,4 @@ data class Location(val x: Int, val y: Int) {
     override fun equals(other: Any?): Boolean = other is Location && other.x == x && other.y == y
 
     override fun hashCode(): Int = x xor Integer.rotateLeft(y, 16)
-
-    /**
-     * Check if location is inside the boundaries.
-     * The lower bound is inclusive the upper bound is exclusive.
-     */
-    fun inBounds(upperBound: Int, lowerBound: Int = 0): Boolean =
-            x >= lowerBound && y >= lowerBound && x < upperBound && y < upperBound
-
-    fun toDoubleLocation(): DoubleLocation = DoubleLocation(x.toDouble(), y.toDouble())
 }

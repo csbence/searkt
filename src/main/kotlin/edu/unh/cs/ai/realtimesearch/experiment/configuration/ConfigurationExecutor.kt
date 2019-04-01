@@ -16,6 +16,7 @@ import edu.unh.cs.ai.realtimesearch.environment.lifegrids.LifegridsIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
+import edu.unh.cs.ai.realtimesearch.environment.airspace.AirspaceIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.squareroottiles.SquareRootTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.traffic.VehicleWorldIO
@@ -33,7 +34,6 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.*
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.XDP
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
@@ -172,6 +172,7 @@ object ConfigurationExecutor {
 //            POINT_ROBOT_WITH_INERTIA -> executePointRobotWithInertia(configuration, domainStream)
             LIFE_GRIDS -> executeLifegrids(configuration, domainStream)
             RACETRACK -> executeRaceTrack(configuration, domainStream)
+            AIRSPACE -> executeRaceTrackLimit(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
             else -> throw MetronomeException("Unknown or deactivated globalDomain: $domain")
         }
@@ -213,9 +214,13 @@ object ConfigurationExecutor {
     }
 
     private fun executeRaceTrack(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        //val domainSizeMultiplier = configuration.domainSizeMultiplier
         val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration)
         return executeDomain(configuration, raceTrackInstance.domain, raceTrackInstance.initialState)
+    }
+
+    private fun executeRaceTrackLimit(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val raceTrackLimitInstance = AirspaceIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, raceTrackLimitInstance.domain, raceTrackLimitInstance.initialState)
     }
 
     private fun executeGridWorld(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
