@@ -20,6 +20,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
+import kotlinx.serialization.ImplicitReflectionSerializer
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -58,8 +59,9 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
     private var proofSuccessful: Int = 0
     private var towardTopNode: Int = 0
     private var numberOfProofs: Int = 0
-    private var targetDepthRankOfOpenFrontierDepth = ArrayList<ExperimentResult.DepthRankPair>()
+    private var targetDepthRankOfOpenFrontierDepth = mutableListOf<ExperimentResult.DepthRankPair>()
 
+    @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
 //        results.proofSuccessful = this.proofSuccessful
         results.towardTopNode = this.towardTopNode
@@ -68,7 +70,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
 //        results.attributes["expansions"] = attributes["expansions"] ?: listOf()
 //        results.attributes["safeExpansions"] = attributes["safeExpansions"] ?: listOf()
-        results.attributes["safeNodesI"] = attributes["safeNodesI"] ?: listOf()
+//        results.attributes["safeNodesI"] = attributes["safeNodesI"] ?: listOf<Int>()
+
+        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"] ?: 0
+        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"] ?: 0
     }
 
     // Performance measurement
@@ -83,10 +88,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
             var currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.[2]")
 
+
             if (filterUnsafe) {
                 while (currentNode.unsafe) {
                     currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.[3]")
                 }
+            } else if (currentNode.unsafe) {
+                incrementCounter("unsafeSearchReexpansion")
             }
 
             if (currentNode.safe || domain.isSafe(currentNode.state)) {
@@ -217,7 +225,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         val targetRank = nodeRankTarget
         val frontierDepth = costToFrontier / actionDuration
 
-        targetDepthRankOfOpenFrontierDepth.add(ExperimentResult.DepthRankPair(targetRank, frontierDepth.toInt()))
+//        targetDepthRankOfOpenFrontierDepth.add(ExperimentResult.DepthRankPair(targetRank, frontierDepth.toInt()))
 
 //            println("\tTargetRank: $targetRank\tTargetDepth: ${frontierDepth.toInt()}")
 
@@ -281,7 +289,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                         totalExpansionDuration += currentExpansionDuration
                         currentExpansionDuration = 0L
 
-                        val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val exponentialExpansionLimit = minOf((costBucket * 2 * safetyExplorationRatio).toLong(), terminationChecker.remaining())
                         val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
                         val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
@@ -412,6 +420,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                             else -> UNKNOWN
                         }
                     }
+
+                    incrementCounter("unsafeSafetyReexpansion", safetyProof.reexpandedUnsafeStates)
 
                     when (safetyProof.status) {
                         SAFE -> {

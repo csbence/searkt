@@ -6,7 +6,6 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProofStatus.*
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import java.util.*
 
 /**
  * @author Bence Cserna (bence@cserna.net)
@@ -40,7 +39,7 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
     override var unsafe = false
 
     /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
-    override var predecessors: MutableList<SearchEdge<SafeRealTimeSearchNode<StateType>>> = arrayListOf()
+    override var predecessors: MutableList<SearchEdge<SafeRealTimeSearchNode<StateType>>> = mutableListOf()
 
     /** Parent pointer that points to the min cost predecessor. */
     override var parent: SafeRealTimeSearchNode<StateType> = parent ?: this
@@ -68,7 +67,7 @@ enum class SafetyProofStatus {
 }
 
 
-data class SafetyProofResult<StateType : State<StateType>>(val status: SafetyProofStatus, val discoveredStates: Collection<StateType> = listOf(), val safetyProof: Collection<StateType> = listOf())
+data class SafetyProofResult<StateType : State<StateType>>(val status: SafetyProofStatus, val discoveredStates: Collection<StateType> = listOf(), val safetyProof: Collection<StateType> = listOf(), val reexpandedUnsafeStates: Int = 0)
 
 /**
  * Prove the safety of a given state. A state is safe (more precisely comfortable) if the state itself is safe or a
@@ -102,14 +101,15 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
         }
     }
 
-    val priorityQueue = PriorityQueue<Node>(nodeComparator)
+    val priorityQueue = java.util.PriorityQueue<Node>(nodeComparator)
     val discoveredStates = hashSetOf<StateType>()
     val safeStates = mutableListOf<StateType>()
+    var reexpandedUnsafeStates = 0
 
     priorityQueue.add(Node(state, domain.safeDistance(state)))
 
     while (!terminationChecker.reachedTermination()) {
-        val currentNode = priorityQueue.poll() ?: return SafetyProofResult(UNSAFE, discoveredStates = discoveredStates)
+        val currentNode = priorityQueue.poll() ?: return SafetyProofResult(UNSAFE, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
 
         if (domain.isSafe(currentNode.state) || (safetyStatus != null && safetyStatus(currentNode.state) == SAFE)) {
 
@@ -123,7 +123,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
                 backTrackNode = backTrackNode.parent
             }
 
-            return SafetyProofResult(SAFE, safetyProof = safeStates)
+            return SafetyProofResult(SAFE, safetyProof = safeStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
         }
 
         terminationChecker.notifyExpansion()
@@ -131,6 +131,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
         for (successor in successors) {
             if (successor.state in discoveredStates) continue
             if (filterUnsafe && safetyStatus != null && safetyStatus(successor.state) == UNSAFE) continue
+            if (safetyStatus != null && safetyStatus(successor.state) == UNSAFE) ++reexpandedUnsafeStates
 
             discoveredStates += successor.state
 
@@ -144,7 +145,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 //                .mapTo(priorityQueue) { Node(it.state, domain.safeDistance(it.state), currentNode) } // Add successors to the queue
     }
 
-    return SafetyProofResult(UNKNOWN, discoveredStates = discoveredStates)
+    return SafetyProofResult(UNKNOWN, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
 }
 
 /**
