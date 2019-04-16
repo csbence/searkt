@@ -11,7 +11,6 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
-import org.slf4j.LoggerFactory
 import java.util.HashMap
 import kotlin.Comparator
 
@@ -80,9 +79,6 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
         override fun toString(): String =
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
-
-    @Suppress("unused")
-    private val logger = LoggerFactory.getLogger(OptimisticSearch::class.java)
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
