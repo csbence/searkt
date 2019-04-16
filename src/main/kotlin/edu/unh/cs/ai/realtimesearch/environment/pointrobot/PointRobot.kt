@@ -14,7 +14,6 @@ import java.util.*
 class PointRobot(val width: Int, val height: Int, val blockedCells: Set<Location>,
                  val endLocation: DoubleLocation, val goalRadius: Double, val actionDuration: Long) : Domain<PointRobotState> {
 
-    //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
 
     fun getAllActions(): ArrayList<PointRobotAction> {

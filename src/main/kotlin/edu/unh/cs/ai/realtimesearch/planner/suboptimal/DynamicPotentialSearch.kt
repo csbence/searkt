@@ -10,7 +10,6 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.BucketNode
 import edu.unh.cs.ai.realtimesearch.util.BucketOpenList
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
-import org.slf4j.LoggerFactory
 import java.util.*
 
 class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : ClassicalPlanner<StateType>() {
@@ -83,8 +82,6 @@ class DynamicPotentialSearch<StateType : State<StateType>>(val domain: Domain<St
             return Node(copyState, this.heuristic, this.cost, this.actionCost, this.action, this.parent)
         }
     }
-
-    private val logger = LoggerFactory.getLogger(DynamicPotentialSearch::class.java)
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000, 1.toFloat())
     private var openList = BucketOpenList<Node<StateType>>(weight) //BucketOpenList<Node<StateType>>(weight)

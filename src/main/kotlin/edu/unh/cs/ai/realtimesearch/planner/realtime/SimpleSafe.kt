@@ -5,16 +5,12 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.trace
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PARENT
 import edu.unh.cs.ai.realtimesearch.planner.SafetyBackup.PREDECESSOR
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
@@ -88,8 +84,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                 "Node: [State: $state, h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
     }
 
-    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
-
     private var iterationCounter = 0L
 
     private val safeNodes = ArrayList<Node<StateType>>()
@@ -132,14 +126,11 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         if (rootState == null) {
             rootState = sourceState
         } else if (sourceState != rootState) {
-            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
         if (domain.isGoal(sourceState)) {
-            logger.warn { "selectAction: The goal sourceState is already found." }
+            return emptyList()
         }
-
-        logger.debug { "Root sourceState: $sourceState" }
 
         // Every turn do k-breadth-first search to learn safe states
         // then A* until time expires
@@ -148,8 +139,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         if (versionNumber == SimpleSafeVersion.ONE) {
             resetSearchTree()
         }
-
-//        logger.debug { "Last BFS node $lastBreadthFirstNode" }
 
         if (openList.isNotEmpty()) {
             dijkstraTimer += measureTimeMillis { dijkstra(terminationChecker) }
@@ -175,9 +164,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
             rootState = targetNode.state
         }
 
-        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
-        logger.debug { "Termination checker remaining resources: ${terminationChecker.remaining()}" }
         return plan!!
     }
 
@@ -193,7 +179,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         breadthFirstFrontier.add(node)
 
         var currentIteration = 0
-        logger.debug { "Starting BFS from state: $state" }
 
         while (!terminationChecker.reachedTermination() && currentIteration < depthBound) {
 
@@ -227,7 +212,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
 
@@ -271,8 +255,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                 depth = parent.depth + 1
             }
 
-            logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size ${openListQueue.size}" }
-            logger.trace { "Adding it to the cost table with value ${successorNode.cost}" }
             // we always add the node doing a BFS
             openListQueue.add(successorNode)
         }
@@ -294,7 +276,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                 ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter, null, false, 0)
         nodes[state] = node
         openList.add(node)
-        logger.debug { "Starting A* from state: $state" }
 
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
@@ -333,7 +314,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
             successorNode.depth = sourceNode.depth + 1
@@ -371,18 +351,12 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                     depth = parent.depth + 1
                 }
 
-                logger.debug { "Expanding from $sourceNode -> $successorNode :: open list size : ${openList.size}" }
-                logger.trace { "Adding it the cost table with value ${successorNode.cost}" }
-
                 if (!successorNode.open) {
                     openList.add(successorNode)
                 } else {
                     openList.update(successorNode)
                 }
             } else {
-                logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
-                }
             }
         }
     }
@@ -431,8 +405,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
      * a better table of heuristics.
      */
     private fun dijkstra(terminationChecker: TerminationChecker) {
-        logger.debug { "Start: Dijkstra" }
-
         iterationCounter++
 
         openList.reorder(heuristicComparator)
@@ -466,11 +438,6 @@ class SimpleSafePlanner<StateType : State<StateType>>(val domain: Domain<StateTy
                     openList.update(predecessorNode)
                 }
             }
-        }
-        if (openList.isEmpty()) {
-            logger.debug { "Done with Dijkstra" }
-        } else {
-            logger.warn { "Incomplete learning step. Lists: Open(${openList.size})" }
         }
     }
 }

@@ -7,11 +7,8 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -34,8 +31,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                                                       val domain: Domain<StateType>,
                                                       val initialState: StateType) : Experiment() {
 
-    private val logger = LoggerFactory.getLogger(AnytimeExperiment::class.java)
-
     /**
      * Runs the experiment
      */
@@ -47,13 +42,11 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         //        val maxCount = 6
         val maxCount: Long = configuration.anytimeMaxCount ?: throw MetronomeConfigurationException("Anytime max count is not specified.")
 
-        logger.info { "Starting experiment from state $initialState" }
         var idlePlanningTime = 1L
         var totalPlanningTime = 0L
         var iterationCount = 0L
 
         while (!domain.isGoal(currentState)) {
-            logger.debug { "Start anytime search" }
             val startTime = getThreadCpuNanoTime()
 
             val tempActions = ArrayList(planner.selectAction(currentState, FakeTerminationChecker))
@@ -61,7 +54,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
             val endTime = getThreadCpuNanoTime()
             totalPlanningTime += endTime - startTime
 
-            logger.debug { "time: " + (endTime - startTime) }
             if (actions.size == 0) {
                 idlePlanningTime = endTime - startTime
                 actionList = tempActions
@@ -73,7 +65,6 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 actionList = tempActions
             }
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
 
             val update = planner.update()
             if (update < 1.0) {
@@ -106,17 +97,10 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
         actionsLists.add("" + maxCount)
         actionsLists += actions
 
-        logger.info { actionsLists.toString() }
 
         val pathLength = actions.size.toLong()
         val totalExecutionNanoTime = pathLength * configuration.actionDuration
         val goalAchievementTime = idlePlanningTime + totalExecutionNanoTime
-
-        logger.info {
-            "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in ${idlePlanningTime} ns. " +
-                    "(${planner.expandedNodeCount / convertNanoUpDouble(idlePlanningTime, TimeUnit.SECONDS)} expanded nodes per sec)"
-        }
 
         val experimentResult = ExperimentResult(
                 configuration = configuration,

@@ -2,12 +2,10 @@ package edu.unh.cs.ai.realtimesearch.environment.squareroottiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 import kotlin.math.sqrt
 
 class SquareRootTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SquareRootTiles4State> {
-    val logger = LoggerFactory.getLogger(SquareRootTilePuzzle::class.java)!!
 
     private val goalState: SquareRootTiles4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })

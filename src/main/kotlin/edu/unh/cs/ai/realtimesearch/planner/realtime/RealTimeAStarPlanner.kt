@@ -7,10 +7,8 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.InsufficientTerminationCriterionException
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 
 class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, var configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
@@ -19,8 +17,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<Stat
     data class SuccessorHeuristicPair<out StateType : State<StateType>>(val successorBundle: SuccessorBundle<StateType>, val heuristicLookahead: Double)
     data class MiniminNode<StateType : State<StateType>>(val state: StateType, val cost: Double, val depth: Int)
     data class HeuristicNode<StateType : State<StateType>>(var heuristic: Double, var interation: Int)
-
-    val logger = LoggerFactory.getLogger(RealTimeAStarPlanner::class.java)
 
     private val heuristicTable: HashMap<StateType, Double> = HashMap<StateType, Double>(100000000, 1F).resize()
 
@@ -58,7 +54,6 @@ class RealTimeAStarPlanner<StateType : State<StateType>>(val domain: Domain<Stat
             }
         }
 
-        logger.debug { "Selected action: $action" }
         return Collections.singletonList(action)
     }
 

@@ -1,16 +1,9 @@
 package edu.unh.cs.ai.realtimesearch.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
-import org.junit.Test
-import org.slf4j.LoggerFactory
-import kotlin.test.assertTrue
-
 /**
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 class AcrobotConfigurationTest {
-    private val logger = LoggerFactory.getLogger(AcrobotConfigurationTest::class.java)
 
 //    @Test
     fun testJSON1() {

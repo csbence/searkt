@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import org.slf4j.LoggerFactory
 import kotlin.system.measureNanoTime
 
 /**
@@ -15,7 +14,6 @@ import kotlin.system.measureNanoTime
  * @param domain is the domain to plan in
  */
 abstract class ClassicalPlannerBase<StateType : State<StateType>>(protected val domain: Domain<StateType>) : ClassicalPlanner<StateType>() {
-    private val logger = LoggerFactory.getLogger(ClassicalPlannerBase::class.java)
 
     data class Node<State>(val parent: Node<State>?, val state: State,
                            val action: Action?, val cost: Double)

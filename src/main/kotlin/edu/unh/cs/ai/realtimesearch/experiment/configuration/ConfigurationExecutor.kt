@@ -8,6 +8,7 @@ import edu.unh.cs.ai.realtimesearch.environment.Domains
 import edu.unh.cs.ai.realtimesearch.environment.Domains.*
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.acrobot.AcrobotIO
+import edu.unh.cs.ai.realtimesearch.environment.airspace.AirspaceIO
 import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
 import edu.unh.cs.ai.realtimesearch.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.heavyvacuumworld.HeavyVacuumWorldIO
@@ -16,7 +17,6 @@ import edu.unh.cs.ai.realtimesearch.environment.lifegrids.LifegridsIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobot.PointRobotIO
 import edu.unh.cs.ai.realtimesearch.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
-import edu.unh.cs.ai.realtimesearch.environment.airspace.AirspaceIO
 import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.squareroottiles.SquareRootTilePuzzleIO
 import edu.unh.cs.ai.realtimesearch.environment.traffic.VehicleWorldIO
@@ -34,7 +34,6 @@ import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.*
 import edu.unh.cs.ai.realtimesearch.planner.suboptimal.*
-import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.Callable
@@ -93,8 +92,6 @@ object ConfigurationExecutor {
     }
 
     fun executeConfiguration(configuration: ExperimentConfiguration, dataRootPath: String? = null): ExperimentResult {
-        val logger = LoggerFactory.getLogger("ConfigurationExecutor")
-
         var experimentResult: ExperimentResult? = null
         var executionException: Throwable? = null
 
@@ -106,9 +103,9 @@ object ConfigurationExecutor {
             executionException = throwable
 
             if (executionException is MetronomeException) {
-                logger.info("Experiment stopped", throwable.message)
+                println("Experiment stopped: ${throwable.message}")
             } else {
-                logger.info("Experiment stopped", throwable)
+                println("Experiment stopped: $throwable")
             }
         }
 
@@ -121,14 +118,14 @@ object ConfigurationExecutor {
         if (executionException != null) {
 //            collectAndWait()
 
-            logger.info("Experiment failed. ${executionException!!.message}")
+            println("Experiment failed. ${executionException!!.message}")
             val failedExperimentResult = ExperimentResult(configuration, "${executionException!!.message}")
             failedExperimentResult.errorDetails = executionException!!.stackTrace!!.contentToString()
             return failedExperimentResult
         }
 
         if (experimentResult == null) {
-            logger.info("Experiment timed out.")
+            println("Experiment timed out.")
             thread.stop() // This should be replaced with a graceful stop
             thread.join()
 
@@ -136,8 +133,6 @@ object ConfigurationExecutor {
 
             return ExperimentResult(configuration, "Timeout")
         }
-
-//        logger.info("Experiment execution is done.")
 
         return experimentResult!!
     }

@@ -12,7 +12,6 @@ import java.util.*
 class PointRobotLOST(val width: Int, val height: Int, val blockedCells: Set<Location>,
                      val endLocation: DoubleLocation, val goalRadius: Double, val actionDuration: Long) : Domain<PointRobotLOSTState> {
 
-    //    private val logger = LoggerFactory.getLogger(DoubleIntegrator::class.java)
     private var actions = getAllActions()
     var maxXSpeed = 0;
     var maxYSpeed = 0;

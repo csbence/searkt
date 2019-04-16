@@ -3,8 +3,6 @@ package edu.unh.cs.ai.realtimesearch.environment.heavyvacuumworld
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.abs
 
@@ -19,8 +17,6 @@ class HeavyVacuumWorld(val width: Int,
                        val height: Int,
                        val blockedCells: Set<Location>,
                        private val initialAmountDirty: Int) : Domain<HeavyVacuumWorldState> {
-
-    private val logger = LoggerFactory.getLogger(HeavyVacuumWorld::class.java)
 
     /**
      * Part of the Domain interface.
@@ -140,7 +136,6 @@ class HeavyVacuumWorld(val width: Int,
 
         val randomLocation = randomLocation(width, height)
         val randomState = HeavyVacuumWorldState(randomLocation, dirtyCells, calculateHeuristic(randomLocation, dirtyCells))
-        logger.debug { "Returning random state $randomState" }
 
         return randomState
     }

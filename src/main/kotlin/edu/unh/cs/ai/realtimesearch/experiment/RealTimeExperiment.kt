@@ -11,13 +11,10 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.CommitmentStrategy
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 /**
@@ -41,8 +38,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                                                        val initialState: StateType,
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
-    private val logger = LoggerFactory.getLogger(RealTimeExperiment::class.java)
-
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
     private val stepLimit = configuration.stepLimit
@@ -53,7 +48,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
      */
     override fun run(): ExperimentResult {
         val actions: MutableList<Action> = arrayListOf()
-        logger.debug { "Starting experiment from state $initialState" }
         var currentState: StateType = initialState
 
         var totalPlanningNanoTime = 0L
@@ -71,6 +65,58 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
         planner.init(initialState)
 
+        // Begin test
+//        if (domain is Airspace) {
+//            val levelProofLength = mutableListOf<Double>()
+//            val levelRatios = mutableListOf<Double>()
+//            val levelSuccessfulExpansions = mutableListOf<Double>()
+//            val levelFailedExpansions = mutableListOf<Double>()
+//
+//            for (y in 0 until domain.height) {
+//                val proofLength = mutableListOf<Int>()
+//                val successfulExpansions = mutableListOf<Int>()
+//                val failedExpansions = mutableListOf<Int>()
+//
+//                for (x in 0 until domain.width) {
+//                    val state: StateType = AirspaceState(x, y) as StateType
+//                    val safetyProofResult = isComfortable(state, FakeTerminationChecker, domain, false)
+//
+//                    if (safetyProofResult.status == SafetyProofStatus.SAFE) {
+//                        proofLength.add(safetyProofResult.safetyProof.size)
+//                        successfulExpansions.add(safetyProofResult.expansions)
+//                    } else {
+//                        failedExpansions.add(safetyProofResult.expansions)
+//                    }
+//                }
+//
+//                val safetyRatio = proofLength.size.toDouble() / domain.width
+//                val averageLength = proofLength.average()
+//
+////                println("level: $y ratio: ${"%.2f".format(safetyRatio)} length: ${"%.2f".format(averageLength)}")
+//                println("level: $y ratio: $safetyRatio length: $averageLength sexp: ${successfulExpansions.average()} fexp:${failedExpansions.average()}")
+//
+//
+//                levelProofLength += averageLength
+//                levelRatios += safetyRatio
+//                levelSuccessfulExpansions += successfulExpansions.average()
+//                levelFailedExpansions += failedExpansions.average()
+//            }
+//
+//            for (i in 0 until domain.height) {
+//                print("\t$i\t&")
+//            }
+//            println("""\\""")
+//            levelRatios.forEach { print("\t${"%.2f".format(it)}\t&") }
+//            println("""\\""")
+//            levelProofLength.forEach { print("\t${"%.0f".format(it)}\t&") }
+//            println("""\\""")
+//            levelSuccessfulExpansions.forEach { print("\t${"%.0f".format(it)}\t&") }
+//            println("""\\""")
+//            levelFailedExpansions.forEach { print("\t${"%.0f".format(it)}\t&") }
+//            println("""\\""")
+//        }
+        // End test
+
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureThreadCpuNanoTime {
                 terminationChecker.resetTo(timeBound)
@@ -85,7 +131,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
             timeBound = 0
             actionList.forEach {
-                currentState = domain.transition(currentState, it.action) ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
+                currentState = domain.transition(currentState, it.action)
+                        ?: return ExperimentResult(experimentConfiguration = configuration, errorMessage = "Invalid transition. From $currentState with ${it.action}")// Move the planner
                 stateList.add(currentState)
                 actions.add(it.action) // Save the action
                 timeBound += it.duration // Add up the action durations to calculate the time bound for the next iteration
@@ -104,7 +151,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 //                        domain.isGoal(currentState))
 //            }
 
-            logger.debug { "Agent return actions: |${actionList.size}| to state $currentState" }
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
@@ -150,12 +196,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             else -> throw MetronomeException("Unsupported termination checker")
         }
 
-        logger.info {
-            "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded " +
-                    "and ${planner.generatedNodeCount} generated nodes in $totalPlanningNanoTime ns. " +
-                    "(${planner.expandedNodeCount / convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)} expanded nodes per sec)"
-        }
-
         val experimentResult = ExperimentResult(
                 configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
@@ -197,8 +237,6 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             }
 
             throw RuntimeException("Real-time bound is violated. Time bound: ${terminationChecker.timeLimit} but execution took $iterationNanoTime. $extras")
-        } else {
-            logger.info { "Time bound: ${terminationChecker.timeLimit} execution took $iterationNanoTime." }
         }
     }
 }
