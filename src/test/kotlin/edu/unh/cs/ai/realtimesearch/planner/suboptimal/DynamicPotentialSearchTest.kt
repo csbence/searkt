@@ -1,10 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.planner.suboptimal
+package edu.unh.cs.searkt.planner.suboptimal
 
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
+import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -146,7 +146,6 @@ class DynamicPotentialSearchTest {
             assertTrue { optimalSolutionLengths[experimentNumber] * weight >= plan.size }
             print("nodes expanded: ${dpsAgent.expandedNodeCount}...")
             print("nodes generated: ${dpsAgent.generatedNodeCount}...")
-            println("total time: ${dpsAgent.executionNanoTime}")
         }
     }
 }

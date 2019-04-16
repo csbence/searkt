@@ -1,19 +1,16 @@
-package edu.unh.cs.ai.realtimesearch.environment.inversetiles
+package edu.unh.cs.searkt.environment.inversetiles
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.ExplicitEstimationSearch
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
+import edu.unh.cs.searkt.environment.Action
+import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream
 import java.util.*
-import kotlin.math.roundToInt
 import kotlin.test.assertTrue
 
 class InverseTilePuzzleTest {

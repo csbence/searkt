@@ -1,6 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
-import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.searkt.environment.SuccessorBundle
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter

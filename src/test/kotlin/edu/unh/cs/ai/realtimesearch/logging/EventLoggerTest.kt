@@ -1,9 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.logging
+package edu.unh.cs.searkt.logging
 
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
 import org.junit.Test
-import kotlin.test.assertTrue
 
 /**
  * @author Bence Cserna (bence@cserna.net)

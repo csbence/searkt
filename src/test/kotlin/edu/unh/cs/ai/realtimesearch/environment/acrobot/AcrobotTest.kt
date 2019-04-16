@@ -1,6 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.searkt.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.searkt.util.doubleNearEquals
 import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

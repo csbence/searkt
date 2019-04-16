@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.searkt.environment.acrobot
 
 /**
  * @author Mike Bogochow (mgp36@unh.edu)

@@ -1,15 +1,14 @@
-package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
+package edu.unh.cs.searkt.environment.vacuumworld
 
-import edu.unh.cs.ai.realtimesearch.environment.Action
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.*
+import edu.unh.cs.searkt.environment.Action
+import edu.unh.cs.searkt.environment.location.Location
+import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.DynamicPotentialSearch
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
-import kotlin.math.roundToInt
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

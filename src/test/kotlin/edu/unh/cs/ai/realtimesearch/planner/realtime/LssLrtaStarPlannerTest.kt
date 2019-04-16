@@ -1,5 +1,3 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.searkt.planner.realtime
 
-class LssLrtaStarPlannerTest {
-
-}
+class LssLrtaStarPlannerTest

@@ -1,15 +1,12 @@
-package edu.unh.cs.ai.realtimesearch.environment.heavyvacuumworld
+package edu.unh.cs.searkt.environment.heavyvacuumworld
 
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldIO
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldTest
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.DynamicPotentialSearch
-import edu.unh.cs.ai.realtimesearch.planner.suboptimal.WeightedAStar
+import edu.unh.cs.searkt.environment.location.Location
+import edu.unh.cs.searkt.environment.vacuumworld.VacuumWorldTest
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.DynamicPotentialSearch
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

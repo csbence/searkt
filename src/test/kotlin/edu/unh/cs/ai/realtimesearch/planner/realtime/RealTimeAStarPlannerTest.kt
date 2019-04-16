@@ -1,12 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.searkt.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
-import edu.unh.cs.ai.realtimesearch.experiment.RealTimeExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import org.junit.Ignore
-import org.junit.Test
 
 @Ignore
 class RealTimeAStarPlannerTest {

@@ -1,9 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.util
+package edu.unh.cs.searkt.util
 
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticTimeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TimeTerminationChecker
+import edu.unh.cs.searkt.experiment.terminationCheckers.FakeTerminationChecker
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticTimeTerminationChecker
 import org.junit.Test
 import java.util.*
 import kotlin.test.assertNotNull

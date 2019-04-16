@@ -1,9 +1,9 @@
-package edu.unh.cs.ai.realtimesearch.planner.suboptimal
+package edu.unh.cs.searkt.planner.suboptimal
 
-import edu.unh.cs.ai.realtimesearch.environment.gridworld.GridWorldIO
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.environment.gridworld.GridWorldIO
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import org.junit.Test
 import java.io.File
 

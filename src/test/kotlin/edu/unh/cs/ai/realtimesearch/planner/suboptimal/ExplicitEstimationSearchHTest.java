@@ -1,10 +1,10 @@
-//package edu.unh.cs.ai.realtimesearch.planner.suboptimal;
+//package edu.unh.cs.searkt.planner.suboptimal;
 //
-//import edu.unh.cs.ai.realtimesearch.environment.fifteenpuzzle.FifteenPuzzle;
-//import edu.unh.cs.ai.realtimesearch.util.search.SearchAlgorithm;
-//import edu.unh.cs.ai.realtimesearch.util.search.SearchDomain;
-//import edu.unh.cs.ai.realtimesearch.util.search.SearchResult;
-//import edu.unh.cs.ai.realtimesearch.util.search.SearchResult.Solution;
+//import edu.unh.cs.searkt.environment.fifteenpuzzle.FifteenPuzzle;
+//import edu.unh.cs.searkt.util.search.SearchAlgorithm;
+//import edu.unh.cs.searkt.util.search.SearchDomain;
+//import edu.unh.cs.searkt.util.search.SearchResult;
+//import edu.unh.cs.searkt.util.search.SearchResult.Solution;
 //import junit.framework.Assert;
 //import org.junit.Test;
 //

@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.vacuumworld
+package edu.unh.cs.searkt.environment.vacuumworld
 
 import org.junit.Test
 import kotlin.test.assertTrue

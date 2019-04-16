@@ -1,8 +1,8 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.searkt.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotConfiguration
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.searkt.environment.DiscretizedState
+import edu.unh.cs.searkt.environment.acrobot.configuration.AcrobotConfiguration
+import edu.unh.cs.searkt.util.doubleNearEquals
 import org.junit.Test
 import kotlin.test.assertTrue
 

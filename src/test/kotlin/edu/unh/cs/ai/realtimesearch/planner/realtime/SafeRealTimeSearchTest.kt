@@ -1,15 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.searkt.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.isComfortable
+import edu.unh.cs.searkt.environment.racetrack.RaceTrack
+import edu.unh.cs.searkt.environment.racetrack.RaceTrackIO
+import edu.unh.cs.searkt.environment.racetrack.RaceTrackState
 import org.junit.After
 import org.junit.Before
-import org.junit.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 
 /**

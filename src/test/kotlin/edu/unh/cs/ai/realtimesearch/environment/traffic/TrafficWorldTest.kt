@@ -1,7 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.environment.traffic
+package edu.unh.cs.searkt.environment.traffic
 
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
+import edu.unh.cs.searkt.environment.location.Location
+import edu.unh.cs.searkt.environment.obstacle.MovingObstacle
 import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

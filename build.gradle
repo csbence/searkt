@@ -15,7 +15,7 @@ applicationDefaultJvmArgs = [
 if (project.hasProperty("mainClass")) {
     mainClassName = mainClass
 } else {
-    mainClassName = "edu.unh.cs.ai.realtimesearch.RealTimeSearchKt"
+    mainClassName = "edu.unh.cs.searkt.SearKt"
 }
 
 buildscript {

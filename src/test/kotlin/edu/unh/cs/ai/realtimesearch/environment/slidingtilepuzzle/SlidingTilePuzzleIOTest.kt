@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
 import org.junit.Test
 import kotlin.test.assertTrue

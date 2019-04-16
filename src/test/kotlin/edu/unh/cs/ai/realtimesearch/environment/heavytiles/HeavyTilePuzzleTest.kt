@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.heavytiles
+package edu.unh.cs.searkt.environment.heavytiles
 
 import org.junit.Test
 import java.io.File
