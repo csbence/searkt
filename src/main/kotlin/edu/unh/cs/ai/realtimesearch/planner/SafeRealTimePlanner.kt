@@ -67,7 +67,7 @@ enum class SafetyProofStatus {
 }
 
 
-data class SafetyProofResult<StateType : State<StateType>>(val status: SafetyProofStatus, val discoveredStates: Collection<StateType> = listOf(), val safetyProof: Collection<StateType> = listOf(), val reexpandedUnsafeStates: Int = 0)
+data class SafetyProofResult<StateType : State<StateType>>(val status: SafetyProofStatus, val discoveredStates: Collection<StateType> = listOf(), val safetyProof: Collection<StateType> = listOf(), val expansions: Int = 0, val reexpandedUnsafeStates: Int = 0)
 
 /**
  * Prove the safety of a given state. A state is safe (more precisely comfortable) if the state itself is safe or a
@@ -105,11 +105,13 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
     val discoveredStates = hashSetOf<StateType>()
     val safeStates = mutableListOf<StateType>()
     var reexpandedUnsafeStates = 0
+    var expansions = 0
 
     priorityQueue.add(Node(state, domain.safeDistance(state)))
 
     while (!terminationChecker.reachedTermination()) {
-        val currentNode = priorityQueue.poll() ?: return SafetyProofResult(UNSAFE, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
+        val currentNode = priorityQueue.poll() ?: return SafetyProofResult(UNSAFE, expansions = expansions, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
+        ++expansions
 
         if (domain.isSafe(currentNode.state) || (safetyStatus != null && safetyStatus(currentNode.state) == SAFE)) {
 
@@ -123,7 +125,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
                 backTrackNode = backTrackNode.parent
             }
 
-            return SafetyProofResult(SAFE, safetyProof = safeStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
+            return SafetyProofResult(SAFE, safetyProof = safeStates, expansions = expansions, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
         }
 
         terminationChecker.notifyExpansion()
@@ -145,7 +147,7 @@ fun <StateType : State<StateType>> isComfortable(state: StateType, terminationCh
 //                .mapTo(priorityQueue) { Node(it.state, domain.safeDistance(it.state), currentNode) } // Add successors to the queue
     }
 
-    return SafetyProofResult(UNKNOWN, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
+    return SafetyProofResult(UNKNOWN, expansions = expansions, discoveredStates = discoveredStates, reexpandedUnsafeStates = reexpandedUnsafeStates)
 }
 
 /**
@@ -196,7 +198,7 @@ fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorit
         var currentNode = frontierNode
         while (currentNode.parent != currentNode) {
             if (currentNode.safe) {
-                recordRank(rank, frontierNode.cost.toInt())
+                recordRank(rank, (frontierNode.cost - currentNode.cost).toInt())
                 return currentNode
             }
             currentNode = currentNode.parent
