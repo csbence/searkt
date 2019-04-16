@@ -92,17 +92,6 @@ class ExperimentResult {
     @Serializable
     data class DepthRankPair(val depth: Int, val rankOnOpen: Int)
 
-    @Optional
-    var proofSuccessful: Int? = null
-    @Optional
-    var towardTopNode: Int? = null
-    @Optional
-    var numberOfProofs: Int? = null
-    @Optional
-    var depthRankOfOpen: List<DepthRankPair>? = null
-    @Optional
-    var frontierNodeDepth: List<Int>? = null
-
     //Comprehensive Envelope stats
     @Optional
     var backupCount: Int = 0
