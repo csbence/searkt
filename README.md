@@ -1,6 +1,6 @@
-# Metronome Real-time Search
+# Searkt - Heuristic Search Library
 
-Metronome provides a unified API to compare offline, anytime, and real-time search algorithms over well defined domains. It comes with several popular hearistic search domains and algorithms, and allows users to provide their own.
+Searkt provides a unified API to compare offline, anytime, and real-time search algorithms over well defined domains. It comes with several popular hearistic search domains and algorithms, and allows users to provide their own.
 
 ## Configuration
 
