@@ -5,6 +5,8 @@ import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
@@ -39,7 +41,7 @@ abstract class RealTimePlanner<StateType : State<StateType>> : Planner<StateType
      *
      * This call does not count towards the planning time.
      */
-    open fun init(rootState : StateType) {
+    open fun init(rootState: StateType) {
 
     }
 
@@ -63,7 +65,7 @@ data class SearchEdge<out Node>(val node: Node, val action: Action, val actionCo
     }
 }
 
-interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>>: Indexable {
+interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> : Indexable {
     val state: StateType
     var heuristic: Double
     var cost: Long
@@ -74,6 +76,43 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
 
     val f: Double
         get() = cost + heuristic
+}
+
+class ConfigurableComparator(configuration: ExperimentConfiguration) : Comparator<SearchNode<*, *>> {
+    val weight: Double = configuration.weight ?: 1.0
+
+    override fun compare(lhs: SearchNode<*, *>, rhs: SearchNode<*, *>): Int {
+        return when (weight) {
+            // f explorationComparator
+            1.0 ->
+                when {
+                    lhs.f < rhs.f -> -1
+                    lhs.f > rhs.f -> 1
+                    lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
+                    lhs.cost < rhs.cost -> 1
+                    else -> 0
+                }
+            // greedy explorationComparator
+            0.0 ->
+                when {
+                    lhs.heuristic < rhs.heuristic -> -1
+                    lhs.heuristic > rhs.heuristic -> 1
+                    lhs.cost > rhs.cost -> -1 // Tie braking on cost (g)
+                    lhs.cost < rhs.cost -> 1
+                    else -> 0
+                }
+            // weighted explorationComparator
+            else ->
+                when {
+                    lhs.cost + lhs.heuristic * weight < rhs.cost + rhs.heuristic * weight -> -1
+                    lhs.cost + lhs.heuristic * weight > rhs.cost + rhs.heuristic * weight -> 1
+                    lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
+                    lhs.cost < rhs.cost -> 1
+                    else -> 0
+                }
+        }
+    }
+
 }
 
 val fValueComparator: java.util.Comparator<SearchNode<*, *>> = Comparator { lhs, rhs ->
@@ -230,7 +269,7 @@ fun <StateType : State<StateType>, NodeType : SearchNode<StateType, NodeType>> e
 inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> expandFromNode(
         context: RealTimePlannerContext<StateType, NodeType>,
         sourceNode: NodeType,
-        nodeFound: ((NodeType) -> Unit)) {
+        nodeFound: ((NodeType) -> Unit) = {}) {
 
     context.expandedNodeCount += 1
 
@@ -239,12 +278,83 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
         val successorState = successor.state
         val successorNode = context.getNode(sourceNode, successor)
 
-        // begin This makes LSS-LRTA* safe
-//        val proofStatus = isComfortable(successorState, FakeTerminationChecker, context.domain)
-//        if (proofStatus.status == SafetyProofStatus.UNSAFE) {
-//            continue
-//        }
-        // end This makes LSS-LRTA* safe
+        if (successorNode.heuristic == Double.POSITIVE_INFINITY) {
+            // Ignore this successor as it is a dead end
+            continue
+        }
+
+        successorCount++
+
+        // If the node is outdated it should be updated.
+        if (successorNode.iteration != context.iterationCounter) {
+            nodeFound(successorNode)
+            successorNode.apply {
+                iteration = context.iterationCounter
+                predecessors.clear()
+                cost = Long.MAX_VALUE
+                // parent, action, and actionCost is outdated too, but not relevant.
+            }
+        }
+
+        // Add the current state as the predecessor of the child state
+        successorNode.predecessors.add(SearchEdge(node = sourceNode, action = successor.action, actionCost = successor.actionCost.toLong()))
+
+        // Skip if we got back to the parent
+        if (successorState == sourceNode.parent.state) {
+            continue
+        }
+
+        // only generate those state that are not visited yet or whose cost value are lower than this path
+        val successorGValueFromCurrent = sourceNode.cost + successor.actionCost
+        if (successorNode.cost > successorGValueFromCurrent) {
+            // here we generate a state. We store it's g value and remember how to get here via the treePointers
+            successorNode.apply {
+                cost = successorGValueFromCurrent.toLong()
+                parent = sourceNode
+                minCostPathLength = sourceNode.minCostPathLength + 1
+                action = successor.action
+                actionCost = successor.actionCost.toLong()
+            }
+
+            if (!successorNode.open) {
+                context.openList.add(successorNode)
+
+            } else {
+                context.openList.update(successorNode)
+            }
+        }
+    }
+
+    sourceNode.lastLearnedHeuristic = Double.POSITIVE_INFINITY
+    // If no successors, update heuristic now, as it will never be learned in the dijkstra phase
+    if (successorCount == 0) sourceNode.heuristic = Double.POSITIVE_INFINITY
+}
+
+/**
+ * Expands a node and add it to closed list. For each successor
+ * it will add it to the open list and store it's g value, as long as the
+ * state has not been seen before, or is found with a lower g value
+ */
+inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> safeExpandFromNode(
+        context: RealTimePlannerContext<StateType, NodeType>,
+        sourceNode: NodeType,
+        nodeFound: ((NodeType) -> Unit) = {}) {
+
+    context.expandedNodeCount += 1
+
+    var successorCount = 0
+    for (successor in context.domain.successors(sourceNode.state)) {
+        val successorState = successor.state
+        val successorNode = context.getNode(sourceNode, successor)
+
+        // // // begin This makes LSS-LRTA* safe // // //
+
+        val proofStatus = isComfortable(successorState, FakeTerminationChecker, context.domain, false)
+        if (proofStatus.status == SafetyProofStatus.UNSAFE) {
+            continue
+        }
+
+        // // // end This makes LSS-LRTA* safe // // //
 
         if (successorNode.heuristic == Double.POSITIVE_INFINITY) {
             // Ignore this successor as it is a dead end
@@ -361,8 +471,8 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
 fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> dynamicDijkstra(
         context: RealTimePlannerContext<StateType, NodeType>,
         freshSearch: Boolean = true,
-        openListComparator: Comparator<RealTimeSearchNode<StateType,NodeType>> = Comparator {lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs)},
-        reachedTermination: (AdvancedPriorityQueue<NodeType>) -> Boolean = {openList -> openList.isEmpty()}) {
+        openListComparator: Comparator<RealTimeSearchNode<StateType, NodeType>> = Comparator { lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs) },
+        reachedTermination: (AdvancedPriorityQueue<NodeType>) -> Boolean = { openList -> openList.isEmpty() }) {
     val openList = context.openList
 
     // Invalidate the current heuristic value by incrementing the counter

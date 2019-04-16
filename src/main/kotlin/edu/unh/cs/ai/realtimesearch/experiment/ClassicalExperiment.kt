@@ -9,10 +9,8 @@ import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.Terminatio
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.info
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.util.convertNanoUpDouble
-import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 /**
@@ -35,14 +33,12 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                                                         val terminationChecker: TerminationChecker) : Experiment() {
     private var experimentRunTime: Long = 0
 
-    private val logger = LoggerFactory.getLogger(ClassicalExperiment::class.java)
     private var actions: List<Action> = emptyList()
     private var expansionLimit = configuration.expansionLimit
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initialState
-        //        logger.warn { "Starting experiment with state $state on planner $planner" }
 
         terminationChecker.resetTo(expansionLimit)
 
@@ -60,7 +56,6 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
 
         // log results
         val pathLength = actions.size.toLong() - 1
-        logger.info { "Path length: [$pathLength] After ${planner.expandedNodeCount} expanded and ${planner.generatedNodeCount} generated nodes" }
 
         var currentState = initialState
         // validate path

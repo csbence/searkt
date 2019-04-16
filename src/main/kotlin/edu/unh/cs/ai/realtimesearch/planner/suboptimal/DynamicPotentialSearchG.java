@@ -747,7 +747,7 @@ public class DynamicPotentialSearchG<StateType extends State<StateType>> extends
     }
 
     /**
-     * The nodes comparator class
+     * The nodes explorationComparator class
      */
     protected final class NodeComparator implements Comparator<Node> {
 

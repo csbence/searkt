@@ -2,11 +2,9 @@ package edu.unh.cs.ai.realtimesearch.environment.inversetiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
 class InverseTilePuzzle(val size: Int, val actionDuration: Long) : Domain<InverseTilePuzzle4State> {
-    val logger = LoggerFactory.getLogger(InverseTilePuzzle::class.java)!!
 
     private val goalState: InverseTilePuzzle4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })

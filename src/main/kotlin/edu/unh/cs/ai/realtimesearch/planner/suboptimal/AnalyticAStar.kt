@@ -13,7 +13,6 @@ import edu.unh.cs.ai.realtimesearch.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
-import org.slf4j.LoggerFactory
 import java.util.HashMap
 import kotlin.Comparator
 import kotlin.math.abs
@@ -62,6 +61,8 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override val f: Double
             get() = cost + heuristic
 
+        var suboptimalCost: Double = 0.0
+
         override fun equals(other: Any?): Boolean {
             if (other != null && other is Node<*>) {
                 return state == other.state
@@ -75,13 +76,21 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
-    @Suppress("unused")
-    private val logger = LoggerFactory.getLogger(AnalyticAStar::class.java)
 
     private val fValueComparator = Comparator<AnalyticAStar.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
+            lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
+    private val weightedValueComparator = Comparator<AnalyticAStar.Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.g + lhs.h * weight < rhs.g + rhs.h * weight -> -1
+            lhs.g + lhs.h * weight > rhs.g + rhs.h * weight -> 1
             lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
@@ -98,7 +107,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), hValueComparator) {
+    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), weightedValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
     }
@@ -138,7 +147,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private fun expandNode(sourceNode: Node<StateType>, open: AbstractAdvancedPriorityQueue<Node<StateType>>): Node<StateType>? {
+    private fun expandNode(sourceNode: Node<StateType>, open: AbstractAdvancedPriorityQueue<Node<StateType>>, suboptimalExpansion: Boolean): Node<StateType>? {
         expandedNodeCount++
         if (sourceNode.expanded != 0) reexpansions++
         sourceNode.expanded = iteration
@@ -158,12 +167,14 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 continue
             }
 
-            val isDuplicate = successorNode.cost < Double.MAX_VALUE
-
             // only generate states which have not been visited or with a cheaper cost
             val successorGValueFromCurrent = currentGValue + successor.actionCost
             if (successorNode.cost >= successorGValueFromCurrent) {
                 assert(successorNode.state == successor.state)
+
+                if (suboptimalExpansion) {
+                    successorNode.suboptimalCost = successorGValueFromCurrent
+                }
 
                 successorNode.apply {
                     cost = successorGValueFromCurrent
@@ -194,16 +205,32 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         openList.add(node)
         generatedNodeCount++
 
-        val maxRam = 10000
+        val maxRam = 1000
         var rampupDelay = maxRam
         var currentBound = 0.0
         var stepErrorAvg = 0.0
         var greedyStepErrorAvg = 0.0
         iteration++
 
+        // Min value difference of the optimal search tree open list and the suboptimal search tree
+        var allowanceImprovement = 0.0
+
         val optimalExpansionCounts = arrayListOf<Int>()
         val suboptimalExpansionCounts = arrayListOf<Int>()
         val suboptimalMinDistance = arrayListOf<Double>()
+
+
+        /**
+         * This is a naive implementation of the cut improvement, please consider to exploit more advanced data structures.
+         */
+        fun minCutImprovement(): Double? {
+            return openList.backingArray
+                    .take(openList.size)
+                    .requireNoNulls()
+                    .filter { it.suboptimalCost != 0.0 }
+                    .minBy { it.suboptimalCost - it.cost }
+                    ?.let { it.suboptimalCost - it.cost }
+        }
 
         fun expandOptimal(): Node<StateType>? {
             var expanded = 0
@@ -213,7 +240,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
                 currentNode.isClosed = true
 
-                expandNode(currentNode, openList)?.let { return it }
+                expandNode(currentNode, openList, false)?.let { return it }
                 expanded++
                 aStarExpansions++
 
@@ -239,34 +266,36 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 val reach = costEstimate < upperBound
 //                 println("reach: $reach stepError: $stepError costEstimate: $costEstimate upperBound: $upperBound g: ${currentNode.g}")
 
+                // We did not improve, there is no point to do suboptimal expansions (in the simple case)
                 if (upperBound == currentBound) continue
 
-
-                if (reach) {
-                    if (upperBound > currentBound) greedyOpen.clear()
+                if (upperBound > currentBound) {
+                    // We have more room to play with
                     currentBound = upperBound
-//                    println(expandedNodeCount)
-//                    println("A*       error: $stepErrorAvg bound: $upperBound expanded: $expanded")
-
-                    rampupDelay = maxRam
                     return null
+                    print("optimal expansions: $expanded ")
                 }
+
+                // todo utilize the error models to figure out if we should do some meta improvements
+
             }
 
             throw GoalNotReachableException("Open list is empty")
         }
 
+        var minVisitedH = Double.MAX_VALUE
+        var minHError = 0.0
+
         fun expandSuboptimal(): Node<StateType>? {
-            var minVisitedH = Double.MAX_VALUE
-            var minHError = 0.0
             var expanded = 0
 
             while (greedyOpen.isNotEmpty()) {
-                if (greedyOpen.peek()!!.f >= currentBound) {
+                if (greedyOpen.peek()!!.f >= (currentBound + allowanceImprovement)) {
 //                    println(expandedNodeCount)
 //                    println("Bound reached.  error: $greedyStepErrorAvg bound: $currentBound minVisitedH: $minVisitedH expanded: $expanded")
 
                     suboptimalMinDistance.add(minVisitedH)
+                    print("suboptimal expansions: $expanded")
                     return null
                 }
 
@@ -279,7 +308,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     continue
                 }
 
-                val goalNode = expandNode(currentNode, greedyOpen)
+                val goalNode = expandNode(currentNode, greedyOpen, true)
                 if (goalNode != null) {
                     suboptimalMinDistance.add(minVisitedH)
                     return goalNode
@@ -302,6 +331,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
             }
 
+            print("suboptimal expansions: $expanded")
             suboptimalMinDistance.add(minVisitedH)
             return null
         }
@@ -312,6 +342,10 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
             greedyOpen.clear()
 
+            // Reset metrics
+            minVisitedH = Double.MAX_VALUE
+            minHError = 0.0
+
             ++iteration
             topK.forEach { greedyOpen.add(it!!) }
 
@@ -320,23 +354,24 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
 
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-//            println("+++\n")
+            println("+++\n")
 
             var startExpansionCount = expandedNodeCount
 
             expansionPhase = OPTIMAL
             expandOptimal()?.let { return extractPlan(it, state) }
 
-            optimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
+            allowanceImprovement = minCutImprovement() ?: 0.0
 
-            // Continue previous iteration
-//            if (greedyOpen.isNotEmpty()) {
-//                expandSuboptimal()?.let { return extractPlan(it, startState) }
-//            }
+            optimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
 
             startExpansionCount = expandedNodeCount
 
-            populateGreedyQueue()
+            if (greedyOpen.isEmpty()) {
+                println("Polulate greedy open! $iteration")
+                populateGreedyQueue()
+            }
+
             expandSuboptimal()?.let { return extractPlan(it, state) }
 
             suboptimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
@@ -353,7 +388,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     .filter { it != 0.0 && it != Double.POSITIVE_INFINITY }
                     .fold(0.0) { avg, current -> avg * 0.4 + current * 0.6 }
 
-//            println("  estimatedExpansions: $expansionBound")
+            println("  estimatedExpansions: $expansionBound bound: $currentBound allowanceImprovement: $allowanceImprovement")
             rampupDelay = max(expansionBound.toInt(), maxRam)
         }
 

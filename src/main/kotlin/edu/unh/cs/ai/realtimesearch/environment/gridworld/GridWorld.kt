@@ -4,7 +4,6 @@ import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.GridWorldAction
-import org.slf4j.LoggerFactory
 
 /**
  * The GridWorld is a problem where the agent, a robot, is supposed to reach
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory
  *
  */
 class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<GridWorldState> {
-    private val logger = LoggerFactory.getLogger(GridWorld::class.java)
 
     override fun isSafe(state: GridWorldState): Boolean {
         return false

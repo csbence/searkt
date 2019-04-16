@@ -6,17 +6,13 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.measure
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -30,14 +26,10 @@ import kotlin.system.measureTimeMillis
  * - Run A* from the expected destination state
  *
  * This loop continue until the goal has been found
- *
- * @history Kevin C. Gall Adding nano-time measurements outside of logger. Logger disabled as it depends on Groovy,
- * and it is not a good use of my time to reimplement logging when all I need is simple measurements
  */
 class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
-    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     override var iterationCounter = 0L
 
     private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100000000, 1.toFloat()).resize()
@@ -94,17 +86,12 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
             rootState = sourceState
         } else if (sourceState != rootState) {
             // The given sourceState should be the last target
-            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
-            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
-
-        logger.debug { "Root sourceState: $sourceState" }
-        // Every turn learn then A* until time expires
 
         // Learning phase
         if (openList.isNotEmpty()) {
@@ -139,8 +126,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
             printMessage("""A* Time: $aStarNanoTimer""")
         }
 
-        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
 
         printMessage("""Remaining Time: ${terminationChecker.remaining()}""")
 
@@ -159,7 +144,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
         nodes[state] = node
         var currentNode = node
         openList.add(node)
-        logger.debug { "Starting A* from state: $state" }
 
         var pathLengthBuffer = 0L
         val expandedNodes = measureInt({ expandedNodeCount }) {
@@ -182,20 +166,14 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
         if (node == currentNode && !domain.isGoal(currentNode.state)) {
             //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
-        } else {
-            logger.debug { "A* : expanded $expandedNodes nodes" }
         }
-
-        logger.debug { "Done with AStar at $currentNode" }
 
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
 
     private fun initializeAStar() {
         iterationCounter++
-        logger.debug { "Clear open list" }
         openList.clear()
-
         openList.reorder(fValueComparator)
     }
 

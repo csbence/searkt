@@ -2,15 +2,12 @@ package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 import java.util.*
 
 class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<SlidingTilePuzzle4State> {
 
     private val randomIntegerTable = Array(256) { Random(Random().nextLong()).nextInt() }
-
-    val logger = LoggerFactory.getLogger(SlidingTilePuzzle::class.java)!!
 
     private val goalState: SlidingTilePuzzle4State by lazy {
         val tiles = ByteArray(16) { it.toByte() }

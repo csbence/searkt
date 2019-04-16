@@ -3,7 +3,6 @@ package edu.unh.cs.ai.realtimesearch.environment.vehicle
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -12,8 +11,6 @@ import java.util.*
  * Created by doylew on 1/17/17.
  */
 class VehicleWorld(val width: Int, val height: Int, var blockedCells: Set<Location>, var bunkers: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<VehicleWorldState> {
-    private val logger = LoggerFactory.getLogger(VehicleWorld::class.java)
-
     private data class Pair(var x: Int, var y: Int)
 
     private val obstacleVelocities: ArrayList<Pair>

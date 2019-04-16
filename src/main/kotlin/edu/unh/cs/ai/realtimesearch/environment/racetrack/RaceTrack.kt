@@ -8,7 +8,6 @@ import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackAction.NO_OP
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import kotlinx.io.PrintWriter
-import org.slf4j.LoggerFactory
 import java.lang.Math.*
 import java.util.*
 
@@ -43,8 +42,6 @@ class RaceTrack(val width: Int,
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
     private val velocities = mutableListOf<Double>()
-
-    private val logger = LoggerFactory.getLogger(RaceTrack::class.java)
 
     private fun calculateDijkstraHeuristic(): Map<Location, Double> {
         data class Node(val location: Location, val goalDistance: Double)

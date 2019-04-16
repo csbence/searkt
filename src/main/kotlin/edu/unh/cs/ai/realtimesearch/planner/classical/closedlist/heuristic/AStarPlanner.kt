@@ -7,7 +7,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationCh
 import edu.unh.cs.ai.realtimesearch.planner.classical.ClassicalPlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -16,8 +15,6 @@ import java.util.*
  * Requires a domain with an admissible heuristic function.
  */
 class AStarPlanner<StateType : State<StateType>>(val domain: Domain<StateType>) : ClassicalPlanner<StateType>() {
-    private val logger = LoggerFactory.getLogger(AStarPlanner::class.java)
-
     private val openList = PriorityQueue { lhs: Node<StateType>, rhs: Node<StateType> ->
         when {
             lhs.f < rhs.f -> -1

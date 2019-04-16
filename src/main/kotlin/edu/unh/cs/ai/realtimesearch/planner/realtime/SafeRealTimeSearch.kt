@@ -10,8 +10,6 @@ import edu.unh.cs.ai.realtimesearch.experiment.measureLong
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof.A_STAR_FIRST
 import edu.unh.cs.ai.realtimesearch.planner.SafetyProof.TOP_OF_OPEN
@@ -20,7 +18,7 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.generateWhile
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
+import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 
 /**
@@ -29,7 +27,6 @@ import java.util.*
 class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, SafeRealTimeSearchNode<StateType>> {
 
     // Configuration
-    private val actionDuration = configuration.actionDuration
     private val targetSelection = configuration.targetSelection
             ?: throw MetronomeConfigurationException("Target selection strategy is not specified.")
     private val safetyExplorationRatio: Double = configuration.safetyExplorationRatio
@@ -39,14 +36,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     private val filterUnsafe: Boolean = configuration.filterUnsafe
 
-    private val logger = LoggerFactory.getLogger(SafeRealTimeSearch::class.java)
     override var iterationCounter = 0L
 
-    private val nodes: HashMap<StateType, SafeRealTimeSearchNode<StateType>> = HashMap<StateType, SafeRealTimeSearchNode<StateType>>(100000000).resize()
+    private val nodes: HashMap<StateType, SafeRealTimeSearchNode<StateType>> = HashMap<StateType, SafeRealTimeSearchNode<StateType>>(1000000).resize()
 
-    // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
-    // The cost values are initialized to infinity
-    override var openList = AdvancedPriorityQueue<SafeRealTimeSearchNode<StateType>>(10000000, fValueComparator)
+    private val explorationComparator = ConfigurableComparator(configuration)
+
+    override var openList = AdvancedPriorityQueue<SafeRealTimeSearchNode<StateType>>(1000000, explorationComparator)
 
     private var safeNodes = mutableListOf<SafeRealTimeSearchNode<StateType>>()
 
@@ -54,21 +50,10 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     private var continueSearch = false
 
-    // Statistic variables
-    private var proofSuccessful: Int = 0
-    private var towardTopNode: Int = 0
-    private var numberOfProofs: Int = 0
-    private var targetDepthRankOfOpenFrontierDepth = ArrayList<ExperimentResult.DepthRankPair>()
-
+    @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
-//        results.proofSuccessful = this.proofSuccessful
-        results.towardTopNode = this.towardTopNode
-        results.numberOfProofs = this.numberOfProofs
-        results.depthRankOfOpen = this.targetDepthRankOfOpenFrontierDepth
-
-//        results.attributes["expansions"] = attributes["expansions"] ?: listOf()
-//        results.attributes["safeExpansions"] = attributes["safeExpansions"] ?: listOf()
-        results.attributes["safeNodesI"] = attributes["safeNodesI"] ?: listOf()
+        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"] ?: 0
+        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"] ?: 0
     }
 
     // Performance measurement
@@ -83,10 +68,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
             var currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.[2]")
 
+
             if (filterUnsafe) {
                 while (currentNode.unsafe) {
                     currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.[3]")
                 }
+            } else if (currentNode.unsafe) {
+                incrementCounter("unsafeSearchReexpansion")
             }
 
             if (currentNode.safe || domain.isSafe(currentNode.state)) {
@@ -120,7 +108,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
         terminationChecker.resetTo(unusedExpansions + terminationChecker.remaining())
         unusedExpansions = 0
@@ -129,16 +117,13 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
             rootState = sourceState
         } else if (sourceState != rootState) {
             // The given sourceState should be the last target
-            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
-            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root sourceState: $sourceState" }
         // Every turn learn then A* until time expires
 
         // Learning phase
@@ -147,95 +132,32 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         }
 
         // Exploration phase
-        var plan: List<RealTimePlanner.ActionBundle>? = null
 
-        proofSuccessful = 0
         val (targetNode, lastSafeNode) = when (safetyProof) {
             TOP_OF_OPEN -> microIteration(sourceState, terminationChecker)
             A_STAR_FIRST -> macroIteration(sourceState, terminationChecker)
             else -> TODO()
         }
 
-
         // Backup safety
         predecessorSafetyPropagation(safeNodes)
         safeNodes.clear()
-        var nodeRankTarget = 0
-        var costToFrontier = 0
 
         val currentSafeTarget = when (targetSelection) {
             // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
-            SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList, recordRank = { rank: Int, cost: Int -> nodeRankTarget = rank; costToFrontier = cost })
+            SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
             SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
         }
-
-
-        // Metric only - find projected safe node
-        {
-            val openListLookup = openList.backingArray.toSet()
-            val sortedOpenNodes = MutableList(openList.size) { openList.backingArray[it]!! }
-            sortedOpenNodes.sortBy { it.cost + it.heuristic }
-
-            var currentSafeTargetProjection = currentSafeTarget
-
-            if (currentSafeTargetProjection == null) {
-                print("No safe to best node found")
-            }
-
-            while (true) {
-                if (currentSafeTargetProjection in openListLookup) {
-                    print("OpenRank: ${sortedOpenNodes.indexOf(currentSafeTargetProjection)} \t/\t ${sortedOpenNodes.size}")
-                    break
-                }
-
-                if (currentSafeTargetProjection == null) {
-                    println("Internal")
-                    break
-                }
-                val nextSafeTargetProjection = bestSafeChild(currentSafeTargetProjection!!.state, domain) { state ->
-                    nodes[state]?.safe ?: false
-                }?.let { nodes[it] }
-
-                if (currentSafeTargetProjection == nextSafeTargetProjection) {
-                    print("Internal loop")
-                    break
-                }
-
-                currentSafeTargetProjection = nextSafeTargetProjection
-            }
-        }
-        // Metric end
-
 
         val targetSafeNode = currentSafeTarget
                 ?: attemptIdentityAction(sourceState)?.apply { }
                 ?: bestSafeChild(sourceState, domain) { state -> nodes[state]?.safe ?: false }?.let { nodes[it] }
                 ?: targetNode
 
-        if (targetSafeNode == targetNode) towardTopNode++
-        val targetDepth = targetSafeNode.cost / actionDuration
-        val targetRank = nodeRankTarget
-        val frontierDepth = costToFrontier / actionDuration
-
-        targetDepthRankOfOpenFrontierDepth.add(ExperimentResult.DepthRankPair(targetRank, frontierDepth.toInt()))
-
-//            println("\tTargetRank: $targetRank\tTargetDepth: ${frontierDepth.toInt()}")
-
-        // Metrics only
-        val openNodes = mutableListOf<SafeRealTimeSearchNode<StateType>>()
-        openList.forEach { openNodes.add(it) }
-        val openDepths = openNodes.map { it.cost / actionDuration }
-
-//            println("targetD: $targetDepth frontierD: $frontierDepth openD(min: ${openDepths.min()} max: ${openDepths.max()} avg: ${openDepths.average()} ")
-
-        plan = extractPath(targetSafeNode, sourceState)
         rootState = targetSafeNode.state
-
         unusedExpansions = terminationChecker.remaining()
 
-        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-
-        return plan!!
+        return extractPath(targetSafeNode, sourceState)
     }
 
     private fun attemptIdentityAction(sourceState: StateType): SafeRealTimeSearchNode<StateType>? {
@@ -255,7 +177,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * Will just repeatedly expand according to A*.
      */
     private fun microIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
-        logger.debug { "Starting A* from sourceState: $sourceState" }
         initializeAStar(sourceState)
 
         var totalExpansionDuration = 0L
@@ -273,15 +194,16 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     terminationChecker.notifyExpansion()
                     currentExpansionDuration++
                 }
-                .forEach {
-                    if (currentExpansionDuration >= costBucket) {
+                .forEach { _ ->
+                    if (currentExpansionDuration >= costBucket * 2 * safetyExplorationRatio) {
                         // Switch to safety
                         appendAttribute("expansions", currentExpansionDuration.toInt())
 
                         totalExpansionDuration += currentExpansionDuration
                         currentExpansionDuration = 0L
 
-                        val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
+                        val desiredExpansionLimit = costBucket * 2 - currentExpansionDuration
+                        val exponentialExpansionLimit = minOf(desiredExpansionLimit, terminationChecker.remaining())
                         val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
 
                         val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
@@ -294,7 +216,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
                         if (nextTopNode.safe) {
                             // If proof was successful reset the bucket
-                            proofSuccessful++
                             costBucket = 10
                             safeNodes.add(nextTopNode)
                         } else {
@@ -304,8 +225,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                     }
                 }
 
-        appendAttribute("safeNodesI", proofSuccessful)
-
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
 
@@ -314,12 +233,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * Will just repeatedly expand according to A*.
      */
     private fun macroIteration(sourceState: StateType, terminationChecker: TerminationChecker): Pair<SafeRealTimeSearchNode<StateType>, SafeRealTimeSearchNode<StateType>?> {
-        logger.debug { "Starting A* from sourceState: $sourceState" }
         initializeAStar(sourceState)
 
-        var totalExpansionDuration = 0L
-        var currentExpansionDuration = 0L
-        var totalSafetyDuration = 0L
         lastSafeNode = null
 
         val aStarTerminationChecker = StaticExpansionTerminationChecker((terminationChecker.remaining() * safetyExplorationRatio).toLong())
@@ -332,55 +247,20 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 .forEach { _ ->
                     terminationChecker.notifyExpansion()
                     aStarTerminationChecker.notifyExpansion()
-                    currentExpansionDuration++
                 }
 
-        val sortedOpenNodes = MutableList(openList.size) { openList.backingArray[it]!! }
-        sortedOpenNodes.sortBy { it.cost + it.heuristic }
+        while(openList.isNotEmpty()) {
+            val topNode = openList.peek()!!
+            proveSafety(topNode, terminationChecker)
 
-        for (openNode in sortedOpenNodes) {
-            proveSafety(openNode, terminationChecker)
-            if (openNode.safe) {
-                safeNodes.add(openNode)
-                proofSuccessful++
+            if (topNode.safe) {
+                safeNodes.add(topNode)
 
                 break
+            } else {
+                openList.pop()
             }
         }
-
-
-//        {
-//            if (currentExpansionDuration >= costBucket) {
-//                // Switch to safety
-//                appendAttribute("expansions", currentExpansionDuration.toInt())
-//
-//                totalExpansionDuration += currentExpansionDuration
-//                currentExpansionDuration = 0L
-//
-//                val exponentialExpansionLimit = minOf((costBucket * safetyExplorationRatio).toLong(), terminationChecker.remaining())
-//                val safetyTerminationChecker = StaticExpansionTerminationChecker(exponentialExpansionLimit)
-//
-//                val nextTopNode = openList.peek() ?: throw GoalNotReachableException("Goal is not reachable")
-//                val safetyProofDuration = proveSafety(nextTopNode, safetyTerminationChecker)
-//
-//                terminationChecker.notifyExpansion(safetyProofDuration)
-//                totalSafetyDuration += safetyProofDuration
-//
-//                appendAttribute("safeExpansions", safetyProofDuration.toInt())
-//
-//                if (nextTopNode.safe) {
-//                    // If proof was successful reset the bucket
-//                    proofSuccessful++
-//                    costBucket = 10
-//                    safeNodes.add(nextTopNode)
-//                } else {
-//                    // Increase the
-//                    costBucket *= 2
-//                }
-//            }
-//        }
-
-        appendAttribute("safeNodesI", proofSuccessful)
 
         return (openList.peek() ?: throw GoalNotReachableException("Open list is empty.")) to lastSafeNode
     }
@@ -391,7 +271,6 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
      * If the termination checker expires then the safety flag is not set.
      */
     private fun proveSafety(sourceNode: SafeRealTimeSearchNode<StateType>, terminationChecker: TerminationChecker): Long {
-        numberOfProofs++
         return measureLong(terminationChecker::elapsed) {
             when {
                 sourceNode.safe -> {
@@ -412,6 +291,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                             else -> UNKNOWN
                         }
                     }
+
+                    incrementCounter("unsafeSafetyReexpansion", safetyProof.reexpandedUnsafeStates)
 
                     when (safetyProof.status) {
                         SAFE -> {
@@ -438,7 +319,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
         } else {
             iterationCounter++
             openList.clear()
-            openList.reorder(fValueComparator)
+            openList.reorder(explorationComparator)
 
             val node = getUninitializedNode(state)
             node.apply {

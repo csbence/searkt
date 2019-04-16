@@ -1,20 +1,18 @@
 package edu.unh.cs.ai.realtimesearch.planner.realtime
 
+//import edu.unh.cs.ai.realtimesearch.visualizer
 import edu.unh.cs.ai.realtimesearch.environment.Action
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.SearchEdge
 import edu.unh.cs.ai.realtimesearch.planner.SearchNode
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
-//import edu.unh.cs.ai.realtimesearch.visualizer
-import org.slf4j.LoggerFactory
 import java.lang.Double.min
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -32,7 +30,6 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     //Configuration parameters
     private val expansionRatio: Double = configuration.backlogRatio ?: 1.0
     //Logger and timekeeping
-    private val logger = LoggerFactory.getLogger(ComprehensiveEnvelopeSearch::class.java)
     var dijkstraTimer = 0L
     var expansionTimer = 0L
 
@@ -165,7 +162,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
      * </ul>
      */
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
-        logger.debug { "Selecting action with source state:\n $sourceState" }
+        println("Selecting action with source state:\n $sourceState")
 
         if (iterationCount == 0) {
             frontier.add(Node(sourceState, domain.heuristic(sourceState)))
@@ -198,7 +195,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
 
         iterationCount++
 
-        logger.debug {
+        println(
             """
             |*****Status after Iteration $iterationCount*****
             |Timers:
@@ -208,7 +205,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
             |Frontier Size: ${frontier.size}
             |Backlog Queue Size: ${backlogQueue.size}
             """.trimMargin()
-        }
+        )
 
 
 
@@ -223,7 +220,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     private fun dijkstra(terminationChecker: TerminationChecker) {
         val limit = (expansionRatio * lastExpansionCount).toLong()
 
-        logger.debug { "Learning Phase: Limit $limit" }
+        println("Learning Phase: Limit $limit")
 
         //resort min queues
         //with more analysis and work, this may be informed by techniques from D* Lite
@@ -232,12 +229,12 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         for (i in 1..limit) {
             //break checks
             if (terminationChecker.reachedTermination()) {
-                logger.debug { "Learning phase could not complete before termination" }
+                println("Learning phase could not complete before termination")
                 break
             }
 
             if (backlogQueue.isEmpty()) {
-                logger.debug { "Reached the end of the backlog queue" }
+                println("Reached the end of the backlog queue")
                 break
             }
 
@@ -297,7 +294,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
      * @return whether or not the goal was found
      */
     private fun expandFrontier(terminationChecker: TerminationChecker): Boolean {
-        logger.debug { "Expansion Phase" }
+        println("Expansion Phase")
 
         //reset in prep for next learning phase
         lastExpansionCount = 0
@@ -382,7 +379,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
 
         while (!terminationChecker.reachedTermination()) {
             if (goalPathNode == null) {
-                logger.debug { "Goal path propagation complete! No more nodes to update" }
+                println("Goal path propagation complete! No more nodes to update")
                 return
             }
 
@@ -434,7 +431,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     //Agent moves to the next state with the lowest cost (action cost + h), breaking ties on h.
     //If on the goal path, follows diminishing h values
     private fun moveAgent(sourceState: StateType): List<ActionBundle> {
-        logger.debug { "Movement Phase" }
+        println("Movement Phase")
 
         //only commit 1 at a time
         val actionList = ArrayList<ActionBundle>()

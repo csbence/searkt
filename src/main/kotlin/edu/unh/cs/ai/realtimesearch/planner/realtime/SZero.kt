@@ -5,14 +5,10 @@ import edu.unh.cs.ai.realtimesearch.MetronomeException
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.trace
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.*
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureTimeMillis
@@ -68,7 +64,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
     }
 
-    private val logger = LoggerFactory.getLogger(LssLrtaStarPlanner::class.java)
     private var iterationCounter = 0L
 
     private val safeNodes = ArrayList<Node<StateType>>()
@@ -128,16 +123,13 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             rootState = sourceState
         } else if (sourceState != rootState) {
             // The given sourceState should be the last target
-            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
-            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
 
-        logger.debug { "Root sourceState: $sourceState" }
         // Every turn learn then A* until time expires
 
         // Learning phase
@@ -164,8 +156,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             rootState = targetNode.state
         }
 
-        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra time: $dijkstraTimer" }
 
         return plan!!
     }
@@ -182,7 +172,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                 ?: domain.heuristic(state), 0, 0, NoOperationAction, iterationCounter)
         nodes[state] = node
         openList.add(node)
-        logger.debug { "Starting A* from state: $state" }
 
         while (!terminationChecker.reachedTermination()) {
             aStarPopCounter++
@@ -214,7 +203,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
 
@@ -259,18 +247,12 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
                     actionCost = successor.actionCost.toLong()
                 }
 
-                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
-                logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
-
                 if (!successorNode.open) {
                     openList.add(successorNode) // Fresh node not on the open yet
                 } else {
                     openList.update(successorNode)
                 }
             } else {
-                logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
-                }
             }
         }
 
@@ -337,7 +319,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
      *
      */
     private fun dijkstra(terminationChecker: TerminationChecker) {
-        logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
@@ -372,9 +353,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
                 val predecessorHeuristicValue = predecessorNode.heuristic
 
-                //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
-
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
@@ -396,12 +374,6 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             }
         }
 
-        // update mode if done
-        if (openList.isEmpty()) {
-            logger.debug { "Done with Dijkstra" }
-        } else {
-            logger.warn { "Incomplete learning step. Lists: Open(${openList.size})" }
-        }
     }
 
     /**

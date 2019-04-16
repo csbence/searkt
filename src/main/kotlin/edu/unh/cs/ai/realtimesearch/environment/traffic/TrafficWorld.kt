@@ -5,7 +5,6 @@ import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
 import edu.unh.cs.ai.realtimesearch.environment.location.Location
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.MovingObstacle
 import edu.unh.cs.ai.realtimesearch.environment.obstacle.toLocationSet
-import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 
 /**
@@ -14,7 +13,6 @@ import java.lang.Math.abs
  * Created by doylew on 1/17/17.
  */
 class TrafficWorld(val width: Int, val height: Int, var bunkers: Set<Location>, val goal: Location, val actionDuration: Long, obstacles: List<MovingObstacle>) : Domain<TrafficWorldState> {
-    private val logger = LoggerFactory.getLogger(TrafficWorld::class.java)
     private val movingObstacles: List<MovingObstacle> = obstacles.map { it }
     private val obstacleTimeSequence: MutableList<Set<Location>> = arrayListOf(movingObstacles.toLocationSet())
 

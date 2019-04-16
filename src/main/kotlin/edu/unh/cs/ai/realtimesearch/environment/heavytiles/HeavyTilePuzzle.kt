@@ -2,15 +2,12 @@ package edu.unh.cs.ai.realtimesearch.environment.heavytiles
 
 import edu.unh.cs.ai.realtimesearch.environment.Domain
 import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
-import org.slf4j.LoggerFactory
 import java.lang.Math.abs
 import java.util.*
 
 class HeavyTilePuzzle(val size: Int, val actionDuration: Long) : Domain<HeavyTilePuzzle4State> {
 
     private val randomIntegerTable = Array(256, {Random(Random().nextLong()).nextInt()})
-
-    val logger = LoggerFactory.getLogger(HeavyTilePuzzle::class.java)!!
 
     private val goalState: HeavyTilePuzzle4State by lazy {
         val tiles = ByteArray(16, { it.toByte() })

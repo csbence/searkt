@@ -6,13 +6,9 @@ import edu.unh.cs.ai.realtimesearch.environment.State
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.ai.realtimesearch.planner.AnytimePlanner
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.util.*
 
 class AnytimeRepairingAStar<StateType : State<StateType>>(domain: Domain<StateType>) : AnytimePlanner<StateType>(domain) {
-
-    private val logger = LoggerFactory.getLogger(AnytimeRepairingAStar::class.java)
-
     private var inflationFactor = 3.0
     private val openList: Queue<Node<StateType>> = PriorityQueue(compareBy<Node<StateType>> { inflatedFValue(it) })
     private val closedList: MutableMap<StateType, Node<StateType>> = hashMapOf()

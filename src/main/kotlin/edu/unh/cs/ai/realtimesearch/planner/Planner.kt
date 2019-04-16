@@ -7,6 +7,7 @@ import edu.unh.cs.ai.realtimesearch.logging.EventLogger
 abstract class Planner<StateType: State<StateType>> {
     val eventLogger: EventLogger<StateType> = EventLogger()
     val attributes = mutableMapOf<String, MutableCollection<Int>>()
+    val counters = mutableMapOf<String, Int>()
 
     var generatedNodeCount: Int = 0
     var expandedNodeCount: Int = 0
@@ -19,5 +20,10 @@ abstract class Planner<StateType: State<StateType>> {
         collection.add(value)
 
         attributes[key] = collection
+    }
+
+    fun incrementCounter(key: String, increment: Int = 1) {
+        val value = counters[key] ?: 0
+        counters[key] = value + increment
     }
 }

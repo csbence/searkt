@@ -1,7 +1,5 @@
 package edu.unh.cs.ai.realtimesearch.util
 
-import org.slf4j.LoggerFactory
-
 interface BucketNode {
     fun getFValue(): Double
     fun getGValue(): Double
@@ -17,9 +15,6 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
     private val lookUpTable = HashMap<GHPair, Bucket<T>>(100000, 1.toFloat())
 
     private class BucketOpenListException(message: String) : Exception(message)
-
-    @Suppress("unused")
-    private val logger = LoggerFactory.getLogger(BucketOpenList::class.java)
 
     private inner class PotentialComparator<T> : Comparator<T> {
         override fun compare(a: T, b: T): Int {

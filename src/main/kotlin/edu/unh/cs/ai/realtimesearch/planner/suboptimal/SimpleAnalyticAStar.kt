@@ -10,7 +10,6 @@ import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.SearchQueueElement
-import org.slf4j.LoggerFactory
 import java.util.HashMap
 import kotlin.Comparator
 
@@ -64,9 +63,6 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
         override fun toString(): String =
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
-
-    @Suppress("unused")
-    private val logger = LoggerFactory.getLogger(SimpleAnalyticAStar::class.java)
 
     private val fValueComparator = Comparator<SimpleAnalyticAStar.Node<StateType>> { lhs, rhs ->
         when {

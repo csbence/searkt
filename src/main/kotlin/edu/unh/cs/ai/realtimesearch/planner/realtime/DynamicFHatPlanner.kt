@@ -3,15 +3,11 @@ package edu.unh.cs.ai.realtimesearch.planner.realtime
 import edu.unh.cs.ai.realtimesearch.environment.*
 import edu.unh.cs.ai.realtimesearch.experiment.measureInt
 import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.logging.debug
-import edu.unh.cs.ai.realtimesearch.logging.trace
-import edu.unh.cs.ai.realtimesearch.logging.warn
 import edu.unh.cs.ai.realtimesearch.planner.RealTimePlanner
 import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
 import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
 import edu.unh.cs.ai.realtimesearch.util.Indexable
 import edu.unh.cs.ai.realtimesearch.util.resize
-import org.slf4j.LoggerFactory
 import java.lang.Math.max
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -67,7 +63,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         }
     }
 
-    private val logger = LoggerFactory.getLogger(DynamicFHatPlanner::class.java)
     private var iterationCounter = 0L
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
@@ -161,16 +156,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
             rootState = sourceState
         } else if (sourceState != rootState) {
             // The given sourceState should be the last target
-            logger.debug { "Inconsistent world sourceState. Expected $rootState got $sourceState" }
         }
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
-            logger.warn { "selectAction: The goal sourceState is already found." }
             return emptyList()
         }
-
-        logger.debug { "Root sourceState: $sourceState" }
 
         // Learning phase
         if (openList.isNotEmpty()) {
@@ -189,9 +180,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
             rootState = targetNode.state
         }
 
-        logger.debug { "AStar pops: $aStarPopCounter Dijkstra pops: $dijkstraPopCounter" }
-        logger.debug { "AStar time: $aStarTimer Dijkstra pops: $dijkstraTimer" }
-
         return plan!!
     }
 
@@ -207,7 +195,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         nodes[state] = node // Add root node to the node table
         var currentNode = node
         addToOpenList(node)
-        logger.debug { "Starting A* from state: $state" }
 
         val expandedNodes = measureInt({ expandedNodeCount }) {
             while (!terminationChecker.reachedTermination()) {
@@ -225,10 +212,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         if (node == currentNode && !domain.isGoal(currentNode.state)) {
             //            throw InsufficientTerminationCriterionException("Not enough time to expand even one node")
         } else {
-            logger.debug { "A* : expanded $expandedNodes nodes" }
         }
-
-        logger.debug { "Done with AStar at $currentNode" }
 
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
     }
@@ -257,7 +241,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
-            logger.trace { "Considering successor $successorState" }
 
             val successorNode = getNode(sourceNode, successor)
 
@@ -301,18 +284,12 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
                     correctedHeuristic = heuristicError * currentDistanceEstimate + heuristic
                 }
 
-                logger.debug { "Expanding from $sourceNode --> $successorState :: open list size: ${openList.size}" }
-                logger.trace { "Adding it to to cost table with value ${successorNode.cost}" }
-
                 if (!successorNode.open) {
                     addToOpenList(successorNode)
                 } else {
                     openList.update(successorNode)
                 }
             } else {
-                logger.trace {
-                    "Did not add, because it's cost is ${successorNode.cost} compared to cost of predecessor ( ${sourceNode.cost}), and action cost ${successor.actionCost}"
-                }
             }
         }
 
@@ -376,7 +353,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
      *
      */
     private fun dijkstra(terminationChecker: TerminationChecker) {
-        logger.debug { "Start: Dijkstra" }
         // Invalidate the current heuristic value by incrementing the counter
         iterationCounter++
 
@@ -407,9 +383,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
 
                 val predecessorHeuristicValue = predecessorNode.heuristic
 
-                //                logger.debug { "Considering predecessor ${predecessor.node} with heuristic value $predecessorHeuristicValue" }
-                //                logger.debug { "Node in closedList: ${predecessor.node in closedList}. Current heuristic: $predecessorHeuristicValue. Proposed new value: ${(currentHeuristicValue + predecessor.actionCost)}" }
-
                 if (!predecessorNode.open) {
                     // This node is not open yet, because it was not visited in the current planning iteration
 
@@ -429,13 +402,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
                 }
             }
         }
-
-        // update mode if done
-        if (openList.isEmpty()) {
-            logger.debug { "Done with Dijkstra" }
-        } else {
-            logger.warn() { "Incomplete learning step. Lists: Open(${openList.size})) " }
-        }
     }
 
     /**
@@ -444,8 +410,6 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
     private fun extractPlan(targetNode: Node<StateType>, sourceState: StateType): List<ActionBundle> {
         val actions = ArrayList<ActionBundle>(1000)
         var currentNode = targetNode
-
-        logger.debug() { "Extracting plan" }
 
         if (targetNode.state == sourceState) {
             return emptyList()
@@ -457,13 +421,10 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
             currentNode = currentNode.parent
         } while (currentNode.state != sourceState)
 
-        logger.debug() { "Plan extracted" }
-
         return actions.reversed()
     }
 
     private fun clearOpenList() {
-        logger.debug { "Clear open list" }
         openList.clear()
     }
 
