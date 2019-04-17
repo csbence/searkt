@@ -34,6 +34,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
     var expansionTimer = 0L
 
 
+    @Suppress("UNUSED_PARAMETER")
     class Node<StateType : State<StateType>>(override val state: StateType, override var heuristic: Double) : SearchNode<StateType, Node<StateType>>, Indexable {
 
         // We need this for the visualizer - this should be resolved
@@ -326,7 +327,9 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         } else {
             val successors = domain.successors(frontierNode.state)
 
+            @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
             var bestNode: Node<StateType> = frontierNode
+
             var bestH: Double = Double.POSITIVE_INFINITY
             successors.forEach {
                 val successorNode: Node<StateType>?

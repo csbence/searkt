@@ -11,6 +11,7 @@ import java.io.InputStream
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 object AcrobotIO {
+    @Suppress("UNUSED_PARAMETER")
     fun parseFromStream(input: InputStream, actionDuration: Long = AcrobotStateConfiguration.defaultActionDuration): AcrobotInstance {
 //        val configuration = AcrobotConfiguration.fromJsonStream(input)
 //        return AcrobotInstance(DiscretizedDomain(Acrobot(configuration, actionDuration)), DiscretizedState(configuration.initialState))

@@ -134,7 +134,6 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
         this.terminationChecker = terminationChecker
         val node = Node(state, weight * domain.heuristic(state), 0.0, 0.0, NoOperationAction)
         var currentNode: Node<StateType>
-        val startTime = System.nanoTime()
         nodes[state] = node
         openList.add(node)
         generatedNodeCount++
@@ -149,10 +148,12 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
             currentNode.isClosed = true
             expandedNodeCount++
         }
+
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +
                     "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }
+
         throw GoalNotReachableException()
     }
 

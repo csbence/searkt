@@ -99,7 +99,6 @@ private fun generateConfigurations(): String {
                     Triple(LSS_LRTA_STAR, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SAFE_RTS, COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
                     Triple(SAFE_RTS, TARGET_SELECTION, listOf(SAFE_TO_BEST.toString())),
-                    Triple(SAFE_RTS, FILTER_UNSAFE, listOf(false)),
                     Triple(SAFE_RTS, SAFETY_PROOF, listOf(SafetyProof.TOP_OF_OPEN)),
                     safetyExplorationRatio
             ),

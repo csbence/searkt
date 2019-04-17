@@ -1,7 +1,6 @@
 package edu.unh.cs.searkt.planner.realtime
 
 import edu.unh.cs.searkt.environment.*
-import edu.unh.cs.searkt.experiment.measureInt
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.RealTimePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
@@ -194,17 +193,15 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
         var currentNode = node
         addToOpenList(node)
 
-        val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination()) {
-                aStarPopCounter++
+        while (!terminationChecker.reachedTermination()) {
+            aStarPopCounter++
 
-                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
-                if (domain.isGoal(topNode.state)) return topNode
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode
 
-                currentNode = popOpenList()
-                expandFromNode(currentNode)
-                terminationChecker.notifyExpansion()
-            }
+            currentNode = popOpenList()
+            expandFromNode(currentNode)
+            terminationChecker.notifyExpansion()
         }
 
         if (node == currentNode && !domain.isGoal(currentNode.state)) {

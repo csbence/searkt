@@ -51,6 +51,7 @@ open class ExperimentData(val valueStore: MutableMap<String, Any?> = hashMapOf()
 object SimpleSerializer : KSerializer<Any> {
     override val descriptor: SerialDescriptor = StringDescriptor.withName("Simple")
 
+    @Suppress("UNCHECKED_CAST")
     @SuppressWarnings
     override fun serialize(encoder: Encoder, obj: Any) {
         when (obj) {

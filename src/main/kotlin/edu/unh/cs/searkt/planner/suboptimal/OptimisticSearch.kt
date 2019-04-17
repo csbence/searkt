@@ -67,6 +67,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
 
         override fun hashCode(): Int = state.hashCode()
 
+        @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
             return try {
                 val otherCast = other as Node<*>
@@ -209,7 +210,6 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
-        val startTime = System.nanoTime()
         nodes[state] = node
         fOpenList.add(node)
         fHatOpenList.add(node)
@@ -235,10 +235,12 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
             topNode.isClosed = true
             expandedNodeCount++
         }
+
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +
                     "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }
+
         throw GoalNotReachableException()
     }
 

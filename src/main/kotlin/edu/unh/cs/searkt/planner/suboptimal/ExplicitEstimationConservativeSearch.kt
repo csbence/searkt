@@ -267,7 +267,6 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction, d = domain.distance(state))
-        val startTime = System.nanoTime()
         nodes[state] = node
         cleanup.add(node)
         openList.add(node, node)
@@ -281,10 +280,12 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
             expandFromNode(topNode)
             expandedNodeCount++
         }
+
         if (terminationChecker.reachedTermination()) {
             throw MetronomeException("Reached termination condition, " +
                     "${terminationChecker.remaining() + 1} / ${terminationChecker.elapsed() - 1} remaining!")
         }
+
         throw GoalNotReachableException()
     }
 }

@@ -6,7 +6,6 @@ import edu.unh.cs.searkt.environment.State
 import edu.unh.cs.searkt.environment.SuccessorBundle
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.searkt.experiment.measureInt
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.searkt.planner.*
@@ -51,18 +50,18 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
     /** Cost in nanoseconds of following a tree pointer. Used in buffer calculation on when to stop exploring */
     private val treeFollowingFactor = 100.0
 
-    override fun init(rootState: StateType) {
+    override fun init(initialState: StateType) {
         val node = PureRealTimeSearchNode(
-                state = rootState,
-                heuristic = domain.heuristic(rootState),
+                state = initialState,
+                heuristic = domain.heuristic(initialState),
                 actionCost = 0,
                 action = NoOperationAction,
                 cost = 0,
                 iteration = 0)
         node.parent = node
 
-        nodes[rootState] = node
-        nodes.remove(rootState)
+        nodes[initialState] = node
+        nodes.remove(initialState)
     }
 
     /**
@@ -146,24 +145,22 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
         openList.add(node)
 
         var pathLengthBuffer = 0L
-        val expandedNodes = measureInt({ expandedNodeCount }) {
-            while (!terminationChecker.reachedTermination(pathLengthBuffer)) {
-                aStarPopCounter++
+        while (!terminationChecker.reachedTermination(pathLengthBuffer)) {
+            aStarPopCounter++
 
-                val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
-                if (domain.isGoal(topNode.state)) return topNode
+            val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
+            if (domain.isGoal(topNode.state)) return topNode
 
-                currentNode = openList.pop()
-                        ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-                expandFromNode(this, currentNode, {})
+            currentNode = openList.pop()
+                    ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
+            expandFromNode(this, currentNode, {})
 
-                //we only care about path length for time termination limits. Expansion limits get free tree following
-                if (configuration.terminationType == TerminationType.TIME) {
-                    pathLengthBuffer = ((openList.peek()?.minCostPathLength
-                            ?: 0).toDouble() * treeFollowingFactor).toLong()
-                }
-                terminationChecker.notifyExpansion()
+            //we only care about path length for time termination limits. Expansion limits get free tree following
+            if (configuration.terminationType == TerminationType.TIME) {
+                pathLengthBuffer = ((openList.peek()?.minCostPathLength
+                        ?: 0).toDouble() * treeFollowingFactor).toLong()
             }
+            terminationChecker.notifyExpansion()
         }
 
         if (node == currentNode && !domain.isGoal(currentNode.state)) {
@@ -209,5 +206,6 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
     }
 
     //conveniently turn on / off console printing
+    @Suppress("UNUSED_PARAMETER")
     private fun printMessage(message: String) = 0//println(message)
 }

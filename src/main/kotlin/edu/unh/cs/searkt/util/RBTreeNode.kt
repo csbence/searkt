@@ -17,6 +17,7 @@
 package edu.unh.cs.searkt.util
 
 
+@Suppress("EXPOSED_PROPERTY_TYPE_IN_CONSTRUCTOR")
 class RBTreeNode<K : RBTreeElement<K, V>, V> internal constructor(var key: K, var value: V, var color: Color, var left: RBTreeNode<K, V>?, var right: RBTreeNode<K, V>?) {
     internal enum class Color {
         RED, BLACK

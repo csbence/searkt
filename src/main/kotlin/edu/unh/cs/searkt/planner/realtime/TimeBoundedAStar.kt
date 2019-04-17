@@ -133,7 +133,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
         printMessage("""Initial: ${terminationChecker.remaining()}""")
         if (rootState == null) {
@@ -151,7 +151,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             return emptyList()
         }
 
-        var plan: List<RealTimePlanner.ActionBundle>? = null
+        var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             val currentTargetPath = getCurrentPath(sourceState, terminationChecker)
 
@@ -234,32 +234,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
 
-        val expansions = aStarPopCounter
         while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
                         ?: throw GoalNotReachableException("Open list is empty."))) {
-            val iterationExecutionTime = measureNanoTime {
-                aStarPopCounter++
+            aStarPopCounter++
 
-                val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+            val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+            expandFromNode(this, currentNode) {}
 
-//                val listAddExTime = measureNanoTime {
-//                    expandedNodes.add(currentNode)
-//                }
-//                printMessage("""Adding to List Execution Time: $listAddExTime""")
-
-                val expandExecutionTime = measureNanoTime {
-                    expandFromNode(this, currentNode) {}
-                }
-                //printMessage("""Expand Node Execution Time: $expandExecutionTime""")
-
-                terminationChecker.notifyExpansion()
-                currentExpansionDuration++
-            }
-
-            //printMessage("""Iteration execution time: $iterationExecutionTime""")
+            terminationChecker.notifyExpansion()
+            currentExpansionDuration++
         }
-
-        printMessage("""Expanded ${aStarPopCounter - expansions} Nodes""")
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
         return openList.peek() ?: throw GoalNotReachableException("Open list is empty.")
@@ -357,7 +341,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * Average case constant time. (Worst case linear in path size, but only because of hash-set properties.
      */
     private fun findNewPath(bestPath: PathTrace<StateType>, currentAgentNode: PureRealTimeSearchNode<StateType>)
-            : List<RealTimePlanner.ActionBundle>? {
+            : List<ActionBundle>? {
         // Find common ancestor
         val sourceState = currentAgentNode.state
         var sourceOnPath = false
@@ -427,14 +411,17 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     }
 
     private fun backtrack(currentNode: PureRealTimeSearchNode<StateType>,
-                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<RealTimePlanner.ActionBundle> {
+                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<ActionBundle> {
         val transition = domain.transition(currentNode.state, nextNode.state)
                 ?: throw GoalNotReachableException("Cannot backtrack in this domain")
-        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second.toLong()))
+        return listOf(ActionBundle(transition.first, transition.second.toLong()))
     }
 }
 
-inline fun printMessage(msg: String) = 0//println(msg)
+@Suppress("UNUSED_PARAMETER")
+fun printMessage(msg: String) {
+//    println(msg)
+}
 
 enum class TBAOptimization {
     NONE, SHORTCUT, THRESHOLD

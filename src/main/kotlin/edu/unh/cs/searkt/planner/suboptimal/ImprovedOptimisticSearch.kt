@@ -81,6 +81,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
 
         override fun hashCode(): Int = state.hashCode()
 
+        @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
             return try {
                 val otherCast = other as Node<*>

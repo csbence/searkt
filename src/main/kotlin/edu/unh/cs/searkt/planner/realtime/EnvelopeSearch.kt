@@ -197,11 +197,11 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
     /**
      * "Prime" the nodes hashmap. Necessary for real time bounds to avoid hashmap startup costs
      */
-    override fun init(rootState: StateType) {
-        val primer = EnvelopeSearchNode(rootState,
+    override fun init(initialState: StateType) {
+        val primer = EnvelopeSearchNode(initialState,
                 0.0, 0L, 0L, NoOperationAction, 0L)
-        nodes[rootState] = primer
-        nodes.remove(rootState)
+        nodes[initialState] = primer
+        nodes.remove(initialState)
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
@@ -633,6 +633,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         PATH_IMPROVEMENT
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun printMessage(msg: String) = 0//println(msg)
 
     override fun getIterationSummary(): IterationSummary<StateType> {
