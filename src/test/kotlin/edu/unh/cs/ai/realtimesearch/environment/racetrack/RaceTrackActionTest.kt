@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.racetrack
+package edu.unh.cs.searkt.environment.racetrack
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

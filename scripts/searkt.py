@@ -5,20 +5,24 @@
 # Run searkt with the configs
 
 import copy
+import datetime
+import itertools
 import json
 import os
+import pandas as pd
+import slack_notification
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
-import itertools
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
-    expansion_limit = [100000000]
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES']
+    expansion_limit = [sys.maxsize]
     lookahead_type = ['DYNAMIC']
-    time_limit = [100000000000]
+    time_limit = [sys.maxsize]
     action_durations = [1]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -32,6 +36,7 @@ def generate_base_suboptimal_configuration():
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
     base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['errorModel'] = ['path']
 
     compiled_configurations = [{}]
 
@@ -39,7 +44,11 @@ def generate_base_suboptimal_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    weight = [1.1, 1.3, 1.5]
+    # weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    # weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
@@ -48,17 +57,28 @@ def generate_base_suboptimal_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'DPS']])
 
-    return compiled_configurations
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EES']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EECS']])
+
+    experiment_tag = ""
+    for alg in algorithms_to_run:
+        experiment_tag = experiment_tag + "-" + alg
+    return compiled_configurations, experiment_tag
 
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['SAFE_RTS']
+    algorithms_to_run = ['CES', 'ES', 'ALT_ENVELOPE', 'TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
-    action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
-    # action_durations = [50, 100, 150, 200, 250]
+    action_durations = [50, 100, 200, 500]
+    # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
 
@@ -82,6 +102,25 @@ def generate_base_configuration():
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
+
+    # Envelope-based
+    # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
+    backup_ratios = [1.0]
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'CES']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'ENVELOPE']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
+
+    # TBA*
+    optimizations = ['NONE', 'THRESHOLD']
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'tbaOptimization', optimizations,
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # S-RTS specific attributes
     compiled_configurations = cartesian_product(compiled_configurations,
@@ -134,11 +173,28 @@ def generate_racetrack():
     return configurations
 
 
+def generate_vacuum_worlds():
+    configurations, tag = generate_base_suboptimal_configuration()
+    worlds_to_run = []
+    for world in range(0, 1):
+        worlds_to_run.append('vacuum'+str(world)+'.vw')
+
+    world_base_path = 'input/vacuum/gen/'
+    full_world_paths = [world_base_path + world for world in worlds_to_run]
+
+    configurations = cartesian_product(configurations, 'domainName', ['VACUUM_WORLD'])
+    configurations = cartesian_product(configurations, 'domainPath', full_world_paths)
+
+    tag = tag + '-VACUUM_WORLD'
+
+    return configurations, tag
+
+
 def generate_tile_puzzle():
-    configurations = generate_base_suboptimal_configuration()
+    configurations, tag = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 11):
+    for puzzle in range(13, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -146,6 +202,23 @@ def generate_tile_puzzle():
 
     configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
+
+    return configurations, tag+'-SLIDING_TILE_PUZZLE_4'
+
+
+# Generates configs for Dragon Age Origins game map (Nathan Sturtevant)
+def generate_grid_world():
+    configurations = generate_base_configuration()
+
+    grids = []
+    for scenario in range(0, 50):
+        grids.append(str(scenario))
+
+    scenario_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
+    full_grid_paths = [scenario_base_path + scenario for scenario in grids]
+
+    configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
+    configurations = cartesian_product(configurations, 'domainPath', full_grid_paths)
 
     return configurations
 
@@ -226,9 +299,15 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json):
-    with open('output/results_srts.json', 'w') as outfile:
+def save_results(results_json, tag):
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
+    file_name = 'output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now())
+    with open(file_name, 'w') as outfile:
         json.dump(results_json, outfile)
+
+    print(f'Results saved to {file_name}')
 
 
 def main():
@@ -238,19 +317,26 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations = generate_racetrack()  # generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
+    # slack_notification.start_experiment_notification(len(configurations), 'byodoin')
 
+    start_time = time.perf_counter()
     results = parallel_execution(configurations, 1)
+    end_time = time.perf_counter()
+
+    print(f"Experiment time: {end_time - start_time}s")
+
 
     for result in results:
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    save_results(results)
+    save_results(results, tag)
     print_summary(results)
 
     print('{} results has been received.'.format(len(results)))
+    # slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':

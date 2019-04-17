@@ -86,8 +86,8 @@ endY = height
 path = args.path
 
 # hard code size bound for now
-# sizeBound = int(endY / 10)
-sizeBound = 10
+sizeBound = int(endY / 30)
+# sizeBound = 10
 
 if type(path) == type(None):
     path = "../input/vacuum/minima"
@@ -104,7 +104,7 @@ for iteration in range(0, number):
 
     aFile = open(completeFile, "w")
 
-    preamble = args.height+"\n"+args.width+"\n"
+    preamble = args.width+"\n"+args.height+"\n"
     world = ""
 
     obstacleLocations = set()

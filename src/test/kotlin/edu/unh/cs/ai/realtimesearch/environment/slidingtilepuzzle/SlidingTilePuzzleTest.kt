@@ -1,6 +1,6 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
-import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.searkt.environment.SuccessorBundle
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -106,9 +106,9 @@ class SlidingTilePuzzleTest {
         val s3 = SlidingTilePuzzleIO.parseFromStream(s3Instance, 1L)
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.EAST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.SOUTH, 1L)) }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.EAST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.SOUTH, 1.0)) }
     }
 
     @Test
@@ -132,10 +132,10 @@ class SlidingTilePuzzleTest {
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
         assertTrue { stp.domain.heuristic(stp.initialState) == 44.0 }
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.NORTH, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.EAST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s4.initialState, SlidingTilePuzzleAction.SOUTH, 1L)) }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.NORTH, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.EAST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s4.initialState, SlidingTilePuzzleAction.SOUTH, 1.0)) }
     }
 
 

@@ -25,13 +25,14 @@ def main(result_path, src_path_prefix, output_dir):
     for exp in experiments:
         if exp["success"]:
             file_name = exp["configuration"]["domainPath"]
-            file_name = output_dir + "/" + file_name[file_name.rfind("/"):]
+            file_name = output_dir + file_name[file_name.rfind("/"):]
 
             file_name = file_name[0:file_name.rfind("-")] + "-" + str(count) + ".vw"
 
-            shutil.copy(src_path_prefix + exp["configuration"]["domainPath"], file_name)
+            original_file_name = src_path_prefix + exp["configuration"]["domainPath"]
+            shutil.copy(original_file_name, file_name)
             count += 1
 
 
 if __name__ == "__main__":
-    main('../output/uniform_reachability.json', '../src/main/resources/', './filtered_uniform_domains')
+    main('../output/reachability.json', '../src/main/resources/', '../filtered_domains')

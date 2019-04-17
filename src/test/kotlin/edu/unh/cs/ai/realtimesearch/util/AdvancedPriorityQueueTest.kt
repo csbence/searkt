@@ -1,7 +1,11 @@
-package edu.unh.cs.ai.realtimesearch.util
+package edu.unh.cs.searkt.util
 
+import edu.unh.cs.searkt.experiment.terminationCheckers.FakeTerminationChecker
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticTimeTerminationChecker
 import org.junit.Test
 import java.util.*
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -81,7 +85,7 @@ class AdvancedPriorityQueueTest {
         val comparator = Comparator<IndexableContainer> { lhs, rhs ->
             lhs.value - rhs.value
         }
-        val priorityQueue = AdvancedPriorityQueue<IndexableContainer>(100, comparator)
+        val priorityQueue = AdvancedPriorityQueue(100, comparator)
 
         for (i in 1..100) {
             priorityQueue.add(IndexableContainer(i))
@@ -110,9 +114,9 @@ class AdvancedPriorityQueueTest {
         val comparator = Comparator<IndexableContainer> { lhs, rhs ->
             lhs.value - rhs.value
         }
-        val priorityQueue = AdvancedPriorityQueue<IndexableContainer>(100, comparator)
+        val priorityQueue = AdvancedPriorityQueue(100, comparator)
 
-        val numbers = Array(100, { it })
+        val numbers = Array(100) { it }
         val numberList = numbers.asList()
 
         Collections.shuffle(numberList)
@@ -136,7 +140,7 @@ class AdvancedPriorityQueueTest {
             lhs.value - rhs.value
         }
 
-        val priorityQueue = AdvancedPriorityQueue<IndexableContainer>(100, comparator)
+        val priorityQueue = AdvancedPriorityQueue(100, comparator)
 
         for (i in 1..100) {
             priorityQueue.add(IndexableContainer(i))
@@ -161,9 +165,9 @@ class AdvancedPriorityQueueTest {
             lhs.value - rhs.value
         }
 
-        val priorityQueue = AdvancedPriorityQueue<IndexableContainer>(1000, comparator)
+        val priorityQueue = AdvancedPriorityQueue(1000, comparator)
 
-        val numbers = Array(1000, { it })
+        val numbers = Array(1000) { it }
         val numberList = numbers.asList()
 
         Collections.shuffle(numberList)
@@ -189,16 +193,57 @@ class AdvancedPriorityQueueTest {
                     assertTrue(priorityQueue.peek() != null)
                     validateIndexes(priorityQueue)
                 }
-
             }
-
         }
     }
 
+    @Test
+    fun testCopyInitialization() {
+        val comparator1 = Comparator<IndexableContainer> { lhs, rhs ->
+            lhs.value - rhs.value
+        }
 
+        val comparator2 = Comparator<IndexableContainer> { lhs, rhs ->
+            -(lhs.value - rhs.value)
+        }
+
+        val priorityQueue = AdvancedPriorityQueue(100000, comparator1)
+        val priorityQueueCopy = AdvancedPriorityQueue(100000, comparator2)
+
+        val numbers = Array(100000) { it }
+        val numberList = numbers.asList()
+
+        Collections.shuffle(numberList)
+
+        // Add all elements to queue 1
+        numberList.forEach { priorityQueue.add(IndexableContainer(it)) }
+        validateIndexes(priorityQueue)
+
+        assertTrue(priorityQueue.size == 100000)
+
+        val terminationChecker = StaticTimeTerminationChecker(100000, 0)
+        val fakeTerminationChecker = FakeTerminationChecker
+
+        // First incomplete step
+        val completedIndex1 = priorityQueueCopy.initializeFromQueue(priorityQueue, terminationChecker, 0)
+        assertNotNull(completedIndex1)
+
+        // First incomplete step
+        val completedIndex1b = priorityQueueCopy.initializeFromQueue(priorityQueue, fakeTerminationChecker, 0)
+        assertNull(completedIndex1b)
+
+        val completedIndex2 = priorityQueueCopy.initializeFromQueue(priorityQueue, fakeTerminationChecker, 0)
+        assertNull(completedIndex2)
+
+        terminationChecker.resetTo(0)
+        assertNotNull(priorityQueueCopy.heapify(terminationChecker))
+
+        assertNull(priorityQueueCopy.heapify(fakeTerminationChecker))
+        validateIndexes(priorityQueueCopy)
+    }
 
     private fun validateIndexes(queue: AdvancedPriorityQueue<*>) {
-        for (i in  0..queue.backingArray.size - 1) {
+        for (i in 0 until queue.backingArray.size) {
             val indexable = queue.backingArray[i] ?: continue
             assertTrue(indexable.index == i)
         }

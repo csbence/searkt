@@ -1,8 +1,5 @@
-package edu.unh.cs.ai.realtimesearch.planner.anytime
+package edu.unh.cs.searkt.planner.anytime
 
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorld
-import edu.unh.cs.ai.realtimesearch.environment.vacuumworld.VacuumWorldState
 import org.junit.Test
 
 class AnytimeRepairingAStarTest {
