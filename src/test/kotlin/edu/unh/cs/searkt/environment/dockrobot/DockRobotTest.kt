@@ -84,7 +84,22 @@ class DockRobotTest {
 
     @Test
     fun successors() {
-
+        val successors = dockRobot.successors(initialDockRobotState)
+        for (successor in successors) {
+            if (successor.state.cargo != -1) {
+                val nextSuccessors = dockRobot.successors(successor.state)
+                for (nextSuccessor in nextSuccessors) {
+                    if (nextSuccessor.state.robotSiteId == 2) {
+                        val nextNextSuccessors = dockRobot.successors(nextSuccessor.state)
+                        for (nextNextSuccessor in nextNextSuccessors) {
+                            print(nextNextSuccessor)
+                        }
+                    }
+                    print(nextSuccessor)
+                }
+            }
+            print(successor)
+        }
     }
 
     @Test
