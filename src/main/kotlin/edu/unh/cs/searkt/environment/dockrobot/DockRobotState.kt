@@ -13,6 +13,8 @@ data class DockRobotState(val robotSiteId: Int,
                           val containerSites: IntArray,
                           val sites: MutableMap<SiteId, DockRobotSite>) : State<DockRobotState> {
 
+    var heuristic = -1.0
+
     override fun copy(): DockRobotState = copy()
 
     override fun equals(other: Any?): Boolean {
