@@ -48,7 +48,7 @@ class DockRobotDockRobotState(
                 }
 
                 val newState = state.copy(robotSiteId = targetSiteId)
-                successors.add(Successor(newState, DockRobotAction, actionCost = cost.toDouble()))
+                successors.add(Successor(newState, DockRobotMoveAction(targetSiteId), actionCost = cost.toDouble()))
             }
         }
 
@@ -64,12 +64,12 @@ class DockRobotDockRobotState(
             // Unload robot
             currentSite.piles
                     .filter { it.size < maxPileHeight }
-                    .forEachIndexed { pileId, pile ->
+                    .forEachIndexed { targetPileId, pile ->
                         val newPile = ArrayDeque(pile)
                         newPile.push(state.loadedContainer)
 
                         val newPiles = ArrayList(currentSite.piles)
-                        newPiles[pileId] = newPile
+                        newPiles[targetPileId] = newPile
 
                         newPiles.sortBy { it.size }
 
@@ -79,7 +79,7 @@ class DockRobotDockRobotState(
                         updatedSites[robotSiteId] = newSite
 
                         val newState = state.copy(loadedContainer = -1, sites = updatedSites)
-                        successors.add(Successor(newState, DockRobotAction, loadCost))
+                        successors.add(Successor(newState, DockRobotUnLoadAction(targetPileId), loadCost))
                     }
 
             // Create a new pile with the container
@@ -101,19 +101,22 @@ class DockRobotDockRobotState(
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = -1, sites = updatedSites)
-                successors.add(Successor(newState, DockRobotAction, loadCost))
+                successors.add(Successor(newState, DockRobotUnLoadAction(newPiles.size - 1), loadCost))
             }
 
         } else {
             // Load robot
-            currentSite.piles.forEachIndexed { pileId, pile ->
+            currentSite.piles.forEachIndexed { sourcePileId, pile ->
                 val newPile = ArrayDeque(pile)
                 val containerId = newPile.pop()
 
                 val newPiles = ArrayList(currentSite.piles)
-                newPiles[pileId] = newPile
-
-                newPiles.sortBy { it.size }
+                if (newPile.isEmpty()) {
+                    newPiles.removeAt(sourcePileId)
+                } else {
+                    newPiles[sourcePileId] = newPile
+                    newPiles.sortBy { it.size }
+                }
 
                 val newSite = DockRobotSite(newPiles)
 
@@ -121,7 +124,7 @@ class DockRobotDockRobotState(
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = containerId, sites = updatedSites)
-                successors.add(Successor(newState, DockRobotAction, loadCost))
+                successors.add(Successor(newState, DockRobotUnLoadAction(sourcePileId), loadCost))
             }
         }
 

@@ -2,10 +2,8 @@ package edu.unh.cs.searkt.environment.dockrobot
 
 import edu.unh.cs.searkt.environment.Action
 
-enum class DockRobotActionType {
-   MOVE, LOAD_ROBOT, UNLOAD_ROBOT, PICK_CONTAINER, PLACE_CONTAINER
-}
+sealed class DockRobotAction : Action
 
-
-object DockRobotAction : Action
-
+class DockRobotMoveAction(val targetSideId: Int) : DockRobotAction()
+class DockRobotLoadAction(val sourcePileId: Int) : DockRobotAction()
+class DockRobotUnLoadAction(val targetPileId: Int) : DockRobotAction()
