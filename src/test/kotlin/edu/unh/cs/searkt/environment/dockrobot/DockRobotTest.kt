@@ -9,7 +9,7 @@ internal abstract class DockRobotTest {
     private val maxPileHeight = 3
     private val costMatrix = ArrayList<ArrayList<Int>>()
     private val goalConfiguration = IntArray(9)
-    private val initialSites = HashMap<SiteID, DockRobotSite>()
+    private val initialSites = HashMap<SiteId, DockRobotSite>()
 
     private val dockRobot = DockRobot(siteCount, maxPileCount, maxPileHeight,
             costMatrix, goalConfiguration, initialSites.values)

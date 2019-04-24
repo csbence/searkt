@@ -1,6 +1,5 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
-import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.SuccessorBundle
 import java.util.*
@@ -45,8 +44,8 @@ class DockRobot(
                 val updatedContainerSites = state.containerSites.copyOf()
 
                 // Update the container location list if the robot is moving a container between sites
-                if (state.loadedContainer != -1) {
-                    updatedContainerSites[state.loadedContainer] = targetSiteId
+                if (state.cargo != -1) {
+                    updatedContainerSites[state.cargo] = targetSiteId
                 }
 
                 val newState = state.copy(robotSiteId = targetSiteId)
@@ -59,73 +58,94 @@ class DockRobot(
 
     private fun generateRobotLoadSuccessors(state: DockRobotState): List<Successor> {
         val robotSiteId = state.robotSiteId
-        val currentSite = state.sites[robotSiteId] ?: throw MetronomeException("Unknown site id")
+        val currentSite = state.sites[robotSiteId]
         val successors = mutableListOf<Successor>()
 
-        if (state.loadedContainer != -1) {
+        if (state.cargo != -1) {
             // Unload robot
-            currentSite.piles
-                    .filter { it.size < maxPileHeight }
-                    .forEachIndexed { targetPileId, pile ->
+            currentSite?.piles
+                    ?.filter { it.size < maxPileHeight }
+                    ?.forEachIndexed { targetPileId, pile ->
                         val newPile = ArrayDeque(pile)
-                        newPile.push(state.loadedContainer)
+                        newPile.push(state.cargo)
 
                         val newPiles = ArrayList(currentSite.piles)
                         newPiles[targetPileId] = newPile
 
-                        newPiles.sortBy { it.size }
+                        newPiles.sortWith(DockRobotState.pileComparator)
 
                         val newSite = DockRobotSite(newPiles)
 
                         val updatedSites = HashMap(state.sites)
                         updatedSites[robotSiteId] = newSite
 
-                        val newState = state.copy(loadedContainer = -1, sites = updatedSites)
+                        val newState = state.copy(cargo = -1, sites = updatedSites)
                         successors.add(Successor(newState, DockRobotUnLoadAction(targetPileId), loadCost))
                     }
 
+            val targetSite = if (currentSite == null) {
+                val dockRobotSite = DockRobotSite()
+                state.sites[robotSiteId] = dockRobotSite
+                dockRobotSite
+            } else {
+                currentSite
+            }
+
             // Create a new pile with the container
-            if (currentSite.piles.size < maxPileCount) {
+            if (targetSite.piles.size < maxPileCount) {
+                // The site does not exists yet
+
                 // Create the new pile
                 val newPile = ArrayDeque<Container>()
-                newPile.push(state.loadedContainer)
+                newPile.push(state.cargo)
 
                 // Create a copy of the old piles and add the new pile
-                val newPiles = ArrayList(currentSite.piles)
+                val newPiles = ArrayList(targetSite.piles)
                 newPiles.add(newPile)
 
                 // Sorting helps duplicate detection
-                newPiles.sortBy { it.size }
+                newPiles.sortWith(DockRobotState.pileComparator)
 
                 val newSite = DockRobotSite(newPiles)
 
                 val updatedSites = HashMap(state.sites)
                 updatedSites[robotSiteId] = newSite
 
-                val newState = state.copy(loadedContainer = -1, sites = updatedSites)
+                val newState = state.copy(cargo = -1, sites = updatedSites)
                 successors.add(Successor(newState, DockRobotUnLoadAction(newPiles.size - 1), loadCost))
             }
 
         } else {
             // Load robot
-            currentSite.piles.forEachIndexed { sourcePileId, pile ->
+            currentSite?.piles?.forEachIndexed { sourcePileId, pile ->
                 val newPile = ArrayDeque(pile)
                 val containerId = newPile.pop()
 
                 val newPiles = ArrayList(currentSite.piles)
-                if (newPile.isEmpty()) {
-                    newPiles.removeAt(sourcePileId)
-                } else {
-                    newPiles[sourcePileId] = newPile
-                    newPiles.sortBy { it.size }
-                }
-
-                val newSite = DockRobotSite(newPiles)
 
                 val updatedSites = HashMap(state.sites)
-                updatedSites[robotSiteId] = newSite
 
-                val newState = state.copy(loadedContainer = containerId, sites = updatedSites)
+                if (newPile.isEmpty()) {
+                    newPiles.removeAt(sourcePileId)
+
+                    if (newPiles.isEmpty()) {
+                        // The site is now empty as the last container from the last pile was removed
+                        updatedSites.remove(state.robotSiteId)
+                    } else {
+                        // The modified pile is empty
+                        val newSite = DockRobotSite(newPiles)
+                        updatedSites[robotSiteId] = newSite
+                    }
+                } else {
+                    // The modified pile is not empty update the copy of the site
+                    newPiles[sourcePileId] = newPile
+                    newPiles.sortWith(DockRobotState.pileComparator)
+
+                    val newSite = DockRobotSite(newPiles)
+                    updatedSites[robotSiteId] = newSite
+                }
+
+                val newState = state.copy(cargo = containerId, sites = updatedSites)
                 successors.add(Successor(newState, DockRobotUnLoadAction(sourcePileId), loadCost))
             }
         }

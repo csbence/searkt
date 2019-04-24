@@ -9,9 +9,9 @@ typealias SiteId = Int
 typealias Pile = Deque<Container>
 
 data class DockRobotState(val robotSiteId: Int,
-                          val loadedContainer: Container,
+                          val cargo: Container,
                           val containerSites: IntArray,
-                          val sites: Map<SiteId, DockRobotSite>) : State<DockRobotState> {
+                          val sites: MutableMap<SiteId, DockRobotSite>) : State<DockRobotState> {
 
     override fun copy(): DockRobotState = copy()
 
@@ -21,20 +21,39 @@ data class DockRobotState(val robotSiteId: Int,
 
         other as DockRobotState
 
-        if (robotSiteId != other.robotSiteId) return false
-        if (loadedContainer != other.loadedContainer) return false
-        if (!containerSites.contentEquals(other.containerSites)) return false
-        if (sites != other.sites) return false
-
-        return true
+        return when {
+            robotSiteId != other.robotSiteId -> false
+            cargo != other.cargo -> false
+            !containerSites.contentEquals(other.containerSites) -> false
+            sites == other.sites -> false
+            else -> true
+        }
     }
 
     override fun hashCode(): Int {
         var result = robotSiteId
-        result = 31 * result + loadedContainer
+        result = 31 * result + cargo
         result = 31 * result + containerSites.contentHashCode()
-        result = 31 * result + sites.hashCode()
+
+        for ((_, site) in sites) {
+            result = 31 * result + site.piles.size
+        }
+
         return result
+    }
+
+    companion object {
+        val pileComparator = Comparator { lhs: Pile, rhs: Pile ->
+            when {
+                lhs.size < rhs.size -> return@Comparator -1
+                lhs.size > rhs.size -> return@Comparator 1
+                else -> for (pair in lhs.zip(rhs)) {
+                    if (pair.first < pair.second) return@Comparator -1
+                    if (pair.first > pair.second) return@Comparator 1
+                }
+            }
+            return@Comparator 0
+        }
     }
 }
 
@@ -46,5 +65,6 @@ data class DockRobotState(val robotSiteId: Int,
  *
  * The cranes represent the boxes held by the cranes.
  */
-class DockRobotSite(val piles: List<Pile>)
+data class DockRobotSite(val piles: List<Pile> = listOf())
+
 
