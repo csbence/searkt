@@ -4,6 +4,7 @@ import edu.unh.cs.searkt.environment.State
 
 typealias Location = Int
 typealias Container = Int
+typealias Pile = List<Container>
 
 data class DockRobotState(val robotSiteId: Int,
                           val loadedContainer: Container,
@@ -43,5 +44,5 @@ data class DockRobotState(val robotSiteId: Int,
  *
  * The cranes represent the boxes held by the cranes.
  */
-class DockRobotSite(val pile: MutableList<Container>, val cranes: MutableList<Container>)
+class DockRobotSite(val piles: List<Pile>)
 
