@@ -40,7 +40,7 @@ class DockRobot(
         val reachableSites = siteCostMatix[robotSiteId]
         reachableSites.forEachIndexed { targetSiteId, cost ->
             // Only consider successors with "non-infinite" costs
-            if (cost != -1) {
+            if (cost != -1 && targetSiteId != robotSiteId) {
                 val updatedContainerSites = state.containerSites.copyOf()
 
                 // Update the container location list if the robot is moving a container between sites
@@ -146,7 +146,7 @@ class DockRobot(
                 }
 
                 val newState = state.copy(cargo = containerId, sites = updatedSites)
-                successors.add(Successor(newState, DockRobotUnLoadAction(sourcePileId), loadCost))
+                successors.add(Successor(newState, DockRobotLoadAction(sourcePileId), loadCost))
             }
         }
 
