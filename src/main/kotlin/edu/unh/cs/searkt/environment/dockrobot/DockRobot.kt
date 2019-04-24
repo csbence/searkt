@@ -8,11 +8,13 @@ import kotlin.collections.HashMap
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
+data class DockRobotSiteEdge(val siteId: SiteId, val edgeCost: Double)
+
 class DockRobot(
         private val siteCount: Int,
         private val maxPileCount: Int,
         private val maxPileHeight: Int,
-        private val siteCostMatix: List<List<Int>>,
+        private val siteAdjacencyList: List<List<DockRobotSiteEdge>>,
         private val goalContainerSites: IntArray,
         initialSites: Collection<DockRobotSite>) : Domain<DockRobotState> {
 
@@ -39,10 +41,10 @@ class DockRobot(
         val robotSiteId = state.robotSiteId
         val successors = mutableListOf<Successor>()
 
-        val reachableSites = siteCostMatix[robotSiteId]
-        reachableSites.forEachIndexed { targetSiteId, cost ->
+        val reachableSites = siteAdjacencyList[robotSiteId]
+        reachableSites.forEach { (targetSiteId, cost) ->
             // Only consider successors with "non-infinite" costs
-            if (cost != -1 && targetSiteId != robotSiteId) {
+            if (targetSiteId != robotSiteId) {
                 val updatedContainerSites = state.containerSites.copyOf()
 
                 // Update the container location list if the robot is moving a container between sites
@@ -185,6 +187,5 @@ class DockRobot(
     override fun isGoal(state: DockRobotState): Boolean {
         return state.containerSites contentEquals goalContainerSites
     }
-
 }
 
