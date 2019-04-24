@@ -44,6 +44,8 @@ data class DockRobotState(val robotSiteId: Int,
         return result
     }
 
+    fun hasCargo() = cargo != -1
+
     companion object {
         val pileComparator = Comparator { lhs: Pile, rhs: Pile ->
             when {
