@@ -1,10 +1,11 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
 import edu.unh.cs.searkt.environment.State
+import java.util.*
 
 typealias Location = Int
 typealias Container = Int
-typealias Pile = List<Container>
+typealias Pile = Deque<Container>
 
 data class DockRobotState(val robotSiteId: Int,
                           val loadedContainer: Container,

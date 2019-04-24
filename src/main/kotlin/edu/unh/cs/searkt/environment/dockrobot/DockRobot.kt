@@ -2,12 +2,15 @@ package edu.unh.cs.searkt.environment.dockrobot
 
 import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.SuccessorBundle
+import java.util.*
+import kotlin.collections.ArrayList
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
 class DockRobotDockRobotState(
         private val siteCount: Int,
-        private val craneCount: Int,
+        private val maxPileCount: Int,
+        private val maxPileHeight: Int,
         private val siteCostMatix: List<List<Int>>,
         private val goalContainerSites: IntArray,
         initialSites: Collection<DockRobotSite>) : Domain<DockRobotState> {
@@ -26,21 +29,25 @@ class DockRobotDockRobotState(
      * - Unloading the robot
      */
     override fun successors(state: DockRobotState): List<SuccessorBundle<DockRobotState>> {
-        return (generateMoveSuccessors(state) +
-                generateRobotLoadSuccessors(state) +
-                generatePileLoadSuccessors(state))
+        return generateMoveSuccessors(state) + generateRobotLoadSuccessors(state)
     }
 
     private fun generateMoveSuccessors(state: DockRobotState): List<Successor> {
         val robotSiteId = state.robotSiteId
-        val currentSite = state.sites[robotSiteId]
         val successors = mutableListOf<Successor>()
 
         val reachableSites = siteCostMatix[robotSiteId]
-        reachableSites.forEachIndexed { siteId, cost ->
+        reachableSites.forEachIndexed { targetSiteId, cost ->
             // Only consider successors with "non-infinite" costs
             if (cost != -1) {
-                val newState = state.copy(robotSiteId = siteId)
+                val updatedContainerSites = state.containerSites.copyOf()
+
+                // Update the container location list if the robot is moving a container between sites
+                if (state.loadedContainer != -1) {
+                    updatedContainerSites[state.loadedContainer] = targetSiteId
+                }
+
+                val newState = state.copy(robotSiteId = targetSiteId)
                 successors.add(Successor(newState, DockRobotAction, actionCost = cost.toDouble()))
             }
         }
@@ -53,36 +60,64 @@ class DockRobotDockRobotState(
         val currentSite = state.sites[robotSiteId]
         val successors = mutableListOf<Successor>()
 
-        val isCraneAvailable = currentSite.cranes.size < craneCount
         if (state.loadedContainer != -1) {
             // Unload robot
+            currentSite.piles
+                    .filter { it.size < maxPileHeight }
+                    .forEachIndexed { pileId, pile ->
+                        val newPile = ArrayDeque(pile)
+                        newPile.push(state.loadedContainer)
 
-            // Check if there is an empty crane
-            if (isCraneAvailable) {
-                val newCranes = ArrayList(currentSite.cranes)
-                newCranes.add(state.loadedContainer)
+                        val newPiles = ArrayList(currentSite.piles)
+                        newPiles[pileId] = newPile
 
-                val newSite = DockRobotSite(currentSite.pile, newCranes)
+                        newPiles.sortBy { it.size }
 
-                val updatedSites = ArrayList<DockRobotSite>(state.sites)
+                        val newSite = DockRobotSite(newPiles)
+
+                        val updatedSites = ArrayList(state.sites)
+                        updatedSites[robotSiteId] = newSite
+
+                        val newState = state.copy(loadedContainer = -1, sites = updatedSites)
+                        successors.add(Successor(newState, DockRobotAction, loadCost))
+                    }
+
+            // Create a new pile with the container
+            if (currentSite.piles.size < maxPileCount) {
+                // Create the new pile
+                val newPile = ArrayDeque<Container>()
+                newPile.push(state.loadedContainer)
+
+                // Create a copy of the old piles and add the new pile
+                val newPiles = ArrayList(currentSite.piles)
+                newPiles.add(newPile)
+
+                // Sorting helps duplicate detection
+                newPiles.sortBy { it.size }
+
+                val newSite = DockRobotSite(newPiles)
+
+                val updatedSites = ArrayList(state.sites)
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = -1, sites = updatedSites)
-                successors.add(Successor(newState, DockRobotAction, unloadCost))
+                successors.add(Successor(newState, DockRobotAction, loadCost))
             }
 
         } else {
             // Load robot
-            currentSite.cranes.forEachIndexed { craneId, containerId ->
-                val newCranes = ArrayList(currentSite.cranes)
+            currentSite.piles.forEachIndexed { pileId, pile ->
+                val newPile = ArrayDeque(pile)
+                val containerId = newPile.pop()
 
-                val lastCraneIndex = newCranes.size - 1
-                newCranes[craneId] = newCranes[lastCraneIndex]
-                newCranes.removeAt(lastCraneIndex)
+                val newPiles = ArrayList(currentSite.piles)
+                newPiles[pileId] = newPile
 
-                val newSite = DockRobotSite(currentSite.pile, newCranes)
+                newPiles.sortBy { it.size }
 
-                val updatedSites = ArrayList<DockRobotSite>(state.sites)
+                val newSite = DockRobotSite(newPiles)
+
+                val updatedSites = ArrayList(state.sites)
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = containerId, sites = updatedSites)
@@ -92,58 +127,6 @@ class DockRobotDockRobotState(
 
         return successors
     }
-
-
-    private fun generatePileLoadSuccessors(state: DockRobotState): List<Successor> {
-        val successors = mutableListOf<Successor>()
-
-        val robotSiteId = state.robotSiteId
-        val currentSite = state.sites[robotSiteId]
-
-        val isCraneAvailable = currentSite.cranes.size < craneCount
-
-        // Load cranes
-        if (currentSite.pile.isNotEmpty() && isCraneAvailable) {
-            val lastPileIndex = currentSite.pile.size - 1
-
-            val newCranes = ArrayList(currentSite.cranes)
-            val newPile = ArrayList(currentSite.pile)
-
-            val containerToPick = newPile.removeAt(lastPileIndex)
-            newCranes.add(containerToPick)
-
-            val newSite = DockRobotSite(newPile, newCranes)
-
-            val updatedSites = ArrayList<DockRobotSite>(state.sites)
-            updatedSites[robotSiteId] = newSite
-
-            val newState = state.copy(sites = updatedSites)
-            successors.add(Successor(newState, DockRobotAction, loadCost))
-        }
-
-        // Unload cranes
-        currentSite.cranes.forEachIndexed { craneId, containerId ->
-            val newCranes = ArrayList(currentSite.cranes)
-            val newPile = ArrayList(currentSite.pile)
-
-            newPile.add(containerId)
-
-            val lastCraneIndex = newCranes.size - 1
-            newCranes[craneId] = newCranes[lastCraneIndex]
-            newCranes.removeAt(lastCraneIndex)
-
-            val newSite = DockRobotSite(newPile, newCranes)
-
-            val updatedSites = ArrayList<DockRobotSite>(state.sites)
-            updatedSites[robotSiteId] = newSite
-
-            val newState = state.copy(sites = updatedSites)
-            successors.add(Successor(newState, DockRobotAction, unloadCost))
-        }
-
-        return successors
-    }
-
 
     override fun heuristic(state: DockRobotState): Double {
         throw UnsupportedOperationException("not implemented")
