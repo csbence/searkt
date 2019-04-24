@@ -5,7 +5,7 @@ import edu.unh.cs.searkt.environment.SuccessorBundle
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
-class DockRobotDockRobotState(
+class DockRobot(
         private val siteCount: Int,
         private val craneCount: Int,
         private val siteCostMatix: List<List<Int>>,
