@@ -10,7 +10,7 @@ class DockRobotTest {
     private val siteCount: Int = 3
     private val maxPileCount = 3
     private val maxPileHeight = 3
-    private val costMatrix = ArrayList<ArrayList<Int>>(siteCount)
+    private val costMatrix = ArrayList<ArrayList<DockRobotSiteEdge>>(siteCount)
     private val goalConfiguration = IntArray(9)
     private val initialSites = HashMap<SiteId, DockRobotSite>()
 
@@ -28,13 +28,15 @@ class DockRobotTest {
         for (i in 0 until siteCount) {
             costMatrix.add(ArrayList())
             for (j in 0 until siteCount) {
-                costMatrix[i].add(1)
+                costMatrix[i].add(DockRobotSiteEdge(j, 1.0))
             }
         }
+
         // initialize goal configuration
         for (i in 0 until 9) {
             goalConfiguration[i] = siteCount - 1
         }
+
         // initialize initial sites
         var containerId = 0
         for (siteId in 0 until siteCount) {
