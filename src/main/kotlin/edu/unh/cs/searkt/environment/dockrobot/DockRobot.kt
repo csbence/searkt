@@ -108,7 +108,18 @@ class DockRobot(
 
                 val newSite = DockRobotSite(newPiles)
 
-                val updatedSites = HashMap(state.sites)
+                // deepcopy the sites for the hash map
+                val copyHashMap = HashMap<SiteId, DockRobotSite>()
+                state.sites.forEach { (siteId, site) ->
+                    val sitePileCopy = ArrayList<Pile>(site.piles.size)
+                    site.piles.forEachIndexed { pileIndex, pile ->
+                        val pileCopy = ArrayDeque<Int>()
+                        pile.forEach { pileCopy.add(it) }
+                        sitePileCopy.add(pileCopy)
+                    }
+                    copyHashMap[siteId] = DockRobotSite(sitePileCopy)
+                }
+                val updatedSites = HashMap(copyHashMap)
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(cargo = -1, sites = updatedSites)

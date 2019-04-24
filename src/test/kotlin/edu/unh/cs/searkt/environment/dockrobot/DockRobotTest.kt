@@ -28,7 +28,7 @@ class DockRobotTest {
         for (i in 0 until siteCount) {
             costMatrix.add(ArrayList())
             for (j in 0 until siteCount) {
-                costMatrix[i].add(2)
+                costMatrix[i].add(1)
             }
         }
         // initialize goal configuration
