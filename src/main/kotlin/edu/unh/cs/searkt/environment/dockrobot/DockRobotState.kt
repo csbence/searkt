@@ -5,12 +5,13 @@ import java.util.*
 
 typealias Location = Int
 typealias Container = Int
+typealias SiteId = Int
 typealias Pile = Deque<Container>
 
 data class DockRobotState(val robotSiteId: Int,
                           val loadedContainer: Container,
                           val containerSites: IntArray,
-                          val sites: List<DockRobotSite>) : State<DockRobotState> {
+                          val sites: Map<SiteId, DockRobotSite>) : State<DockRobotState> {
 
     override fun copy(): DockRobotState = copy()
 

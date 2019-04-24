@@ -1,9 +1,11 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
+import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.SuccessorBundle
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
@@ -57,7 +59,7 @@ class DockRobotDockRobotState(
 
     private fun generateRobotLoadSuccessors(state: DockRobotState): List<Successor> {
         val robotSiteId = state.robotSiteId
-        val currentSite = state.sites[robotSiteId]
+        val currentSite = state.sites[robotSiteId] ?: throw MetronomeException("Unknown site id")
         val successors = mutableListOf<Successor>()
 
         if (state.loadedContainer != -1) {
@@ -75,7 +77,7 @@ class DockRobotDockRobotState(
 
                         val newSite = DockRobotSite(newPiles)
 
-                        val updatedSites = ArrayList(state.sites)
+                        val updatedSites = HashMap(state.sites)
                         updatedSites[robotSiteId] = newSite
 
                         val newState = state.copy(loadedContainer = -1, sites = updatedSites)
@@ -97,7 +99,7 @@ class DockRobotDockRobotState(
 
                 val newSite = DockRobotSite(newPiles)
 
-                val updatedSites = ArrayList(state.sites)
+                val updatedSites = HashMap(state.sites)
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = -1, sites = updatedSites)
@@ -120,7 +122,7 @@ class DockRobotDockRobotState(
 
                 val newSite = DockRobotSite(newPiles)
 
-                val updatedSites = ArrayList(state.sites)
+                val updatedSites = HashMap(state.sites)
                 updatedSites[robotSiteId] = newSite
 
                 val newState = state.copy(loadedContainer = containerId, sites = updatedSites)
