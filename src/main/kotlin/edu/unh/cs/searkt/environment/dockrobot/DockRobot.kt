@@ -9,7 +9,7 @@ import kotlin.collections.HashMap
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
-class DockRobotDockRobotState(
+class DockRobot(
         private val siteCount: Int,
         private val maxPileCount: Int,
         private val maxPileHeight: Int,
