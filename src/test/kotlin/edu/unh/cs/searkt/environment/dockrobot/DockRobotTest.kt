@@ -28,7 +28,7 @@ class DockRobotTest {
         for (i in 0 until siteCount) {
             costMatrix.add(ArrayList())
             for (j in 0 until siteCount) {
-                costMatrix[i].add(DockRobotSiteEdge(j, 2.0))
+                costMatrix[i].add(DockRobotSiteEdge(j, 1.0))
             }
         }
 
@@ -86,7 +86,22 @@ class DockRobotTest {
 
     @Test
     fun successors() {
-
+        val successors = dockRobot.successors(initialDockRobotState)
+        for (successor in successors) {
+            if (successor.state.cargo != -1) {
+                val nextSuccessors = dockRobot.successors(successor.state)
+                for (nextSuccessor in nextSuccessors) {
+                    if (nextSuccessor.state.robotSiteId == 2) {
+                        val nextNextSuccessors = dockRobot.successors(nextSuccessor.state)
+                        for (nextNextSuccessor in nextNextSuccessors) {
+                            print(nextNextSuccessor)
+                        }
+                    }
+                    print(nextSuccessor)
+                }
+            }
+            print(successor)
+        }
     }
 
     @Test
