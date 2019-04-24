@@ -1,15 +1,18 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
+import java.util.*
+
 internal abstract class DockRobotTest {
 
     private val siteCount = 3
-    private val craneCount = 1
+    private val maxPileCount = 3
+    private val maxPileHeight = 3
     private val costMatrix = ArrayList<ArrayList<Int>>()
     private val goalConfiguration = IntArray(9)
-    private val initialSites = ArrayList<DockRobotSite>()
+    private val initialSites = HashMap<SiteID, DockRobotSite>()
 
-    private val dockRobot = DockRobot(siteCount, craneCount,
-            costMatrix, goalConfiguration, initialSites)
+    private val dockRobot = DockRobot(siteCount, maxPileCount, maxPileHeight,
+            costMatrix, goalConfiguration, initialSites.values)
 
     private val initialContainerSites = IntArray(9)
     private val initialDockRobotState = DockRobotState(0, -1, initialContainerSites, initialSites)
@@ -35,9 +38,9 @@ internal abstract class DockRobotTest {
             when (siteId) {
                 0 -> {
                     val piles = ArrayList<Pile>(3)
-                    val pile1 = ArrayList<Container>()
-                    val pile2 = ArrayList<Container>()
-                    val pile3 = ArrayList<Container>()
+                    val pile1 = ArrayDeque<Container>()
+                    val pile2 = ArrayDeque<Container>()
+                    val pile3 = ArrayDeque<Container>()
                     initialContainerSites[containerId] = siteId
                     pile1.add(containerId); containerId++
                     initialContainerSites[containerId] = siteId
@@ -52,13 +55,13 @@ internal abstract class DockRobotTest {
                     pile3.add(containerId); containerId++
                     initialContainerSites[containerId] = siteId
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
-                    initialSites.add(DockRobotSite(piles))
+                    initialSites[siteId] = DockRobotSite(piles)
                 }
                 1 -> {
                     val piles = ArrayList<Pile>(3)
-                    val pile1 = ArrayList<Container>()
-                    val pile2 = ArrayList<Container>()
-                    val pile3 = ArrayList<Container>()
+                    val pile1 = ArrayDeque<Container>()
+                    val pile2 = ArrayDeque<Container>()
+                    val pile3 = ArrayDeque<Container>()
                     initialContainerSites[containerId] = siteId
                     pile1.add(containerId); containerId++
                     initialContainerSites[containerId] = siteId
@@ -66,11 +69,10 @@ internal abstract class DockRobotTest {
                     initialContainerSites[containerId] = siteId
                     pile3.add(containerId); containerId++
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
-                    initialSites.add(DockRobotSite(piles))
+                    initialSites[siteId] = DockRobotSite(piles)
                 }
                 2 -> {
-                    val piles = ArrayList<Pile>(3)
-                    initialSites.add(DockRobotSite(piles))
+                    // empty site
                 }
             }
         }
@@ -82,6 +84,7 @@ internal abstract class DockRobotTest {
 
     @org.junit.jupiter.api.Test
     fun successors() {
+
     }
 
     @org.junit.jupiter.api.Test

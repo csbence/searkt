@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.environment.dockrobot
 import edu.unh.cs.searkt.environment.State
 import java.util.*
 
+typealias SiteID = Int
 typealias Location = Int
 typealias Container = Int
 typealias Pile = Deque<Container>
@@ -10,7 +11,7 @@ typealias Pile = Deque<Container>
 data class DockRobotState(val robotSiteId: Int,
                           val loadedContainer: Container,
                           val containerSites: IntArray,
-                          val sites: List<DockRobotSite>) : State<DockRobotState> {
+                          val sites: HashMap<SiteID, DockRobotSite>) : State<DockRobotState> {
 
     override fun copy(): DockRobotState = copy()
 
