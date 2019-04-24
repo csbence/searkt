@@ -1,13 +1,16 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
+import org.junit.Before
+import org.junit.Test
 import java.util.*
+import kotlin.collections.ArrayList
 
-internal abstract class DockRobotTest {
+class DockRobotTest {
 
-    private val siteCount = 3
+    private val siteCount: Int = 3
     private val maxPileCount = 3
     private val maxPileHeight = 3
-    private val costMatrix = ArrayList<ArrayList<Int>>()
+    private val costMatrix = ArrayList<ArrayList<Int>>(siteCount)
     private val goalConfiguration = IntArray(9)
     private val initialSites = HashMap<SiteId, DockRobotSite>()
 
@@ -19,22 +22,22 @@ internal abstract class DockRobotTest {
 
     private val goalDockRobotState = DockRobotState(0, -1, goalConfiguration, initialSites)
 
-
-    @org.junit.jupiter.api.BeforeEach
+    @Before
     fun setUp() {
         // initialize cost matrix
-        for (i in 0..siteCount) {
-            for (j in 0..siteCount) {
-                costMatrix[i][j] = 1
+        for (i in 0 until siteCount) {
+            costMatrix.add(ArrayList())
+            for (j in 0 until siteCount) {
+                costMatrix[i].add(2)
             }
         }
         // initialize goal configuration
-        for (i in 0..9) {
+        for (i in 0 until 9) {
             goalConfiguration[i] = siteCount - 1
         }
         // initialize initial sites
         var containerId = 0
-        for (siteId in 0..siteCount) {
+        for (siteId in 0 until siteCount) {
             when (siteId) {
                 0 -> {
                     val piles = ArrayList<Pile>(3)
@@ -78,26 +81,25 @@ internal abstract class DockRobotTest {
         }
     }
 
-    @org.junit.jupiter.api.AfterEach
-    fun tearDown() {
-    }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun successors() {
 
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun heuristic() {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun distance() {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     fun isGoal() {
         assert(!dockRobot.isGoal(initialDockRobotState))
         assert(dockRobot.isGoal(goalDockRobotState))
     }
+
+
 }
