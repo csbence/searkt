@@ -103,6 +103,31 @@ class DockRobotTest {
     }
 
     @Test
+    fun loadRobot() {
+        val successors = dockRobot.successors(initialDockRobotState)
+        successors.filter { it.state.cargo != -1 }.forEach { successor ->
+            val robotLoadedState = successor.state
+            assert(robotLoadedState.sites.all { site ->
+                site.value.piles.all { !it.contains(robotLoadedState.cargo) }
+            })
+        }
+    }
+
+    @Test
+    fun unloadRobot() {
+        val successors = dockRobot.successors(initialDockRobotState)
+        val lastLoadedSuccessor = successors.findLast { it.state.cargo != -1 }!!
+        dockRobot.successors(lastLoadedSuccessor.state)
+                .filter { it.state.cargo == -1 && it.state.robotSiteId == lastLoadedSuccessor.state.robotSiteId }
+                .forEach { successor ->
+                    val robotUnloadedState = successor.state
+                    assert(robotUnloadedState.sites.any { site ->
+                        site.value.piles.any { it.contains(lastLoadedSuccessor.state.cargo) }
+                    })
+                }
+    }
+
+    @Test
     fun heuristic() {
     }
 
