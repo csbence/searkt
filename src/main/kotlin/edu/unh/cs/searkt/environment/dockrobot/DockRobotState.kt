@@ -36,7 +36,11 @@ data class DockRobotState(val robotSiteId: Int,
         var result = robotSiteId
         result = 31 * (result + cargo)
         result = 31 * (result + containerSites.contentHashCode())
-        result = 31 * (result + sites.hashCode())
+        sites.values.forEach { site ->
+            site.piles.forEach { pile ->
+                pile.forEach { result = 31 * (result + it) }
+            }
+        }
 
         return result
     }

@@ -241,6 +241,17 @@ class DockRobotTest {
     @Test
     fun hashCodeEquivalence() {
         val equivalentInitialState = getEquivalentState(initialDockRobotState)
+        assertNotEquals(equivalentInitialState.hashCode(), initialDockRobotState.hashCode(),
+                message = "Before reordering the piles we have a different hash-code")
+        val updatedSites = HashMap(equivalentInitialState.sites)
+        equivalentInitialState.sites.forEach { (siteId, site) ->
+            val newPiles = ArrayList(site.piles)
+            newPiles.sortWith(DockRobotState.pileComparator)
+            updatedSites[siteId] = DockRobotSite(newPiles)
+        }
+        val newEquivalentInitialState = equivalentInitialState.copy(sites = updatedSites)
+        assertEquals(newEquivalentInitialState.hashCode(), initialDockRobotState.hashCode(),
+                message = "After reordering the piles we have the same hash-code")
 
     }
 
@@ -277,22 +288,24 @@ class DockRobotTest {
         val newContainerSites = IntArray(state.containerSites.size)
         state.containerSites.forEachIndexed { index, i -> newContainerSites[index] = i }
         val newSites: MutableMap<SiteId, DockRobotSite> = HashMap()
-        var numberOfSites = state.sites.size
 
-        state.sites.forEach { (_, site) ->
+        state.sites.forEach { (siteId, site) ->
             val piles = ArrayList<Pile>()
 
             site.piles.forEach { pile ->
-                val newPile = ArrayDeque<Int>()
+                val newPile = ArrayDeque<Container>()
                 pile.forEach { newPile.add(it) }
                 piles.add(newPile)
             }
 
-            newSites[numberOfSites - 1] = DockRobotSite(piles)
-            numberOfSites--
+            val oldPile = piles[0]
+            piles[0] = piles.last()
+            piles[piles.size - 1] = oldPile
+
+            newSites[siteId] = DockRobotSite(piles)
         }
 
-        return DockRobotState(state.sites.size - 1, newContainer, newContainerSites, newSites)
+        return DockRobotState(state.robotSiteId, newContainer, newContainerSites, newSites)
     }
 
 
