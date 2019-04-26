@@ -106,27 +106,6 @@ class DockRobotTest {
         }
     }
 
-
-    @Test
-    fun successors() {
-        val successors = dockRobot.successors(initialDockRobotState)
-        for (successor in successors) {
-            if (successor.state.cargo != -1) {
-                val nextSuccessors = dockRobot.successors(successor.state)
-                for (nextSuccessor in nextSuccessors) {
-                    if (nextSuccessor.state.robotSiteId == 2) {
-                        val nextNextSuccessors = dockRobot.successors(nextSuccessor.state)
-                        for (nextNextSuccessor in nextNextSuccessors) {
-                            print(nextNextSuccessor)
-                        }
-                    }
-                    print(nextSuccessor)
-                }
-            }
-            print(successor)
-        }
-    }
-
     @Test
     fun loadRobot() {
         val successors = dockRobot.successors(initialDockRobotState)
@@ -153,6 +132,29 @@ class DockRobotTest {
     }
 
     @Test
+    fun moveRobot() {
+        val successors = dockRobot.successors(initialDockRobotState)
+        assert(successors.any { it.state.robotSiteId != initialDockRobotState.robotSiteId })
+        successors.forEach { successor ->
+            assert(dockRobot.successors(successor.state)
+                    .any { it.state.robotSiteId != successor.state.robotSiteId }
+            )
+        }
+    }
+
+    @Test
+    fun boundedMoveRobot() {
+        val successors = dockRobot.successors(initialDockRobotState)
+        assert(successors.filter { it.state.robotSiteId != initialDockRobotState.robotSiteId }
+                .all { it.state.robotSiteId in 0 until siteCount })
+        successors.forEach { successor ->
+            assert(dockRobot.successors(successor.state)
+                    .filter { it.state.robotSiteId != initialDockRobotState.robotSiteId }
+                    .all { it.state.robotSiteId in 0 until siteCount })
+        }
+    }
+
+    @Test
     fun heuristic() {
         assert(dockRobot.heuristic(initialDockRobotState) != 0.0)
         assert(dockRobot.heuristic(initialDockRobotState) > 0.0)
@@ -166,6 +168,8 @@ class DockRobotTest {
     @Test
     fun isGoal() {
         assert(!dockRobot.isGoal(initialDockRobotState))
+        val successors = dockRobot.successors(initialDockRobotState)
+        successors.forEach { assert(!dockRobot.isGoal(it.state)) }
         assert(dockRobot.isGoal(goalDockRobotState))
     }
 
