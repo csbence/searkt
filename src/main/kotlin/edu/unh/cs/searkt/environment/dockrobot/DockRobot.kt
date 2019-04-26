@@ -186,14 +186,14 @@ class DockRobot(
         val unstackCost = state.sites.map { (_, site) ->
             site.piles.sumByDouble { pile ->
                 val height = pile.indexOfFirst { misplacedContainers[it] }
-                val depth = pile.size - 1 - height
+                val depth = if (height >= 0) pile.size - 1 - height else 0
                 val unstackCost = depth * levelCost
 
                 unstackCost
             }
         }.sum()
 
-        val misplacedContainerCost = misplacedContainers.count() * minMoveCost
+        val misplacedContainerCost = misplacedContainers.filter { it }.count() * minMoveCost
 
         return unstackCost + misplacedContainerCost
     }

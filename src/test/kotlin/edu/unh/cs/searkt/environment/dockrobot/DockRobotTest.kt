@@ -13,6 +13,7 @@ class DockRobotTest {
     private val costMatrix = ArrayList<ArrayList<DockRobotSiteEdge>>(siteCount)
     private val goalConfiguration = IntArray(9)
     private val initialSites = HashMap<SiteId, DockRobotSite>()
+    private val goalSites = HashMap<SiteId, DockRobotSite>()
 
     private val dockRobot = DockRobot(siteCount, maxPileCount, maxPileHeight,
             costMatrix, goalConfiguration, initialSites.values)
@@ -20,7 +21,7 @@ class DockRobotTest {
     private val initialContainerSites = IntArray(9)
     private val initialDockRobotState = DockRobotState(0, -1, initialContainerSites, initialSites)
 
-    private val goalDockRobotState = DockRobotState(0, -1, goalConfiguration, initialSites)
+    private val goalDockRobotState = DockRobotState(0, -1, goalConfiguration, goalSites)
 
     @Before
     fun setUp() {
@@ -38,7 +39,7 @@ class DockRobotTest {
         }
 
         // initialize initial sites
-        var containerId = 0
+        var initialContainerId = 0
         for (siteId in 0 until siteCount) {
             when (siteId) {
                 0 -> {
@@ -46,19 +47,19 @@ class DockRobotTest {
                     val pile1 = ArrayDeque<Container>()
                     val pile2 = ArrayDeque<Container>()
                     val pile3 = ArrayDeque<Container>()
-                    initialContainerSites[containerId] = siteId
-                    pile1.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile2.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile3.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile1.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile2.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile3.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
+                    initialContainerSites[initialContainerId] = siteId
+                    pile1.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile2.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile3.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile1.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile2.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile3.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
                     initialSites[siteId] = DockRobotSite(piles)
                 }
@@ -67,17 +68,39 @@ class DockRobotTest {
                     val pile1 = ArrayDeque<Container>()
                     val pile2 = ArrayDeque<Container>()
                     val pile3 = ArrayDeque<Container>()
-                    initialContainerSites[containerId] = siteId
-                    pile1.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile2.add(containerId); containerId++
-                    initialContainerSites[containerId] = siteId
-                    pile3.add(containerId); containerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile1.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile2.add(initialContainerId); initialContainerId++
+                    initialContainerSites[initialContainerId] = siteId
+                    pile3.add(initialContainerId); initialContainerId++
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
                     initialSites[siteId] = DockRobotSite(piles)
                 }
                 2 -> {
                     // empty site
+                }
+            }
+        }
+
+        // initialize goal sites
+        var goalContainerId = 0
+        for (siteId in 0 until siteCount) {
+            when (siteId) {
+                0 -> {
+                    // empty site
+                }
+                1 -> {
+                    // empty site
+                }
+                2 -> {
+                    val piles = ArrayList<Pile>(3)
+                    val pile3 = ArrayDeque<Container>()
+                    for (container in 0 until 9) {
+                        pile3.add(goalContainerId); goalContainerId++
+                    }
+                    piles.add(pile3)
+                    goalSites[siteId] = DockRobotSite(piles)
                 }
             }
         }
@@ -131,6 +154,9 @@ class DockRobotTest {
 
     @Test
     fun heuristic() {
+        assert(dockRobot.heuristic(initialDockRobotState) != 0.0)
+        assert(dockRobot.heuristic(initialDockRobotState) > 0.0)
+        assert(dockRobot.heuristic(goalDockRobotState) == 0.0)
     }
 
     @Test
