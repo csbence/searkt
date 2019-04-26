@@ -8,6 +8,11 @@ import org.junit.Before
 import org.junit.Test
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class DockRobotTest {
 
@@ -120,9 +125,9 @@ class DockRobotTest {
         val successors = dockRobot.successors(initialDockRobotState)
         successors.filter { it.state.cargo != -1 }.forEach { successor ->
             val robotLoadedState = successor.state
-            assert(robotLoadedState.sites.all { site ->
+            assertTrue(robotLoadedState.sites.all { site ->
                 site.value.piles.all { !it.contains(robotLoadedState.cargo) }
-            })
+            }, message = "Robot eventually is able to load a container from an unloaded state")
         }
     }
 
@@ -134,47 +139,55 @@ class DockRobotTest {
                 .filter { it.state.cargo == -1 && it.state.robotSiteId == lastLoadedSuccessor.state.robotSiteId }
                 .forEach { successor ->
                     val robotUnloadedState = successor.state
-                    assert(robotUnloadedState.sites.any { site ->
+                    assertTrue(robotUnloadedState.sites.any { site ->
                         site.value.piles.any { it.contains(lastLoadedSuccessor.state.cargo) }
-                    })
+                    }, message = "Robot eventually is able to unload a container from a loaded state")
                 }
     }
 
     @Test
     fun moveRobot() {
         val successors = dockRobot.successors(initialDockRobotState)
-        assert(successors.any { it.state.robotSiteId != initialDockRobotState.robotSiteId })
+        assertTrue(successors.any { it.state.robotSiteId != initialDockRobotState.robotSiteId },
+                message = "Robot is able to move from the initial starting location")
         successors.forEach { successor ->
-            assert(dockRobot.successors(successor.state)
+            assertTrue(dockRobot.successors(successor.state)
                     .any { it.state.robotSiteId != successor.state.robotSiteId }
-            )
+                    , message = "From a new successor state the robot will eventually move to a new location")
         }
     }
 
     @Test
     fun boundedMoveRobot() {
         val successors = dockRobot.successors(initialDockRobotState)
-        assert(successors.filter { it.state.robotSiteId != initialDockRobotState.robotSiteId }
-                .all { it.state.robotSiteId in 0 until siteCount })
+        assertTrue(successors.filter { it.state.robotSiteId != initialDockRobotState.robotSiteId }
+                .all { it.state.robotSiteId in 0 until siteCount },
+                message = "Robot will move to a new site that is within the specified number of sites")
         successors.forEach { successor ->
-            assert(dockRobot.successors(successor.state)
+            assertTrue(dockRobot.successors(successor.state)
                     .filter { it.state.robotSiteId != initialDockRobotState.robotSiteId }
-                    .all { it.state.robotSiteId in 0 until siteCount })
+                    .all { it.state.robotSiteId in 0 until siteCount },
+                    message = "Robot will move to a completely new site from a new successor state " +
+                            "that is within the specified number of sites")
         }
     }
 
     @Test
     fun heuristic() {
-        assert(dockRobot.heuristic(initialDockRobotState) != 0.0)
-        assert(dockRobot.heuristic(initialDockRobotState) > 0.0)
-        assert(dockRobot.heuristic(goalDockRobotState) == 0.0)
+        assertTrue(dockRobot.heuristic(initialDockRobotState) != 0.0,
+                message = "Initial state heuristic is non-zero")
+        assertTrue(dockRobot.heuristic(initialDockRobotState) > 0.0,
+                message = "Initial state heuristic is greater than zero")
+        assertEquals(dockRobot.heuristic(goalDockRobotState), 0.0,
+                message = "Goal state heuristic is equal to zero")
     }
 
     @Test
     fun heuristicProgression() {
         dockRobot.successors(initialDockRobotState).forEach { successor ->
-            assert(dockRobot.successors(successor.state)
-                    .any { dockRobot.heuristic(it.state) <= dockRobot.heuristic(successor.state) })
+            assertTrue(dockRobot.successors(successor.state)
+                    .any { dockRobot.heuristic(it.state) <= dockRobot.heuristic(successor.state) },
+                    message = "Eventually the robot can reach a state which has a lower heuristic value")
         }
     }
 
@@ -188,7 +201,8 @@ class DockRobotTest {
                 if (lookupTable.containsKey(key)) {
                     val oldList = lookupTable[key]!!
                     oldList.forEach { state ->
-                        assert(state == successor.state)
+                        assertEquals(state, successor.state, "States with the same hash-code are " +
+                                "equivalent by the equals method")
                     }
                     oldList.add(successor.state)
 
@@ -208,24 +222,37 @@ class DockRobotTest {
         val numSuccessors = successors.size
         successors.forEachIndexed { index, successorBundle ->
             if (index < numSuccessors - 1) {
-                assert(successorBundle.state.hashCode() != successors[index + 1].state.hashCode())
-                assert(successorBundle.state != successors[index + 1].state)
+                assertNotEquals(successorBundle.state.hashCode(), successors[index + 1].state.hashCode(),
+                        message = "Simple check that the successors are unique in sequential order by" +
+                                "having different hash-code values")
+                assertNotEquals(successorBundle.state, successors[index + 1].state,
+                        message = "Simple check that the successors are unique in sequential order by" +
+                                "having different equals evaluation")
             }
-            assert(initialDockRobotState.hashCode() != successorBundle.state.hashCode())
-            assert(initialDockRobotState != successorBundle.state)
+            assertNotEquals(initialDockRobotState.hashCode(), successorBundle.state.hashCode(),
+                    message = "Sanity check that the last successor does not have the same hash-code" +
+                            "as its parent")
+            assertNotEquals(initialDockRobotState, successorBundle.state,
+                    message = "Sanity check that the last successor does not have the same equals" +
+                            "evaluation as its parent")
         }
     }
 
     @Test
+    fun hashCodeEquivalence() {
+        val equivalentInitialState = getEquivalentState(initialDockRobotState)
+
+    }
+
     fun solvable() {
-//        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
-//        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
+        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
+        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
         dummyConfiguration.weight = 2.4
         val suboptimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
         val suboptimalPlan = suboptimalAgent.plan(initialDockRobotState,
                 StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit))
-        print(suboptimalPlan)
-//        assert(optimalPlan.size <= suboptimalPlan.size)
+        assertTrue(optimalPlan.size <= suboptimalPlan.size,
+                message = "The optimal plan should be shorter than any suboptimal plan")
     }
 
     @Test
@@ -234,10 +261,38 @@ class DockRobotTest {
 
     @Test
     fun isGoal() {
-        assert(!dockRobot.isGoal(initialDockRobotState))
+        assertFalse(dockRobot.isGoal(initialDockRobotState),
+                message = "The initial state is not the goal state")
         val successors = dockRobot.successors(initialDockRobotState)
-        successors.forEach { assert(!dockRobot.isGoal(it.state)) }
-        assert(dockRobot.isGoal(goalDockRobotState))
+        successors.forEach {
+            assertFalse(dockRobot.isGoal(it.state),
+                    message = "None of the successors are a goal state")
+        }
+        assertTrue(dockRobot.isGoal(goalDockRobotState),
+                message = "The goal state is indeed the goal")
+    }
+
+    private fun getEquivalentState(state: DockRobotState): DockRobotState {
+        val newContainer: Container = state.cargo
+        val newContainerSites = IntArray(state.containerSites.size)
+        state.containerSites.forEachIndexed { index, i -> newContainerSites[index] = i }
+        val newSites: MutableMap<SiteId, DockRobotSite> = HashMap()
+        var numberOfSites = state.sites.size
+
+        state.sites.forEach { (_, site) ->
+            val piles = ArrayList<Pile>()
+
+            site.piles.forEach { pile ->
+                val newPile = ArrayDeque<Int>()
+                pile.forEach { newPile.add(it) }
+                piles.add(newPile)
+            }
+
+            newSites[numberOfSites - 1] = DockRobotSite(piles)
+            numberOfSites--
+        }
+
+        return DockRobotState(state.sites.size - 1, newContainer, newContainerSites, newSites)
     }
 
 
