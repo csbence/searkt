@@ -162,6 +162,52 @@ class DockRobotTest {
     }
 
     @Test
+    fun heuristicProgression() {
+        dockRobot.successors(initialDockRobotState).forEach { successor ->
+            assert(dockRobot.successors(successor.state)
+                    .any { dockRobot.heuristic(it.state) <= dockRobot.heuristic(successor.state) })
+        }
+    }
+
+    @Test
+    fun hashCodeEquals() {
+        var currentState = initialDockRobotState
+        val lookupTable = HashMap<Int, ArrayList<DockRobotState>>()
+        for (i in 0..9) {
+            dockRobot.successors(currentState).forEach { successor ->
+                val key = successor.state.hashCode()
+                if (lookupTable.containsKey(key)) {
+                    val oldList = lookupTable[key]!!
+                    oldList.forEach { state ->
+                        assert(state == successor.state)
+                    }
+                    oldList.add(successor.state)
+
+                } else {
+                    val newList = ArrayList<DockRobotState>()
+                    newList.add(successor.state)
+                    lookupTable[key] = newList
+                }
+                currentState = successor.state
+            }
+        }
+    }
+
+    @Test
+    fun hashCodeEqualsSimple() {
+        val successors = dockRobot.successors(initialDockRobotState)
+        val numSuccessors = successors.size
+        successors.forEachIndexed { index, successorBundle ->
+            if (index < numSuccessors - 1) {
+                assert(successorBundle.state.hashCode() != successors[index + 1].state.hashCode())
+                assert(successorBundle.state != successors[index + 1].state)
+            }
+            assert(initialDockRobotState.hashCode() != successorBundle.state.hashCode())
+            assert(initialDockRobotState != successorBundle.state)
+        }
+    }
+
+    @Test
     fun distance() {
     }
 
