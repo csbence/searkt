@@ -34,12 +34,9 @@ data class DockRobotState(val robotSiteId: Int,
 
     override fun hashCode(): Int {
         var result = robotSiteId
-        result = 31 * result + cargo
-        result = 31 * result + containerSites.contentHashCode()
-
-        for ((_, site) in sites) {
-            result = 31 * result + site.piles.size
-        }
+        result = 31 * (result + cargo)
+        result = 31 * (result + containerSites.contentHashCode())
+        result = 31 * (result + sites.hashCode())
 
         return result
     }

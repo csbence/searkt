@@ -1,5 +1,9 @@
 package edu.unh.cs.searkt.environment.dockrobot
 
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -7,6 +11,11 @@ import kotlin.collections.ArrayList
 
 class DockRobotTest {
 
+
+    private val dummyConfiguration = ExperimentConfiguration(domainName = "DOCK_ROBOT", algorithmName = "WEIGHTED_A_STAR",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 10000000L,
+            weight = 1.0)
     private val siteCount: Int = 3
     private val maxPileCount = 3
     private val maxPileHeight = 3
@@ -205,6 +214,18 @@ class DockRobotTest {
             assert(initialDockRobotState.hashCode() != successorBundle.state.hashCode())
             assert(initialDockRobotState != successorBundle.state)
         }
+    }
+
+    @Test
+    fun solvable() {
+//        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
+//        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
+        dummyConfiguration.weight = 2.4
+        val suboptimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
+        val suboptimalPlan = suboptimalAgent.plan(initialDockRobotState,
+                StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit))
+        print(suboptimalPlan)
+//        assert(optimalPlan.size <= suboptimalPlan.size)
     }
 
     @Test
