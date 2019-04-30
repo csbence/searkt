@@ -174,19 +174,22 @@ class DockRobotTest {
 
     @Test
     fun containersMoveFromStartingLocation() {
+        val successMap = HashMap<DockRobotState, Boolean>()
         val startingLocation = initialDockRobotState.containerSites
         dockRobot.successors(initialDockRobotState).forEach { successor ->
             dockRobot.successors(successor.state).forEach { successor2 ->
                 dockRobot.successors(successor2.state).forEach { successor3 ->
-                    assertTrue(startingLocation.mapIndexed { index, i ->
+                    successMap[successor3.state] = startingLocation.mapIndexed { index, i ->
                         successor3.state.containerSites[index] != i
-                    }.any { it },
-                            message = "After three moves down the state tree" +
-                                    "there should be at least one container which has" +
-                                    "moved from its starting location")
+                    }.any { it }
+
                 }
             }
         }
+        assertTrue(successMap.values.any { it },
+                message = "After three moves down the state tree " +
+                        "there should be at least one container which has " +
+                        "moved from its starting location")
     }
 
     @Test
