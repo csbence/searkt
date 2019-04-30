@@ -19,7 +19,7 @@ class DockRobotTest {
 
     private val dummyConfiguration = ExperimentConfiguration(domainName = "DOCK_ROBOT", algorithmName = "WEIGHTED_A_STAR",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
-            expansionLimit = 10000000L,
+            expansionLimit = 5000000L,
             weight = 1.0)
     private val siteCount: Int = 3
     private val maxPileCount = 3
@@ -173,6 +173,23 @@ class DockRobotTest {
     }
 
     @Test
+    fun containersMoveFromStartingLocation() {
+        val startingLocation = initialDockRobotState.containerSites
+        dockRobot.successors(initialDockRobotState).forEach { successor ->
+            dockRobot.successors(successor.state).forEach { successor2 ->
+                dockRobot.successors(successor2.state).forEach { successor3 ->
+                    assertTrue(startingLocation.mapIndexed { index, i ->
+                        successor3.state.containerSites[index] != i
+                    }.any { it },
+                            message = "After three moves down the state tree" +
+                                    "there should be at least one container which has" +
+                                    "moved from its starting location")
+                }
+            }
+        }
+    }
+
+    @Test
     fun heuristic() {
         assertTrue(dockRobot.heuristic(initialDockRobotState) != 0.0,
                 message = "Initial state heuristic is non-zero")
@@ -255,15 +272,16 @@ class DockRobotTest {
 
     }
 
+    @Test
     fun solvable() {
-        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
-        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
+//        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
+//        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
         dummyConfiguration.weight = 2.4
         val suboptimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
         val suboptimalPlan = suboptimalAgent.plan(initialDockRobotState,
                 StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit))
-        assertTrue(optimalPlan.size <= suboptimalPlan.size,
-                message = "The optimal plan should be shorter than any suboptimal plan")
+//        assertTrue(optimalPlan.size <= suboptimalPlan.size,
+//                message = "The optimal plan should be shorter than any suboptimal plan")
     }
 
     @Test

@@ -27,7 +27,7 @@ data class DockRobotState(val robotSiteId: Int,
             robotSiteId != other.robotSiteId -> false
             cargo != other.cargo -> false
             !containerSites.contentEquals(other.containerSites) -> false
-            sites == other.sites -> false
+            sites != other.sites -> false
             else -> true
         }
     }

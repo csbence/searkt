@@ -106,6 +106,8 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
+            openList.forEach { println("${it.state} | f: ${it.f} | h: ${it.h} | g: ${it.g}") }
+            println("---")
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
 
