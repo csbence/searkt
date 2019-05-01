@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.environment.SuccessorBundle
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.abs
 
 typealias Successor = SuccessorBundle<DockRobotState>
 
@@ -49,11 +50,11 @@ class DockRobot(
 
                 // Update the container location list if the robot is moving a container between sites
                 if (state.cargo != -1) {
-                    updatedContainerSites[state.cargo] = targetSiteId
+                    updatedContainerSites[state.cargo] = robotSiteId
                 }
 
-                val newState = state.copy(robotSiteId = targetSiteId)
-                successors.add(Successor(newState, DockRobotMoveAction(targetSiteId), actionCost = cost.toDouble()))
+                val newState = state.copy(robotSiteId = targetSiteId, containerSites = updatedContainerSites)
+                successors.add(Successor(newState, DockRobotMoveAction(targetSiteId), actionCost = cost))
             }
         }
 
@@ -74,6 +75,9 @@ class DockRobot(
         currentSite?.piles
                 ?.filter { it.size < maxPileHeight }
                 ?.forEachIndexed { targetPileId, pile ->
+                    val updatedContainerSites = state.containerSites.copyOf()
+                    updatedContainerSites[state.cargo] = state.robotSiteId
+
                     val newPile = ArrayDeque(pile)
                     newPile.push(state.cargo)
 
@@ -87,7 +91,7 @@ class DockRobot(
                     val updatedSites = HashMap(state.sites)
                     updatedSites[robotSiteId] = newSite
 
-                    val newState = state.copy(cargo = -1, sites = updatedSites)
+                    val newState = state.copy(cargo = -1, sites = updatedSites, containerSites = updatedContainerSites)
                     successors.add(Successor(newState, DockRobotUnLoadAction(targetPileId), unloadCost))
                 }
 
@@ -128,7 +132,10 @@ class DockRobot(
             val updatedSites = HashMap(copyHashMap)
             updatedSites[robotSiteId] = newSite
 
-            val newState = state.copy(cargo = -1, sites = updatedSites)
+            val updatedContainerSites = state.containerSites.copyOf()
+            updatedContainerSites[state.cargo] = state.robotSiteId
+
+            val newState = state.copy(cargo = -1, sites = updatedSites, containerSites = updatedContainerSites)
             successors.add(Successor(newState, DockRobotUnLoadAction(newPiles.size - 1), unloadCost))
         }
 
@@ -168,6 +175,9 @@ class DockRobot(
                 updatedSites[robotSiteId] = newSite
             }
 
+            val updatedContainerSites = state.containerSites.copyOf()
+            updatedContainerSites[containerId] = state.robotSiteId
+
             val newState = state.copy(cargo = containerId, sites = updatedSites)
             successors.add(Successor(newState, DockRobotLoadAction(sourcePileId), loadCost))
         }
@@ -178,9 +188,17 @@ class DockRobot(
     override fun heuristic(state: DockRobotState): Double {
         if (state.heuristic >= 0) return state.heuristic
 
-        // Cost of moving the containers to the right site
+        // Determine which containers need to be moved
         val misplacedContainers = state.containerSites.indices
                 .map { state.containerSites[it] != goalContainerSites[it] }
+
+        // Cost of performing move actions to the right site
+        val moveActionsRequired = state.containerSites.indices
+                .map { abs(goalContainerSites[it] - state.containerSites[it]) }.sum()
+
+        // The minimum number of load actions
+        val minimumNumberLoadActions = state.containerSites.indices
+                .map { if (state.cargo != it) 1 else 0 }.sum()
 
         // Cost of removing the containers from the piles if they are at not at the right site
         val unstackCost = state.sites.map { (_, site) ->
@@ -193,9 +211,7 @@ class DockRobot(
             }
         }.sum()
 
-        val misplacedContainerCost = misplacedContainers.filter { it }.count() * minMoveCost
-
-        return unstackCost + misplacedContainerCost
+        return unstackCost + moveActionsRequired + minimumNumberLoadActions
     }
 
     override fun distance(state: DockRobotState): Double {

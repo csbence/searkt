@@ -279,12 +279,13 @@ class DockRobotTest {
     fun solvable() {
 //        val optimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
 //        val optimalPlan = optimalAgent.plan(initialDockRobotState, StaticExpansionTerminationChecker(1000000))
-        dummyConfiguration.weight = 2.4
+        dummyConfiguration.weight = 2.3
         val suboptimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
         val suboptimalPlan = suboptimalAgent.plan(initialDockRobotState,
                 StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit))
 //        assertTrue(optimalPlan.size <= suboptimalPlan.size,
 //                message = "The optimal plan should be shorter than any suboptimal plan")
+        suboptimalPlan.forEach { println(it) }
     }
 
     @Test

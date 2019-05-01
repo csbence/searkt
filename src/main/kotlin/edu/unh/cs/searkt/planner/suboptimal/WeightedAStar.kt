@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.planner.suboptimal
 import edu.unh.cs.searkt.MetronomeConfigurationException
 import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
+import edu.unh.cs.searkt.environment.dockrobot.DockRobotState
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.Planners
@@ -106,8 +107,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
-            openList.forEach { println("${it.state} | f: ${it.f} | h: ${it.h} | g: ${it.g}") }
-            println("---")
+//            openList.forEach { println("${it.state} | f: ${it.f} | h: ${it.h} | g: ${it.g}") }
+//            println("---")
+            assert((successor.state as DockRobotState).heuristic == -1.0)
             val successorState = successor.state
             val successorNode = getNode(sourceNode, successor)
 
