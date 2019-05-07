@@ -7,8 +7,6 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
-import edu.unh.cs.searkt.planner.suboptimal.BoundedSuboptimalExploration.ExpansionPhase.OPTIMAL
-import edu.unh.cs.searkt.planner.suboptimal.BoundedSuboptimalExploration.ExpansionPhase.SUBOPTIMAL_NEW
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
@@ -20,7 +18,7 @@ import kotlin.math.max
 
 class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
     private val weight: Double = configuration.weight
-            ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
+            ?: throw MetronomeConfigurationException("Weight for suboptimal search is not defined.")
 
     var terminationChecker: TerminationChecker? = null
 
@@ -88,9 +86,10 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
     }
 
     private val weightedValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        val internalWeight = weight * 2
         when {
-            lhs.g + lhs.h * weight < rhs.g + rhs.h * weight -> -1
-            lhs.g + lhs.h * weight > rhs.g + rhs.h * weight -> 1
+            lhs.g + lhs.h * internalWeight < rhs.g + rhs.h * internalWeight -> -1
+            lhs.g + lhs.h * internalWeight > rhs.g + rhs.h * internalWeight -> 1
             lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
@@ -107,14 +106,14 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         }
     }
 
-    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), weightedValueComparator) {
+    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), weightedValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
     }
 
     private var greedyOpen = GreedyOpen()
 
-    private val nodes: HashMap<StateType, BoundedSuboptimalExploration.Node<StateType>> = HashMap(1000000, 1.toFloat())
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(100000, 1.toFloat())
 
     private var openList = AdvancedPriorityQueue(1000000, fValueComparator)
 
@@ -123,8 +122,6 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
     private enum class ExpansionPhase {
         OPTIMAL, SUBOPTIMAL_OLD, SUBOPTIMAL_NEW
     }
-
-    private var expansionPhase = OPTIMAL
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -198,198 +195,50 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         return null
     }
 
+    private val maxRam = 1000
+    private var rampupDelay = maxRam
+    private var currentBound = 0.0
+    private var stepErrorAvg = 0.0
+    private var greedyStepErrorAvg = 0.0
+
+    // Min value difference of the optimal search tree open list and the suboptimal search tree
+    private var allowanceImprovement = 0.0
+
+    private val optimalExpansionCounts = arrayListOf<Int>()
+    private val suboptimalExpansionCounts = arrayListOf<Int>()
+    private val suboptimalMinDistance = arrayListOf<Double>()
+
+    private var minVisitedH = Double.MAX_VALUE
+    private var minHError = 0.0
+
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
-        nodes[state] = node
-        openList.add(node)
+        val startNode = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
+        nodes[state] = startNode
+        openList.add(startNode)
         generatedNodeCount++
-
-        val maxRam = 1000
-        var rampupDelay = maxRam
-        var currentBound = 0.0
-        var stepErrorAvg = 0.0
-        var greedyStepErrorAvg = 0.0
         iteration++
 
-        // Min value difference of the optimal search tree open list and the suboptimal search tree
-        var allowanceImprovement = 0.0
-
-        val optimalExpansionCounts = arrayListOf<Int>()
-        val suboptimalExpansionCounts = arrayListOf<Int>()
-        val suboptimalMinDistance = arrayListOf<Double>()
-
-
-        /**
-         * This is a naive implementation of the cut improvement, please consider to exploit more advanced data structures.
-         */
-        fun minCutImprovement(): Double? {
-            return openList.backingArray
-                    .take(openList.size)
-                    .requireNoNulls()
-                    .filter { it.suboptimalCost != 0.0 }
-                    .minBy { it.suboptimalCost - it.cost }
-                    ?.let { it.suboptimalCost - it.cost }
-        }
-
-        fun expandOptimal(): Node<StateType>? {
-            var expanded = 0
-
-            while (openList.isNotEmpty()) {
-                val currentNode = openList.pop()!!
-
-                currentNode.isClosed = true
-
-                expandNode(currentNode, openList, false)?.let { return it }
-                expanded++
-                aStarExpansions++
-
-                val hDiff = node.h - currentNode.h
-                val totalError = currentNode.g - hDiff
-
-                val stepError = if (currentNode.g == 0.0) 0.0
-                else abs(totalError / currentNode.g)
-
-                val learningRate = 0.001 + (rampupDelay - 1) / maxRam
-                stepErrorAvg = stepErrorAvg * (1 - learningRate) + stepError * learningRate
-
-                if (rampupDelay > 0) {
-                    --rampupDelay
-                    continue
-                }
-
-
-                val pessimisticStepError = max(stepErrorAvg, greedyStepErrorAvg)
-                val costEstimate = currentNode.h * pessimisticStepError + currentNode.f // estimate
-                val upperBound = weight * currentNode.f
-
-                val reach = costEstimate < upperBound
-//                 println("reach: $reach stepError: $stepError costEstimate: $costEstimate upperBound: $upperBound g: ${currentNode.g}")
-
-                // We did not improve, there is no point to do suboptimal expansions (in the simple case)
-                if (upperBound == currentBound) continue
-
-                if (upperBound > currentBound) {
-                    // We have more room to play with
-                    currentBound = upperBound
-                    return null
-                    print("optimal expansions: $expanded ")
-                }
-
-                // todo utilize the error models to figure out if we should do some meta improvements
-
-            }
-
-            throw GoalNotReachableException("Open list is empty")
-        }
-
-        var minVisitedH = Double.MAX_VALUE
-        var minHError = 0.0
-
-        fun expandSuboptimal(): Node<StateType>? {
-            var expanded = 0
-
-            while (greedyOpen.isNotEmpty()) {
-                if (greedyOpen.peek()!!.f >= (currentBound + allowanceImprovement)) {
-//                    println(expandedNodeCount)
-//                    println("Bound reached.  error: $greedyStepErrorAvg bound: $currentBound minVisitedH: $minVisitedH expanded: $expanded")
-
-                    suboptimalMinDistance.add(minVisitedH)
-                    print("suboptimal expansions: $expanded")
-                    return null
-                }
-
-                expanded++
-                greedyExpansions++
-                val currentNode = greedyOpen.pop()!!
-
-
-                if (currentNode.isClosed || currentNode.expanded == iteration) {
-                    continue
-                }
-
-                val goalNode = expandNode(currentNode, greedyOpen, true)
-                if (goalNode != null) {
-                    suboptimalMinDistance.add(minVisitedH)
-                    return goalNode
-                }
-
-                if (currentNode.h <= minVisitedH) {
-                    minVisitedH = currentNode.h
-
-                    val hDiff = node.h - currentNode.h
-                    val totalError = currentNode.g - hDiff
-
-                    val stepError = if (currentNode.g == 0.0) 0.0
-                    else abs(totalError / currentNode.g)
-
-                    greedyStepErrorAvg = stepError
-
-//                    val learningRate = 0.001
-//                    greedyStepErrorAvg = greedyStepErrorAvg * (1 - learningRate) + stepError * learningRate
-                }
-
-            }
-
-            print("suboptimal expansions: $expanded")
-            suboptimalMinDistance.add(minVisitedH)
-            return null
-        }
-
-        fun populateGreedyQueue() {
-            val topK = openList.backingArray
-                    .take(openList.size)
-
-            greedyOpen.clear()
-
-            // Reset metrics
-            minVisitedH = Double.MAX_VALUE
-            minHError = 0.0
-
-            ++iteration
-            topK.forEach { greedyOpen.add(it!!) }
-
-            expansionPhase = SUBOPTIMAL_NEW
-//            println("Populate greedy queue")
-        }
-
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-            println("+++\n")
+//            println("+++\n")
 
             var startExpansionCount = expandedNodeCount
 
-            expansionPhase = OPTIMAL
-            expandOptimal()?.let { return extractPlan(it, state) }
+            expandOptimal(startNode)?.let { return extractPlan(it, state) }
 
             allowanceImprovement = minCutImprovement() ?: 0.0
-
             optimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
-
             startExpansionCount = expandedNodeCount
 
             if (greedyOpen.isEmpty()) {
-                println("Polulate greedy open! $iteration")
+//                println("Polulate greedy open! $iteration")
                 populateGreedyQueue()
             }
 
-            expandSuboptimal()?.let { return extractPlan(it, state) }
+            expandSuboptimal(startNode)?.let { return extractPlan(it, state) }
 
             suboptimalExpansionCounts.add(expandedNodeCount - startExpansionCount)
-
-            val expansionBound = (1 until suboptimalExpansionCounts.size)
-                    .map { i ->
-                        val distanceImprovement = suboptimalMinDistance[i - 1] - suboptimalMinDistance[i]
-                        val distanceImprovementPerExpansion = distanceImprovement / optimalExpansionCounts[i]
-
-                        val estimatedExpansions = suboptimalMinDistance[i] / distanceImprovementPerExpansion
-
-                        estimatedExpansions
-                    }
-                    .filter { it != 0.0 && it != Double.POSITIVE_INFINITY }
-                    .fold(0.0) { avg, current -> avg * 0.4 + current * 0.6 }
-
-            println("  estimatedExpansions: $expansionBound bound: $currentBound allowanceImprovement: $allowanceImprovement")
-            rampupDelay = max(expansionBound.toInt(), maxRam)
+            updateMetrics()
         }
 
         if (terminationChecker.reachedTermination()) {
@@ -399,6 +248,143 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
 
         throw GoalNotReachableException()
     }
+
+    private fun updateMetrics() {
+        val expansionBound = (1 until suboptimalExpansionCounts.size)
+                .map { i ->
+                    val distanceImprovement = suboptimalMinDistance[i - 1] - suboptimalMinDistance[i]
+                    val distanceImprovementPerExpansion = distanceImprovement / optimalExpansionCounts[i]
+
+                    val estimatedExpansions = suboptimalMinDistance[i] / distanceImprovementPerExpansion
+
+                    estimatedExpansions
+                }
+                .filter { it != 0.0 && it != Double.POSITIVE_INFINITY }
+                .fold(0.0) { avg, current -> avg * 0.4 + current * 0.6 }
+
+//        println("  estimatedExpansions: $expansionBound bound: $currentBound allowanceImprovement: $allowanceImprovement")
+
+        rampupDelay = max(expansionBound.toInt(), maxRam)
+    }
+
+    /**
+     * This is a naive implementation of the cut improvement, please consider to exploit more advanced data structures.
+     */
+    fun minCutImprovement(): Double? {
+        return openList.backingArray
+                .take(openList.size)
+                .requireNoNulls()
+                .filter { it.suboptimalCost != 0.0 }
+                .minBy { it.suboptimalCost - it.cost }
+                ?.let { it.suboptimalCost - it.cost }
+    }
+
+    private fun expandOptimal(startNode: Node<StateType>): Node<StateType>? {
+        var expanded = 0
+
+        while (openList.isNotEmpty()) {
+            val currentNode = openList.pop()!!
+
+            currentNode.isClosed = true
+
+            expandNode(currentNode, openList, false)?.let { return it }
+            expanded++
+            aStarExpansions++
+
+            val hDiff = startNode.h - currentNode.h
+            val totalError = currentNode.g - hDiff
+
+            val stepError = if (currentNode.g == 0.0) 0.0
+            else abs(totalError / currentNode.g)
+
+            val learningRate = 0.001 + (rampupDelay - 1) / maxRam
+            stepErrorAvg = stepErrorAvg * (1 - learningRate) + stepError * learningRate
+
+            if (rampupDelay > 0) {
+                --rampupDelay
+                continue
+            }
+
+            val pessimisticStepError = max(stepErrorAvg, greedyStepErrorAvg)
+            val costEstimate = currentNode.h * pessimisticStepError + currentNode.f // estimate
+            val upperBound = weight * currentNode.f
+
+            val reach = costEstimate < upperBound
+//                 println("reach: $reach stepError: $stepError costEstimate: $costEstimate upperBound: $upperBound g: ${currentNode.g}")
+
+            // We did not improve, there is no point to do suboptimal expansions (in the simple case)
+            if (upperBound == currentBound) continue
+
+            if (upperBound > currentBound) {
+                // We have more room to play with
+                currentBound = upperBound
+                return null
+            }
+        }
+
+        throw GoalNotReachableException("Open list is empty")
+    }
+
+    private fun expandSuboptimal(startNode: Node<StateType>): Node<StateType>? {
+        var expanded = 0
+
+        while (greedyOpen.isNotEmpty()) {
+            if (greedyOpen.peek()!!.f >= (currentBound + allowanceImprovement)) {
+                suboptimalMinDistance.add(minVisitedH)
+//                print("suboptimal expansions: $expanded")
+                return null
+            }
+
+            expanded++
+            greedyExpansions++
+            val currentNode = greedyOpen.pop()!!
+
+            if (currentNode.isClosed || currentNode.expanded == iteration) {
+                continue
+            }
+
+            val goalNode = expandNode(currentNode, greedyOpen, true)
+            if (goalNode != null) {
+                suboptimalMinDistance.add(minVisitedH)
+                return goalNode
+            }
+
+            if (currentNode.h <= minVisitedH) {
+                minVisitedH = currentNode.h
+
+                val hDiff = startNode.h - currentNode.h
+                val totalError = currentNode.g - hDiff
+
+                val stepError = if (currentNode.g == 0.0) 0.0
+                else abs(totalError / currentNode.g)
+
+                greedyStepErrorAvg = stepError
+
+//                    val learningRate = 0.001
+//                    greedyStepErrorAvg = greedyStepErrorAvg * (1 - learningRate) + stepError * learningRate
+            }
+
+        }
+
+//        print("suboptimal expansions: $expanded")
+        suboptimalMinDistance.add(minVisitedH)
+        return null
+    }
+
+    private fun populateGreedyQueue() {
+        val topK = openList.backingArray
+                .take(openList.size)
+
+        greedyOpen.clear()
+
+        // Reset metrics
+        minVisitedH = Double.MAX_VALUE
+        minHError = 0.0
+
+        ++iteration
+        topK.forEach { greedyOpen.add(it!!) }
+    }
+
 
     private fun extractPlan(solutionNode: Node<StateType>, startState: StateType): List<Action> {
         val actions = arrayListOf<Action>()
