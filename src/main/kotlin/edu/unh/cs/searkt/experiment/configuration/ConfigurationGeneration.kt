@@ -24,12 +24,12 @@ typealias DomainPath = String
 fun generateConfigurations(
         domains: Iterable<Pair<Domains, DomainPath>>,
         planners: Iterable<Planners>,
-        actionDurations: Iterable<Long>,
-        terminationType: TerminationType,
-        lookaheadType: LookaheadType,
         timeLimit: Long,
         expansionLimit: Long,
-        stepLimit: Long,
+        actionDurations: Iterable<Long>,
+        terminationType: TerminationType? = null,
+        lookaheadType: LookaheadType? = null,
+        stepLimit: Long? = null,
         domainExtras: List<Triple<Domains, String, Iterable<Long>>>? = null,
         plannerExtras: Iterable<Triple<Planners, Any, Iterable<Any>>>? = null): Collection<Map<String, Any>> {
 
@@ -39,11 +39,20 @@ fun generateConfigurations(
 
     configurations = configurations.cartesianProduct(ALGORITHM_NAME.toString(), planners.map(Any::toString)).toMutableList()
     configurations = configurations.cartesianProduct(ACTION_DURATION.toString(), actionDurations).toMutableList()
-    configurations = configurations.cartesianProduct(TERMINATION_TYPE.toString(), listOf(terminationType.toString())).toMutableList()
-    configurations = configurations.cartesianProduct(LOOKAHEAD_TYPE.toString(), listOf(lookaheadType.toString())).toMutableList()
-    configurations = configurations.cartesianProduct(TIME_LIMIT.toString(), listOf(timeLimit)).toMutableList()
     configurations = configurations.cartesianProduct(EXPANSION_LIMIT.toString(), listOf(expansionLimit)).toMutableList()
-    configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(stepLimit)).toMutableList()
+    configurations = configurations.cartesianProduct(TIME_LIMIT.toString(), listOf(timeLimit)).toMutableList()
+
+    if (terminationType != null) {
+        configurations = configurations.cartesianProduct(TERMINATION_TYPE.toString(), listOf(terminationType.toString())).toMutableList()
+    }
+
+    if (lookaheadType != null) {
+        configurations = configurations.cartesianProduct(LOOKAHEAD_TYPE.toString(), listOf(lookaheadType.toString())).toMutableList()
+    }
+
+    if (stepLimit != null) {
+        configurations = configurations.cartesianProduct(STEP_LIMIT.toString(), listOf(stepLimit)).toMutableList()
+    }
 
     val extraConfigurations = listOf(Pair(plannerExtras, ALGORITHM_NAME), Pair(domainExtras, DOMAIN_NAME))
 

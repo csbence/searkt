@@ -5,7 +5,9 @@ import edu.unh.cs.searkt.experiment.configuration.Configurations
 import edu.unh.cs.searkt.experiment.configuration.SimpleSerializer
 import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.searkt.planner.*
+import edu.unh.cs.searkt.planner.CommitmentStrategy
+import edu.unh.cs.searkt.planner.Planners
+import edu.unh.cs.searkt.planner.SafeRealTimeSearchConfiguration
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import java.util.concurrent.TimeUnit
@@ -20,11 +22,14 @@ fun generateConfigurations(): String {
     val commitmentStrategy = CommitmentStrategy.SINGLE.toString()
 //    val commitmentStrategy = CommitmentStrategy.MULTIPLE.toString()
 
-    val domains = listOf(
+    val domains = mutableListOf(
             Domains.RACETRACK to "input/racetrack/uniform.track",
             Domains.RACETRACK to "input/racetrack/hansen-bigger-quad.track",
             Domains.RACETRACK to "input/racetrack/hansen-bigger-octa.track"
     )
+
+    domains += (0..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/real/$it" }
+    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
 
     val actionDurations = LongProgression.fromClosedRange(20, 100, 5)
     val terminationType = TerminationType.EXPANSION
@@ -54,27 +59,12 @@ fun generateConfigurations(): String {
             stepLimit = stepLimit,
             plannerExtras = listOf(
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(Planners.SAFE_RTS, Configurations.COMMITMENT_STRATEGY, listOf(commitmentStrategy)),
-                    Triple(Planners.SAFE_RTS, SafeRealTimeSearchConfiguration.TARGET_SELECTION, listOf(SafeRealTimeSearchTargetSelection.SAFE_TO_BEST.toString())),
-                    Triple(Planners.SAFE_RTS, SafeRealTimeSearchConfiguration.SAFETY_PROOF, listOf(SafetyProof.TOP_OF_OPEN)),
                     safetyExplorationRatio
             ),
             domainExtras = domainExtras
     )
 
-    val oracleConfiguration = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
-            domains = domains,
-            planners = listOf(Planners.A_STAR),
-            actionDurations = listOf(actionDurations.min()!!, actionDurations.max()!!),
-            terminationType = terminationType,
-            lookaheadType = lookaheadType,
-            timeLimit = timeLimit,
-            expansionLimit = expansionLimit,
-            stepLimit = stepLimit,
-            domainExtras = domainExtras
-    )
-
-    val configurations = safeRtsConfiguration + oracleConfiguration
+    val configurations = safeRtsConfiguration
 
     println("${configurations.size} configuration has been generated.")
 
