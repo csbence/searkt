@@ -4,6 +4,7 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
+import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -26,14 +27,14 @@ class DockRobotTest {
     private val maxPileHeight = 3
     private val costMatrix = ArrayList<ArrayList<DockRobotSiteEdge>>(siteCount)
     private val goalConfiguration = IntArray(9)
-    private val initialSites = HashMap<SiteId, DockRobotSite>()
-    private val goalSites = HashMap<SiteId, DockRobotSite>()
-
-    private val dockRobot = DockRobot(siteCount, maxPileCount, maxPileHeight,
-            costMatrix, goalConfiguration, initialSites.values)
+    private val initialSites = HashMap<SiteId, Piles>()
+    private val goalSites = HashMap<SiteId, Piles>()
 
     private val initialContainerSites = IntArray(9)
     private val initialDockRobotState = DockRobotState(0, -1, initialContainerSites, initialSites)
+
+    private val dockRobot = DockRobot(maxPileCount, maxPileHeight,
+            costMatrix, goalConfiguration.toList(), initialDockRobotState)
 
     private val goalDockRobotState = DockRobotState(0, -1, goalConfiguration, goalSites)
 
@@ -75,7 +76,7 @@ class DockRobotTest {
                     pile3.add(initialContainerId); initialContainerId++
                     initialContainerSites[initialContainerId] = siteId
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
-                    initialSites[siteId] = DockRobotSite(piles)
+                    initialSites[siteId] = piles
                 }
                 1 -> {
                     val piles = ArrayList<Pile>(3)
@@ -89,7 +90,7 @@ class DockRobotTest {
                     initialContainerSites[initialContainerId] = siteId
                     pile3.add(initialContainerId); initialContainerId++
                     piles.add(pile1); piles.add(pile2); piles.add(pile3)
-                    initialSites[siteId] = DockRobotSite(piles)
+                    initialSites[siteId] = piles
                 }
                 2 -> {
                     // empty site
@@ -114,7 +115,7 @@ class DockRobotTest {
                         pile3.add(goalContainerId); goalContainerId++
                     }
                     piles.add(pile3)
-                    goalSites[siteId] = DockRobotSite(piles)
+                    goalSites[siteId] = piles
                 }
             }
         }
@@ -126,7 +127,7 @@ class DockRobotTest {
         successors.filter { it.state.cargo != -1 }.forEach { successor ->
             val robotLoadedState = successor.state
             assertTrue(robotLoadedState.sites.all { site ->
-                site.value.piles.all { !it.contains(robotLoadedState.cargo) }
+                site.value.all { !it.contains(robotLoadedState.cargo) }
             }, message = "Robot eventually is able to load a container from an unloaded state")
         }
     }
@@ -140,7 +141,7 @@ class DockRobotTest {
                 .forEach { successor ->
                     val robotUnloadedState = successor.state
                     assertTrue(robotUnloadedState.sites.any { site ->
-                        site.value.piles.any { it.contains(lastLoadedSuccessor.state.cargo) }
+                        site.value.any { it.contains(lastLoadedSuccessor.state.cargo) }
                     }, message = "Robot eventually is able to unload a container from a loaded state")
                 }
     }
@@ -265,9 +266,9 @@ class DockRobotTest {
                 message = "Before reordering the piles we have a different hash-code")
         val updatedSites = HashMap(equivalentInitialState.sites)
         equivalentInitialState.sites.forEach { (siteId, site) ->
-            val newPiles = ArrayList(site.piles)
+            val newPiles = ArrayList(site)
             newPiles.sortWith(DockRobotState.pileComparator)
-            updatedSites[siteId] = DockRobotSite(newPiles)
+            updatedSites[siteId] = newPiles
         }
         val newEquivalentInitialState = equivalentInitialState.copy(sites = updatedSites)
         assertEquals(newEquivalentInitialState.hashCode(), initialDockRobotState.hashCode(),
@@ -309,12 +310,12 @@ class DockRobotTest {
         val newContainer: Container = state.cargo
         val newContainerSites = IntArray(state.containerSites.size)
         state.containerSites.forEachIndexed { index, i -> newContainerSites[index] = i }
-        val newSites: MutableMap<SiteId, DockRobotSite> = HashMap()
+        val newSites: MutableMap<SiteId, Piles> = HashMap()
 
         state.sites.forEach { (siteId, site) ->
             val piles = ArrayList<Pile>()
 
-            site.piles.forEach { pile ->
+            site.forEach { pile ->
                 val newPile = ArrayDeque<Container>()
                 pile.forEach { newPile.add(it) }
                 piles.add(newPile)
@@ -324,11 +325,26 @@ class DockRobotTest {
             piles[0] = piles.last()
             piles[piles.size - 1] = oldPile
 
-            newSites[siteId] = DockRobotSite(piles)
+            newSites[siteId] = piles
         }
 
         return DockRobotState(state.robotSiteId, newContainer, newContainerSites, newSites)
     }
 
+    @Test
+    fun serialization() {
+        val dockRobot = Json.parse(SerializableDockRobot.serializer(), """{
+            |"maxPileCount": 1,
+            |"maxPileHeight": 1,
+            |"siteAdjacencyList": [],
+            |"goalContainerSites" : [],
+            |}""".trimMargin())
 
+        assertEquals(dockRobot.maxPileCount, 1)
+    }
+//    |"initialState" : {
+//        |   "robotSiteId": 1,
+//        |   "cargo": -1,
+//        |   "sites": {"1": }
+//        |}
 }

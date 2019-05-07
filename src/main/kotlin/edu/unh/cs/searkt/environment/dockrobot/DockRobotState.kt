@@ -7,11 +7,15 @@ typealias Location = Int
 typealias Container = Int
 typealias SiteId = Int
 typealias Pile = Deque<Container>
+/**
+ * The pile is an ordered list of Boxes in which the first index is the bottom of the pile.
+ */
+typealias Piles = List<Pile>
 
 data class DockRobotState(val robotSiteId: Int,
                           val cargo: Container,
                           val containerSites: IntArray,
-                          val sites: MutableMap<SiteId, DockRobotSite>) : State<DockRobotState> {
+                          val sites: MutableMap<SiteId, Piles>) : State<DockRobotState> {
 
     var heuristic = -1.0
 
@@ -37,7 +41,7 @@ data class DockRobotState(val robotSiteId: Int,
         result = 31 * (result + cargo)
         result = 31 * (result + containerSites.contentHashCode())
         sites.values.forEach { site ->
-            site.piles.forEach { pile ->
+            site.forEach { pile ->
                 pile.forEach { result = 31 * (result + it) }
             }
         }
@@ -61,15 +65,3 @@ data class DockRobotState(val robotSiteId: Int,
         }
     }
 }
-
-/**
- * DockRobotSite represents one physical location of the Dock Robot world.
- * It consists of a pile of
- *
- * The pile is an ordered list of Boxes in which the first index is the bottom of the pile.
- *
- * The cranes represent the boxes held by the cranes.
- */
-data class DockRobotSite(val piles: List<Pile> = listOf())
-
-
