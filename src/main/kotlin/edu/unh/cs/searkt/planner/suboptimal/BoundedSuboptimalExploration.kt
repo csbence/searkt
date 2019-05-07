@@ -77,7 +77,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
     }
 
 
-    private val fValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
+    private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -87,7 +87,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         }
     }
 
-    private val weightedValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
+    private val weightedValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.g + lhs.h * weight < rhs.g + rhs.h * weight -> -1
             lhs.g + lhs.h * weight > rhs.g + rhs.h * weight -> 1
@@ -97,7 +97,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         }
     }
 
-    private val hValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
+    private val hValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.h < rhs.h -> -1
             lhs.h > rhs.h -> 1
