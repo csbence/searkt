@@ -7,8 +7,8 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
-import edu.unh.cs.searkt.planner.suboptimal.AnalyticAStar.ExpansionPhase.OPTIMAL
-import edu.unh.cs.searkt.planner.suboptimal.AnalyticAStar.ExpansionPhase.SUBOPTIMAL_NEW
+import edu.unh.cs.searkt.planner.suboptimal.BoundedSuboptimalExploration.ExpansionPhase.OPTIMAL
+import edu.unh.cs.searkt.planner.suboptimal.BoundedSuboptimalExploration.ExpansionPhase.SUBOPTIMAL_NEW
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
@@ -18,7 +18,7 @@ import kotlin.Comparator
 import kotlin.math.abs
 import kotlin.math.max
 
-class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
+class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
 
@@ -29,7 +29,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
-                                             override var parent: AnalyticAStar.Node<StateType>? = null) :
+                                             override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
         var isClosed = false
         var expanded = 0
@@ -77,7 +77,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
 
-    private val fValueComparator = Comparator<AnalyticAStar.Node<StateType>> { lhs, rhs ->
+    private val fValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
         when {
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -87,7 +87,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val weightedValueComparator = Comparator<AnalyticAStar.Node<StateType>> { lhs, rhs ->
+    private val weightedValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
         when {
             lhs.g + lhs.h * weight < rhs.g + rhs.h * weight -> -1
             lhs.g + lhs.h * weight > rhs.g + rhs.h * weight -> 1
@@ -97,7 +97,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
-    private val hValueComparator = Comparator<AnalyticAStar.Node<StateType>> { lhs, rhs ->
+    private val hValueComparator = Comparator<BoundedSuboptimalExploration.Node<StateType>> { lhs, rhs ->
         when {
             lhs.h < rhs.h -> -1
             lhs.h > rhs.h -> 1
@@ -114,7 +114,7 @@ class AnalyticAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private var greedyOpen = GreedyOpen()
 
-    private val nodes: HashMap<StateType, AnalyticAStar.Node<StateType>> = HashMap(1000000, 1.toFloat())
+    private val nodes: HashMap<StateType, BoundedSuboptimalExploration.Node<StateType>> = HashMap(1000000, 1.toFloat())
 
     private var openList = AdvancedPriorityQueue(1000000, fValueComparator)
 

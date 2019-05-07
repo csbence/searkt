@@ -263,7 +263,7 @@ object ConfigurationExecutor {
         }
 
         return when (Planners.valueOf(algorithmName)) {
-            A_A_STAR -> executeOfflineSearch(AnalyticAStar(domain, configuration), configuration, domain, sourceState)
+            BOUNDED_SUBOPTIMAL_EXPLORATION -> executeOfflineSearch(BoundedSuboptimalExploration(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_DD -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)

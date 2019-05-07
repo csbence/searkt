@@ -7,7 +7,7 @@ import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminati
 import org.junit.Test
 import java.io.File
 
-class AnalyticAStarTest {
+class BoundedSuboptimalExplorationTest {
     private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "EESO",
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 2.5, variant = "O")
@@ -28,7 +28,7 @@ class AnalyticAStarTest {
 //        val tsAgent = TentacleSearch(vacuumWorld.domain, configuration)
 //        val tsAgent = ExplicitEstimationSearchH(vacuumWorld.domain, configuration)
         val tsAgent = ExplicitEstimationSearch(domain.domain, configuration)
-//        val tsAgent = AnalyticAStar(domain.domain, configuration)
+//        val tsAgent = BoundedSuboptimalExploration(domain.domain, configuration)
 //        val tsAgent = WeightedAStar(domain.domain, configuration)
 //        val tsAgent = OptimisticSearch(domain.domain, configuration)
         val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit))

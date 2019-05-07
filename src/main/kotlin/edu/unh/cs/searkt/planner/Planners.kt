@@ -1,7 +1,7 @@
 package edu.unh.cs.searkt.planner
 
 enum class Planners {
-    A_A_STAR,
+    BOUNDED_SUBOPTIMAL_EXPLORATION,
     A_STAR,
     RTA_STAR,
     LSS_LRTA_STAR,
