@@ -171,7 +171,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 return experimentResult
             }
 
-            if (expansionLimit <= planner.expandedNodeCount) {
+            if (expansionLimit != null && expansionLimit <= planner.expandedNodeCount) {
                 val experimentResult = createSnapshotResult()
                 experimentResult.apply {
                     errorMessage = "The planner exceeded the expansion limit: $expansionLimit"

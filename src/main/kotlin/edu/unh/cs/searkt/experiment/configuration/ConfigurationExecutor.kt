@@ -112,7 +112,7 @@ object ConfigurationExecutor {
 
         thread.start()
         thread.priority = Thread.MAX_PRIORITY
-        thread.join(MILLISECONDS.convert(configuration.timeLimit, NANOSECONDS))
+        thread.join(MILLISECONDS.convert(configuration.timeLimit ?: 0 , NANOSECONDS))
 
         if (executionException != null) {
 //            collectAndWait()

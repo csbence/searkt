@@ -48,11 +48,14 @@ data class ExperimentConfiguration(
         val domainName: String,
         @Optional val rawDomain: String? = null,
         val algorithmName: String,
-        val terminationType: TerminationType,
+        @Optional
+        val terminationType: TerminationType = TerminationType.UNLIMITED,
         @Optional val domainPath: String? = null,
         val actionDuration: Long,
-        val timeLimit: Long,
-        val expansionLimit: Long,
+        @Optional
+        val timeLimit: Long? = null,
+        @Optional
+        val expansionLimit: Long? = null,
 
         // Domain
         @Optional

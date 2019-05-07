@@ -31,25 +31,23 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                                                         val domain: Domain<StateType>,
                                                         val initialState: StateType,
                                                         val terminationChecker: TerminationChecker) : Experiment() {
-    private var experimentRunTime: Long = 0
 
     private var actions: List<Action> = emptyList()
-    private var expansionLimit = configuration.expansionLimit
+    private val expansionLimit = configuration.expansionLimit
 
     override fun run(): ExperimentResult {
         // do experiment on state, either given or randomly created
         val state: StateType = initialState
 
-        terminationChecker.resetTo(expansionLimit)
 
-        val cpuNanoTime = measureThreadCpuNanoTime {
+        if (expansionLimit != null) terminationChecker.resetTo(expansionLimit)
+
+        val experimentExecutionTime = measureThreadCpuNanoTime {
             actions = planner.plan(state, terminationChecker)
         }
 
-        experimentRunTime = cpuNanoTime
-
         val planningTime: Long = when (configuration.terminationType) {
-            TIME -> cpuNanoTime
+            TIME -> experimentExecutionTime
             EXPANSION -> planner.expandedNodeCount.toLong()
             else -> throw MetronomeException("Unknown termination type")
         }
@@ -73,14 +71,14 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                 configuration = configuration,
                 expandedNodes = planner.expandedNodeCount,
                 generatedNodes = planner.generatedNodeCount,
-                planningTime = experimentRunTime,
+                planningTime = experimentExecutionTime,
                 iterationCount = 1,
                 actionExecutionTime = pathLength * configuration.actionDuration,
                 goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
                 idlePlanningTime = planningTime,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
-                experimentRunTime = convertNanoUpDouble(experimentRunTime, TimeUnit.SECONDS)
+                experimentRunTime = convertNanoUpDouble(experimentExecutionTime, TimeUnit.SECONDS)
         )
 
         experimentResult.reexpansions = planner.reexpansions
