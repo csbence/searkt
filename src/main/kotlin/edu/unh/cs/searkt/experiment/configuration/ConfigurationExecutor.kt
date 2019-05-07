@@ -22,7 +22,7 @@ import edu.unh.cs.searkt.environment.squareroottiles.SquareRootTilePuzzleIO
 import edu.unh.cs.searkt.environment.traffic.VehicleWorldIO
 import edu.unh.cs.searkt.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.searkt.experiment.AnytimeExperiment
-import edu.unh.cs.searkt.experiment.ClassicalExperiment
+import edu.unh.cs.searkt.experiment.OfflineExperiment
 import edu.unh.cs.searkt.experiment.RealTimeExperiment
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
@@ -301,7 +301,7 @@ object ConfigurationExecutor {
     }
 
     private fun <StateType : State<StateType>> executeOfflineSearch(planner: OfflinePlanner<StateType>, configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
-        return ClassicalExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
+        return OfflineExperiment(configuration, planner, domain, initialState, getTerminationChecker(configuration)).run()
     }
 
     private fun <StateType : State<StateType>> executeAnytimeRepairingAStar(experimentConfiguration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {

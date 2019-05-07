@@ -74,7 +74,7 @@ class AcrobotTest {
 //        experimentConfiguration[Configurations.TIME_LIMIT.toString()] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 //
 //        val aStarAgent = AStarPlanner(domain)
-//        val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState)
+//        val aStarExperiment = OfflineExperiment(experimentConfiguration, aStarAgent, domain, initialState)
 //
 //        aStarExperiment.run()
     }

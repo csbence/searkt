@@ -170,7 +170,7 @@ class SlidingTilePuzzleTest {
 //        val initialState = SlidingTilePuzzleDynamicState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 //
 //        val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
+//        val aStarExperiment = OfflineExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 //
 //        aStarExperiment.run()
 //    }
@@ -264,7 +264,7 @@ class SlidingTilePuzzleTest {
 //        val initialState = slidingTilePuzzleInstance.initialState
 //
 //        val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
+//        val aStarExperiment = OfflineExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 //
 //        aStarExperiment.run()
 //    }

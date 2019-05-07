@@ -1,12 +1,9 @@
 package edu.unh.cs.searkt.experiment
 
-import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.State
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType.EXPANSION
-import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType.TIME
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
@@ -26,11 +23,11 @@ import java.util.concurrent.TimeUnit
  * @param domain is the domain of the planner. Used for random state generation
  * @param initialState is the start state of the planner.
  */
-class ClassicalExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
-                                                        val planner: OfflinePlanner<StateType>,
-                                                        val domain: Domain<StateType>,
-                                                        val initialState: StateType,
-                                                        val terminationChecker: TerminationChecker) : Experiment() {
+class OfflineExperiment<StateType : State<StateType>>(val configuration: ExperimentConfiguration,
+                                                      val planner: OfflinePlanner<StateType>,
+                                                      val domain: Domain<StateType>,
+                                                      val initialState: StateType,
+                                                      val terminationChecker: TerminationChecker) : Experiment() {
 
     private var actions: List<Action> = emptyList()
     private val expansionLimit = configuration.expansionLimit
@@ -46,11 +43,11 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
             actions = planner.plan(state, terminationChecker)
         }
 
-        val planningTime: Long = when (configuration.terminationType) {
-            TIME -> experimentExecutionTime
-            EXPANSION -> planner.expandedNodeCount.toLong()
-            else -> throw MetronomeException("Unknown termination type")
-        }
+//        val planningTime: Long = when (configuration.terminationType) {
+//            TIME -> experimentExecutionTime
+//            EXPANSION -> planner.expandedNodeCount.toLong()
+//            else -> throw MetronomeException("Unknown termination type")
+//        }
 
         // log results
         val pathLength = actions.size.toLong() - 1
@@ -74,8 +71,8 @@ class ClassicalExperiment<StateType : State<StateType>>(val configuration: Exper
                 planningTime = experimentExecutionTime,
                 iterationCount = 1,
                 actionExecutionTime = pathLength * configuration.actionDuration,
-                goalAchievementTime = planningTime + pathLength * configuration.actionDuration,
-                idlePlanningTime = planningTime,
+                goalAchievementTime = 0,
+                idlePlanningTime = 0,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
                 experimentRunTime = convertNanoUpDouble(experimentExecutionTime, TimeUnit.SECONDS)
