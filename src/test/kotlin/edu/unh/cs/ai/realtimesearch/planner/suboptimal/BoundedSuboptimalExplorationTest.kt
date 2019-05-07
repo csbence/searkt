@@ -31,7 +31,7 @@ class BoundedSuboptimalExplorationTest {
 //        val tsAgent = BoundedSuboptimalExploration(domain.domain, configuration)
 //        val tsAgent = WeightedAStar(domain.domain, configuration)
 //        val tsAgent = OptimisticSearch(domain.domain, configuration)
-        val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit))
+        val plan = tsAgent.plan(initialState, StaticExpansionTerminationChecker(configuration.expansionLimit ?: Long.MAX_VALUE))
         println(num)
         println("expansions:${tsAgent.expandedNodeCount}")
         println("costOfSolution:${plan.size}")
