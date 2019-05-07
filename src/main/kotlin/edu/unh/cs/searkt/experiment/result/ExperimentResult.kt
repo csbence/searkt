@@ -9,6 +9,7 @@ import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 /**
  * ExperimentResult is a class to store experiment results.
@@ -141,24 +142,60 @@ class ExperimentResult {
 }
 
 fun Collection<ExperimentResult>.summary(): String {
+    val algorithmNameLength = this.map { it.configuration.algorithmName }.maxBy { it.length }!!.length
+    val fieldLength = this.map { (it.expandedNodes / 1000).toString() }.maxBy { it.length }!!.length + 1
+
+    this.groupBy { it.configuration.domainName }.forEach { (domainName, domainGroup) ->
+        // Print headers
+        println("Domain: $domainName")
+
+        val transforms = listOf(
+                "Expansions (k)" to { result: ExperimentResult -> result.expandedNodes.toDouble() / 1000 }
+                , "Re-expansions (k)" to { result: ExperimentResult -> result.reexpansions.toDouble() / 1000 }
+                , "Planning time (ms)" to { result: ExperimentResult -> result.planningTime.toDouble() / 1000000}
+        )
+        transforms.forEach { (name, transform) ->
+            println(name)
+            print("Weight".padStart(algorithmNameLength) + "|")
+            this.map { it.configuration.weight }.distinct().forEach { print(it.toString().padStart(fieldLength) + " |") }
+            println()
+
+
+            domainGroup.groupBy { it.configuration.algorithmName }.forEach { (algorithmName, algorithmGroup) ->
+                print(algorithmName.padStart(algorithmNameLength) + "|")
+
+                algorithmGroup.sortedBy { it.configuration.weight }.groupBy { it.configuration.weight!! }.forEach { (weight, weightGroup) ->
+                    val avgValue = weightGroup.map(transform).average()
+                    print(avgValue.roundToInt().toString().padStart(fieldLength) + " |")
+                }
+
+                println()
+            }
+
+            println()
+        }
+    }
+
+    println()
+
     val builder = StringBuilder("Results: [${this.size}]")
     val successfulExperiments = this.filter { it.errorMessage == null }
     val failedExperiments = this.filter { it.errorMessage != null }
     builder.appendln("Successful: ${successfulExperiments.size} Failed: ${failedExperiments.size}")
 
-    this.forEach {
-        val algorithm = it.configuration.algorithmName
-        val domain = it.configuration.domainPath
-        val GAT = it.goalAchievementTime
-
-        builder.appendln(
-                " GAT: $GAT" +
-                        " path:${it.pathLength}" +
-                        " dur:${it.configuration.actionDuration}" +
-                        " algorithm: $algorithm" +
-                        " domain: $domain" +
-                        " error: ${it.errorMessage ?: "None"}")
-    }
+//    this.forEach {
+//        val algorithm = it.configuration.algorithmName
+//        val domain = it.configuration.domainPath
+//        val GAT = it.goalAchievementTime
+//
+//        builder.appendln(
+//                " GAT: $GAT" +
+//                        " path:${it.pathLength}" +
+//                        " dur:${it.configuration.actionDuration}" +
+//                        " algorithm: $algorithm" +
+//                        " domain: $domain" +
+//                        " error: ${it.errorMessage ?: "None"}")
+//    }
 
     return builder.toString()
 }
