@@ -10,6 +10,7 @@ import edu.unh.cs.searkt.environment.location.Location
  * the four direction.
  *
  */
+
 class Lifegrids(val width: Int, val height: Int, val blockedCells: Set<Location>, val targetLocation: Location, val actionDuration: Long) : Domain<LifegridsState> {
 
     override fun isSafe(state: LifegridsState): Boolean {

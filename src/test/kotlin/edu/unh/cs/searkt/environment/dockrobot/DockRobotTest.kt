@@ -4,7 +4,6 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
 import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
-import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -283,7 +282,7 @@ class DockRobotTest {
         dummyConfiguration.weight = 2.3
         val suboptimalAgent = WeightedAStar(dockRobot, dummyConfiguration)
         val suboptimalPlan = suboptimalAgent.plan(initialDockRobotState,
-                StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit))
+                StaticExpansionTerminationChecker(dummyConfiguration.expansionLimit!!))
 //        assertTrue(optimalPlan.size <= suboptimalPlan.size,
 //                message = "The optimal plan should be shorter than any suboptimal plan")
         suboptimalPlan.forEach { println(it) }

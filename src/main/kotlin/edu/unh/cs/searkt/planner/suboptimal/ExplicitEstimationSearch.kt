@@ -195,12 +195,12 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         val bestF = cleanup.peek()
 
         when {
-            bestDHat.fHat <= weight * bestF.f -> {
+            bestDHat != null && bestDHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
                 dHatExpansions++
             }
-            bestFHat.fHat <= weight * bestF.f -> {
+            bestFHat != null && bestFHat.fHat <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
                 fHatExpansions++
@@ -222,11 +222,11 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         val bestF = cleanup.peek()
 
         when {
-            bestDHat.f <= weight * bestF.f -> {
+            bestDHat != null && bestDHat.f <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
             }
-            bestFHat.f <= weight * bestF.f -> {
+            bestFHat != null && bestFHat.f <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
             }
@@ -246,17 +246,17 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
         val bestF = cleanup.peek()
 
         when {
-            minOf(bestDHat.f, bestFHat.f) > weight * bestF.f -> {
+            bestDHat != null && bestFHat != null && minOf(bestDHat.f, bestFHat.f) > weight * bestF.f -> {
                 value = cleanup.poll()
                 gequeue.remove(value)
                 aStarPrimeExpansions++
             }
-            bestDHat.f <= weight * bestF.f -> {
+            bestDHat != null && bestDHat.f <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
                 dHatExpansions++
             }
-            bestFHat.f <= weight * bestF.f -> {
+            bestFHat != null && bestFHat.f <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
                 fHatExpansions++

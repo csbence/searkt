@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.planner.suboptimal
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.searkt.environment.inversetiles.InverseTilePuzzleIO
+import edu.unh.cs.searkt.environment.lifegrids.LifegridsIO
 import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
@@ -39,6 +40,15 @@ class ExplicitEstimationSearchTest {
         }
         fileWriter.close()
         return temp.inputStream()
+    }
+
+    @Test
+    fun debugDragonAgeMap() {
+        configuration.weight = 1.6
+        val lifegrids = LifegridsIO.parseFromStream(File("src/main/resources/input/vacuum/orz100d/orz100d.map_scen_2").inputStream(), 1L)
+        val eesAgent = ExplicitEstimationSearch(lifegrids.domain, configuration)
+        eesAgent.plan(lifegrids.initialState, StaticExpansionTerminationChecker(5000000))
+
     }
 
     @Test

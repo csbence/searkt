@@ -191,11 +191,11 @@ class ExplicitEstimationSearchFix<StateType : State<StateType>>(val domain: Doma
         val bestF = cleanup.peek()
 
         when {
-            bestDHat.f <= weight * bestF.f -> {
+            bestDHat != null && bestDHat.f <= weight * bestF.f -> {
                 value = gequeue.pollFocal()
                 cleanup.remove(value)
             }
-            bestFHat.f <= weight * bestF.f -> {
+            bestFHat != null && bestFHat.f <= weight * bestF.f -> {
                 value = gequeue.pollOpen()
                 cleanup.remove(value)
             }
