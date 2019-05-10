@@ -17,12 +17,12 @@ import java.util.concurrent.TimeUnit
 fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
 //            Domains.RACETRACK to "input/racetrack/uniform.track"
-//            ,Domains.RACETRACK to "input/racetrack/hansen-bigger.track"
+//            Domains.RACETRACK to "input/racetrack/hansen-bigger.track"
 //            ,Domains.RACETRACK to "input/racetrack/hansen-bigger-octa.track"
     )
 
-//    domains += (1..5).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
-    domains += listOf(7,10,13).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+    domains += (1..99).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+//    domains += listOf(4).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
 //    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum//orz100d.map_scen_$it" }
 
@@ -44,7 +44,8 @@ fun generateConfigurations(): String {
     )
 
     // Add these to all configurations
-    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
+    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.6, 2.0, 3.0, 4.0, 10.0))
+//    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
 
 
     println("${configurations.size} configuration has been generated.")

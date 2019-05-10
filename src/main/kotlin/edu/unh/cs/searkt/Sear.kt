@@ -31,8 +31,10 @@ fun main(args: Array<String>) {
     // Convert the json configuration string to experiment configuration instances
     val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration)
 
+    println("Execute ${parsedConfigurations.size} configurations.")
+
     // Execute the experiments
-    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 4)
+    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 8)
 
     // Convert the results to json
     val rawResults = Json.stringify(ExperimentResult.serializer().list, results)

@@ -8,7 +8,7 @@ object SlidingTilePuzzleIO {
 
     fun parseFromStream(input: InputStream, actionDuration: Long): SlidingTilePuzzleInstance {
         val inputScanner = Scanner(input)
-        inputScanner.useDelimiter("\n")
+        inputScanner.useDelimiter(System.lineSeparator())
 
         val dimension: Int
 
@@ -35,7 +35,7 @@ object SlidingTilePuzzleIO {
         }
 
         val slidingTilePuzzle = SlidingTilePuzzle(dimension, actionDuration)
-        val tiles = ByteArray(16, { 0.toByte() })
+        val tiles = ByteArray(16) { 0.toByte() }
         val slidingTilePuzzleState = SlidingTilePuzzle4State(0, tiles, 0.0, slidingTilePuzzle.calculateHashCode(tiles))
 
         try {
