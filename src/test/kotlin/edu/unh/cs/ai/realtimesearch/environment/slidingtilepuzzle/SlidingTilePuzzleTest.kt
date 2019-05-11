@@ -1,6 +1,10 @@
 package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
 import edu.unh.cs.searkt.environment.SuccessorBundle
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -9,6 +13,11 @@ import java.util.*
 import kotlin.test.assertTrue
 
 class SlidingTilePuzzleTest {
+
+    private val dummyConfiguration = ExperimentConfiguration(domainName = "LIFEGRIDS", algorithmName = "WEIGHTED_A_STAR",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 5000000L,
+            weight = 1.0)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -23,6 +32,13 @@ class SlidingTilePuzzleTest {
         }
         fileWriter.close()
         return temp.inputStream()
+    }
+
+    @Test
+    fun aStarSlidingTilePuzzle() {
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(File("src/main/resources/input/tiles/korf/4/real/12").inputStream(), 1L)
+        val weightedAStar = WeightedAStar(slidingTilePuzzle.domain, dummyConfiguration)
+        weightedAStar.plan(slidingTilePuzzle.initialState, StaticExpansionTerminationChecker(1000000))
     }
 
     @Test

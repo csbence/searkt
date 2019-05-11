@@ -3,7 +3,6 @@ package edu.unh.cs.searkt.planner.suboptimal
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -157,7 +156,7 @@ class ExplicitEstimationSearchExtensionsTest {
             for (i in 1..100) {
                 print(i.toString() + " ")
                 System.out.flush()
-                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+                val stream = ExplicitEstimationSearchExtensionsTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
                 val initialState = slidingTilePuzzle.initialState
                 val eetsAgent = ExplicitEstimationTildeSearch(slidingTilePuzzle.domain, configuration)

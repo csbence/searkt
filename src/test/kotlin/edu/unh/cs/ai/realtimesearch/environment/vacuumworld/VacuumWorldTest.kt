@@ -2,7 +2,6 @@ package edu.unh.cs.searkt.environment.vacuumworld
 
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.location.Location
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -93,7 +92,7 @@ class VacuumWorldTest {
             configuration.weight = currentWeight
             for (i in 0 until 50) {
                 println(i.toString())
-                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/vacuum/gen/vacuum$i.vw")
+                val stream = VacuumWorldTest::class.java.classLoader.getResourceAsStream("input/vacuum/gen/vacuum$i.vw")
                 val vacuumWorld = VacuumWorldIO.parseFromStream(stream)
                 val initialState = vacuumWorld.initialState
                 val aStarAgent = WeightedAStar(vacuumWorld.domain, configuration)

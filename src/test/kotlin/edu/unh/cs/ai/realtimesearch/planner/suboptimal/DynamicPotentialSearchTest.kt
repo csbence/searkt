@@ -1,7 +1,6 @@
 package edu.unh.cs.searkt.planner.suboptimal
 
 import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -107,7 +106,7 @@ class DynamicPotentialSearchTest {
     fun testDPS6() {
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45)
         for (i in 12 until 13) {
-            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+            val stream = DynamicPotentialSearchTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
             val dpsAgent= DynamicPotentialSearch(slidingTilePuzzle.domain, configuration)
@@ -131,7 +130,7 @@ class DynamicPotentialSearchTest {
 
         for ((experimentNumber, i) in instanceNumbers.withIndex()) {
             print("Executing $i...")
-            val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+            val stream = DynamicPotentialSearchTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
             val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, 1L)
             val initialState = slidingTilePuzzle.initialState
 

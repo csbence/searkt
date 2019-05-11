@@ -1,7 +1,6 @@
 package edu.unh.cs.searkt.environment.inversetiles
 
 import edu.unh.cs.searkt.environment.Action
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -99,7 +98,7 @@ class InverseTilePuzzleTest {
             configuration.weight = currentWeight
             for (i in 1..100) {
                 println(i.toString())
-                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+                val stream = InverseTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = InverseTilePuzzleIO.parseFromStream(stream, 1L)
                 val initialState = slidingTilePuzzle.initialState
                 val eesAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)

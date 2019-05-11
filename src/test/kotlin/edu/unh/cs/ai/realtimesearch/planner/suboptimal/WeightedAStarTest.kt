@@ -2,7 +2,6 @@ package edu.unh.cs.searkt.planner.suboptimal
 
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -154,7 +153,7 @@ class WeightedAStarTest {
             println("running sub-optimality validation on weight: $currentWeight")
             configuration.weight = currentWeight
             for (i in 1..1) {
-                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+                val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = HeavyTilePuzzleIO.parseFromStream(stream, 1L)
                 val initialState = slidingTilePuzzle.initialState
                 val aStarAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)

@@ -5,7 +5,6 @@ import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.searkt.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.searkt.environment.lifegrids.LifegridsIO
 import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
@@ -165,7 +164,7 @@ class ExplicitEstimationSearchTest {
                 print(i.toString() + "\n")
                 System.out.flush()
                 System.out.flush()
-                val stream = SlidingTilePuzzleTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
+                val stream = ExplicitEstimationSearchTest::class.java.classLoader.getResourceAsStream("input/tiles/korf/4/real/$i")
                 val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(stream, configuration.actionDuration)
                 val initialState = slidingTilePuzzle.initialState
                 val eetsAgent = WeightedAStar(slidingTilePuzzle.domain, configuration)

@@ -14,6 +14,7 @@ class LifegridsTest {
             expansionLimit = 5000000L,
             weight = 1.0)
 
+
     private val lifeGrid = LifegridsIO.parseFromStream(File("src/main/resources/input/lifegrids/lifegrids0.lg").inputStream(), 1L)
 
     @Test
