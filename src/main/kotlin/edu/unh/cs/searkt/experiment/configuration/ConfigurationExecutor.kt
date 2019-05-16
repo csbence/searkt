@@ -266,6 +266,8 @@ object ConfigurationExecutor {
             BOUNDED_SUBOPTIMAL_EXPLORATION -> executeOfflineSearch(BoundedSuboptimalExploration(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_DD -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            WEIGHTED_A_STAR_XDP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            WEIGHTED_A_STAR_XUP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
