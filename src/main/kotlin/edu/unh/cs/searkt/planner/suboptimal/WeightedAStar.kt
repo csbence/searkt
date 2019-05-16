@@ -22,7 +22,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private val algorithmName = configuration.algorithmName
 
-    private val optimisticWeight: Double = (2.0 * weight) - 1.0
+    private val optimisticWeight: Double = weight // (2.0 * weight) - 1.0
 
     var terminationChecker: TerminationChecker? = null
 
