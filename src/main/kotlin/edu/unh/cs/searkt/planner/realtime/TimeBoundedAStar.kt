@@ -1,19 +1,19 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.searkt.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.MetronomeConfigurationException
-import edu.unh.cs.ai.realtimesearch.MetronomeException
-import edu.unh.cs.ai.realtimesearch.environment.*
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.TerminationChecker
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.getTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.*
-import edu.unh.cs.ai.realtimesearch.planner.exception.GoalNotReachableException
-import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.NONE
-import edu.unh.cs.ai.realtimesearch.planner.realtime.TBAOptimization.SHORTCUT
-import edu.unh.cs.ai.realtimesearch.util.AdvancedPriorityQueue
-import edu.unh.cs.ai.realtimesearch.util.generateWhile
-import edu.unh.cs.ai.realtimesearch.util.resize
+import edu.unh.cs.searkt.MetronomeConfigurationException
+import edu.unh.cs.searkt.MetronomeException
+import edu.unh.cs.searkt.environment.*
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
+import edu.unh.cs.searkt.planner.*
+import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
+import edu.unh.cs.searkt.planner.realtime.TBAOptimization.NONE
+import edu.unh.cs.searkt.planner.realtime.TBAOptimization.SHORTCUT
+import edu.unh.cs.searkt.util.AdvancedPriorityQueue
+import edu.unh.cs.searkt.util.generateWhile
+import edu.unh.cs.searkt.util.resize
 import java.util.*
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -368,7 +368,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             val undiscoveredNode = PureRealTimeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState) * weight,
-                    actionCost = successor.actionCost,
+                    actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
                     cost = Long.MAX_VALUE,
@@ -384,10 +384,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     }
 
     private fun backtrack(currentNode: PureRealTimeSearchNode<StateType>,
-                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<RealTimePlanner.ActionBundle> {
+                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<ActionBundle> {
         val transition = domain.transition(currentNode.state, nextNode.state)
                 ?: throw GoalNotReachableException("Cannot backtrack in this domain")
-        return listOf(RealTimePlanner.ActionBundle(transition.first, transition.second))
+        return listOf(ActionBundle(transition.first, transition.second.toLong()))
     }
 
     private inline fun printTime(msg: String, noinline fn: () -> Unit){

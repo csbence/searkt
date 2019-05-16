@@ -18,6 +18,15 @@ import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.system.measureNanoTime
 
+/**
+ * Real time search algorithm which maintains an ever-expanding search envelope
+ * and directs the agent toward the best node on the frontier
+ *
+ * Note: Cannibalized from the original Envelope Search which did not perform well
+ * enough
+ *
+ * @author Kevin C. Gall
+ */
 class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
@@ -36,6 +45,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             override var actionCost: Long,
             override var action: Action,
             override var iteration: Long,
+            override var closed: Boolean,
             parent: EnvelopeSearchNode<StateType>? = null
     ) : RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>>, Indexable {
 
@@ -199,7 +209,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
      */
     override fun init(initialState: StateType) {
         val primer = EnvelopeSearchNode(initialState,
-                0.0, 0L, 0L, NoOperationAction, 0L)
+                0.0, 0L, 0L, NoOperationAction, 0L, false)
         nodes[initialState] = primer
         nodes.remove(initialState)
     }
@@ -208,7 +218,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         if (rootState == null) {
             rootState = sourceState
 
-            val node = EnvelopeSearchNode(sourceState, domain.heuristic(sourceState), 0, 0, NoOperationAction, 0)
+            val node = EnvelopeSearchNode(sourceState, domain.heuristic(sourceState), 0, 0, NoOperationAction, 0, false)
             node.waveParent = node
             nodes[sourceState] = node
 
@@ -591,7 +601,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
                     action = successor.action,
                     parent = parent,
                     cost = MAX_VALUE,
-                    iteration = 0
+                    iteration = 0,
+                    closed = false
             )
 
             undiscoveredNode.generated = generatedNodeCount

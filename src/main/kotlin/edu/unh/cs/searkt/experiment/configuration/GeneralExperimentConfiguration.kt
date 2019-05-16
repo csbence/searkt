@@ -8,6 +8,7 @@ import edu.unh.cs.searkt.planner.SafetyBackup
 import edu.unh.cs.searkt.planner.SafetyProof
 import edu.unh.cs.searkt.planner.realtime.BackupComparator
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
+import edu.unh.cs.searkt.planner.realtime.TBStrategy
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
@@ -114,6 +115,8 @@ data class ExperimentConfiguration(
         // TBA*
         @Optional
         val tbaOptimization: TBAOptimization? = null,
+        @Optional
+        val timeBoundedSearchStrategy: TBStrategy? = null,
 
         // Envelope Search
         @Optional
