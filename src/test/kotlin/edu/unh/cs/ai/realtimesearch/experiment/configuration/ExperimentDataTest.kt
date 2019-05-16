@@ -1,8 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.experiment.configuration
-
-import edu.unh.cs.ai.realtimesearch.experiment.result.ExperimentResult
-import org.junit.Test
-import kotlin.test.assertTrue
+package edu.unh.cs.searkt.experiment.configuration
 
 /**
  * @author Bence Cserna (bence@cserna.net)

@@ -1,15 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.planner.realtime
+package edu.unh.cs.searkt.planner.realtime
 
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrack
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackIO
-import edu.unh.cs.ai.realtimesearch.environment.racetrack.RaceTrackState
-import edu.unh.cs.ai.realtimesearch.experiment.terminationCheckers.FakeTerminationChecker
-import edu.unh.cs.ai.realtimesearch.planner.isComfortable
+import edu.unh.cs.searkt.environment.racetrack.RaceTrack
+import edu.unh.cs.searkt.environment.racetrack.RaceTrackIO
+import edu.unh.cs.searkt.environment.racetrack.RaceTrackState
 import org.junit.After
 import org.junit.Before
-import org.junit.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 
 /**
@@ -66,18 +61,18 @@ internal class SafeRealTimeSearchTest {
     fun tearDown() {
     }
 
-    @Test
-    fun testIsComfortable() {
-        assertTrue { isComfortable(initialState, FakeTerminationChecker, raceTrack) != null }
-        assertTrue { isComfortable(RaceTrackState(2, 2, 0, 0), FakeTerminationChecker, raceTrack) != null }
-        assertTrue { isComfortable(RaceTrackState(2, 2, 1, 1), FakeTerminationChecker, raceTrack) != null }
-        // Go up & right
-        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 5), FakeTerminationChecker, raceTrack) != null }
-        // Go right
-        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 0), FakeTerminationChecker, raceTrack) != null }
-        // Go up
-        assertTrue { isComfortable(RaceTrackState(2, 32, 0, -5), FakeTerminationChecker, raceTrack) != null }
-    }
+//    @Test
+//    fun testIsComfortable() {
+//        assertTrue { isComfortable(initialState, FakeTerminationChecker, raceTrack) != null }
+//        assertTrue { isComfortable(RaceTrackState(2, 2, 0, 0), FakeTerminationChecker, raceTrack) != null }
+//        assertTrue { isComfortable(RaceTrackState(2, 2, 1, 1), FakeTerminationChecker, raceTrack) != null }
+//        // Go up & right
+//        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 5), FakeTerminationChecker, raceTrack) != null }
+//        // Go right
+//        assertFalse { isComfortable(RaceTrackState(2, 32, 5, 0), FakeTerminationChecker, raceTrack) != null }
+//        // Go up
+//        assertTrue { isComfortable(RaceTrackState(2, 32, 0, -5), FakeTerminationChecker, raceTrack) != null }
+//    }
 
 
 }

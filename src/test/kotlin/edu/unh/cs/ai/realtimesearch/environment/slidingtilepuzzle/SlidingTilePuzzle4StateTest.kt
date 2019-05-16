@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -12,8 +12,10 @@ class SlidingTilePuzzle4StateTest {
 
     @Test
     fun testGetOperator() {
+        val slidingTilePuzzle = SlidingTilePuzzle(4, 1)
         val validTiles = byteArrayOf(1,2,0,3,5,4,6,7,8,9,10,11,12,13,14,15)
-        val state = SlidingTilePuzzle4State(2, validTiles, 0.0)
+        val state = SlidingTilePuzzle4State(2, validTiles, 0.0,
+                slidingTilePuzzle.calculateHashCode(validTiles))
         validTiles.forEachIndexed{ index, byte ->
             assertEquals(state[index],byte,"index $index")
         }
@@ -21,8 +23,10 @@ class SlidingTilePuzzle4StateTest {
 
     @Test
     fun testGetAndSetAreConsistent() {
+        val slidingTilePuzzle = SlidingTilePuzzle(4, 1)
         val validTiles = byteArrayOf(1,2,0,3,5,4,6,7,8,9,10,11,12,13,14,15)
-        val state = SlidingTilePuzzle4State(2, kotlin.ByteArray(16, {0.toByte()}),0.0)
+        val state = SlidingTilePuzzle4State(2, kotlin.ByteArray(16, {0.toByte()}),0.0,
+                slidingTilePuzzle.calculateHashCode(validTiles))
         validTiles.forEachIndexed{index, byte ->
             assertEquals(0, state[index], "index $index")
             state[index] = byte
@@ -34,7 +38,8 @@ class SlidingTilePuzzle4StateTest {
     fun testHeuristic() {
         val slidingTilePuzzle = SlidingTilePuzzle(4, 0)
         val tiles = ByteArray(16, {0.toByte()})
-        val slidingTilePuzzle4State = SlidingTilePuzzle4State(0, tiles, 0.0)
+        val slidingTilePuzzle4State = SlidingTilePuzzle4State(0, tiles, 0.0,
+                slidingTilePuzzle.calculateHashCode(tiles))
 
         for (i in 0..15) {
             slidingTilePuzzle4State[i] = 15
@@ -64,8 +69,10 @@ class SlidingTilePuzzle4StateTest {
     fun testTwoStateHeuristic() {
         val tiles = ByteArray(16, {0.toByte()})
         val slidingTilePuzzle = SlidingTilePuzzle(4, 0)
-        val stateA = SlidingTilePuzzle4State(0, tiles, 0.0)
-        val stateB = SlidingTilePuzzle4State(0, tiles, 0.0)
+        val stateA = SlidingTilePuzzle4State(0, tiles, 0.0,
+                slidingTilePuzzle.calculateHashCode(tiles))
+        val stateB = SlidingTilePuzzle4State(0, tiles, 0.0,
+                slidingTilePuzzle.calculateHashCode(tiles))
 
         for (i in 0..15) {
             stateA[i] = i.toByte()
@@ -79,7 +86,8 @@ class SlidingTilePuzzle4StateTest {
 
         assertTrue(slidingTilePuzzle.heuristic(stateA, stateB) == slidingTilePuzzle.heuristic(stateB, stateA))
 
-        val stateC = SlidingTilePuzzle4State(0, tiles, 0.0)
+        val stateC = SlidingTilePuzzle4State(0, tiles, 0.0,
+                slidingTilePuzzle.calculateHashCode(tiles))
 
         for (i in 15 downTo 0) {
             stateC[i] = 10

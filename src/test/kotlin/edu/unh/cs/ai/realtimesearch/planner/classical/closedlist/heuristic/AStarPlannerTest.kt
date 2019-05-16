@@ -1,8 +1,5 @@
-package edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic
+package edu.unh.cs.searkt.planner.classical.closedlist.heuristic
 
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleIO
-import edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle.SlidingTilePuzzleTest
-import org.junit.Test
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStream

@@ -1,4 +1,4 @@
-package edu.unh.cs.ai.realtimesearch
+package edu.unh.cs.searkt
 
 import org.junit.Test
 

@@ -1,8 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.searkt.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.searkt.util.doubleNearEquals
 import org.junit.Test
-import org.slf4j.LoggerFactory
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -10,8 +9,6 @@ import kotlin.test.assertTrue
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 class AcrobotStateTest {
-
-    private val logger = LoggerFactory.getLogger(AcrobotStateTest::class.java)
 
 //    @Test
 //    fun testEnergy1() {

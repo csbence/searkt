@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
+import argparse
 import os.path
-import argparse 
 import random
 
 parser = argparse.ArgumentParser()
@@ -19,54 +19,55 @@ height = int(args.height) + 1
 width = int(args.width) + 1
 number = int(args.number)
 
-
 if args.verbose:
-  print(args.height)
-  print(args.width)
+    print(args.height)
+    print(args.width)
 
 obstaclePercentage = float(args.obstacles)
 bunkerPercentage = float(args.bunkers)
 startX = 1
-startY = 1
+startY = int((height - 1) / 2.0)
 
-endX = width
-endY = height
+endX = (width - 1)
+endY = int((height - 1) / 2.0)
+
+print("start:" + str(startX) + ", " + str(startY))
+print("end: " + str(endX) + ", " + str(endY))
 
 path = args.path
 
 if type(path) == type(None):
-  path = "..//input/vehicle"
+    path = "../../src/main/resources/input/gridworld/"
 
-for iteration in range(0,number):
+for iteration in range(0, number):
+    newDomain = "gridworld" + str(iteration)
 
-  newDomain = "vehicle"+str(iteration)
+    completeFile = os.path.join(path, newDomain + ".gw")
 
-  completeFile = os.path.join(path, newDomain+".v")
+    aFile = open(completeFile, "w")
 
-  aFile = open(completeFile, "w")
+    preamble = args.width + "\n" + args.height + "\n"
+    world = ""
 
-  preamble = args.height+"\n"+args.width+"\n"
-  world = ""
+    for y in range(1, height):
+        for x in range(1, width):
+            flipObstacle = random.random()
+            flipBunker = random.random()
+            if x == startX and y == startY:
+                world += "@"
+            elif flipObstacle < obstaclePercentage and x != width - 1:
+                world += "#"
+            elif flipBunker < bunkerPercentage and x != width - 1:
+                world += "$"
+            elif y == endY and x == endX:
+                world += "*"
+            else:
+                world += "_"
+        world += "\n"
 
-  for y in range(1,height):
-    for x in range(1,width):
-      flipObstacle = random.random()
-      flipBunker = random.random() 
-      if ((x == startX) and (y == startY)):
-        world += "@"
-      elif flipObstacle < obstaclePercentage and x != width-1:
-        world += "#"
-      elif flipBunker < bunkerPercentage and x != width-1:
-        world += "$"
-      elif (y == height-1 and x == width-1):
-        world += "*"
-      else:
-        world += "_"
-    world += "\n"
+    if args.verbose:
+        print(world)
 
-  if args.verbose:
-    print(world)
-    
-  aFile.write(preamble + world)
+    aFile.write(preamble + world)
 
-  aFile.close()
+    aFile.close()

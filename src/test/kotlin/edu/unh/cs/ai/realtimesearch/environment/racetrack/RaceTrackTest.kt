@@ -1,7 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.environment.racetrack
+package edu.unh.cs.searkt.environment.racetrack
 
-import edu.unh.cs.ai.realtimesearch.MetronomeException
-import edu.unh.cs.ai.realtimesearch.environment.location.Location
+import edu.unh.cs.searkt.MetronomeException
+import edu.unh.cs.searkt.environment.location.Location
 import org.junit.Before
 import org.junit.Test
 import java.lang.Math.max

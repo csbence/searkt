@@ -1,18 +1,7 @@
-package edu.unh.cs.ai.realtimesearch.environment.acrobot
+package edu.unh.cs.searkt.environment.acrobot
 
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedDomain
-import edu.unh.cs.ai.realtimesearch.environment.DiscretizedState
-import edu.unh.cs.ai.realtimesearch.environment.Domains
-import edu.unh.cs.ai.realtimesearch.environment.acrobot.configuration.AcrobotStateConfiguration
-import edu.unh.cs.ai.realtimesearch.experiment.ClassicalExperiment
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.Configurations
-import edu.unh.cs.ai.realtimesearch.experiment.configuration.GeneralExperimentConfiguration
-import edu.unh.cs.ai.realtimesearch.planner.Planners
-import edu.unh.cs.ai.realtimesearch.planner.classical.closedlist.heuristic.AStarPlanner
-import edu.unh.cs.ai.realtimesearch.util.doubleNearEquals
+import edu.unh.cs.searkt.util.doubleNearEquals
 import org.junit.Test
-import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -20,8 +9,6 @@ import kotlin.test.assertTrue
  * @author Mike Bogochow (mgp36@unh.edu)
  */
 class AcrobotTest {
-
-    private val logger = LoggerFactory.getLogger(AcrobotTest::class.java)
 
     @Test
     fun testGoalHeuristic() {
@@ -87,7 +74,7 @@ class AcrobotTest {
 //        experimentConfiguration[Configurations.TIME_LIMIT.toString()] = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 //
 //        val aStarAgent = AStarPlanner(domain)
-//        val aStarExperiment = ClassicalExperiment(experimentConfiguration, aStarAgent, domain, initialState)
+//        val aStarExperiment = OfflineExperiment(experimentConfiguration, aStarAgent, domain, initialState)
 //
 //        aStarExperiment.run()
     }

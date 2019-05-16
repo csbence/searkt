@@ -1,6 +1,6 @@
-//package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+//package edu.unh.cs.searkt.environment.slidingtilepuzzle
 //
-//import edu.unh.cs.ai.realtimesearch.environment.location.Location
+//import edu.unh.cs.searkt.environment.location.Location
 //import org.junit.Test
 //import kotlin.test.assertTrue
 //

@@ -1,6 +1,10 @@
-package edu.unh.cs.ai.realtimesearch.environment.slidingtilepuzzle
+package edu.unh.cs.searkt.environment.slidingtilepuzzle
 
-import edu.unh.cs.ai.realtimesearch.environment.SuccessorBundle
+import edu.unh.cs.searkt.environment.SuccessorBundle
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -9,6 +13,11 @@ import java.util.*
 import kotlin.test.assertTrue
 
 class SlidingTilePuzzleTest {
+
+    private val dummyConfiguration = ExperimentConfiguration(domainName = "LIFEGRIDS", algorithmName = "WEIGHTED_A_STAR",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            expansionLimit = 5000000L,
+            weight = 1.0)
 
     private fun createInstanceFromString(puzzle: String): InputStream {
         val temp = File.createTempFile("tile", ".puzzle")
@@ -23,6 +32,13 @@ class SlidingTilePuzzleTest {
         }
         fileWriter.close()
         return temp.inputStream()
+    }
+
+    @Test
+    fun aStarSlidingTilePuzzle() {
+        val slidingTilePuzzle = SlidingTilePuzzleIO.parseFromStream(File("src/main/resources/input/tiles/korf/4/real/12").inputStream(), 1L)
+        val weightedAStar = WeightedAStar(slidingTilePuzzle.domain, dummyConfiguration)
+        weightedAStar.plan(slidingTilePuzzle.initialState, StaticExpansionTerminationChecker(1000000))
     }
 
     @Test
@@ -106,9 +122,9 @@ class SlidingTilePuzzleTest {
         val s3 = SlidingTilePuzzleIO.parseFromStream(s3Instance, 1L)
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.EAST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.SOUTH, 1L)) }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.EAST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.SOUTH, 1.0)) }
     }
 
     @Test
@@ -132,10 +148,10 @@ class SlidingTilePuzzleTest {
         val successors = stp.domain.successors(stp.initialState)
         println(successors)
         assertTrue { stp.domain.heuristic(stp.initialState) == 44.0 }
-        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.NORTH, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.EAST, 1L)) }
-        assertTrue { successors.contains(SuccessorBundle(s4.initialState, SlidingTilePuzzleAction.SOUTH, 1L)) }
+        assertTrue { successors.contains(SuccessorBundle(s1.initialState, SlidingTilePuzzleAction.WEST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s2.initialState, SlidingTilePuzzleAction.NORTH, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s3.initialState, SlidingTilePuzzleAction.EAST, 1.0)) }
+        assertTrue { successors.contains(SuccessorBundle(s4.initialState, SlidingTilePuzzleAction.SOUTH, 1.0)) }
     }
 
 
@@ -170,7 +186,7 @@ class SlidingTilePuzzleTest {
 //        val initialState = SlidingTilePuzzleDynamicState(2, 0, tiles, slidingTilePuzzle.heuristic(tiles))
 //
 //        val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
+//        val aStarExperiment = OfflineExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 //
 //        aStarExperiment.run()
 //    }
@@ -264,7 +280,7 @@ class SlidingTilePuzzleTest {
 //        val initialState = slidingTilePuzzleInstance.initialState
 //
 //        val aStarAgent = ClassicalAgent(AStarPlanner(slidingTilePuzzle))
-//        val aStarExperiment = ClassicalExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
+//        val aStarExperiment = OfflineExperiment(GeneralExperimentConfiguration(), aStarAgent, slidingTilePuzzle, initialState)
 //
 //        aStarExperiment.run()
 //    }

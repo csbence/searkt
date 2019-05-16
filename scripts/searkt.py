@@ -5,23 +5,80 @@
 # Run searkt with the configs
 
 import copy
+import datetime
+import itertools
 import json
 import os
+import pandas as pd
+import slack_notification
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from subprocess import run, TimeoutExpired, PIPE
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
-import itertools
-
-__author__ = 'Bence Cserna, William Doyle, Kevin C. Gall'
 
 
 def generate_base_suboptimal_configuration():
-    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS']
+    algorithms_to_run = ['WEIGHTED_A_STAR', 'DPS', 'EES']
+    expansion_limit = [sys.maxsize]
+    lookahead_type = ['DYNAMIC']
+    time_limit = [sys.maxsize]
+    action_durations = [1]
+    termination_types = ['EXPANSION']
+    step_limits = [100000000]
+
+    base_configuration = dict()
+    base_configuration['algorithmName'] = algorithms_to_run
+    base_configuration['expansionLimit'] = expansion_limit
+    base_configuration['lookaheadType'] = lookahead_type
+    base_configuration['actionDuration'] = action_durations
+    base_configuration['terminationType'] = termination_types
+    base_configuration['stepLimit'] = step_limits
+    base_configuration['timeLimit'] = time_limit
+    base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['errorModel'] = ['path']
+
+    compiled_configurations = [{}]
+
+    for key, value in base_configuration.items():
+        compiled_configurations = cartesian_product(compiled_configurations, key, value)
+
+    # Algorithm specific configurations
+    weight = [1.1, 1.3, 1.5]
+    # weight = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    # weight = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
+    # weight = [1.17, 1.2, 1.25, 1.33, 1.5, 1.78, 2.0, 2.33, 2.67, 2.75, 3.0]  # Unit tile weights
+    # weight = [1.11, 1.13, 1.14, 1.17, 1.2, 1.25, 1.5, 2.0, 2.67, 3.0]  # Heavy tile weights
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'WEIGHTED_A_STAR']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'DPS']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EES']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'EECS']])
+
+    experiment_tag = ""
+    for alg in algorithms_to_run:
+        experiment_tag = experiment_tag + "-" + alg
+    return compiled_configurations, experiment_tag
+
+
+def generate_base_configuration():
+    # required configuration parameters
+    algorithms_to_run = ['CES', 'ES', 'ALT_ENVELOPE', 'TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
-    time_limit = [1000000000000]
-    action_durations = [1]
+    time_limit = [100000000000]
+    action_durations = [50, 100, 200, 500]
+    # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
 
@@ -46,83 +103,58 @@ def generate_base_suboptimal_configuration():
                                                 'weight', weight,
                                                 [['algorithmName', 'WEIGHTED_A_STAR']])
 
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', weight,
-                                                [['algorithmName', 'DPS']])
-
-    return compiled_configurations
-
-
-def generate_base_configuration():
-    # required configuration parameters
-    algorithms_to_run = ['A_STAR']
-    # algorithms_to_run = ['ES']
-    # algorithms_to_run = ['ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
-    # algorithms_to_run = ['ES', 'TIME_BOUNDED_A_STAR']
-    # algorithms_to_run = ['LSS_LRTA_STAR']
-    # algorithms_to_run = ['LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
-    #algorithms_to_run = ['TIME_BOUNDED_A_STAR']
-    expansion_limit = [100000000]
-    lookahead_type = ['DYNAMIC']
-    time_limit = [300000000000]
-    action_durations = [1] # Use this for A*
-    #action_durations = [10000000, 12000000, 16000000, 20000000, 25000000, 32000000]
-    termination_types = ['TIME']
-    step_limits = [100000000]
-
-    base_configuration = dict()
-    base_configuration['algorithmName'] = algorithms_to_run
-    base_configuration['expansionLimit'] = expansion_limit
-    base_configuration['lookaheadType'] = lookahead_type
-    base_configuration['actionDuration'] = action_durations
-    base_configuration['terminationType'] = termination_types
-    base_configuration['stepLimit'] = step_limits
-    base_configuration['timeLimit'] = time_limit
-    base_configuration['commitmentStrategy'] = ['SINGLE']
-    base_configuration['terminationTimeEpsilon'] = [5000000]  # 4ms
-
-    # base_configuration['expansionDelay'] = [0, 200, 400, 600, 800, 1000]
-    # base_configuration['expansionDelay'] = [1000, 10000, 50000]
-
-    compiled_configurations = [{}]
-
-    for key, value in base_configuration.items():
-        compiled_configurations = cartesian_product(compiled_configurations, key, value)
-
-    # Algorithm specific configurations
-    weight = [3.0]
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', weight,
-                                                [['algorithmName', 'WEIGHTED_A_STAR']])
-
     # Envelope-based
-    # No configurable resource ratio for RES at this time
-
+    # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
+    backup_ratios = [1.0]
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', [0.2],
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'CES']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
+                                                [['algorithmName', 'ENVELOPE']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'backlogRatio', backup_ratios,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # TBA*
-    optimizations = ['THRESHOLD']
+    optimizations = ['NONE', 'THRESHOLD']
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
-    tbaStrategies = ['A_STAR', 'GBFS']
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'timeBoundedSearchStrategy', tbaStrategies,
-                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
-    tbaWeights = [1.0, 1.4, 1.8, 2.2, 2.6, 3.0]
+    # S-RTS specific attributes
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'weight', tbaWeights,
-                                                [
-                                                    ['algorithmName', 'TIME_BOUNDED_A_STAR'],
-                                                    ['timeBoundedSearchStrategy', 'A_STAR']
-                                                ])
+                                                'targetSelection', ['SAFE_TO_BEST'],
+                                                [['algorithmName', 'SAFE_RTS']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                # 'safetyProof', ['LOW_D_LOW_H_OPEN'],
+                                                'safetyProof', ['TOP_OF_OPEN'],
+                                                # 'safetyProof', ['LOW_D_LOW_H'],
+                                                # 'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
+                                                # 'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
+                                                [['algorithmName', 'SAFE_RTS']])
 
     compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backupComparator', ['F'],#, 'PSEUDO_F'],
-                                                [['algorithmName', 'ES']])
+                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_WINDOW']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
+                                                [['algorithmName', 'SAFE_RTS'],
+                                                 ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [0],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H_OPEN']])
+
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyWindowSize', [0],
+                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'TOP_OF_OPEN']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'safetyExplorationRatio', [1],
+                                                [['algorithmName', 'SAFE_RTS']])
+
     return compiled_configurations
 
 
@@ -141,11 +173,28 @@ def generate_racetrack():
     return configurations
 
 
+def generate_vacuum_worlds():
+    configurations, tag = generate_base_suboptimal_configuration()
+    worlds_to_run = []
+    for world in range(0, 1):
+        worlds_to_run.append('vacuum'+str(world)+'.vw')
+
+    world_base_path = 'input/vacuum/gen/'
+    full_world_paths = [world_base_path + world for world in worlds_to_run]
+
+    configurations = cartesian_product(configurations, 'domainName', ['VACUUM_WORLD'])
+    configurations = cartesian_product(configurations, 'domainPath', full_world_paths)
+
+    tag = tag + '-VACUUM_WORLD'
+
+    return configurations, tag
+
+
 def generate_tile_puzzle():
-    configurations = generate_base_suboptimal_configuration()
+    configurations, tag = generate_base_suboptimal_configuration()
 
     puzzles = []
-    for puzzle in range(1, 11):
+    for puzzle in range(13, 101):
         puzzles.append(str(puzzle))
 
     puzzle_base_path = 'input/tiles/korf/4/real/'
@@ -154,38 +203,22 @@ def generate_tile_puzzle():
     configurations = cartesian_product(configurations, 'domainName', ['SLIDING_TILE_PUZZLE_4'])
     configurations = cartesian_product(configurations, 'domainPath', full_puzzle_paths)
 
-    return configurations
+    return configurations, tag+'-SLIDING_TILE_PUZZLE_4'
 
 
 # Generates configs for Dragon Age Origins game map (Nathan Sturtevant)
 def generate_grid_world():
     configurations = generate_base_configuration()
 
-    domain_paths = []
+    grids = []
+    for scenario in range(0, 50):
+        grids.append(str(scenario))
 
-    # Build all domain paths
-    dao_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
-    dao_paths = []
-    minima1500_base_path = 'input/vacuum/minima1500/minima1500_1500-'
-    minima1500_paths = []
-    minima3000_base_path = 'input/vacuum/minima3k_300/minima3000_300-'
-    minima3000_paths = []
-    uniform1500_base_path = 'input/vacuum/uniform1500/uniform1500_1500-'
-    uniform1500_paths = []
-    for scenario_num in range(0, 50): # large set 25
-        n = str(scenario_num)
-        dao_paths.append(dao_base_path + n)
-        minima1500_paths.append(minima1500_base_path + n + '.vw')
-        minima3000_paths.append(minima3000_base_path + n + '.vw')
-        uniform1500_paths.append(uniform1500_base_path + n + '.vw')
-
-    domain_paths.extend(dao_paths)
-    domain_paths.extend(minima1500_paths)
-    domain_paths.extend(minima3000_paths) # this was not included in the large set
-    domain_paths.extend(uniform1500_paths)
+    scenario_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
+    full_grid_paths = [scenario_base_path + scenario for scenario in grids]
 
     configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
-    configurations = cartesian_product(configurations, 'domainPath', domain_paths)
+    configurations = cartesian_product(configurations, 'domainPath', full_grid_paths)
 
     return configurations
 
@@ -209,17 +242,7 @@ def cartesian_product(base, key, values, filters=None):
 
 
 def execute_configurations(configurations, timeout=100000):
-    # OpenJ9 Command
-    # Metronome configuration allocates maximum of 2ms out of every 10ms
-    # to gc. When all configurations tested have time limits that are divisible by 10,
-    # this allows us to split the time spent on garbage collecting throughout the algorithm,
-    # which allows for more even breaking. Additionally, we do not need to manage different
-    # configurations for termination epsilon since all GC ops can only take 2ms at any given
-    # time which falls within the ability of the termination checker to guard against.
-    command = ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G', '-jar',
-               '-Xgcpolicy:metronome', '-Xgc:targetPauseTime=2', '-Xgc:targetUtilization=80',
-               '-server', '-Xgc:nosynchronousGCOnOOM', '-Xdisableexplicitgc',
-               '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar']
+    command = ['java', '-Xms7G', '-Xmx7G', '-jar', 'build/libs/real-time-search-1.0-SNAPSHOT.jar']
     json_configurations = json.dumps(configurations)
 
     try:
@@ -238,10 +261,6 @@ def execute_configurations(configurations, timeout=100000):
                 for configuration in configurations]
 
     raw_output = completed_process.stdout.decode('utf-8').splitlines()
-    # Below is for debugging with console outputs
-    # with open('scripts/raw.log', 'w') as f:
-    #     for line in raw_output:
-    #         f.write(line+'\n')
 
     result_offset = raw_output.index('#') + 1
     results = json.loads(raw_output[result_offset])
@@ -270,126 +289,8 @@ def parallel_execution(configurations, threads=1):
     return list(itertools.chain.from_iterable(result_lists))
 
 
-def distributed_execution(configurations):
-    executor = create_distlre_executor()
-
-    futures = []
-    progress_bar = tqdm(total=len(configurations))
-
-    for configuration in configurations:
-        # TODO remove hardcoded java home
-        command = ' '.join(
-            ['/home/aifs2/group/jvms/jdk8u181-b13/bin/java', '-Xms7G', '-Xmx7G',
-             '-Xgcpolicy:metronome',
-             '-Xgc:targetPauseTime=2', '-Xgc:targetUtilization=80',
-             '-Xdisableexplicitgc', '-Xgc:nosynchronousGCOnOOM',
-             '-jar',
-             '/home/aifs2/group/code/real_time_search/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar'])
-
-        json_configuration = f'[{json.dumps(configuration)}]\n'
-
-        task = Task(command=command, meta='META', time_limit=10,
-                    memory_limit=10)
-        task.input = json_configuration
-
-        future = executor.submit(task)
-        future.add_done_callback(lambda _: progress_bar.update())
-
-        futures.append(future)
-
-    start_experiment_notification(experiment_count=len(configurations))
-    print('Experiments started')
-    executor.execute_tasks()
-
-    executor.wait()
-
-    print('Experiments finished')
-    end_experiment_notification()
-
-    results = parse_result_futures(futures)
-
-    return results
-
-
-def parse_result_futures(futures):
-    results = []
-    for future in futures:
-        exception = future.exception()
-        if exception:
-            results.append({
-                'configuration': configuration,
-                'success': False,
-                'errorMessage': 'exception ::' + str(exception)
-            })
-            continue
-
-        result = future.result()
-        # print(f'output: {result.output}')
-
-        # if result.error:
-        #     results.append({
-        #         'configuration': configuration,
-        #         'success': False,
-        #         'errorMessage': 'unknown error ::' + str(result.error)
-        #     })
-        #     continue
-
-        raw_output = result.output.splitlines()
-        result_offset = raw_output.index('#') + 1
-        output = json.loads(raw_output[result_offset])
-        results += output
-    return results
-
-
-def create_distlre_executor():
-    from slack_notification import start_experiment_notification, \
-        end_experiment_notification
-    from distlre.distlre import DistLRE, Task, RemoteHost
-    import getpass
-    HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in
-             [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
-    print('\nExecuting configurations on the following ai servers: ')
-    print(HOSTS)
-    # I would recommend setting up public key auth for your ssh
-    # password = getpass.getpass("Password to connect to [ai.cs.unh.edu]")
-    password = None
-    remote_hosts = [RemoteHost(host, port=22, password=password) for host in
-                    HOSTS]
-    executor = DistLRE(remote_hosts=remote_hosts)
-    return executor
-
-
-def read_results_from_file(file_name):
-    if file_name.endswith('.gz'):
-        with gzip.open("input.json.gz", "rb") as file:
-            return json.loads(file.read().decode("utf-8"))
-
-    with open(file_name) as file:
-        return json.load(file)
-
-
-def inplace_merge_experiments(old_results, new_results):
-    for new_result in new_results:
-        replaced = False
-        for i, old_result in enumerate(old_results):
-            if old_result['configuration'] == new_result['configuration']:
-                old_results[i] = new_result
-                replaced = True
-                break
-
-        if not replaced:
-            old_results.append(new_result)
-
-
-def extract_configurations_from_failed_results(results):
-    return [result['configuration'] for result in results if not result['success']]
-
-
 def build_searkt():
-    env = os.environ.copy()
-    env['JAVA_HOME'] = '/home/aifs2/group/jvms/jdk8u181-b13'
-
-    return_code = run(['./gradlew', 'jar', '-x', 'test'], env=env).returncode
+    return_code = run(['./gradlew', 'jar', '-x', 'test']).returncode
     return return_code == 0
 
 
@@ -398,50 +299,44 @@ def print_summary(results_json):
     print('Successful: {}/{}'.format(results.success.sum(), len(results_json)))
 
 
-def save_results(results_json, file_name):
+def save_results(results_json, tag):
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
+    file_name = 'output/data-local{}-{:%H-%M-%d-%m-%y}.json'.format(tag, datetime.datetime.now())
     with open(file_name, 'w') as outfile:
         json.dump(results_json, outfile)
+
     print(f'Results saved to {file_name}')
 
 
 def main():
     os.chdir('..')
 
-    recycle = False
-
-    if not build_metronome():
-        raise Exception(
-            'Build failed. Make sure the jar generation is functioning. ')
+    if not build_searkt():
+        raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    file_name = 'output/results.json'
-
-    if recycle:
-        # Load previous configurations
-        old_results = read_results_from_file(file_name)
-        configurations = extract_configurations_from_failed_results(old_results)
-    else:
-        # Generate new domain configurations
-        configurations = generate_grid_world()
-
+    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
     print('{} configurations has been generated '.format(len(configurations)))
+    # slack_notification.start_experiment_notification(len(configurations), 'byodoin')
 
-    results = distributed_execution(configurations)
+    start_time = time.perf_counter()
+    results = parallel_execution(configurations, 1)
+    end_time = time.perf_counter()
 
-    if recycle:
-        inplace_merge_experiments(old_results, results)
-        results = old_results
+    print(f"Experiment time: {end_time - start_time}s")
+
 
     for result in results:
         result.pop('actions', None)
         result.pop('systemProperties', None)
 
-    save_results(results, 'output/results_temp.json')
-
-    save_results(results, file_name)
+    save_results(results, tag)
     print_summary(results)
 
     print('{} results has been received.'.format(len(results)))
+    # slack_notification.end_experiment_notification()
 
 
 if __name__ == '__main__':
