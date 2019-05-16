@@ -11,6 +11,7 @@ import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
+import kotlin.system.measureNanoTime
 
 /**
  * A planner for real time search environments, where a constraint is placed

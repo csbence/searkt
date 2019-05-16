@@ -23,7 +23,7 @@ import kotlin.system.measureNanoTime
  * and directs the agent toward the best node on the frontier
  *
  * Note: Cannibalized from the original Envelope Search which did not perform well
- * enough
+ * enough to keep around
  *
  * @author Kevin C. Gall
  */
@@ -31,13 +31,13 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, EnvelopeSearch.EnvelopeSearchNode<StateType>> {
 
-    // Configuration - Hard Coded
-    private val pseudoGWeight = 2.0
+    // Configuration
+    private val weight = configuration.weight ?: 1.0
 
-    private val greedyResourceRatio = 7.0 / 9.0 //r1
-    private val pseudoFResourceRatio = 1.0 / 9.0 //r2
-    //r3 is the remainder of the time
+    // TODO: Decide what ratio to use for exploration vs. backward searching vs. local expansion
 
+    // TODO: Ensure this node type can handle both envelope and local search
+    // TODO: Consider removing lss-specific props from RealTimeSearchNode and moving them into a new sub intf LocalSearchNode
     class EnvelopeSearchNode<StateType : State<StateType>>(
             override val state: StateType,
             override var heuristic: Double,
@@ -45,31 +45,22 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             override var actionCost: Long,
             override var action: Action,
             override var iteration: Long,
-            override var closed: Boolean,
-            parent: EnvelopeSearchNode<StateType>? = null
-    ) : RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>>, Indexable {
+            override var closed: Boolean
+    ) : RealTimeSearchNode<StateType, EnvelopeSearchNode<StateType>> {
+        override var index = -1 // required to implement RealTimeSearchNode
 
-        /** Item index in the open list. */
-        override var index: Int = -1
-
-        /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
+        /** Nodes that generated this node as a successor */
         override var predecessors: MutableList<SearchEdge<EnvelopeSearchNode<StateType>>> = arrayListOf()
 
-        /** Parent pointer that points to the min cost predecessor. */
-        override var parent: EnvelopeSearchNode<StateType> = parent ?: this
+        /** Parent pointer is irrelevant in this algorithm, so always set to this */
+        override var parent: EnvelopeSearchNode<StateType> = this
 
         override var lastLearnedHeuristic = heuristic
         override var minCostPathLength: Long = 0L
 
-        var waveCounter: Int = -1
-        lateinit var waveParent: EnvelopeSearchNode<StateType>
-        var waveHeuristic: Double = Double.POSITIVE_INFINITY
-        var waveExpanded = false
-        lateinit var frontierPointer: EnvelopeSearchNode<StateType>
-        var backupIndex = -1
-
-        var pseudoFOpenIndex = -1
-        var heuristicOpenIndex = -1
+        // Envelope-specific props
+        var frontierOpenIndex = -1
+        var backwardOpenIndex = -1
 
         var expanded = -1
         var generated = -1
@@ -84,7 +75,7 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
 
         override fun toString() =
-                "RTSNode: [State: $state h: $heuristic, wave:$waveCounter, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
+                "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
 
     }
 
@@ -92,8 +83,8 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     private val pseudoFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
         //using heuristic function for pseudo-g
-        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state) * pseudoGWeight
-        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state) * pseudoGWeight
+        val lhsPseudoG = domain.heuristic(currentAgentState, lhs.state) * weight
+        val rhsPseudoG = domain.heuristic(currentAgentState, rhs.state) * weight
         val lhsPseudoF = lhs.heuristic + lhsPseudoG
         val rhsPseudoF = rhs.heuristic + rhsPseudoG
 
@@ -109,76 +100,30 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         }
     }
 
-    private val waveFComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsWaveF = lhs.waveHeuristic + domain.heuristic(lhs.state, currentAgentState)
-        val rhsWaveF = rhs.waveHeuristic + domain.heuristic(rhs.state, currentAgentState)
-
-        when {
-            lhsWaveF < rhsWaveF -> -1
-            lhsWaveF > rhsWaveF -> 1
-            lhs.waveHeuristic < rhs.waveHeuristic -> -1
-            lhs.waveHeuristic > rhs.waveHeuristic -> 1
-            else -> 0
-        }
-    }
-
-    private val waveComparator = Comparator<EnvelopeSearchNode<StateType>> { lhs, rhs ->
-        when {
-            lhs.waveCounter > rhs.waveCounter -> -1
-            lhs.waveCounter < rhs.waveCounter -> 1
-            lhs.heuristic < rhs.heuristic -> -1
-            lhs.heuristic > rhs.heuristic -> 1
-
-            else -> 0
-        }
-    }
+    private val backwardsComparator: Comparator<EnvelopeSearchNode<StateType>> = TODO("A comparator for searching backwards from the frontier toward the agent")
 
     /* SPECIALIZED PRIORITY QUEUES */
 
-    inner class HeuristicOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), heuristicComparator) {
-        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.heuristicOpenIndex
+    inner class FrontierOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), pseudoFComparator) {
+        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.frontierOpenIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
-            item.heuristicOpenIndex = index
-        }
-
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.pseudoFOpenIndex > -1) pseudoFOpenList.remove(node)
-            return node
+            item.frontierOpenIndex = index
         }
     }
 
-    inner class PseudoFOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), pseudoFComparator) {
-        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.pseudoFOpenIndex
+    inner class BackwardOpenList : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backwardsComparator) {
+        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backwardOpenIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
-            item.pseudoFOpenIndex = index
-        }
-
-        override fun pop(): EnvelopeSearchNode<StateType>? {
-            val node = super.pop()
-            if (node != null && node.heuristicOpenIndex > -1) heuristicOpenList.remove(node)
-            return node
+            item.backwardOpenIndex = index
         }
     }
 
-    private var heuristicOpenList = HeuristicOpenList()
-    private var pseudoFOpenList = PseudoFOpenList()
+    private var frontierOpenList = FrontierOpenList()
+    private var backwardOpenList = BackwardOpenList()
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, EnvelopeSearchNode<StateType>> = HashMap<StateType, EnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
     override var openList = AdvancedPriorityQueue(1000000, pseudoFComparator)
-    private var waveFrontier = object : AbstractAdvancedPriorityQueue<EnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), waveFComparator) {
-        override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
-        override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
-            item.backupIndex = index
-        }
-    }
-
-    // Visualizer properties
-    private val expandedNodes = ArrayList<EnvelopeSearchNode<StateType>>(1000000)
-
-    private val backedUpNodes = ArrayList<EnvelopeSearchNode<StateType>>(1000000)
-    private var clearPreviousBackup = false
 
     // Current and discovered states
     private var rootState: StateType? = null
@@ -574,14 +519,6 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         return bestNode
     }
 
-    //Wait...isn't this an expansion? TODO Bookkeeping
-    private fun getOutsideHeuristic(sourceNode: EnvelopeSearchNode<StateType>) = domain.successors(sourceNode.state)
-            .map { getNode(sourceNode, it) }
-            .filter { it.expanded == -1 && !it.open } // Outside of envelope
-            .map { it.heuristic + it.actionCost }
-            .min() ?: Double.POSITIVE_INFINITY
-
-
     /**
      * Get a node for the state if exists, else create a new node.
      *
@@ -646,49 +583,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
 
     @Suppress("UNUSED_PARAMETER")
     private fun printMessage(msg: String) = 0//println(msg)
-
-    override fun getIterationSummary(): IterationSummary<StateType> {
-        val expandedNodeMap = mutableMapOf<StateType, Map<String, String>>()
-        val backedUpNodeMap = mutableMapOf<StateType, Map<String, String>>()
-
-        expandedNodes.forEach {
-            expandedNodeMap[it.state] = mapOf("h" to it.heuristic.toString())
-        }
-        expandedNodes.clear() //reset
-
-        backedUpNodes.forEach {
-
-            backedUpNodeMap[it.state] = mapOf(
-                    "h" to it.heuristic.toString(),
-                    "\"Wave\" h" to it.waveHeuristic.toString(),
-                    "Wave Counter" to it.waveCounter.toString(),
-                    "Wave Parent" to it.waveParent.state.toString()
-            )
-        }
-        backedUpNodes.clear() //reset
-
-        val summary = IterationSummary(expandedNodeMap, false, backedUpNodeMap, clearPreviousBackup, lastPlannedPath)
-        clearPreviousBackup = false
-
-        return summary
-    }
 }
 
 enum class ExpansionStrategy {
     H_VALUE, PSEUDO_F
 }
 
-enum class UpdateStrategy {
-    PSEUDO, RTDP
-}
-
-enum class BackupComparator {
-    H_VALUE, PSEUDO_F;
-}
-
 enum class EnvelopeConfigurations(private val configurationName: String) {
-    BACKLOG_RATIO("backlogRatio"),
-    COMPARATOR("backupComparator");
+    BACKUP_RATIO("backupRatio");
 
     override fun toString() = configurationName
 }

@@ -6,7 +6,6 @@ import edu.unh.cs.searkt.planner.CommitmentStrategy
 import edu.unh.cs.searkt.planner.SafeRealTimeSearchTargetSelection
 import edu.unh.cs.searkt.planner.SafetyBackup
 import edu.unh.cs.searkt.planner.SafetyProof
-import edu.unh.cs.searkt.planner.realtime.BackupComparator
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
 import edu.unh.cs.searkt.planner.realtime.TBStrategy
 import kotlinx.serialization.Optional
@@ -108,17 +107,13 @@ data class ExperimentConfiguration(
         // Error Models
         @Optional val errorModel: String? = null,
 
-        //Envelope-based searching (i.e. not LSS)
+        //Envelope-based searching
         @Optional
-        val backlogRatio: Double? = null,
+        val backupRatio: Double? = null,
 
         // TBA*
         @Optional
         val tbaOptimization: TBAOptimization? = null,
         @Optional
-        val timeBoundedSearchStrategy: TBStrategy? = null,
-
-        // Envelope Search
-        @Optional
-        val backupComparator: BackupComparator? = null
+        val timeBoundedSearchStrategy: TBStrategy? = null
 )
