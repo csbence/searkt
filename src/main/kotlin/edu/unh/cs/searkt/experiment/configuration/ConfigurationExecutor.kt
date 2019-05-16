@@ -278,6 +278,7 @@ object ConfigurationExecutor {
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             SXDP -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
             SXUP -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
+            IOS -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)

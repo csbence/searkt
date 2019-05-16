@@ -11,6 +11,7 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import edu.unh.cs.searkt.util.SearchQueueElement
+import java.io.File
 import java.util.HashMap
 import kotlin.Comparator
 
@@ -19,6 +20,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             ?: throw MetronomeConfigurationException("Weight for weighted A* is not specified.")
 
     private val algorithmName = configuration.algorithmName
+
+    private val fLayerFile = File("/home/aifs2/doylew/fLayerFile")
+    private var outputText = ""
 
     var terminationChecker: TerminationChecker? = null
 
@@ -103,6 +107,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
+        outputText += "${sourceNode.f} $expandedNodeCount\n"
         if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -152,6 +157,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
             if (domain.isGoal(topNode.state)) {
+                fLayerFile.writeText(outputText)
                 return extractPlan(topNode, state)
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
