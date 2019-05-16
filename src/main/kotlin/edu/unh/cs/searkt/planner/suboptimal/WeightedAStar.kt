@@ -176,7 +176,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     actionCost = successor.actionCost
                 }
                 if (isDuplicate && !successorNode.open) {
-                    if (algorithmName == Planners.WEIGHTED_A_STAR.toString()) {
+                    if (algorithmName == Planners.WEIGHTED_A_STAR.toString() ||
+                            algorithmName == Planners.WEIGHTED_A_STAR_XDP.toString() ||
+                            algorithmName == Planners.WEIGHTED_A_STAR_XUP.toString() ) {
                         openList.add(successorNode)
                     }
                 } else if (isDuplicate && successorNode.open) {
