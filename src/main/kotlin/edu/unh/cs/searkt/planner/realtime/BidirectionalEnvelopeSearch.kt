@@ -272,7 +272,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     /**
      * Get a node for the state if exists, else create a new node.
      * Populate global successor and predecessor sets as necessary
-     * 
+     *
      * pseudoG set at time of node generation and not changed after. This is to maintain some kind of invariant
      * in the min heap because otherwise pseudoG changes with every iteration and thus destroys properties of
      * minimum priority queue.
