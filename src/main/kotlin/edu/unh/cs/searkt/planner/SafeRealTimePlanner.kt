@@ -34,6 +34,7 @@ class SafeRealTimeSearchNode<StateType : State<StateType>>(
 
     override val open: Boolean
         get() = index >= 0
+    override var closed = false
 
     override var safe = false
     override var unsafe = false

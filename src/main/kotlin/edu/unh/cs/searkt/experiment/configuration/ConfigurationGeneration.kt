@@ -4,6 +4,7 @@ import edu.unh.cs.searkt.environment.Domains
 import edu.unh.cs.searkt.experiment.configuration.Configurations.*
 import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.planner.CommitmentStrategy
 import edu.unh.cs.searkt.planner.Planners
 
 fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, value: V): Collection<Map<K, V>> {

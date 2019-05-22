@@ -270,6 +270,7 @@ object ConfigurationExecutor {
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ES -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)
+            BI_ES -> executeRealTimeSearch(BidirectionalEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             DYNAMIC_F_HAT -> executeRealTimeSearch(DynamicFHatPlanner(domain), configuration, domain, sourceState)
             RTA_STAR -> executeRealTimeSearch(RealTimeAStarPlanner(domain, configuration), configuration, domain, sourceState)
             ARA_STAR -> executeAnytimeRepairingAStar(configuration, domain, sourceState)
@@ -288,8 +289,6 @@ object ConfigurationExecutor {
             OPTIMISTIC_DD -> executeOfflineSearch(OptimisticSearch(domain, configuration), configuration, domain, sourceState)
             OPTIMISTIC_ST -> executeOfflineSearch(OptimisticSearch(domain, configuration), configuration, domain, sourceState)
             TIME_BOUNDED_A_STAR -> executeRealTimeSearch(TimeBoundedAStar(domain, configuration), configuration, domain, sourceState)
-            ALT_ENVELOPE -> executeRealTimeSearch(AlternateEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
-            ENVELOPE -> throw MetronomeException("Planner not specified - Remove enum?")
             else -> throw MetronomeException("Planner not specified or unrecognized: $algorithmName")
         }
     }

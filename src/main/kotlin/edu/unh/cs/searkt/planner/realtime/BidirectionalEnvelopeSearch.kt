@@ -101,13 +101,18 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             is BiSearchEdge<*> -> predecessor == other.predecessor && successor == other.successor && action == other.action && actionCost == other.actionCost
             else -> false
         }
+
+        companion object {
+            fun <Node>fromSearchEdge(successor: Node, edge: SearchEdge<Node>): BiSearchEdge<Node> =
+                    BiSearchEdge(edge.node, successor, edge.action, edge.actionCost)
+        }
     }
 
     /* COMPARATORS */
 
     private val pseudoFComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsPseudoF = lhs.heuristic + lhs.pseudoG
-        val rhsPseudoF = rhs.heuristic + rhs.pseudoG
+        val lhsPseudoF = (lhs.heuristic * weight) + lhs.pseudoG
+        val rhsPseudoF = (rhs.heuristic * weight) + rhs.pseudoG
 
         //break ties on lower H -> this is better info!
         when {
@@ -120,8 +125,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     }
 
     private val backwardsComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsF = lhs.backwardG + lhs.backwardH
-        val rhsF = rhs.backwardG + rhs.backwardH
+        val lhsF = lhs.backwardG + (lhs.backwardH * weight)
+        val rhsF = rhs.backwardG + (rhs.backwardH * weight)
 
         // G is relevant, so we can break ties on higher G
         when {
@@ -167,7 +172,11 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
     /* State of the algorithm */
     // Counters
-    override var iterationCounter = 0L
+    override var iterationCounter = 0L // used by local search
+    var backwardIterationCounter = 0L // used by backward search
+    var globalIterationCounter = 0L
+    // resource leftover
+    var timeRemaining = 0L
 
 
     // Path Caching
@@ -205,7 +214,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         val frontierTimeSlice = (terminationChecker.remaining() * frontierLimitRatio).toLong()
-        val pathSelectionTimeSlice = terminationChecker.remaining() - frontierTimeSlice
+        // adds carry-over from prior iteration to path selection time
+        val pathSelectionTimeSlice = (terminationChecker.remaining() - frontierTimeSlice) + timeRemaining
 
         var backwardTimeSlice = (pathSelectionTimeSlice * backwardLimitRatio).toLong()
         var localTimeSlice = pathSelectionTimeSlice - backwardTimeSlice
@@ -219,17 +229,27 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         val bestCurrentNode = explore(getTerminationChecker(configuration, frontierTimeSlice))
 
         // backward search tries to connect a path to the agent
-        backwardSearch(bestCurrentNode, getTerminationChecker(configuration, backwardTimeSlice))
+        val backwardTerminationChecker = getTerminationChecker(configuration, backwardTimeSlice)
+        backwardSearch(bestCurrentNode, backwardTerminationChecker)
+
+        timeRemaining = backwardTerminationChecker.remaining()
 
         // local search kicks in if we don't have a path yet - generates one with limited knowledge
-        if (cachedPath.size == 0) {
-            localSearch(agentNode, getTerminationChecker(configuration, localTimeSlice))
+        timeRemaining += if (cachedPath.size == 0) {
+            val localTerminationChecker = getTerminationChecker(configuration, localTimeSlice)
+            localSearch(agentNode, localTerminationChecker)
+
+            //localTerminationChecker.remaining()
+            0
+        } else {
+            //localTimeSlice
+            0
         }
 
         val nextEdge = cachedPath.removeFirst()
         pathStates.remove(sourceState)
 
-        iterationCounter++
+        globalIterationCounter++
         return listOf(ActionBundle(nextEdge.action, nextEdge.actionCost))
     }
 
@@ -271,6 +291,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
             currentNode.frontierClosed = true
             terminationChecker.notifyExpansion()
+            expandedNodeCount++
         }
 
         return frontierOpenList.peek() ?: firstDiscoveredGoal ?:
@@ -288,41 +309,35 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         if (backwardOpenList.isEmpty()) {
             if (foundGoals.size > 0) {
                 foundGoals.forEach { node ->
-                    node.backwardSearchIteration = iterationCounter
+                    node.backwardSearchIteration = backwardIterationCounter
                     node.backwardG = 0
                     node.backwardH = domain.heuristic(currentAgentState, node.state)
+                    node.backwardParent = null
                     backwardOpenList.add(node)
                 }
             } else {
-                seed.backwardSearchIteration = iterationCounter
+                seed.backwardSearchIteration = backwardIterationCounter
                 seed.backwardG = 0
                 seed.backwardH = domain.heuristic(currentAgentState, seed.state)
+                seed.backwardParent = null
 
                 frontierTarget = seed
                 backwardOpenList.add(seed)
             }
         }
 
-        var foundAgentPath: Boolean = false
-
         // search into envelope via already-generated predecessors
-        while (!terminationChecker.reachedTermination() && !foundAgentPath) {
-            val currentNode = backwardOpenList.pop() ?: throw GoalNotReachableException("Backward Search Open list is empty without finding the Agent")
+        backSearch@while (!terminationChecker.reachedTermination()) {
+            val currentNode = backwardOpenList.pop() ?:
+                throw GoalNotReachableException("Backward Search Open list is empty without finding the Agent")
 
-            currentNode.globalPredecessors.forEach { edge ->
+            for (edge in currentNode.globalPredecessors) {
                 val predecessorNode = edge.predecessor
-
-                if (predecessorNode.state == currentAgentState || pathStates.contains(predecessorNode.state)) {
-                    foundAgentPath = true
-                    extractBackwardPath() // sets cached Path and path state set
-
-                    return@forEach
-                }
 
                 if (predecessorNode.backwardSearchIteration != currentNode.backwardSearchIteration) {
                     predecessorNode.backwardSearchIteration = currentNode.backwardSearchIteration
                     predecessorNode.backwardG = MAX_VALUE
-                    predecessorNode.backwardH = domain.heuristic(currentAgentState, predecessorNode.state)
+                    predecessorNode.backwardH = domain.heuristic(currentAgentState, predecessorNode.state) * weight
                 }
 
                 val newG = currentNode.backwardG + edge.actionCost
@@ -330,7 +345,14 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                     predecessorNode.backwardParent = edge
                     predecessorNode.backwardG = newG
 
-                    if (backwardOpenList.isOpen(predecessorNode)) {
+                    // Performing goal condition check now. Insight is that it's better for us to have
+                    // a path than to have an "optimal" path since optimality is sacrificed anyway
+                    if (predecessorNode.state == currentAgentState || pathStates.contains(predecessorNode.state)) {
+                        // allowing path extraction to take place from current agent node
+                        extractBackwardPath() // sets cached Path and path state set
+
+                        break@backSearch
+                    } else if (backwardOpenList.isOpen(predecessorNode)) {
                         backwardOpenList.update(predecessorNode)
                     } else {
                         backwardOpenList.add(predecessorNode)
@@ -340,12 +362,32 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
             // TODO: Is this a full expansion op?
             terminationChecker.notifyExpansion()
+            expandedNodeCount++
         }
+    }
 
-        if (foundAgentPath) {
-            backwardOpenList.clear()
-            frontierTarget = null
+    /**
+     * Extracts path from the given node to the target frontier node (or a goal)
+     */
+    private fun extractBackwardPath(startState: StateType = currentAgentState,
+                                    stateSet: MutableSet<StateType> = mutableSetOf(),
+                                    pathList: LinkedList<BiSearchEdge<BiEnvelopeSearchNode<StateType>>> = LinkedList()) {
+        var currentNode = nodes[startState]!!
+        while (currentNode != frontierTarget && !foundGoals.contains(currentNode)) {
+            if (!stateSet.add(currentNode.state)) {
+                throw MetronomeException("Cycle detected in extractBackwardPath")
+            }
+            pathList.add(currentNode.backwardParent ?: throw MetronomeException("Attempt to extract path failed"))
+
+            currentNode = currentNode.backwardParent!!.successor
         }
+        if (!stateSet.add(currentNode.state)) throw MetronomeException("Cycle detected in extractBackwardPath")
+
+        backwardIterationCounter++ // invalidate past iteration
+        backwardOpenList.clear()
+        frontierTarget = null
+        pathStates = stateSet
+        cachedPath = pathList
     }
 
     /**
@@ -355,23 +397,70 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
      * Technique used is LSS-LRTA*, but this could theoretically be any LSS algorithm
      */
     private fun localSearch(root: BiEnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker) {
+        openList.clear()
+        openList.reorder(fValueComparator)
+        openList.add(root)
 
+        extractForwardPath(aStar(terminationChecker))
+
+        // updates iteration counter and learns
+        dijkstra(this)
     }
 
     /**
-     * Extracts path from the current agent node to the target frontier node (or a goal)
-     * Note: inefficient in that we do not take advantage of situations where we only need to construct a partial path
+     * Returns target node
      */
-    private fun extractBackwardPath() {
+    private fun aStar(terminationChecker: TerminationChecker):BiEnvelopeSearchNode<StateType> {
+        while (!terminationChecker.reachedTermination()) {
+            val currentNode = openList.pop()
+                    ?: throw GoalNotReachableException("Local search terminated in dead end")
+
+            if (domain.isGoal(currentNode.state) || currentNode.backwardSearchIteration == backwardIterationCounter) {
+                return currentNode
+            }
+
+            // Make sure that if we are exploring the frontier, open lists are appropriately modified
+            if (frontierOpenList.isOpen(currentNode)) {
+                frontierOpenList.remove(currentNode)
+            }
+            expandFromNode(this, currentNode) {
+                if (!it.frontierClosed && !frontierOpenList.isOpen(it)) {
+                    frontierOpenList.add(it)
+                }
+            }
+        }
+
+        return openList.peek() ?: throw GoalNotReachableException("Local search open list empty")
+    }
+
+    /**
+     * Extracts a path from the current agent state to the target using parent pointers.
+     * Sets the "backwardParent" edge along the way to allow the backward search to use it for path extraction
+     *
+     * If it is detected that the target is on a backward search, extracts the full path to the frontier
+     */
+    private fun extractForwardPath(target: BiEnvelopeSearchNode<StateType>) {
         pathStates = mutableSetOf()
         cachedPath = LinkedList()
 
-        var currentNode = nodes[currentAgentState]!!
-        while (currentNode != frontierTarget && !foundGoals.contains(currentNode)) {
-            pathStates.add(currentNode.state)
-            cachedPath.add(currentNode.backwardParent ?: throw MetronomeException("Attempt to extract path failed"))
+        var currentNode = target
 
-            currentNode = currentNode.backwardParent!!.successor
+        while (currentNode.state != currentAgentState) {
+            val edge = BiSearchEdge.fromSearchEdge(currentNode,
+                    currentNode.predecessors.find { pred -> pred.node == currentNode.parent }
+                            ?: throw MetronomeException("Parent not among predecessors"))
+
+            currentNode.parent.backwardParent = edge
+            cachedPath.addFirst(edge)
+            pathStates.add(currentNode.parent.state)
+
+            currentNode = currentNode.parent
+        }
+
+        if (target.backwardSearchIteration == backwardIterationCounter) {
+            extractBackwardPath(target.state, pathStates, cachedPath)
+        } else {
+            pathStates.add(target.state)
         }
     }
 
@@ -395,7 +484,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             val undiscoveredNode = BiEnvelopeSearchNode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
-                    iteration = iterationCounter,
+                    iteration = -1, // using local search iteration counter
                     pseudoG = domain.heuristic(currentAgentState, successorState).toLong()
             )
 
@@ -403,14 +492,14 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
             undiscoveredNode
         } else {
-            tempSuccessorNode!!
+            tempSuccessorNode
         }
 
         val edge = BiSearchEdge(predecessor = parent, successor = successorNode, action = successor.action, actionCost = successor.actionCost.toLong())
 
         // add to parent's successor set
         parent.successors.add(edge)
-        // add parent to successor's predecessors
+        // add parent to successor's predecessors set
         successorNode.globalPredecessors.add(edge)
 
         return successorNode

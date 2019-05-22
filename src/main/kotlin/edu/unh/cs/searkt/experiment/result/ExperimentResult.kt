@@ -150,9 +150,10 @@ fun Collection<ExperimentResult>.summary(): String {
         println("Domain: $domainName")
 
         val transforms = listOf(
-                "Expansions (k)" to { result: ExperimentResult -> result.expandedNodes.toDouble() / 1000 }
-                , "Re-expansions (k)" to { result: ExperimentResult -> result.reexpansions.toDouble() / 1000 }
+                "Expansions" to { result: ExperimentResult -> result.expandedNodes.toDouble()}
+                , "Re-expansions" to { result: ExperimentResult -> result.reexpansions.toDouble()}
                 , "Planning time (ms)" to { result: ExperimentResult -> result.planningTime.toDouble() / 1000000}
+                , "Path Length (Steps)" to { result: ExperimentResult -> result.pathLength.toDouble()}
         )
         transforms.forEach { (name, transform) ->
             println(name)

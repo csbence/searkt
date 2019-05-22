@@ -28,7 +28,7 @@ class ComprehensiveEnvelopeSearch<StateType : State<StateType>>(
         val domain: Domain<StateType>,
         val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>() {
     //Configuration parameters
-    private val expansionRatio: Double = configuration.backlogRatio ?: 1.0
+    private val expansionRatio: Double = configuration.backupRatio ?: 1.0
     //Logger and timekeeping
     var dijkstraTimer = 0L
     var expansionTimer = 0L

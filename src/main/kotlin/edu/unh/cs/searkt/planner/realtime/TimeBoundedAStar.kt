@@ -43,7 +43,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
     private val traceCost = 5 //number tuned on Lubuntu 18.04 w/ low-latency kernel, OpenJ9 JVM, Intel i7-4770 3.4GHz (4 core)
     /** ratio of tracebacks to expansions */
-    private val backlogRatio = configuration.backlogRatio ?: 1.0
+    private val backlogRatio = configuration.backupRatio ?: 1.0
 
     override var iterationCounter = 0L
 
@@ -390,6 +390,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         return listOf(ActionBundle(transition.first, transition.second.toLong()))
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private inline fun printTime(msg: String, noinline fn: () -> Unit){
         fn()
 //        printNanoTime(msg, fn)

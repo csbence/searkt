@@ -7,6 +7,7 @@ enum class Planners {
     LSS_LRTA_STAR,
     CES,
     ES,
+    BI_ES,
     ARA_STAR,
     WEIGHTED_A_STAR,
     WEIGHTED_A_STAR_DD,
@@ -29,7 +30,5 @@ enum class Planners {
     EETS,
     EECS,
     TS,
-    TIME_BOUNDED_A_STAR,
-    ENVELOPE,
-    ALT_ENVELOPE
+    TIME_BOUNDED_A_STAR
 }
