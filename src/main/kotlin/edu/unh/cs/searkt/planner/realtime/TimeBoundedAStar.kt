@@ -129,7 +129,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             return emptyList()
         }
 
-        var plan: List<RealTimePlanner.ActionBundle>? = null
+        var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
             var currentTargetPath = getCurrentPath(sourceState, terminationChecker)
             currentTargetPath = when(tbaOptimization) {
@@ -169,7 +169,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                         currentTargetPath.pathHead = currentTargetPath.pathHead.next ?:
                                 throw MetronomeException("Bug - attempted to get the next path node when one does not exist")
                         //TODO: Add support for multiple commit
-                        listOf(RealTimePlanner.ActionBundle(currentTargetPath.pathHead.action, currentTargetPath.pathHead.cost))
+                        listOf(ActionBundle(currentTargetPath.pathHead.action, currentTargetPath.pathHead.cost))
                     }
                 } else {
                     findNewPath(currentTargetPath, currentAgentNode)
@@ -267,7 +267,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         /*  if using real time bound, we will use the termination checker instead of
          *  a numeric trace limit
          */
-        val traceLimit = (expansionLimit * backlogRatio) + 2
+        val traceLimit = Double.POSITIVE_INFINITY// (expansionLimit * backlogRatio) + 2
         var currentTraceCount = 0
         val traceBound : () -> Boolean = if (configuration.terminationType == TerminationType.TIME) {
             {

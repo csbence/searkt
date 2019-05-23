@@ -199,7 +199,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         if (rootState == null) {
             rootState = sourceState
 
-            val node = BiEnvelopeSearchNode(sourceState, domain.heuristic(sourceState), 0, 0)
+            val node = BiEnvelopeSearchNode(sourceState, domain.heuristic(sourceState), -1, 0)
             nodes[sourceState] = node
 
             frontierOpenList.add(node)
@@ -383,6 +383,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
         if (!stateSet.add(currentNode.state)) throw MetronomeException("Cycle detected in extractBackwardPath")
 
+//        println("""Backtrack path size: ${pathList.size}""")
+
         backwardIterationCounter++ // invalidate past iteration
         backwardOpenList.clear()
         frontierTarget = null
@@ -397,9 +399,14 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
      * Technique used is LSS-LRTA*, but this could theoretically be any LSS algorithm
      */
     private fun localSearch(root: BiEnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker) {
+        iterationCounter++
         openList.clear()
         openList.reorder(fValueComparator)
         openList.add(root)
+
+        root.parent = root
+        root.iteration = iterationCounter
+        root.cost = 0
 
         extractForwardPath(aStar(terminationChecker))
 

@@ -22,13 +22,12 @@ import java.util.concurrent.TimeUnit
  */
 fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
-            Domains.GRID_WORLD to "input/vacuum/uniform.vw"
+            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_3"
     )
 
 //    domains += (1..99).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += listOf(4).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
-//    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-//    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum//orz100d.map_scen_$it" }
+//    domains += (0..5).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
 
     // Maximum time per experiment
     val timeLimit = TimeUnit.NANOSECONDS.convert(999, TimeUnit.MINUTES)
@@ -41,7 +40,7 @@ fun generateConfigurations(): String {
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
             planners = listOf(Planners.BI_ES, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR),
-            actionDurations = listOf(5),
+            actionDurations = listOf(10),
             timeLimit = timeLimit,
             stepLimit = 1000000,
             terminationType = TerminationType.EXPANSION,
@@ -57,7 +56,7 @@ fun generateConfigurations(): String {
     )
 
     // Add these to all configurations
-    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.0,2.0,3.0,4.5,6.0,10.0,12.0,15.0))
+    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.0, 3.0, 5.0, 10.0, 15.0))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
 
 
