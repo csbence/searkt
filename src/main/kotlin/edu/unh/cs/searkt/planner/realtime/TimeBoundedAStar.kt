@@ -12,10 +12,8 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization.NONE
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization.SHORTCUT
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
-import edu.unh.cs.searkt.util.generateWhile
 import edu.unh.cs.searkt.util.resize
 import java.util.*
-import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 /**
@@ -43,7 +41,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
     private val traceCost = 5 //number tuned on Lubuntu 18.04 w/ low-latency kernel, OpenJ9 JVM, Intel i7-4770 3.4GHz (4 core)
     /** ratio of tracebacks to expansions */
-    private val backlogRatio = configuration.backupRatio ?: 1.0
+    private val backupRatio = configuration.backupRatio ?: 1.0
 
     override var iterationCounter = 0L
 
@@ -244,7 +242,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
              *  to the intended "backlog ratio", which is the amount of traces that should occur per
              *  expansion
              */
-            (backlogRatio * (terminationChecker.remaining().toDouble() / (traceCost + 1.0))).toLong()
+            (backupRatio * (terminationChecker.remaining().toDouble() / (traceCost + 1.0))).toLong()
         } else {
             0L
         }
@@ -267,7 +265,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         /*  if using real time bound, we will use the termination checker instead of
          *  a numeric trace limit
          */
-        val traceLimit = Double.POSITIVE_INFINITY// (expansionLimit * backlogRatio) + 2
+        val traceLimit = (expansionLimit * backupRatio) + 2
         var currentTraceCount = 0
         val traceBound : () -> Boolean = if (configuration.terminationType == TerminationType.TIME) {
             {
