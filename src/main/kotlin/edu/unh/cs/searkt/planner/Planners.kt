@@ -7,6 +7,7 @@ enum class Planners {
     LSS_LRTA_STAR,
     CES,
     ES,
+    BACK_ES,
     BI_ES,
     ARA_STAR,
     WEIGHTED_A_STAR,

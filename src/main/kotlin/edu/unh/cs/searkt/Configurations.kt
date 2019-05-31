@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  */
 fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
-            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_3"
+            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_1"
     )
 
 //    domains += (1..99).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
@@ -39,7 +39,7 @@ fun generateConfigurations(): String {
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
-            planners = listOf(Planners.BI_ES, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR),
+            planners = listOf(Planners.BI_ES),//, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR),
             actionDurations = listOf(10),
             timeLimit = timeLimit,
             stepLimit = 1000000,
@@ -50,7 +50,8 @@ fun generateConfigurations(): String {
                     Triple(Planners.BI_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.MULTIPLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
-                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD))
+                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD)),
+                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKUP_RATIO, listOf(Double.MAX_VALUE))
             ),
             domainExtras = domainExtras
     )

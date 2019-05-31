@@ -405,7 +405,7 @@ enum class TBStrategy {
 
 enum class TBAStarConfiguration(val key: String) {
     TBA_OPTIMIZATION("tbaOptimization"),
-    BACKLOG_RATIO("backlogRatio"),
+    BACKUP_RATIO("backupRatio"),
     TB_STRATEGY("timeBoundedSearchStrategy");
 
     override fun toString(): String = key
