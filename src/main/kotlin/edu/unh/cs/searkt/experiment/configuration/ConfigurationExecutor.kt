@@ -102,9 +102,12 @@ object ConfigurationExecutor {
             executionException = throwable
 
             if (executionException is MetronomeException) {
-                println("Experiment stopped: ${throwable.message}")
+                println("Experiment stopped: ${throwable.message} \n alg:${configuration.algorithmName} domain:${configuration.domainName}")
             } else {
-                println("Experiment stopped: $throwable")
+                println("Experiment stopped: $throwable \n" +
+                        " alg:${configuration.algorithmName}" +
+                        " domain:${configuration.domainName}" +
+                        " instance:${configuration.domainPath}")
             }
         }
 
@@ -112,7 +115,7 @@ object ConfigurationExecutor {
 
         thread.start()
         thread.priority = Thread.MAX_PRIORITY
-        thread.join(MILLISECONDS.convert(configuration.timeLimit ?: 0 , NANOSECONDS))
+        thread.join(MILLISECONDS.convert(configuration.timeLimit ?: 0, NANOSECONDS))
 
         if (executionException != null) {
 //            collectAndWait()
