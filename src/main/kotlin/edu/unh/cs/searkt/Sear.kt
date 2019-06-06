@@ -58,6 +58,6 @@ fun main(args: Array<String>) {
 
     // System.err.println(results.summary())
     println('#') // Indicator for the parser
-//    println(rawResults) // This should be the last printed line
+    println(rawResults) // This should be the last printed line
 }
 
