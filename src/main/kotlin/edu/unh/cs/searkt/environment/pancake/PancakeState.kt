@@ -17,6 +17,9 @@ class PancakeState(val ordering: ByteArray, var indexFlipped: Int) : State<Panca
     }
 
     override fun equals(other: Any?): Boolean {
+        if(other ==  null) {
+            return false
+        }
         other as PancakeState
         return other.ordering.contentEquals(ordering)
     }

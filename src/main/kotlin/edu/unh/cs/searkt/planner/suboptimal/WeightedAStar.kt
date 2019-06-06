@@ -121,7 +121,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         Planners.WEIGHTED_A_STAR_XUP.toString() -> xupComparator
         Planners.WEIGHTED_A_STAR.toString() -> fValueComparator
         Planners.WEIGHTED_A_STAR_DD.toString() -> fValueComparator
-        else -> throw MetronomeException("Unrecognized algorithm name for Improved Optimistic Search")
+        else -> throw MetronomeException("Unrecognized algorithm name for Weighted A*")
     }
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
