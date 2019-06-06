@@ -121,7 +121,6 @@ verbosegc*.txt
 *.pdf
 
 # sample configurations
-/configs/
 /configurations/
 
 # Python
