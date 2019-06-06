@@ -1,6 +1,7 @@
 package edu.unh.cs.searkt.environment
 
 enum class Domains {
+    GRID_MAP,
     ACROBOT,
     GRID_WORLD,
     POINT_ROBOT,
