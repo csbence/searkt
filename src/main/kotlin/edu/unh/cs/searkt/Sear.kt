@@ -29,7 +29,7 @@ fun main(args: Array<String>) {
     if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 
     // Convert the json configuration string to experiment configuration instances
-    val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration)
+    val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration).take(1)
 
     System.err.println("Execute ${parsedConfigurations.size} configurations.")
 
@@ -42,14 +42,13 @@ fun main(args: Array<String>) {
     val memoryLimit = (runtime.maxMemory() shr 31).toInt()
     val desiredThreadCount = min(threadLimit, memoryLimit).coerceAtLeast(1)
 
-    println("Automatic thread count: $desiredThreadCount")
+    System.err.println("Automatic thread count: $desiredThreadCount")
 
     // Execute the experiments
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = desiredThreadCount)
 
     // Convert the results to json
     val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
-    println(rawResults)
 
     // Print results
     val outputPath = "results/results.json"
