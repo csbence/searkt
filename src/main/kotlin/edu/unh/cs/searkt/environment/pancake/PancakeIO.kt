@@ -13,10 +13,10 @@ object PancakeIO {
         val startOrdering = ByteArray(problemSize)
         val endOrdering = ByteArray(problemSize)
 
-        (0..problemSize).forEach { startOrdering[it] = inputScanner.nextByte() }
+        (0 until problemSize).forEach { startOrdering[it] = inputScanner.nextByte() }
         inputScanner.nextLine() // skip empty line
 
-        (0..problemSize).forEach { endOrdering[it] = inputScanner.nextByte() }
+        (0 until problemSize).forEach { endOrdering[it] = inputScanner.nextByte() }
 
         val puzzleVariant = 0 // default
         val initialState = PancakeState(startOrdering, 0)

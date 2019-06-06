@@ -14,7 +14,7 @@ class PancakeProblem(val startOrdering: ByteArray, val endOrdering: ByteArray, p
     override fun successors(state: PancakeState): List<SuccessorBundle<PancakeState>> {
         val successors = ArrayList<SuccessorBundle<PancakeState>>()
 
-        (state.ordering.size - 1 until 0).forEach { flipLocation ->
+        (1 until state.ordering.size).forEach { flipLocation ->
             // do not allow inverse actions
             if (state.indexFlipped != flipLocation) {
                 flipOrdering(successors, state.ordering, flipLocation)
@@ -28,7 +28,7 @@ class PancakeProblem(val startOrdering: ByteArray, val endOrdering: ByteArray, p
                              ordering: ByteArray,
                              flipLocation: Int) {
         val flippedPancakes = ordering.slice((0..flipLocation)).reversed()
-        val restOfPancakes = ordering.slice((flipLocation until ordering.size))
+        val restOfPancakes = ordering.slice((flipLocation + 1 until ordering.size))
         val reorderedPancakes = (flippedPancakes + restOfPancakes).toByteArray()
         successors.add(SuccessorBundle(PancakeState(reorderedPancakes, flipLocation), PancakeAction(flipLocation), 1.0))
     }
@@ -42,7 +42,7 @@ class PancakeProblem(val startOrdering: ByteArray, val endOrdering: ByteArray, p
         val plate = size + 1
         var sum = 0
 
-        (0..size).forEach { i ->
+        (1 until size).forEach { i ->
             val x = state.ordering[i - 1]
             val y = state.ordering[i]
             val difference = x - y
@@ -81,7 +81,7 @@ class PancakeProblem(val startOrdering: ByteArray, val endOrdering: ByteArray, p
     }
 
     override fun isGoal(state: PancakeState): Boolean {
-        return startOrdering.contentEquals(endOrdering)
+        return state.ordering.contentEquals(endOrdering)
     }
 
 
