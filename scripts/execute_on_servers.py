@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import datetime
-import getpass
-import os.path
-from datetime import datetime
-from subprocess import run, PIPE
-
-import simplejson as json
-from distlre.distlre import DistLRE, Task, RemoteHost
-from slack_notification import start_experiment_notification, end_experiment_notification
 from tqdm import tqdm
+import simplejson as json
+import getpass
+import datetime
+import os.path
+import datetime
+from slack_notification import start_experiment_notification, end_experiment_notification
+from distlre.distlre import DistLRE, Task, RemoteHost
+
+from subprocess import run, PIPE
 
 proc = run('cd ~/IdeaProjects/searkt && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
 assert proc.returncode == 0
@@ -23,13 +23,13 @@ remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
 print(HOSTS)
 
-file_lock_path = '/home/aifs2/group/exp/distlre.lock'
 
+file_lock_path = '/home/aifs2/group/exp/distlre.lock'
 
 def execute_tasks():
     if not os.path.isfile(file_lock_path):
         lock_file = open(file_lock_path, 'w')
-        lock_file.write(getpass.getuser() + '@' + str(datetime.now()))
+        lock_file.write(getpass.getuser() + '@' + str(datetime.datetime.now()))
         lock_file.close()
         executor.execute_tasks()
         executor.wait()
@@ -76,8 +76,7 @@ def update_progress_bar(future):
 
 
 command = "/home/aifs2/group/jvms/jdk-12/bin/java -Xms7500m -Xmx7500m -jar IdeaProjects/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar -stdinConfiguration"
-tasks = [Task(command=command, meta=progress_bar, time_limit=3600, memory_limit=10) for config in
-         worlds]
+tasks = [Task(command=command, meta=progress_bar, time_limit=3600, memory_limit=10) for config in worlds]
 for task, config in zip(tasks, configs):
     task.input = config
 
@@ -95,22 +94,21 @@ for future in futures:
     result = future.result()
     results.append(result)
 
-
-def save_results(results, tag, path_prefix=None):
-    l_results = []
-    o_results = []
-    file_handle = ""
-    if path_prefix is not None:
-        file_handle += path_prefix
-    file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
-    f = open(file_handle, 'w+')
-    for result in results:
-        o_results.append(json.loads(result))
-    f.write(json.dumps(o_results))
-    f.close()
-    return file_handle
-
-
-results_file = save_results([result.output.split('#')[0].strip() for result in results], tag,
-                            path_prefix="/home/aifs2/doylew/IdeaProjects/searkt/")
-print(results_file)
+# def save_results(results, tag, path_prefix=None):
+#     l_results = []
+#     o_results = []
+#     file_handle = ""
+#     if path_prefix is not None:
+#         file_handle += path_prefix
+#     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
+#     f = open(file_handle, 'w+')
+#     for result in results:
+#         o_results.append(json.loads(result))
+#     f.write(json.dumps(o_results))
+#     f.close()
+#     return file_handle
+#
+#
+# results_file = save_results([result.output.split('#')[-1].strip() for result in results], tag,
+#                             path_prefix="/home/aifs2/doylew/IdeaProjects/searkt/")
+# print(results_file)

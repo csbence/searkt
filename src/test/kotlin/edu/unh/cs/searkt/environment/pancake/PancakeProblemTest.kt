@@ -8,13 +8,13 @@ import kotlin.test.assertTrue
 
 internal class PancakeProblemTest {
 
-    private val pancakeProblem = PancakeIO.parseFromStream(File("/home/aifs2/doylew/IdeaProjects/searkt/src/main/resources/input/pancake/toy").inputStream(), 1L)
+    private val pancakeProblem = PancakeIO.parseFromStream(File("/home/aifs2/doylew/IdeaProjects/searkt/src/main/resources/input/pancake/0.pqq").inputStream(), 1L)
     private val initialState = byteArrayOf(6, 8, 9, 10, 1, 2, 3, 5, 4, 7, 11)
     private val goalState = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
     @Test
     fun parseProblemInstance() {
-        assertTrue(pancakeProblem.initialState.ordering.contentEquals(initialState), "initial state should be: $initialState")
+        assertTrue(pancakeProblem.initialState.ordering.contentEquals(initialState), "initial state should be: ${initialState.asList()} was ${pancakeProblem.initialState.ordering.asList()}")
         assertTrue(pancakeProblem.domain.startOrdering.contentEquals(initialState), "domain beginning ordering should be: $initialState")
         assertTrue(pancakeProblem.domain.endOrdering.contentEquals(goalState), "domain goal state should be: $goalState")
         assertEquals(11, pancakeProblem.initialState.ordering.size, "initial state size should be 11")
