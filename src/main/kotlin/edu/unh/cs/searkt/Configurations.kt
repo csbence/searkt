@@ -85,7 +85,7 @@ fun main() {
     val configurationString = generateConfigurations()
 
     // Save configurations
-    val outputPath = "results/configurations.json"
+    val outputPath = "configs/configurations.json"
     kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(configurationString) }
     println("Configurations has been saved to $outputPath")
 }
