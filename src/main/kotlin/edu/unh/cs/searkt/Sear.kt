@@ -51,9 +51,9 @@ fun main(args: Array<String>) {
     val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
 
     // Print results
-    val outputPath = "results/results.json"
-    kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
-    System.err.println("\nResult has been saved to $outputPath")
+//    val outputPath = "results/results.json"
+//    kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+//    System.err.println("\nResult has been saved to $outputPath")
 
     // System.err.println(results.summary())
     println('#') // Indicator for the parser
