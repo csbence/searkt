@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
+import kotlin.math.min
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -32,8 +33,19 @@ fun main(args: Array<String>) {
 
     System.err.println("Execute ${parsedConfigurations.size} configurations.")
 
+    val runtime = Runtime.getRuntime()
+
+    // Leave at least 2 threads for the GC
+    val threadLimit = runtime.availableProcessors() - 2
+
+    // Assume that an experiment uses 2 gigs
+    val memoryLimit = (runtime.maxMemory() shr 31).toInt()
+    val desiredThreadCount = min(threadLimit, memoryLimit).coerceAtLeast(1)
+
+    println("Automatic thread count: $desiredThreadCount")
+
     // Execute the experiments
-    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 8)
+    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = desiredThreadCount)
 
     // Convert the results to json
     val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
