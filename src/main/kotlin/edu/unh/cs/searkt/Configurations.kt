@@ -53,15 +53,15 @@ fun generateConfigurations(): String {
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
-//            planners = listOf(
-//                    WEIGHTED_A_STAR,
-//                    EES,
-//                    DPS, DPSG,
-//                    BOUNDED_SUBOPTIMAL_EXPLORATION,
-//                    WEIGHTED_A_STAR_XDP,
-//                    WEIGHTED_A_STAR_XUP
-//            ),
-            planners = listOf(Planners.WEIGHTED_A_STAR),
+            planners = listOf(
+                    Planners.WEIGHTED_A_STAR,
+                    Planners.EES,
+                    Planners.DPS, Planners.DPSG,
+                    Planners.BOUNDED_SUBOPTIMAL_EXPLORATION,
+                    Planners.WEIGHTED_A_STAR_XDP,
+                    Planners.WEIGHTED_A_STAR_XUP
+            ),
+//            planners = listOf(Planners.WEIGHTED_A_STAR),
             actionDurations = listOf(1),
             timeLimit = timeLimit,
             plannerExtras = listOf(
