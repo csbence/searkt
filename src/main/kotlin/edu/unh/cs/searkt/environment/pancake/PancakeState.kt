@@ -1,6 +1,14 @@
 package edu.unh.cs.searkt.environment.pancake
 
-class PancakeState(val ordering: ByteArray, var indexFlipped: Int) {
+import edu.unh.cs.searkt.environment.State
+
+class PancakeState(val ordering: ByteArray, var indexFlipped: Int) : State<PancakeState> {
+
+    override fun copy(): PancakeState {
+        val copyOrdering = ByteArray(ordering.size)
+        ordering.forEachIndexed { index, byte -> copyOrdering[index] = byte }
+        return PancakeState(copyOrdering, indexFlipped)
+    }
 
     private var hashCode: Int = 0
 

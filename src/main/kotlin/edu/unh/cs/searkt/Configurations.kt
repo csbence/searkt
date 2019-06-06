@@ -21,6 +21,8 @@ fun generateConfigurations(): String {
 //            ,Domains.RACETRACK to "input/racetrack/hansen-bigger-octa.track"
     )
 
+    domains += (0..9).map { Domains.PANCAKE to "input/pancake/$it.pqq" }
+
     domains += (1..20).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
     domains += (1..20).map { Domains.SLIDING_TILE_PUZZLE_4_INVERSE to "input/tiles/korf/4/real/$it" }
     domains += (1..20).map { Domains.SLIDING_TILE_PUZZLE_4_HEAVY to "input/tiles/korf/4/real/$it" }
