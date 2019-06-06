@@ -8,7 +8,6 @@ from subprocess import run, PIPE
 
 import simplejson as json
 from distlre.distlre import DistLRE, Task, RemoteHost
-from searkt_im import Experiment
 from slack_notification import start_experiment_notification, end_experiment_notification
 from tqdm import tqdm
 
@@ -77,7 +76,7 @@ def update_progress_bar(future):
 
 
 command = "/home/aifs2/group/jvms/jdk-12/bin/java -Xms7500m -Xmx7500m -jar IdeaProjects/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar -stdinConfiguration"
-tasks = [Task(command=Experiment(config, command), meta=progress_bar, time_limit=3600, memory_limit=10) for config in
+tasks = [Task(command=command, meta=progress_bar, time_limit=3600, memory_limit=10) for config in
          worlds]
 for task, config in zip(tasks, configs):
     task.input = config
