@@ -3,7 +3,6 @@ package edu.unh.cs.searkt
 import edu.unh.cs.searkt.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
-import edu.unh.cs.searkt.experiment.result.summary
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 
@@ -31,20 +30,21 @@ fun main(args: Array<String>) {
     // Convert the json configuration string to experiment configuration instances
     val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration)
 
-    println("Execute ${parsedConfigurations.size} configurations.")
+    System.err.println("Execute ${parsedConfigurations.size} configurations.")
 
     // Execute the experiments
     val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = 8)
 
     // Convert the results to json
     val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
+    println(rawResults)
 
     // Print results
     val outputPath = "results/results.json"
     kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
     System.err.println("\nResult has been saved to $outputPath")
 
-    println(results.summary())
+    // System.err.println(results.summary())
     println('#') // Indicator for the parser
 //    println(rawResults) // This should be the last printed line
 }
