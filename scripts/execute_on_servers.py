@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-from tqdm import tqdm
-import simplejson as json
+import datetime
 import getpass
-import datetime
 import os.path
-import datetime
-from slack_notification import start_experiment_notification, end_experiment_notification
-from distlre.distlre import DistLRE, Task, RemoteHost
-
 from subprocess import run, PIPE
+
+import simplejson as json
+from distlre.distlre import DistLRE, Task, RemoteHost
+from slack_notification import start_experiment_notification, end_experiment_notification
+from tqdm import tqdm
 
 proc = run('cd ~/IdeaProjects/searkt && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
 assert proc.returncode == 0
@@ -94,21 +93,22 @@ for future in futures:
     result = future.result()
     results.append(result)
 
-# def save_results(results, tag, path_prefix=None):
-#     l_results = []
-#     o_results = []
-#     file_handle = ""
-#     if path_prefix is not None:
-#         file_handle += path_prefix
-#     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
-#     f = open(file_handle, 'w+')
-#     for result in results:
-#         o_results.append(json.loads(result))
-#     f.write(json.dumps(o_results))
-#     f.close()
-#     return file_handle
-#
-#
-# results_file = save_results([result.output.split('#')[-1].strip() for result in results], tag,
-#                             path_prefix="/home/aifs2/doylew/IdeaProjects/searkt/")
-# print(results_file)
+
+def save_results(results, tag, path_prefix=None):
+    l_results = []
+    o_results = []
+    file_handle = ""
+    if path_prefix is not None:
+        file_handle += path_prefix
+    file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
+    f = open(file_handle, 'w+')
+    for result in results:
+        o_results.append(json.loads(result))
+    f.write(json.dumps(o_results))
+    f.close()
+    return file_handle
+
+
+results_file = save_results([result.output.split('#')[-1].strip() for result in results], tag,
+                            path_prefix="/home/aifs2/doylew/IdeaProjects/searkt/")
+print(results_file)
