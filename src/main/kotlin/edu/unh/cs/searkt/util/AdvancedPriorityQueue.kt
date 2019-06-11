@@ -33,6 +33,8 @@ abstract class AbstractAdvancedPriorityQueue<T>(
     abstract fun getIndex(item: T): Int
     abstract fun setIndex(item: T, index: Int)
 
+    fun isOpen(item: T) = getIndex(item) > -1
+
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 
     private var resizable = true

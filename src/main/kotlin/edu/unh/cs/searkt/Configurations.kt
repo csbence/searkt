@@ -22,7 +22,9 @@ import java.util.concurrent.TimeUnit
  */
 fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
-            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_1"
+            Domains.GRID_WORLD to "input/vacuum/minima/minima0.vw"
+//            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_1"
+//            Domains.GRID_WORLD to "input/vacuum/cups.vw"
     )
 
 //    domains += (1..99).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
@@ -39,7 +41,7 @@ fun generateConfigurations(): String {
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
-            planners = listOf(Planners.BI_ES),//, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR),
+            planners = listOf(Planners.BI_ES/*, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR, Planners.BACK_ES*/),
             actionDurations = listOf(10),
             timeLimit = timeLimit,
             stepLimit = 1000000,
@@ -48,6 +50,7 @@ fun generateConfigurations(): String {
             lookaheadType = LookaheadType.DYNAMIC,
             plannerExtras = listOf(
                     Triple(Planners.BI_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
+                    Triple(Planners.BACK_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.MULTIPLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD)),

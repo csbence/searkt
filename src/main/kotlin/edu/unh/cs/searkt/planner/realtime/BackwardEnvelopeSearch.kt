@@ -141,7 +141,6 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         override fun setIndex(item: BackwardEnvelopeSearchNode<StateType>, index: Int) {
             item.frontierOpenIndex = index
         }
-        fun isOpen(item: BackwardEnvelopeSearchNode<StateType>): Boolean = item.frontierOpenIndex > -1
     }
 
     inner class BackwardOpenList : AbstractAdvancedPriorityQueue<BackwardEnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backwardsComparator) {
@@ -149,7 +148,6 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         override fun setIndex(item: BackwardEnvelopeSearchNode<StateType>, index: Int) {
             item.backwardOpenIndex = index
         }
-        fun isOpen(item: BackwardEnvelopeSearchNode<StateType>): Boolean = item.backwardOpenIndex > -1
     }
 
     private var frontierOpenList = FrontierOpenList()
@@ -235,11 +233,9 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
             val localTerminationChecker = getTerminationChecker(configuration, localTimeSlice)
             localSearch(agentNode, localTerminationChecker)
 
-            //localTerminationChecker.remaining()
-            0
+            localTerminationChecker.remaining()
         } else {
-            //localTimeSlice
-            0
+            localTimeSlice
         }
 
         val nextEdge = cachedPath.removeFirst()
