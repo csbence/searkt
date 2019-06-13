@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
@@ -125,7 +126,12 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
         }
     }
 
-    private val convexComparator = if (algorithmName == "SXDP") xdpComparator else xupComparator
+    private val convexComparator = when (algorithmName) {
+        Planners.SXDP.toString() -> xdpComparator
+        Planners.SXUP.toString() -> xupComparator
+        Planners.IOS.toString() -> fValueComparator
+        else -> throw MetronomeException("Unrecognized algorithm name for Improved Optimistic Search")
+    }
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
 

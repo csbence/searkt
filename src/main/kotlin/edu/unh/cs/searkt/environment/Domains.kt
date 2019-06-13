@@ -1,6 +1,7 @@
 package edu.unh.cs.searkt.environment
 
 enum class Domains {
+    GRID_MAP,
     ACROBOT,
     GRID_WORLD,
     POINT_ROBOT,
@@ -15,5 +16,7 @@ enum class Domains {
     SLIDING_TILE_PUZZLE_4,
     SLIDING_TILE_PUZZLE_4_HEAVY,
     SLIDING_TILE_PUZZLE_4_INVERSE,
-    SLIDING_TILE_PUZZLE_4_SQRT
+    SLIDING_TILE_PUZZLE_4_SQRT,
+    PANCAKE,
+    HEAVY_PANCAKE
 }

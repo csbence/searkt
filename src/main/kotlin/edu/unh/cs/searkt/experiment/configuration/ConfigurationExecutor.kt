@@ -9,11 +9,13 @@ import edu.unh.cs.searkt.environment.Domains.*
 import edu.unh.cs.searkt.environment.State
 import edu.unh.cs.searkt.environment.acrobot.AcrobotIO
 import edu.unh.cs.searkt.environment.airspace.AirspaceIO
+import edu.unh.cs.searkt.environment.gridworld.GridMapIO
 import edu.unh.cs.searkt.environment.gridworld.GridWorldIO
 import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
 import edu.unh.cs.searkt.environment.heavyvacuumworld.HeavyVacuumWorldIO
 import edu.unh.cs.searkt.environment.inversetiles.InverseTilePuzzleIO
 import edu.unh.cs.searkt.environment.lifegrids.LifegridsIO
+import edu.unh.cs.searkt.environment.pancake.PancakeIO
 import edu.unh.cs.searkt.environment.pointrobot.PointRobotIO
 import edu.unh.cs.searkt.environment.pointrobotlost.PointRobotLOSTIO
 import edu.unh.cs.searkt.environment.racetrack.RaceTrackIO
@@ -102,9 +104,12 @@ object ConfigurationExecutor {
             executionException = throwable
 
             if (executionException is MetronomeException) {
-                println("Experiment stopped: ${throwable.message}")
+                println("Experiment stopped: ${throwable.message} \n alg:${configuration.algorithmName} domain:${configuration.domainName}")
             } else {
-                println("Experiment stopped: $throwable")
+                println("Experiment stopped: $throwable \n" +
+                        " alg:${configuration.algorithmName}" +
+                        " domain:${configuration.domainName}" +
+                        " instance:${configuration.domainPath}")
             }
         }
 
@@ -112,7 +117,7 @@ object ConfigurationExecutor {
 
         thread.start()
         thread.priority = Thread.MAX_PRIORITY
-        thread.join(MILLISECONDS.convert(configuration.timeLimit ?: 0 , NANOSECONDS))
+        thread.join(MILLISECONDS.convert(configuration.timeLimit ?: 0, NANOSECONDS))
 
         if (executionException != null) {
 //            collectAndWait()
@@ -146,6 +151,7 @@ object ConfigurationExecutor {
 
         val domainStream: InputStream = when {
             configuration.rawDomain != null -> configuration.rawDomain.byteInputStream()
+            configuration.domainPath!!.contains(':') -> InputStream.nullInputStream()
             dataRootPath != null -> FileInputStream(dataRootPath + configuration.domainPath)
             else -> Unit::class.java.classLoader.getResourceAsStream(configuration.domainPath)
                     ?: throw MetronomeException("Instance file not found: ${configuration.domainPath}")
@@ -153,6 +159,8 @@ object ConfigurationExecutor {
 
         val domain = Domains.valueOf(domainName)
         return when (domain) {
+            PANCAKE -> executePancakeProblem(configuration, domainStream)
+            HEAVY_PANCAKE -> executeHeavyPancakeProblem(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_HEAVY -> executeHeavySlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_INVERSE -> executeInverseSlidingTilePuzzle(configuration, domainStream)
@@ -168,8 +176,30 @@ object ConfigurationExecutor {
             RACETRACK -> executeRaceTrack(configuration, domainStream)
             AIRSPACE -> executeRaceTrackLimit(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
+            GRID_MAP -> executeGridMap(configuration, dataRootPath)
             else -> throw MetronomeException("Unknown or deactivated globalDomain: $domain")
         }
+    }
+
+    private fun executeGridMap(configuration: ExperimentConfiguration, dataRootPath: String?): ExperimentResult {
+        val (domainPath, instancePath) = configuration.domainPath!!.split(":")
+
+        val (domainStream, instanceStream) = when {
+            dataRootPath != null ->
+                FileInputStream(dataRootPath + domainPath) to FileInputStream(dataRootPath + instancePath)
+            else -> {
+                val domainStream = Unit::class.java.classLoader.getResourceAsStream(domainPath)
+                        ?: throw MetronomeException("Grid map instance file not found: ${configuration.domainPath}")
+
+                val instanceStream = Unit::class.java.classLoader.getResourceAsStream(instancePath)
+                        ?: throw MetronomeException("Grid map instance file not found: ${configuration.domainPath}")
+
+                domainStream to instanceStream
+            }
+        }
+
+        val (gridDomain, initialState) = GridMapIO.parseFromStream(domainStream, instanceStream, configuration.domainSeed, configuration.actionDuration)
+        return executeDomain(configuration, gridDomain, initialState)
     }
 
     private fun executeLifegrids(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
@@ -228,6 +258,16 @@ object ConfigurationExecutor {
         return executeDomain(configuration, vehicleWorldInstance.domain, vehicleWorldInstance.initialState)
     }
 
+    private fun executePancakeProblem(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val pancakeProblemInstance = PancakeIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, pancakeProblemInstance.domain, pancakeProblemInstance.initialState)
+    }
+
+    private fun executeHeavyPancakeProblem(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val pancakeProblemInstance = PancakeIO.parseFromStream(domainStream, configuration.actionDuration, heavy = true)
+        return executeDomain(configuration, pancakeProblemInstance.domain, pancakeProblemInstance.initialState)
+    }
+
     private fun executeSlidingTilePuzzle(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val slidingTilePuzzleInstance = SlidingTilePuzzleIO.parseFromStream(domainStream, configuration.actionDuration)
         return executeDomain(configuration, slidingTilePuzzleInstance.domain, slidingTilePuzzleInstance.initialState)
@@ -256,7 +296,12 @@ object ConfigurationExecutor {
     private fun <StateType : State<StateType>> executeDomain(configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val algorithmName = configuration.algorithmName
         val seed = configuration.domainSeed
-        val sourceState = seed?.run { domain.randomizedStartState(initialState, this) } ?: initialState
+
+        val sourceState = if (configuration.domainName != GRID_MAP.toString()) {
+            seed?.run { domain.randomizedStartState(initialState, this) } ?: initialState
+        } else {
+            initialState
+        }
 
         if (algorithmName == Planners.A_STAR.toString()) {
             configuration.weight = 1.0
@@ -266,6 +311,8 @@ object ConfigurationExecutor {
             BOUNDED_SUBOPTIMAL_EXPLORATION -> executeOfflineSearch(BoundedSuboptimalExploration(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_DD -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            WEIGHTED_A_STAR_XDP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            WEIGHTED_A_STAR_XUP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
@@ -280,6 +327,7 @@ object ConfigurationExecutor {
             SIMPLE_SAFE -> executeRealTimeSearch(SimpleSafePlanner(domain, configuration), configuration, domain, sourceState)
             SXDP -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
             SXUP -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
+            IOS -> executeOfflineSearch(ImprovedOptimisticSearch(domain, configuration), configuration, domain, sourceState)
             DPS -> executeOfflineSearch(DynamicPotentialSearch(domain, configuration), configuration, domain, sourceState)
             DPSG -> executeOfflineSearch(DynamicPotentialSearchG(domain, configuration), configuration, domain, sourceState)
             EES -> executeOfflineSearch(ExplicitEstimationSearch(domain, configuration), configuration, domain, sourceState)

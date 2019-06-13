@@ -11,8 +11,10 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import edu.unh.cs.searkt.util.SearchQueueElement
+import java.io.File
 import java.util.HashMap
 import kotlin.Comparator
+import kotlin.math.sqrt
 
 class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
     private val weight: Double = configuration.weight
@@ -20,11 +22,13 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private val algorithmName = configuration.algorithmName
 
+    private val optimisticWeight: Double = weight // (2.0 * weight) - 1.0
+
     var terminationChecker: TerminationChecker? = null
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
-                                             override var parent: WeightedAStar.Node<StateType>? = null) :
+                                             override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
         var isClosed = false
         private val indexMap = Array(1) { -1 }
@@ -41,6 +45,9 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override val dHat: Double
             get() = heuristic
 
+        val fPrime: Double
+            get() = g + (weight * h)
+
         override fun setIndex(key: Int, index: Int) {
             indexMap[key] = index
         }
@@ -54,12 +61,24 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override val f: Double
             get() = cost + heuristic
 
+
+        @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
-            if (other != null && other is Node<*>) {
-                return state == other.state
+            return try {
+                val otherCast = other as Node<*>
+                otherCast.hashCode() == this.hashCode()
+            } catch (exp: ClassCastException) {
+                false
             }
-            return false
         }
+
+        val xdp: Double
+            get() = (1 / (2 * optimisticWeight)) * ((((2 * optimisticWeight) - 1) *
+                    h) + sqrt(Math.pow(g - h, 2.0) + (4 * optimisticWeight * h * g)))
+
+        val xup: Double
+            get() = (1 / (2 * optimisticWeight)) * (g + h + sqrt(Math.pow(g + h, 2.0) +
+                    ((4 * optimisticWeight) * (optimisticWeight - 1) * Math.pow(h, 2.0))))
 
         override fun hashCode(): Int = state.hashCode()
 
@@ -67,19 +86,47 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
-    private val fValueComparator = Comparator<WeightedAStar.Node<StateType>> { lhs, rhs ->
+    private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.f < rhs.f -> -1
-            lhs.f > rhs.f -> 1
+            lhs.fPrime < rhs.fPrime -> -1
+            lhs.fPrime > rhs.fPrime -> 1
             lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
 
-    private val nodes: HashMap<StateType, WeightedAStar.Node<StateType>> = HashMap(1000000, 1.toFloat())
+    private val xdpComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.xdp < rhs.xdp -> -1
+            lhs.xdp > rhs.xdp -> 1
+            lhs.g > rhs.g -> -1 // tie breaking on cost
+            lhs.g < rhs.g -> 1
+            else -> 0
+        }
+    }
 
-    private var openList = AdvancedPriorityQueue(1000000, fValueComparator)
+    private val xupComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.xup < rhs.xup -> -1
+            lhs.xup > rhs.xup -> 1
+            lhs.g > rhs.g -> -1 // tie breaking on cost
+            lhs.g < rhs.g -> 1
+            else -> 0
+        }
+    }
+
+    private val comparator = when (algorithmName) {
+        Planners.WEIGHTED_A_STAR_XDP.toString() -> xdpComparator
+        Planners.WEIGHTED_A_STAR_XUP.toString() -> xupComparator
+        Planners.WEIGHTED_A_STAR.toString() -> fValueComparator
+        Planners.WEIGHTED_A_STAR_DD.toString() -> fValueComparator
+        else -> throw MetronomeException("Unrecognized algorithm name for Weighted A*")
+    }
+
+    private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
+
+    private var openList = AdvancedPriorityQueue(1000000, comparator)
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -89,7 +136,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             terminationChecker!!.notifyExpansion()
             val undiscoveredNode = Node(
                     state = successorState,
-                    heuristic = weight * domain.heuristic(successorState),
+                    heuristic = domain.heuristic(successorState),
                     actionCost = successorBundle.actionCost,
                     action = successorBundle.action,
                     parent = sourceNode,
@@ -143,7 +190,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
-        val node = Node(state, weight * domain.heuristic(state), 0.0, 0.0, NoOperationAction)
+        val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)
