@@ -22,15 +22,14 @@ fun generateConfigurations(): String {
     )
 
     domains += (0..33).map { Domains.PANCAKE to "input/pancake/$it.pqq" }
+//    domains += (0..33).map { Domains.HEAVY_PANCAKE to "input/pancake/$it.pqq" }
 
 //    domains += (1..33).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (1..33).map { Domains.SLIDING_TILE_PUZZLE_4_INVERSE to "input/tiles/korf/4/real/$it" }
 //    domains += (1..33).map { Domains.SLIDING_TILE_PUZZLE_4_HEAVY to "input/tiles/korf/4/real/$it" }
 
     domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-
-    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-    domains += (0..10).map { Domains.LIFE_GRIDS to "input/vacuum/orz100d/orz100d.map_scen_$it" }
+    domains += (0..10).map { Domains.LIFE_GRIDS to "input/lifegrids/lifegrids$it.lg" }
 
     domains += (0..10).map { Domains.VACUUM_WORLD to "input/vacuum/gen/vacuum$it.vw" }
     domains += (0..10).map { Domains.HEAVY_VACUUM_WORLD to "input/vacuum/gen/vacuum$it.vw" }
@@ -42,7 +41,7 @@ fun generateConfigurations(): String {
 
 
     // Maximum time per experiment
-    val timeLimit = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
+    val timeLimit = TimeUnit.NANOSECONDS.convert(10, TimeUnit.MINUTES)
 
     val domainExtras = listOf(
             Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0..2L),
@@ -69,7 +68,7 @@ fun generateConfigurations(): String {
     )
 
     // Add these to all configurations
-    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.6, 2.4, 5.0, 10.0))
+    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(2.0))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
 

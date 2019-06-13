@@ -5,7 +5,7 @@ import java.util.*
 
 object PancakeIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long): PancakeProblemInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long, heavy: Boolean = false): PancakeProblemInstance {
         val inputScanner = Scanner(input)
         val problemSize = inputScanner.nextInt()
         inputScanner.nextLine() // skip empty line
@@ -18,7 +18,7 @@ object PancakeIO {
 
         (0 until problemSize).forEach { endOrdering[it] = inputScanner.nextByte() }
 
-        val puzzleVariant = 0 // default
+        val puzzleVariant = if (heavy) 1 else 0 // 0: default (unit), 1: heavy
         val initialState = PancakeState(startOrdering, 0)
 
         return PancakeProblemInstance(PancakeProblem(startOrdering, endOrdering, puzzleVariant), initialState)

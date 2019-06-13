@@ -1,13 +1,16 @@
 package edu.unh.cs.searkt.environment.pancake
 
-import org.junit.Test
+import edu.unh.cs.searkt.experiment.OfflineExperiment
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import java.io.File
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 internal class PancakeProblemTest {
 
+    private val config = ExperimentConfiguration(domainName = "PANCAKE", algorithmName = "WEIGHTED_A_STAR",
+            terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L, weight = 1.6)
     private val pancakeProblem = PancakeIO.parseFromStream(File("/home/aifs2/doylew/IdeaProjects/searkt/src/main/resources/input/pancake/0.pqq").inputStream(), 1L)
     private val initialState = byteArrayOf(6, 8, 9, 10, 1, 2, 3, 5, 4, 7, 11)
     private val goalState = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
@@ -43,6 +46,13 @@ internal class PancakeProblemTest {
         pancakeProblem.domain.successors(pancakeProblem.initialState).forEach { successor ->
             assertFalse(pancakeProblem.domain.isGoal(successor.state))
         }
+    }
+
+    @Test
+    fun experimentPipeline() {
+        val experiment = OfflineExperiment(config, WeightedAStar(pancakeProblem.domain, config), pancakeProblem.domain,
+                pancakeProblem.initialState, StaticExpansionTerminationChecker(config.expansionLimit!!))
+        experiment.run()
 
     }
 }

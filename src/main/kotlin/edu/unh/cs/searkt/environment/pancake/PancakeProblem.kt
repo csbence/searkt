@@ -30,7 +30,10 @@ class PancakeProblem(val startOrdering: ByteArray, val endOrdering: ByteArray, p
         val flippedPancakes = ordering.slice((0..flipLocation)).reversed()
         val restOfPancakes = ordering.slice((flipLocation + 1 until ordering.size))
         val reorderedPancakes = (flippedPancakes + restOfPancakes).toByteArray()
-        successors.add(SuccessorBundle(PancakeState(reorderedPancakes, flipLocation), PancakeAction(flipLocation), 1.0))
+        when(variant) {
+            0 -> successors.add(SuccessorBundle(PancakeState(reorderedPancakes, flipLocation), PancakeAction(flipLocation), 1.0))
+            else -> successors.add(SuccessorBundle(PancakeState(reorderedPancakes, flipLocation), PancakeAction(flipLocation), flippedPancakes.sum().toDouble()))
+        }
     }
 
     override fun heuristic(state: PancakeState): Double {

@@ -160,6 +160,7 @@ object ConfigurationExecutor {
         val domain = Domains.valueOf(domainName)
         return when (domain) {
             PANCAKE -> executePancakeProblem(configuration, domainStream)
+            HEAVY_PANCAKE -> executeHeavyPancakeProblem(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_HEAVY -> executeHeavySlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_INVERSE -> executeInverseSlidingTilePuzzle(configuration, domainStream)
@@ -259,6 +260,11 @@ object ConfigurationExecutor {
 
     private fun executePancakeProblem(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
         val pancakeProblemInstance = PancakeIO.parseFromStream(domainStream, configuration.actionDuration)
+        return executeDomain(configuration, pancakeProblemInstance.domain, pancakeProblemInstance.initialState)
+    }
+
+    private fun executeHeavyPancakeProblem(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
+        val pancakeProblemInstance = PancakeIO.parseFromStream(domainStream, configuration.actionDuration, heavy = true)
         return executeDomain(configuration, pancakeProblemInstance.domain, pancakeProblemInstance.initialState)
     }
 
