@@ -2,7 +2,7 @@
 
 import datetime
 import getpass
-import os.path
+import os
 from subprocess import run, PIPE
 
 import simplejson as json
@@ -13,10 +13,12 @@ from tqdm import tqdm
 projectRoot = '/home/aifs1/kch29/repos/searkt'
 configFile = 'kevin_configs.json'
 
-proc = run(f'cd {projectRoot} && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
+print('Building project')
+os.chdir(projectRoot)
+proc = run(['./gradlew', 'jar', '-x', 'test'])
 assert proc.returncode == 0
 
-HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
+HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 port_number = 22
 
 # use if your ssh auth key isn't set up
@@ -29,18 +31,20 @@ print(HOSTS)
 file_lock_path = '/home/aifs2/group/exp/distlre.lock'
 
 def execute_tasks():
+    
     if not os.path.isfile(file_lock_path):
-        lock_file = open(file_lock_path, 'w')
-        lock_file.write(getpass.getuser() + '@' + str(datetime.datetime.now()))
-        lock_file.close()
+    #    lock_file = open(file_lock_path, 'w')
+    #    lock_file.write(getpass.getuser() + '@' + str(datetime.datetime.now()))
+    #    lock_file.close()
         executor.execute_tasks()
         executor.wait()
-        os.remove(file_lock_path)
+    #    os.remove(file_lock_path)
     else:
         lock_file = open(file_lock_path, 'r')
         contents = lock_file.read().strip().split('@')
         user, time = (contents[0], contents[1])
         raise Exception(f"{user} started experiments @ {time}, check #experiments on Slack for updates")
+    
 
 
 vmstat_command = "vmstat 3 3"
@@ -62,9 +66,11 @@ for future in futures:
 
 remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
-f = open(f"{projectRoot}/results/{configFile}")
+f = open(f"{projectRoot}/configs/{configFile}")
 worlds = json.load(f)
-tag = "CUSTOM"
+# worlds = worlds[:20] # for testing
+print(f'Loaded {len(worlds)} configurations')
+tag = "TEST"
 # experiments = create_experiments(worlds)
 progress_bar = tqdm(total=len(worlds))
 configs = ['[' + json.dumps(config) + ']' + '\n' for config in worlds]
@@ -106,7 +112,9 @@ def save_results(results, tag, path_prefix=None):
     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
     f = open(file_handle, 'w+')
     for result in results:
-        o_results.append(json.loads(result))
+        resDict = json.loads(result)[0] # loads as array
+        resDict.pop('actions', None)
+        o_results.append(resDict)
     f.write(json.dumps(o_results))
     f.close()
     return file_handle
