@@ -17,7 +17,7 @@ __author__ = 'Bence Cserna, modified by Kevin C. Gall'
 
 alg_map = {"A_STAR": "A*", "LSS_LRTA_STAR": "LSS-LRTA*", "SAFE_RTS": "SRTS", "S_ZERO": "S0", "SIMPLE_SAFE": "SS",
            "SINGLE_SAFE": "BEST_SAFE", "SAFE_RTS_TOP": "SRTS_TOP", "TIME_BOUNDED_A_STAR": "TBA*", "CES": "CES",
-           "ENVELOPE": "Envelope v0.5", "ES": "RES"}
+           "BACK_ES": "Backward ES", "BI_ES": "Bidirectional ES"}
 
 
 def flatten(experiment):
@@ -86,7 +86,7 @@ def plot_all_experiments(data, plot_title):
     # data = data[data.algorithmName != 'LSS_LRTA_STAR']
 
     # rescale action durations to ms
-    data['actionDuration'] = data['actionDuration'] / 1000000
+    # data['actionDuration'] = data['actionDuration'] / 1000000
 
     # Change data structure such that goal achievement time is averaged,
     # grouped by action duration and algorithm
@@ -117,12 +117,12 @@ def plot_all_experiments(data, plot_title):
     # plot.set_yscale('log')
 
     # plot.set_xticks([50, 100, 150, 250, 500, 1000, 2000, 3200])
-    plot.set_xticks([10, 20, 40])
+    plot.set_xticks(data.actionDuration.unique())
     plot.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
     plot.get_yaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
-    plot.set_xlabel('Planning Time per Iteration (milliseconds)')
+    plot.set_xlabel('Planning Time per Iteration (expansions)')
     plot.set_ylabel('Goal Achievement Time (Factor of Optimal)')
     plot.legend(title="")
 
@@ -131,7 +131,7 @@ def plot_all_experiments(data, plot_title):
     pdf.close()
 
 
-def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_delay):
+def main(individual_plots, paths_to_base, paths, title, domain_token):
     set_rc()
 
     results = []
@@ -145,10 +145,6 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
 
     data = construct_data_frame(results)
 
-    # Filter out any domains that do not meet our expansion delay
-    if expansion_delay is not None:
-        data = data[data.expansionDelay == int(expansion_delay)]
-
     compact_base_data = construct_data_frame(base_results)
 
     print(len(base_results))
@@ -158,14 +154,13 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
 
     action_durations = data.actionDuration.unique()
     print(f'action duration used: {action_durations}')
-    base_data = extrapolate_a_star_results(compact_base_data, action_durations)
 
     data = pd.concat([data, compact_base_data], sort=False)
 
     
     data = data[~data['errorMessage'].notnull()]
     
-    print(len(data[data.algorithmName == 'A_STAR']))
+    print(len(data[data.algorithmName == 'WEIGHTED_A_STAR']))
 
     
     # drop certain rows for brevity
@@ -176,7 +171,7 @@ def main(individual_plots, paths_to_base, paths, title, domain_token, expansion_
     
     data = extrapolate_within_optimal(data)
 
-    data = data[~(data.algorithmName == 'A_STAR')]
+    data = data[~(data.algorithmName == 'WEIGHTED_A_STAR')]
 
     # df = data.groupby(['algorithmName', 'expansionDelay'], as_index=False).mean()
 
@@ -203,7 +198,7 @@ def remove_unused_columns(data):
 
 
 def extrapolate_within_optimal(data):
-    astar = data[data["algorithmName"] == "A_STAR"]
+    astar = data[data["algorithmName"] == "WEIGHTED_A_STAR"]
 
     astar["optimalPathLength"] = astar["pathLength"]
     astar = astar[["domainPath", "optimalPathLength"]]
@@ -212,21 +207,6 @@ def extrapolate_within_optimal(data):
     data["withinOpt"] = data["goalAchievementTime"] / (data["actionDuration"] * data["optimalPathLength"])
 
     return data
-
-
-def extrapolate_a_star_results(data, action_durations):
-    extrapolated_data = []
-
-    for action_duration in action_durations:
-        modified_data = data.copy()
-
-        modified_data.actionDuration = action_duration
-        modified_data.goalAchievementTime = modified_data.goalAchievementTime * action_duration + modified_data.planningTime
-
-        extrapolated_data.append(modified_data)
-
-    return pd.concat(extrapolated_data)
-
 
 
 if __name__ == "__main__":
@@ -241,7 +221,6 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument("-t", "--title", help="Title for plot (ignored for individual plots)", default="Experiments")
     parser.add_argument("-d", "--domain_token", help="Domain token for filtering")
-    parser.add_argument("-e", "--expansion_delay", help="Expansion delay for filtering")
 
     args = parser.parse_args()
     individual_plots = args.individual
@@ -249,6 +228,5 @@ if __name__ == "__main__":
     paths = args.paths
     title = args.title
     domain_token = args.domain_token
-    expansion_delay = args.expansion_delay
     
-    main(individual_plots, paths_to_base, paths, title, domain_token, expansion_delay)
+    main(individual_plots, paths_to_base, paths, title, domain_token)
