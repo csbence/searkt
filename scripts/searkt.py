@@ -73,11 +73,11 @@ def generate_base_suboptimal_configuration():
 
 def generate_base_configuration():
     # required configuration parameters
-    algorithms_to_run = ['CES', 'ES', 'ALT_ENVELOPE', 'TIME_BOUNDED_A_STAR']
+    algorithms_to_run = ['BACK_ES', 'BI_ES', 'LSS_LRTA_STAR', 'TIME_BOUNDED_A_STAR']
     expansion_limit = [100000000]
     lookahead_type = ['DYNAMIC']
     time_limit = [100000000000]
-    action_durations = [50, 100, 200, 500]
+    action_durations = [10, 50, 100, 200, 500]
     # action_durations = [50, 100, 150, 200, 250, 400, 800, 1600, 3200, 6400, 12800]
     termination_types = ['EXPANSION']
     step_limits = [100000000]
@@ -90,7 +90,7 @@ def generate_base_configuration():
     base_configuration['terminationType'] = termination_types
     base_configuration['stepLimit'] = step_limits
     base_configuration['timeLimit'] = time_limit
-    base_configuration['commitmentStrategy'] = ['SINGLE']
+    base_configuration['commitmentStrategy'] = ['MULTIPLE']
 
     compiled_configurations = [{}]
 
@@ -98,62 +98,29 @@ def generate_base_configuration():
         compiled_configurations = cartesian_product(compiled_configurations, key, value)
 
     # Algorithm specific configurations
-    weight = [3.0]
+    weight = [1.0, 1.2, 1.8, 3.0, 5.0, 7.5, 12.0, 16.0]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'weight', weight,
-                                                [['algorithmName', 'WEIGHTED_A_STAR']])
+                                                [['algorithmName', 'TIME_BOUNDED_A_STAR']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'BACK_ES']])
+    compiled_configurations = cartesian_product(compiled_configurations,
+                                                'weight', weight,
+                                                [['algorithmName', 'BI_ES']])
 
     # Envelope-based
     # backup_ratios = [0.0, 1.0, 2.0, 10.0, 50.0, 100.0]
-    backup_ratios = [1.0]
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', backup_ratios,
-                                                [['algorithmName', 'CES']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'backlogRatio', backup_ratios,
-                                                [['algorithmName', 'ENVELOPE']])
+    backup_ratios = [sys.float_info['max']]
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'backlogRatio', backup_ratios,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
 
     # TBA*
-    optimizations = ['NONE', 'THRESHOLD']
+    optimizations = ['THRESHOLD']
     compiled_configurations = cartesian_product(compiled_configurations,
                                                 'tbaOptimization', optimizations,
                                                 [['algorithmName', 'TIME_BOUNDED_A_STAR']])
-
-    # S-RTS specific attributes
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'targetSelection', ['SAFE_TO_BEST'],
-                                                [['algorithmName', 'SAFE_RTS']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                # 'safetyProof', ['LOW_D_LOW_H_OPEN'],
-                                                'safetyProof', ['TOP_OF_OPEN'],
-                                                # 'safetyProof', ['LOW_D_LOW_H'],
-                                                # 'safetyProof', ['LOW_D_TOP_PREDECESSOR'],
-                                                # 'safetyProof', ['LOW_D_WINDOW', 'TOP_OF_OPEN'],
-                                                [['algorithmName', 'SAFE_RTS']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_WINDOW']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'],
-                                                 ['safetyProof', 'LOW_D_TOP_PREDECESSOR']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [1, 2, 5, 10, 15, 100],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [0],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'LOW_D_LOW_H_OPEN']])
-
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyWindowSize', [0],
-                                                [['algorithmName', 'SAFE_RTS'], ['safetyProof', 'TOP_OF_OPEN']])
-    compiled_configurations = cartesian_product(compiled_configurations,
-                                                'safetyExplorationRatio', [1],
-                                                [['algorithmName', 'SAFE_RTS']])
 
     return compiled_configurations
 
@@ -210,15 +177,14 @@ def generate_tile_puzzle():
 def generate_grid_world():
     configurations = generate_base_configuration()
 
-    grids = []
-    for scenario in range(0, 50):
-        grids.append(str(scenario))
-
     scenario_base_path = 'input/vacuum/orz100d/orz100d.map_scen_'
-    full_grid_paths = [scenario_base_path + scenario for scenario in grids]
+    minima_base_path = 'input/vacuum/minima1500/minima1500_1500-'
+
+    grid_paths = [scenario_base_path + str(scenario) for scenario in range(0, 50)]
+    grid_paths.extend([minima_base_path + str(scenario) + '.vw' for scenario in range(0, 50)])
 
     configurations = cartesian_product(configurations, 'domainName', ['GRID_WORLD'])
-    configurations = cartesian_product(configurations, 'domainPath', full_grid_paths)
+    configurations = cartesian_product(configurations, 'domainPath', grid_paths)
 
     return configurations
 
@@ -317,7 +283,7 @@ def main():
         raise Exception('Build failed. Make sure the jar generation is functioning. ')
     print('Build complete!')
 
-    configurations, tag = generate_tile_puzzle()  # generate_racetrack()
+    configurations, tag = generate_grid_world()
     print('{} configurations has been generated '.format(len(configurations)))
     # slack_notification.start_experiment_notification(len(configurations), 'byodoin')
 

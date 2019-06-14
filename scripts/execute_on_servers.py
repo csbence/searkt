@@ -10,7 +10,10 @@ from distlre.distlre import DistLRE, Task, RemoteHost
 from slack_notification import start_experiment_notification, end_experiment_notification
 from tqdm import tqdm
 
-proc = run('cd ~/IdeaProjects/searkt && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
+projectRoot = '/home/aifs1/kch29/repos/searkt'
+configFile = 'kevin_configs.json'
+
+proc = run(f'cd {projectRoot} && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
 assert proc.returncode == 0
 
 HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
@@ -59,7 +62,7 @@ for future in futures:
 
 remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
-f = open("/home/aifs2/doylew/IdeaProjects/searkt/results/configurations.json")
+f = open(f"{projectRoot}/results/{configFile}")
 worlds = json.load(f)
 tag = "CUSTOM"
 # experiments = create_experiments(worlds)
@@ -74,7 +77,7 @@ def update_progress_bar(future):
     future.result().meta
 
 
-command = "/home/aifs2/group/jvms/jdk-12/bin/java -Xms7500m -Xmx7500m -jar IdeaProjects/searkt/build/libs/real-time-search-1.0-SNAPSHOT.jar -stdinConfiguration"
+command = f"/home/aifs2/group/jvms/jdk-12/bin/java -Xms7500m -Xmx7500m -jar {projectRoot}/build/libs/real-time-search-1.0-SNAPSHOT.jar -stdinConfiguration"
 tasks = [Task(command=command, meta=progress_bar, time_limit=3600, memory_limit=10) for config in worlds]
 for task, config in zip(tasks, configs):
     task.input = config
@@ -110,5 +113,5 @@ def save_results(results, tag, path_prefix=None):
 
 
 results_file = save_results([result.output.split('#')[-1].strip() for result in results], tag,
-                            path_prefix="/home/aifs2/doylew/IdeaProjects/searkt/")
+                            path_prefix=projectRoot+"/")
 print(results_file)
