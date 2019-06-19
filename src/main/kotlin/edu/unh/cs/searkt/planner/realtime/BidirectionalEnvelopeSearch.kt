@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.planner.realtime
 import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.searkt.planner.*
@@ -10,6 +11,7 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.resize
+import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 
@@ -40,13 +42,18 @@ import kotlin.Long.Companion.MAX_VALUE
 class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, BidirectionalEnvelopeSearch.BiEnvelopeSearchNode<StateType>> {
+    // Counter and attribute keys
+    private val EXTRACT_TEMP_PATH_COUNTER = "tempPath"
+    private val TEMP_PATH_LENGTH = "tempPathLength"
+    private val CACHED_PATH_LENGTH = "cachedPathLength"
 
     // Configuration
     private val weight = configuration.weight ?: 1.0
+    private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
-    private var frontierLimitRatio = 0.5
+    private var frontierLimitRatio = 0.8
 
     // TODO: Configuration for traceback accounting
 
@@ -77,6 +84,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         override var action: Action = NoOperationAction
         override var closed: Boolean = false
         var forwardParent: BiSearchEdge<BiEnvelopeSearchNode<StateType>>? = null
+        /** If node is part of cached path, we store the parent of the cached path here */
+        var cachedForwardParent: BiSearchEdge<BiEnvelopeSearchNode<StateType>>? = null
         var forwardSearchIteration = -1L
 
         // Properties for backward search
@@ -137,6 +146,17 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
     }
 
+    private val weightedHComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsH = lhs.heuristic * weight
+        val rhsH = rhs.heuristic * weight
+
+        when {
+            lhsH < rhsH -> -1
+            lhsH > rhsH -> 1
+            else -> 0
+        }
+    }
+
     private val backwardsComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsF = lhs.backwardG + (lhs.backwardH * weight)
         val rhsF = rhs.backwardG + (rhs.backwardH * weight)
@@ -147,6 +167,48 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             lhsF > rhsF -> 1
             lhs.backwardG > rhs.backwardG -> -1
             lhs.backwardG < rhs.backwardG -> 1
+            else -> 0
+        }
+    }
+
+    private val greedyBackwardsComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsH = lhs.backwardH * weight
+        val rhsH = rhs.backwardH * weight
+
+        // Still break ties on G
+        when {
+            lhsH < rhsH -> -1
+            lhsH > rhsH -> 1
+            lhs.backwardG > rhs.backwardG -> -1
+            lhs.backwardG < rhs.backwardG -> 1
+            else -> 0
+        }
+    }
+
+    private val weightedFComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsF = (lhs.heuristic * weight) + lhs.cost
+        val rhsF = (rhs.heuristic * weight) + rhs.cost
+
+        // break ties on low H
+        when {
+            lhsF < rhsF -> -1
+            lhsF > rhsF -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
+    }
+
+    private val greedyLocalHComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsH = lhs.heuristic * weight
+        val rhsH = rhs.heuristic * weight
+
+        // break ties on G
+        when {
+            lhsH < rhsH -> -1
+            lhsH > rhsH -> 1
+            lhs.cost > rhs.cost -> -1
+            lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
@@ -171,7 +233,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     // Open lists
     private var frontierOpenList = FrontierOpenList()
     private var backwardOpenList = BackwardOpenList()
-    override var openList = AdvancedPriorityQueue<BiEnvelopeSearchNode<StateType>>(1000000, fValueComparator)
+    override var openList = AdvancedPriorityQueue<BiEnvelopeSearchNode<StateType>>(1000000, weightedFComparator)
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, BiEnvelopeSearchNode<StateType>> = HashMap<StateType, BiEnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()
@@ -208,6 +270,21 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 0.0, 0L, 0L, 0L)
         nodes[initialState] = primer
         nodes.remove(initialState)
+
+        // reset comparators if lookahead is greedy
+        if (lookaheadStrategy == LookaheadStrategy.GBFS) {
+            frontierOpenList.reorder(weightedHComparator)
+            backwardOpenList.reorder(greedyBackwardsComparator)
+            openList.reorder(greedyLocalHComparator)
+        }
+    }
+
+    @ImplicitReflectionSerializer
+    override fun appendPlannerSpecificResults(results: ExperimentResult) {
+        val avgCachedPathSize = this.attributes[CACHED_PATH_LENGTH]!!.average()
+
+        results.attributes["avgCachedPathLength"] = avgCachedPathSize
+        results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER]!!
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
@@ -230,9 +307,10 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         // If we don't already have a path to the goal
         if (!(cachedPath.size > 0 && domain.isGoal(cachedPath.last.successor.state))) {
-            val frontierTimeSlice = (terminationChecker.remaining() * frontierLimitRatio).toLong()
+            var frontierTimeSlice = (terminationChecker.remaining() * frontierLimitRatio).toLong()
+            val biSearchTimeSlice = (terminationChecker.remaining() - frontierTimeSlice)
             // adds carry-over from prior iteration to path selection time
-            val biSearchTimeSlice = (terminationChecker.remaining() - frontierTimeSlice) + timeRemaining
+            frontierTimeSlice += timeRemaining
 
             // Expand the frontier
             val bestCurrentNode = explore(getTerminationChecker(configuration, frontierTimeSlice))
@@ -251,8 +329,11 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         // TODO: Make this fit into real time resource allocation
         if (cachedPath.size == 0) extractTemporaryPath()
+
+        // Remove current state / step from cached path
         val nextEdge = cachedPath.removeFirst()
         pathStates.remove(sourceState)
+        nodes[currentAgentState]!!.cachedForwardParent = null
 
         iterationCounter++
         return listOf(ActionBundle(nextEdge.action, nextEdge.actionCost))
@@ -347,7 +428,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                     // Must check for closed forward search nodes since successor lists may have been
                     // increased by expansion, so a "closed" forward node may not be within the frontier
                     if (openList.isOpen(predecessorNode) ||
-                            predecessorNode.forwardSearchIteration == forwardIterationCounter) {
+                            predecessorNode.forwardSearchIteration == forwardIterationCounter
+                            || pathStates.contains(predecessorNode.state)) {
                         predecessorNode.backwardParent = edge // we need the edge set for path extraction
                         searchIntersection = predecessorNode
 
@@ -480,34 +562,63 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         // start at the intersection and work backward toward root, then come back and work forward toward frontier
         var currentNode = intersectionNode
-        while (currentNode != forwardRoot) {
+        var useCachedPointer = pathStates.contains(currentNode.state)
+        var canAppend = false
+        while (currentNode.state != currentAgentState) {
+            if (currentNode == forwardRoot) {
+                canAppend = true
+                break
+            }
 
-            newPath.addFirst(currentNode.forwardParent)
-            currentNode = currentNode.forwardParent?.predecessor ?:
+            val nextEdge = if(useCachedPointer) {
+                currentNode.cachedForwardParent
+            } else {
+                currentNode.cachedForwardParent = currentNode.forwardParent
+                currentNode.forwardParent
+            }
+
+            newPath.addFirst(nextEdge)
+            currentNode = nextEdge?.predecessor ?:
                     throw MetronomeException("Cannot trace path to forward root")
 
 
-            if (!newPathStates.add(currentNode.state)) throw MetronomeException("Cycle detected in extractPath toward root")
+            if (!newPathStates.add(currentNode.state)) {
+                throw MetronomeException("Cycle detected in extractPath toward root")
+            }
+            if (!useCachedPointer && pathStates.contains(currentNode.state)) useCachedPointer = true
         }
 
         currentNode = intersectionNode
         while (currentNode != frontierTarget) {
+            val edge = currentNode.backwardParent ?: throw MetronomeException("Cannot trace path to frontier target")
 
-            newPath.addLast(currentNode.backwardParent)
-            currentNode = currentNode.backwardParent?.successor ?: throw MetronomeException("Cannot trace path to frontier target")
+            newPath.addLast(edge)
+            currentNode = edge.successor
+
+            // set forward parent in case we hit this node in the cached path on a subsequent search and need to trace back
+            currentNode.cachedForwardParent = edge
 
             if (!newPathStates.add(currentNode.state)) {
                 throw MetronomeException("Cycle detected in extractPath toward frontier")
             }
         }
 
-        pathStates.addAll(newPathStates)
-        cachedPath.addAll(newPath) // appends to current path
+        if (canAppend) {
+            pathStates.addAll(newPathStates)
+            cachedPath.addAll(newPath) // appends to current path
+        } else {
+            pathStates = newPathStates
+            cachedPath = newPath // replaces current path
+        }
+
+        this.appendAttribute(CACHED_PATH_LENGTH, cachedPath.size)
 
         clearSearch()
     }
 
     private fun extractTemporaryPath() {
+        this.incrementCounter(EXTRACT_TEMP_PATH_COUNTER)
+
         val targetNode = openList.peek() ?: throw MetronomeException("Cannot construct temporary path from empty open list")
         pathStates = mutableSetOf(targetNode.state)
         cachedPath = LinkedList()
@@ -515,10 +626,13 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         var currentNode = targetNode
         while (currentNode.state != currentAgentState) {
             cachedPath.addFirst(currentNode.forwardParent)
+            currentNode.cachedForwardParent = currentNode.forwardParent
             currentNode = currentNode.forwardParent?.predecessor ?: throw MetronomeException("Cannot trace path to forward root")
 
             if (!pathStates.add(currentNode.state)) throw MetronomeException("Cycle detected in extractTemporaryPath")
         }
+
+        this.appendAttribute(TEMP_PATH_LENGTH, cachedPath.size)
 
         clearForwardSearch() // moving invalidates our current search
     }

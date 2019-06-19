@@ -19,6 +19,7 @@ enum class Configurations(val configurationName: String) {
     STEP_LIMIT("stepLimit"),
     ACTION_DURATION("actionDuration"),
     TERMINATION_TYPE("terminationType"),
+    LOOKAHEAD_STRATEGY("lookaheadStrategy"),
     // Domain-specific configurations
     DOMAIN_SEED("domainSeed"),
     // Real-time search configurations

@@ -28,10 +28,11 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
 
     // Configuration
     private val weight = configuration.weight ?: 1.0
+    private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
-    private var frontierLimitRatio = 0.5
+    private var frontierLimitRatio = 0.8
     // r2 + r3 = 1.0
     private val backwardLimitRatio = 0.6
 //    private val localLimitRatio = 0.4 // implied by above
@@ -120,6 +121,17 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         }
     }
 
+    private val weightedHComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsH = lhs.heuristic * weight
+        val rhsH = rhs.heuristic * weight
+
+        when {
+            lhsH < rhsH -> -1
+            lhsH > rhsH -> 1
+            else -> 0
+        }
+    }
+
     private val backwardsComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsF = lhs.backwardG + (lhs.backwardH * weight)
         val rhsF = rhs.backwardG + (rhs.backwardH * weight)
@@ -128,6 +140,20 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         when {
             lhsF < rhsF -> -1
             lhsF > rhsF -> 1
+            lhs.backwardG > rhs.backwardG -> -1
+            lhs.backwardG < rhs.backwardG -> 1
+            else -> 0
+        }
+    }
+
+    private val greedyBackwardsComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        val lhsH = lhs.backwardH * weight
+        val rhsH = rhs.backwardH * weight
+
+        // Still break ties on G
+        when {
+            lhsH < rhsH -> -1
+            lhsH > rhsH -> 1
             lhs.backwardG > rhs.backwardG -> -1
             lhs.backwardG < rhs.backwardG -> 1
             else -> 0
@@ -187,6 +213,12 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                 0.0, 0L, 0L)
         nodes[initialState] = primer
         nodes.remove(initialState)
+
+        // resort open lists for greedy strategy
+        if (lookaheadStrategy == LookaheadStrategy.GBFS) {
+            backwardOpenList.reorder(greedyBackwardsComparator)
+            frontierOpenList.reorder(weightedHComparator)
+        }
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {

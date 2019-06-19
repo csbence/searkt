@@ -10,7 +10,7 @@ __author__ = 'Kevin C. Gall'
 
 alg_map = {"A_STAR": "A*", "LSS_LRTA_STAR": "LSS-LRTA*", "SAFE_RTS": "SRTS", "S_ZERO": "S0", "SIMPLE_SAFE": "SS",
            "SINGLE_SAFE": "BEST_SAFE", "SAFE_RTS_TOP": "SRTS_TOP", "TIME_BOUNDED_A_STAR": "TBA*", "CES": "CES",
-           "BACK_ES": "Backward ES", "BI_ES": "Bidirectional ES"}
+           "BACK_ES": "Back-ES", "BI_ES": "Bi-ES"}
 
 
 def read_data(file_name):

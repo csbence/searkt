@@ -2,10 +2,7 @@ package edu.unh.cs.searkt.experiment.configuration
 
 import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.searkt.planner.CommitmentStrategy
-import edu.unh.cs.searkt.planner.SafeRealTimeSearchTargetSelection
-import edu.unh.cs.searkt.planner.SafetyBackup
-import edu.unh.cs.searkt.planner.SafetyProof
+import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
 import edu.unh.cs.searkt.planner.realtime.TBStrategy
 import kotlinx.serialization.Optional
@@ -56,6 +53,8 @@ data class ExperimentConfiguration(
         val timeLimit: Long? = null,
         @Optional
         val expansionLimit: Long? = null,
+        @Optional
+        val lookaheadStrategy: LookaheadStrategy? = null,
 
         // Domain
         @Optional
