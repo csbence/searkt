@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
@@ -106,7 +107,26 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         }
     }
 
-    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), weightedValueComparator) {
+    private val dValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.d < rhs.d -> -1
+            lhs.d > rhs.d -> 1
+            lhs.h < rhs.h -> -1
+            lhs.h > rhs.h -> 1
+            lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
+    private val suboptimalQueueComparator = when (configuration.embeddedAlgorithm) {
+        Planners.OPTIMISTIC -> weightedValueComparator
+        Planners.GREEDY -> hValueComparator
+        Planners.SPEEDY -> dValueComparator
+        else -> throw MetronomeException("Behavior is undifined for the following embedded suboptimal method: ${configuration.embeddedAlgorithm}")
+    }
+
+    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), suboptimalQueueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
     }
@@ -399,4 +419,8 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         actions.reverse()
         return actions
     }
+}
+
+enum class SuboptimalBoundImprovement {
+    FrontierCut, CurrentBestPath, TopKBestPath
 }

@@ -2,12 +2,10 @@ package edu.unh.cs.searkt.experiment.configuration
 
 import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
-import edu.unh.cs.searkt.planner.CommitmentStrategy
-import edu.unh.cs.searkt.planner.SafeRealTimeSearchTargetSelection
-import edu.unh.cs.searkt.planner.SafetyBackup
-import edu.unh.cs.searkt.planner.SafetyProof
+import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.realtime.BackupComparator
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
+import edu.unh.cs.searkt.planner.suboptimal.SuboptimalBoundImprovement
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
@@ -47,7 +45,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
 data class ExperimentConfiguration(
         val domainName: String,
         @Optional val rawDomain: String? = null,
-        val algorithmName: String,
+        val algorithmName: Planners,
         @Optional
         val terminationType: TerminationType = TerminationType.UNLIMITED,
         @Optional val domainPath: String? = null,
@@ -117,5 +115,13 @@ data class ExperimentConfiguration(
 
         // Envelope Search
         @Optional
-        val backupComparator: BackupComparator? = null
+        val backupComparator: BackupComparator? = null,
+
+        // Bounded Suboptimal Exploration
+        @Optional
+        val embeddedAlgorithm: Planners? = null,
+
+        @Optional
+        val suboptimalBoundImprovement: SuboptimalBoundImprovement? = null
+
 )
