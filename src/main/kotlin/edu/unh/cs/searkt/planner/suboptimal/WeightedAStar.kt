@@ -60,12 +60,11 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override val f: Double
             get() = cost + heuristic
 
-
         @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
             return try {
                 val otherCast = other as Node<*>
-                otherCast.hashCode() == this.hashCode()
+                otherCast.state == this.state
             } catch (exp: ClassCastException) {
                 false
             }
@@ -104,6 +103,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             else -> 0
         }
     }
+
 
     private val xupComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
