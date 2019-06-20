@@ -18,7 +18,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for optimistic search is not specified.")
 
-    private val algorithmName: String = configuration.algorithmName
+    private val algorithmName = configuration.algorithmName
 
     var terminationChecker: TerminationChecker? = null
 
@@ -169,7 +169,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                     // if duplicate and is closed add back to open
                     fOpenList.add(successorNode)
                     // only add duplicates back in with original optimistic search
-                    if (algorithmName == Planners.OPTIMISTIC.toString()) {
+                    if (algorithmName == Planners.OPTIMISTIC) {
                         fHatOpenList.add(successorNode)
                     }
                 } else if (isDuplicate && !successorNode.isClosed) {

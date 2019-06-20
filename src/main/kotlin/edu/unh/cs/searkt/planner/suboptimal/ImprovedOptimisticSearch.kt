@@ -19,7 +19,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for optimistic search is not specified.")
 
-    private val algorithmName: String = configuration.algorithmName
+    private val algorithmName = configuration.algorithmName
 
     var terminationChecker: TerminationChecker? = null
 
@@ -127,9 +127,9 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
     }
 
     private val convexComparator = when (algorithmName) {
-        Planners.SXDP.toString() -> xdpComparator
-        Planners.SXUP.toString() -> xupComparator
-        Planners.IOS.toString() -> fValueComparator
+        Planners.SXDP -> xdpComparator
+        Planners.SXUP -> xupComparator
+        Planners.IOS -> fValueComparator
         else -> throw MetronomeException("Unrecognized algorithm name for Improved Optimistic Search")
     }
 
