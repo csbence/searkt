@@ -122,6 +122,7 @@ verbosegc*.txt
 
 # sample configurations
 /configurations/
+configs/
 
 # Python
 __pycache__/

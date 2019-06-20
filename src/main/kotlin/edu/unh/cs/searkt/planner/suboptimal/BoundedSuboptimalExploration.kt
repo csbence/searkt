@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
@@ -15,6 +16,7 @@ import java.util.HashMap
 import kotlin.Comparator
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.sqrt
 
 class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
     private val weight: Double = configuration.weight
@@ -22,10 +24,12 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
 
     var terminationChecker: TerminationChecker? = null
 
+    private val optimisticWeight: Double = (2.0 * weight) - 1.0
+
     var aStarExpansions = 0
     var greedyExpansions = 0
 
-    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
@@ -46,6 +50,10 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         override val dHat: Double
             get() = heuristic
 
+        val xdp: Double
+            get() = (1 / (2 * optimisticWeight)) * ((((2 * optimisticWeight) - 1) *
+                    h) + sqrt(Math.pow(g - h, 2.0) + (4 * optimisticWeight * h * g)))
+
         override fun setIndex(key: Int, index: Int) {
             indexMap[key] = index
         }
@@ -61,11 +69,14 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
 
         var suboptimalCost: Double = 0.0
 
+        @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
-            if (other != null && other is Node<*>) {
-                return state == other.state
+            return try {
+                val otherCast = other as Node<*>
+                otherCast.state == this.state
+            } catch (exp: ClassCastException) {
+                false
             }
-            return false
         }
 
         override fun hashCode(): Int = state.hashCode()
@@ -106,7 +117,37 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         }
     }
 
-    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), weightedValueComparator) {
+    private val dValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.d < rhs.d -> -1
+            lhs.d > rhs.d -> 1
+            lhs.h < rhs.h -> -1
+            lhs.h > rhs.h -> 1
+            lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
+    private val xdpComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.xdp < rhs.xdp -> -1
+            lhs.xdp > rhs.xdp -> 1
+            lhs.g > rhs.g -> -1 // tie breaking on cost
+            lhs.g < rhs.g -> 1
+            else -> 0
+        }
+    }
+
+    private val suboptimalQueueComparator = when (configuration.embeddedAlgorithm) {
+        Planners.OPTIMISTIC -> weightedValueComparator
+        Planners.GREEDY -> hValueComparator
+        Planners.SPEEDY -> dValueComparator
+        Planners.WEIGHTED_A_STAR_XDP -> xdpComparator
+        else -> throw MetronomeException("Behavior is undifined for the following embedded suboptimal method: ${configuration.embeddedAlgorithm}")
+    }
+
+    inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), suboptimalQueueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
     }
@@ -399,4 +440,8 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         actions.reverse()
         return actions
     }
+}
+
+enum class SuboptimalBoundImprovement {
+    FrontierCut, CurrentBestPath, TopKBestPath
 }

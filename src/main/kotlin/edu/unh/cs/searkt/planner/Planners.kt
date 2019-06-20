@@ -34,5 +34,7 @@ enum class Planners {
     TS,
     TIME_BOUNDED_A_STAR,
     ENVELOPE,
-    ALT_ENVELOPE
+    ALT_ENVELOPE,
+    GREEDY,
+    SPEEDY
 }

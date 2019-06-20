@@ -142,7 +142,6 @@ interface Domain<State> {
     fun applyOperator(state: State, op: Operator<State>): State = TODO()
 }
 
-
 data class SuccessorBundle<out State>(val state: State, val action: Action, val actionCost: Double)
 
 interface Operator<in State> : Action {

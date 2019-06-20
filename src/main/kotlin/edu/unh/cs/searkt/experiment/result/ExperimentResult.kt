@@ -7,6 +7,7 @@ import edu.unh.cs.searkt.util.convertNanoUpDouble
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
@@ -65,13 +66,20 @@ class ExperimentResult {
     var expandedNodes: Int = 0
     var generatedNodes: Int = 0
     var planningTime: Long = 0
+    @Transient
     var iterationCount: Long = 0
+    @Transient
     var actionExecutionTime: Long = 0
+    @Transient
     var goalAchievementTime: Long = 0
+    @Transient
     var idlePlanningTime: Long = 0
+    @Transient
     var actions: List<String> = listOf()
+    @Transient
     var timestamp: Long = 0
     var success: Boolean = false
+    @Transient
     var systemProperties: MutableMap<String, String>
     var experimentRunTime: Double = 0.0
 
@@ -87,6 +95,7 @@ class ExperimentResult {
 
     // Racetrack domain
     @Optional
+    @Transient
     var averageVelocity: Double = 0.0
 
     // Safety stats tracking
@@ -95,6 +104,7 @@ class ExperimentResult {
 
     //Comprehensive Envelope stats
     @Optional
+    @Transient
     var backupCount: Int = 0
 
 
@@ -142,7 +152,7 @@ class ExperimentResult {
 }
 
 fun Collection<ExperimentResult>.summary(): String {
-    val algorithmNameLength = this.map { it.configuration.algorithmName }.maxBy { it.length }!!.length
+    val algorithmNameLength = this.map { it.configuration.algorithmName.toString() }.maxBy { it.length }!!.length
     val fieldLength = this.map { (it.expandedNodes / 1000).toString() }.maxBy { it.length }!!.length + 1
 
     this.groupBy { it.configuration.domainName }.forEach { (domainName, domainGroup) ->
@@ -162,7 +172,7 @@ fun Collection<ExperimentResult>.summary(): String {
 
 
             domainGroup.groupBy { it.configuration.algorithmName }.forEach { (algorithmName, algorithmGroup) ->
-                print(algorithmName.padStart(algorithmNameLength) + "|")
+                print(algorithmName.toString().padStart(algorithmNameLength) + "|")
 
                 algorithmGroup.sortedBy { it.configuration.weight }.groupBy { it.configuration.weight!! }.forEach { (weight, weightGroup) ->
                     val avgValue = weightGroup.map(transform).average()

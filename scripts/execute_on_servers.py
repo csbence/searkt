@@ -13,7 +13,7 @@ from tqdm import tqdm
 proc = run('cd ~/IdeaProjects/searkt && ./gradlew jar -x test', stdout=PIPE, stderr=PIPE, shell=True)
 assert proc.returncode == 0
 
-HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
+HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 port_number = 22
 
 # use if your ssh auth key isn't set up
@@ -59,7 +59,7 @@ for future in futures:
 
 remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
-f = open("/home/aifs2/doylew/IdeaProjects/searkt/results/configurations.json")
+f = open("/home/aifs2/doylew/IdeaProjects/searkt/configs/configurations.json")
 worlds = json.load(f)
 tag = "CUSTOM"
 # experiments = create_experiments(worlds)

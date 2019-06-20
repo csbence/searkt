@@ -180,6 +180,18 @@ class ExplicitEstimationSearch<StateType : State<StateType>>(val domain: Domain<
             return diff
         }
 
+        @Suppress("UNCHECKED_CAST")
+        override fun equals(other: Any?): Boolean {
+            return try {
+                val otherCast = other as Node<*>
+                otherCast.state == this.state
+            } catch (exp: ClassCastException) {
+                false
+            }
+        }
+
+        override fun hashCode(): Int = state.hashCode()
+
     }
 
     private fun insertNode(node: Node<StateType>, oldBest: Node<StateType>) {

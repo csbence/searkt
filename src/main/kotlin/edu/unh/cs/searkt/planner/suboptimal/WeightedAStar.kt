@@ -11,7 +11,6 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import edu.unh.cs.searkt.util.SearchQueueElement
-import java.io.File
 import java.util.HashMap
 import kotlin.Comparator
 import kotlin.math.sqrt
@@ -61,12 +60,11 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         override val f: Double
             get() = cost + heuristic
 
-
         @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
             return try {
                 val otherCast = other as Node<*>
-                otherCast.hashCode() == this.hashCode()
+                otherCast.state == this.state
             } catch (exp: ClassCastException) {
                 false
             }
@@ -106,6 +104,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
     }
 
+
     private val xupComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.xup < rhs.xup -> -1
@@ -117,10 +116,10 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private val comparator = when (algorithmName) {
-        Planners.WEIGHTED_A_STAR_XDP.toString() -> xdpComparator
-        Planners.WEIGHTED_A_STAR_XUP.toString() -> xupComparator
-        Planners.WEIGHTED_A_STAR.toString() -> fValueComparator
-        Planners.WEIGHTED_A_STAR_DD.toString() -> fValueComparator
+        Planners.WEIGHTED_A_STAR_XDP -> xdpComparator
+        Planners.WEIGHTED_A_STAR_XUP -> xupComparator
+        Planners.WEIGHTED_A_STAR -> fValueComparator
+        Planners.WEIGHTED_A_STAR_DD -> fValueComparator
         else -> throw MetronomeException("Unrecognized algorithm name for Weighted A*")
     }
 
@@ -176,7 +175,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                     actionCost = successor.actionCost
                 }
                 if (isDuplicate && !successorNode.open) {
-                    if (algorithmName == Planners.WEIGHTED_A_STAR.toString()) {
+                    if (algorithmName == Planners.WEIGHTED_A_STAR) {
                         openList.add(successorNode)
                     }
                 } else if (isDuplicate && successorNode.open) {
