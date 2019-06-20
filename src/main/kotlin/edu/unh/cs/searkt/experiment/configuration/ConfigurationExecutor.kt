@@ -4,6 +4,7 @@ package edu.unh.cs.searkt.experiment.configuration
 
 import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.Domain
+import edu.unh.cs.searkt.environment.DomainInstance
 import edu.unh.cs.searkt.environment.Domains
 import edu.unh.cs.searkt.environment.Domains.*
 import edu.unh.cs.searkt.environment.State
@@ -28,7 +29,6 @@ import edu.unh.cs.searkt.experiment.OfflineExperiment
 import edu.unh.cs.searkt.experiment.RealTimeExperiment
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
-import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.Planners.*
 import edu.unh.cs.searkt.planner.RealTimePlanner
 import edu.unh.cs.searkt.planner.anytime.AnytimeRepairingAStar
@@ -159,7 +159,7 @@ object ConfigurationExecutor {
 
         val domain = Domains.valueOf(domainName)
         return when (domain) {
-            PANCAKE -> executePancakeProblem(configuration, domainStream)
+            PANCAKE -> executeDomain(configuration, PancakeIO.parseFromStream(domainStream, configuration.actionDuration))
             HEAVY_PANCAKE -> executeHeavyPancakeProblem(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4 -> executeSlidingTilePuzzle(configuration, domainStream)
             SLIDING_TILE_PUZZLE_4_HEAVY -> executeHeavySlidingTilePuzzle(configuration, domainStream)
@@ -293,6 +293,9 @@ object ConfigurationExecutor {
         return executeDomain(configuration, acrobotInstance.domain, acrobotInstance.initialState)
     }
 
+    private fun <StateType : State<StateType>> executeDomain(configuration: ExperimentConfiguration, domainInstance: DomainInstance<StateType>) =
+            executeDomain(configuration, domainInstance.domain, domainInstance.initialState)
+
     private fun <StateType : State<StateType>> executeDomain(configuration: ExperimentConfiguration, domain: Domain<StateType>, initialState: StateType): ExperimentResult {
         val algorithmName = configuration.algorithmName
         val seed = configuration.domainSeed
@@ -303,17 +306,16 @@ object ConfigurationExecutor {
             initialState
         }
 
-        if (algorithmName == Planners.A_STAR.toString()) {
-            configuration.weight = 1.0
-        }
-
-        return when (Planners.valueOf(algorithmName)) {
+        return when (algorithmName) {
             BOUNDED_SUBOPTIMAL_EXPLORATION -> executeOfflineSearch(BoundedSuboptimalExploration(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_DD -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_XDP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             WEIGHTED_A_STAR_XUP -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
-            A_STAR -> executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            A_STAR -> {
+                if (configuration.weight != 1.0) throw MetronomeException("A* is a shorthand for wA* with weight=1.0 thus the weight can't be ${configuration.weight}.")
+                executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
+            }
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ES -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)

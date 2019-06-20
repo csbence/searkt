@@ -1,5 +1,6 @@
 package edu.unh.cs.searkt.environment.pancake
 
+import edu.unh.cs.searkt.environment.DomainInstance
 import java.io.InputStream
 import java.util.*
 
@@ -27,4 +28,4 @@ object PancakeIO {
 }
 
 class InvalidPancakeProblemException(message: String, e: Exception? = null) : RuntimeException(message, e)
-data class PancakeProblemInstance(val domain: PancakeProblem, val initialState: PancakeState)
+data class PancakeProblemInstance(override val domain: PancakeProblem, override val initialState: PancakeState) : DomainInstance<PancakeState>
