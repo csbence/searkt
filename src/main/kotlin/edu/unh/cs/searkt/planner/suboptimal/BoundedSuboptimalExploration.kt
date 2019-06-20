@@ -123,6 +123,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         Planners.OPTIMISTIC -> weightedValueComparator
         Planners.GREEDY -> hValueComparator
         Planners.SPEEDY -> dValueComparator
+        Planners.WEIGHTED_A_STAR_XDP -> TODO("Will pls add the comp function here")
         else -> throw MetronomeException("Behavior is undifined for the following embedded suboptimal method: ${configuration.embeddedAlgorithm}")
     }
 
