@@ -28,11 +28,15 @@ import java.util.*
  * The parameter 'p' introduces stochasticity to the problem: with probability p the car will
  * fail its action and maintain its speed.
  *
+ * The isSafe domain parameter converts this into Racetrack with "airbags" - instead of dead ends,
+ * collisions cause the agent to stop and spend multiple actions restarting
+ *
  */
 class RaceTrack(val width: Int,
                 val height: Int,
                 val obstacles: Set<Location>,
                 val finishLine: Set<Location>,
+                val isSafe: Boolean,
                 val actionDuration: Long) : Domain<RaceTrackState> {
 
     /** Pre-calculated heuristic value store */
@@ -68,7 +72,7 @@ class RaceTrack(val width: Int,
         while (queue.isNotEmpty()) {
             val (location, goalDistance) = queue.poll()
 
-            predecessors(RaceTrackState(location.x, location.y, 0, 0))
+            predecessors(RaceTrackState(location.x, location.y, 0, 0, 0))
                     .filter { it.action != NO_OP }
                     .map { Location(it.state.x, it.state.y) }
                     .filter { it !in discovered }
@@ -105,54 +109,80 @@ class RaceTrack(val width: Int,
     override fun successors(state: RaceTrackState): List<SuccessorBundle<RaceTrackState>> {
         val successors: MutableList<SuccessorBundle<RaceTrackState>> = arrayListOf()
 
+        // if agent has collided, perform startup action
+        if (state.startupCounter > 0) {
+            successors.add(SuccessorBundle(
+                    RaceTrackState(state.x, state.y, state.dX, state.dY, state.startupCounter - 1),
+                    RaceTrackAction.STARTUP,
+                    actionCost = actionDuration.toDouble()
+            ))
+            return successors
+        }
+
         for (action in RaceTrackAction.values()) {
+            if (action == RaceTrackAction.STARTUP) continue
+
             val newDX = state.dX + action.aX
             val newDY = state.dY + action.aY
 
             if (newDX == 0 && newDY == 0) {
                 // Identity and stop action
                 successors.add(SuccessorBundle(
-                        state = RaceTrackState(state.x, state.y, newDX, newDY),
+                        state = RaceTrackState(state.x, state.y, newDX, newDY, 0),
                         action = action,
                         actionCost = actionDuration.toDouble())
                 )
                 continue
             }
 
-            //filter on legal moves (not too fast and on the obstacles)
-            if (isCollisionFree(state.x, state.y, newDX, newDY)) {
-                successors.add(SuccessorBundle(
-                        RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY),
+            // filter on legal moves (not too fast and on the obstacles)
+            // if domain is configured as safe add airbags collision outcome
+            val collisionSite = detectCollision(state.x, state.y, newDX, newDY)
+            when {
+                collisionSite == null -> successors.add(SuccessorBundle(
+                            RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY, 0),
+                            action,
+                            actionCost = actionDuration.toDouble()))
+                isSafe -> successors.add(SuccessorBundle(
+                        collisionSite,
                         action,
-                        actionCost = actionDuration.toDouble()))
+                        actionCost = actionDuration.toDouble()
+                ))
             }
         }
 
         return successors
     }
 
-    fun isCollisionFree(x: Int, y: Int, dX: Int, dY: Int): Boolean {
+    /**
+     * @return The state just prior to a collision, if applicable
+     */
+    fun detectCollision(x: Int, y: Int, dX: Int, dY: Int): RaceTrackState? {
         val distance = round(sqrt(pow(dX.toDouble(), 2.0) + pow(dY.toDouble(), 2.0)))
 
-        var xRunnung = x.toDouble()
+        var xRunning = x.toDouble()
         var yRunning = y.toDouble()
 
         val dt = 1.0 / distance
-        var valid = true
+        var collisionState: RaceTrackState? = null
 
         val stepX = dX * dt
         val stepY = dY * dt
 
+        // Check that all cells in traversed distance are clear
         for (i in 1..distance.toInt()) {
-            xRunnung += stepX
+            val lastX = xRunning
+            val lastY = yRunning
+
+            xRunning += stepX
             yRunning += stepY
 
-            if (!isLegalLocation(Math.round(xRunnung).toInt(), Math.round(yRunning).toInt())) {
-                valid = false
-                break
+            if (!isLegalLocation(Math.round(xRunning).toInt(), Math.round(yRunning).toInt())) {
+                collisionState = RaceTrackState(Math.round(lastX).toInt(), Math.round(lastY).toInt(),
+                        0, 0, actionDuration.toInt())
             }
         }
-        return valid
+        return collisionState
     }
 
     /**
@@ -227,20 +257,20 @@ class RaceTrack(val width: Int,
             for (xS in 0..maxXSpeed) {
                 for (yS in 0..maxYSpeed) {
                     when {
-                        xS == 0 && yS == 0 -> list.add(RaceTrackState(x, y, xS, yS))
+                        xS == 0 && yS == 0 -> list.add(RaceTrackState(x, y, xS, yS, 0))
                         xS == 0 -> {
-                            list.add(RaceTrackState(x, y, xS, yS))
-                            list.add(RaceTrackState(x, y, xS, -yS))
+                            list.add(RaceTrackState(x, y, xS, yS, 0))
+                            list.add(RaceTrackState(x, y, xS, -yS, 0))
                         }
                         yS == 0 -> {
-                            list.add(RaceTrackState(x, y, xS, yS))
-                            list.add(RaceTrackState(x, y, -xS, yS))
+                            list.add(RaceTrackState(x, y, xS, yS, 0))
+                            list.add(RaceTrackState(x, y, -xS, yS, 0))
                         }
                         else -> {
-                            list.add(RaceTrackState(x, y, xS, yS))
-                            list.add(RaceTrackState(x, y, -xS, yS))
-                            list.add(RaceTrackState(x, y, xS, -yS))
-                            list.add(RaceTrackState(x, y, -xS, -yS))
+                            list.add(RaceTrackState(x, y, xS, yS, 0))
+                            list.add(RaceTrackState(x, y, -xS, yS, 0))
+                            list.add(RaceTrackState(x, y, xS, -yS, 0))
+                            list.add(RaceTrackState(x, y, -xS, -yS, 0))
                         }
                     }
                 }
@@ -266,7 +296,7 @@ class RaceTrack(val width: Int,
                 .mapTo(locations) { it.key }
 
         locations[Random(seed).nextInt(locations.size)].let {
-            return RaceTrackState(it.x, it.y, 0, 0)
+            return RaceTrackState(it.x, it.y, 0, 0, 0)
         }
     }
 

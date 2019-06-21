@@ -176,7 +176,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 experimentResult.apply {
                     errorMessage = "The planner exceeded the expansion limit: $expansionLimit"
                 }
-                //return experimentResult
+                return experimentResult
             }
 
             if (stepLimit <= actions.size) {

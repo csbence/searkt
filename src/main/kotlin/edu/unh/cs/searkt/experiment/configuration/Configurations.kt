@@ -22,6 +22,7 @@ enum class Configurations(val configurationName: String) {
     LOOKAHEAD_STRATEGY("lookaheadStrategy"),
     // Domain-specific configurations
     DOMAIN_SEED("domainSeed"),
+    IS_SAFE("isSafe"),
     // Real-time search configurations
     LOOKAHEAD_TYPE("lookaheadType"),
     COMMITMENT_STRATEGY("commitmentStrategy"),

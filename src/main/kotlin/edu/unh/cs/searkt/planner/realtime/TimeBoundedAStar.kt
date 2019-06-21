@@ -34,7 +34,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
-    private val strategy = configuration.timeBoundedSearchStrategy ?: TBStrategy.A_STAR
+    private val strategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val weight = configuration.weight ?: 1.0
 
     //HARD CODED for testing. Should be configurable
@@ -51,7 +51,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     // The cost values are initialized to infinity
     override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000,
             when (strategy){
-                TBStrategy.GBFS -> heuristicComparator
+                LookaheadStrategy.GBFS -> heuristicComparator
                 else -> fValueComparator
             })
 

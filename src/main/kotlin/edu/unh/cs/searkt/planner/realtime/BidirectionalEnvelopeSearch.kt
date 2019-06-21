@@ -620,6 +620,10 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         this.incrementCounter(EXTRACT_TEMP_PATH_COUNTER)
 
         val targetNode = openList.peek() ?: throw MetronomeException("Cannot construct temporary path from empty open list")
+        if (targetNode.state == currentAgentState) {
+            // we do 1-step lookahead
+        }
+
         pathStates = mutableSetOf(targetNode.state)
         cachedPath = LinkedList()
 

@@ -6,7 +6,7 @@ import java.util.*
 
 object RaceTrackIO {
 
-    fun parseFromStream(input: InputStream, actionDuration: Long, sizeMultiplier: Int = 1): RaceTrackInstance {
+    fun parseFromStream(input: InputStream, actionDuration: Long, isSafe: Boolean, sizeMultiplier: Int = 1): RaceTrackInstance {
         val inputScanner = Scanner(input)
 
         val rowCount: Int
@@ -59,10 +59,11 @@ object RaceTrackIO {
                 rowCount * sizeMultiplier,
                 blockedCells.toHashSet(),
                 endLocations.toHashSet(),
+                isSafe,
                 actionDuration
         )
 
-        val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0)
+        val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0, 0)
 
         return RaceTrackInstance(raceTrack, startState)
     }

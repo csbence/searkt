@@ -36,33 +36,35 @@ fun generateConfigurations(): String {
 //            Domains.GRID_WORLD to "input/vacuum/minima/minima0.vw"
 //            Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_0"
 //            Domains.GRID_WORLD to "input/vacuum/cups.vw"
+            Domains.RACETRACK to "input/racetrack/hansen-bigger.track"
     )
 
-//    domains += (1..99).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+//    domains += (1..1).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += listOf(4).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (0..50).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
+//    domains += (0..10).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
 
     // Maximum time per experiment
     val timeLimit = TimeUnit.NANOSECONDS.convert(999, TimeUnit.MINUTES)
 
 
     val domainExtras = listOf(
-            Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0..2L)
+            Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), 0..2L),
+            Triple(Domains.RACETRACK, Configurations.IS_SAFE.toString(), listOf(false))
     )
 
-    val weights = listOf(1.0, 1.3, 2.6, 3.0, 5.0, 10.0, 15.0)
+    val weights = listOf(1.0)//, 1.3, 2.6, 3.0, 5.0, 10.0, 15.0)
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
-            planners = listOf(Planners.BI_ES/*, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR, Planners.BACK_ES*/),
-            actionDurations = listOf(10),//, 20, 50, 100, 200, 500),
-//            planners = listOf(Planners.WEIGHTED_A_STAR),
-//            actionDurations = listOf(1),
+//            planners = listOf(Planners.BI_ES, Planners.LSS_LRTA_STAR, Planners.TIME_BOUNDED_A_STAR, Planners.BACK_ES),
+//            actionDurations = listOf(10),//, 20, 50, 100, 200, 500),
+            planners = listOf(Planners.WEIGHTED_A_STAR),
+            actionDurations = listOf(1),
             timeLimit = timeLimit,
             stepLimit = 1000000,
             terminationType = TerminationType.EXPANSION,
-            expansionLimit = 5000000,
+            expansionLimit = 50000000,
             lookaheadType = LookaheadType.DYNAMIC,
             plannerExtras = listOf(
                     Triple(Planners.BI_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
@@ -70,11 +72,13 @@ fun generateConfigurations(): String {
                     Triple(Planners.BI_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.GBFS)),
                     Triple(Planners.BACK_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.BACK_ES, Configurations.WEIGHT, weights),
+                    Triple(Planners.BACK_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.GBFS)),
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.MULTIPLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.WEIGHT, weights),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKUP_RATIO, listOf(Double.MAX_VALUE)),
+                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.GBFS)),
                     Triple(Planners.WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = domainExtras

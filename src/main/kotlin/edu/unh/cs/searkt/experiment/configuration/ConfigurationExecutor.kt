@@ -238,7 +238,7 @@ object ConfigurationExecutor {
     }
 
     private fun executeRaceTrack(configuration: ExperimentConfiguration, domainStream: InputStream): ExperimentResult {
-        val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration)
+        val raceTrackInstance = RaceTrackIO.parseFromStream(domainStream, configuration.actionDuration, configuration.isSafe)
         return executeDomain(configuration, raceTrackInstance.domain, raceTrackInstance.initialState)
     }
 

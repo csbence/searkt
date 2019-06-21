@@ -53,7 +53,7 @@ fun main(args: Array<String>) {
     // println(rawResults)
 
     // Print results
-     val outputPath = "results/results_bi.json"
+     val outputPath = "results/results_test.json"
      kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
      System.err.println("\nResult has been saved to $outputPath")
 

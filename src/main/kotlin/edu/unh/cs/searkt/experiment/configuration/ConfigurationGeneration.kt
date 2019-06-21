@@ -36,7 +36,7 @@ fun generateConfigurations(
         terminationType: TerminationType? = null,
         lookaheadType: LookaheadType? = null,
         stepLimit: Long? = null,
-        domainExtras: List<Triple<Domains, String, Iterable<Long>>>? = null,
+        domainExtras: List<Triple<Domains, String, Iterable<Any>>>? = null,
         plannerExtras: Iterable<Triple<Planners, Any, Iterable<Any>>>? = null): Collection<Map<String, Any>> {
 
     var configurations: Collection<Map<String, Any>> = domains.map {

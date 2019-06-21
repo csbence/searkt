@@ -17,5 +17,6 @@ enum class RaceTrackAction(val aX: Int, val aY: Int) : Action {
     RIGHT(1, 0),
     LEFT_DOWN(-1, -1),
     DOWN(0, -1),
-    RIGHT_DOWN(1, -1)
+    RIGHT_DOWN(1, -1),
+    STARTUP(0, 0)
 }

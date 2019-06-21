@@ -23,7 +23,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             val successorState = successorState(state, action.relativeX, action.relativeY, action)
 
             if (successorState != null) {
-                successorBundles.add(SuccessorBundle(successorState, action, 1.0))
+                successorBundles.add(SuccessorBundle(successorState, action, actionDuration.toDouble()))
             }
         }
 
@@ -79,7 +79,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             }
         }
 
-        return manhattanSum
+        return manhattanSum * actionDuration
     }
 
     override fun heuristic(startState: SlidingTilePuzzle4State, endState: SlidingTilePuzzle4State): Double {
@@ -104,7 +104,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             }
         }
 
-        return manhattanSum
+        return manhattanSum * actionDuration
     }
 
     fun initialHeuristic(state: SlidingTilePuzzle4State): Double {
@@ -120,10 +120,10 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
             }
         }
 
-        return manhattanSum
+        return manhattanSum * actionDuration
     }
 
-    override fun distance(state: SlidingTilePuzzle4State) = state.heuristic
+    override fun distance(state: SlidingTilePuzzle4State) = state.heuristic / actionDuration
 
     override fun isGoal(state: SlidingTilePuzzle4State) = state.heuristic == 0.0 && state == goalState
 

@@ -61,6 +61,8 @@ data class ExperimentConfiguration(
         var domainSeed: Long? = null,
         @Optional
         val domainSizeMultiplier: Int = 1,
+        @Optional
+        val isSafe: Boolean = false,
 
         // AStar
         @Optional
