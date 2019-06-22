@@ -104,17 +104,14 @@ for future in futures:
 
 
 def save_results(results, tag, path_prefix=None):
-    l_results = []
     o_results = []
     file_handle = ""
     if path_prefix is not None:
         file_handle += path_prefix
     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
     f = open(file_handle, 'w+')
-    for result in results:
-        resDict = json.loads(result)[0] # loads as array
-        resDict.pop('actions', None)
-        o_results.append(resDict)
+    for exp_result in results:
+        o_results.append(json.loads(exp_result))
     f.write(json.dumps(o_results))
     f.close()
     return file_handle
