@@ -66,7 +66,7 @@ fun generateConfigurations(): String {
             timeLimit = timeLimit,
             stepLimit = 1000000,
             terminationType = TerminationType.EXPANSION,
-            expansionLimit = 50_000_000,
+            expansionLimit = 10_000_000,
             lookaheadType = LookaheadType.DYNAMIC,
             plannerExtras = listOf(
                     Triple(Planners.BI_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
