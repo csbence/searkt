@@ -36,8 +36,8 @@ fun main(args: Array<String>) {
     val runtime = Runtime.getRuntime()
 
     // Leave at least 2 threads for the GC
-//    val threadLimit = runtime.availableProcessors() - 2
-    val threadLimit = 2
+    val threadLimit = runtime.availableProcessors() - 2
+//    val threadLimit = 2
 
     // Assume that an experiment uses 2 gigs
     val memoryLimit = (runtime.maxMemory() shr 31).toInt()
@@ -53,12 +53,12 @@ fun main(args: Array<String>) {
     // println(rawResults)
 
     // Print results
-     val outputPath = "results/results_test.json"
-     kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
-     System.err.println("\nResult has been saved to $outputPath")
+//     val outputPath = "results/results_test.json"
+//     kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(rawResults) }
+//     System.err.println("\nResult has been saved to $outputPath")
 
     // System.err.println(results.summary())
-//    println('#') // Indicator for the parser
-//    println(rawResults) // This should be the last printed line
+    println('#') // Indicator for the parser
+    println(rawResults) // This should be the last printed line
 }
 
