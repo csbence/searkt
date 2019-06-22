@@ -459,6 +459,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                     frontierOpenList.add(it)
                 }
             }
+            terminationChecker.notifyExpansion()
         }
 
         return openList.peek() ?: throw GoalNotReachableException("Local search open list empty")

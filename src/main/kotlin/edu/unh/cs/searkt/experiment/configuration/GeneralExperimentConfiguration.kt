@@ -4,7 +4,6 @@ import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
-import edu.unh.cs.searkt.planner.realtime.TBStrategy
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
@@ -111,10 +110,11 @@ data class ExperimentConfiguration(
         //Envelope-based searching
         @Optional
         val backupRatio: Double? = null,
+        // strategy for searching within the envelope
+        @Optional
+        val envelopeSearchStrategy: LookaheadStrategy? = null,
 
         // TBA*
         @Optional
-        val tbaOptimization: TBAOptimization? = null,
-        @Optional
-        val timeBoundedSearchStrategy: TBStrategy? = null
+        val tbaOptimization: TBAOptimization? = null
 )

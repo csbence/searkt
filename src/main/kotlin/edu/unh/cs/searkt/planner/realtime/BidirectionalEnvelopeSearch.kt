@@ -50,6 +50,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     // Configuration
     private val weight = configuration.weight ?: 1.0
     private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
+    private val envelopeStrategy = configuration.envelopeSearchStrategy ?: lookaheadStrategy // align w/ general lookahead
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
@@ -146,17 +147,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
     }
 
-    private val weightedHComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsH = lhs.heuristic * weight
-        val rhsH = rhs.heuristic * weight
-
-        when {
-            lhsH < rhsH -> -1
-            lhsH > rhsH -> 1
-            else -> 0
-        }
-    }
-
     private val backwardsComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsF = lhs.backwardG + (lhs.backwardH * weight)
         val rhsF = rhs.backwardG + (rhs.backwardH * weight)
@@ -172,15 +162,23 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     }
 
     private val greedyBackwardsComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsH = lhs.backwardH * weight
-        val rhsH = rhs.backwardH * weight
-
         // Still break ties on G
         when {
-            lhsH < rhsH -> -1
-            lhsH > rhsH -> 1
+            lhs.backwardH < rhs.backwardH -> -1
+            lhs.backwardH > rhs.backwardH -> 1
             lhs.backwardG > rhs.backwardG -> -1
             lhs.backwardG < rhs.backwardG -> 1
+            else -> 0
+        }
+    }
+
+    private val greedyLocalHComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
+        // break ties on G
+        when {
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            lhs.cost > rhs.cost -> -1
+            lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
@@ -195,20 +193,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             lhsF > rhsF -> 1
             lhs.heuristic < rhs.heuristic -> -1
             lhs.heuristic > rhs.heuristic -> 1
-            else -> 0
-        }
-    }
-
-    private val greedyLocalHComparator = Comparator<BiEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsH = lhs.heuristic * weight
-        val rhsH = rhs.heuristic * weight
-
-        // break ties on G
-        when {
-            lhsH < rhsH -> -1
-            lhsH > rhsH -> 1
-            lhs.cost > rhs.cost -> -1
-            lhs.cost < rhs.cost -> 1
             else -> 0
         }
     }
@@ -273,7 +257,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         // reset comparators if lookahead is greedy
         if (lookaheadStrategy == LookaheadStrategy.GBFS) {
-            frontierOpenList.reorder(weightedHComparator)
+            frontierOpenList.reorder(heuristicComparator)
+        }
+        if (envelopeStrategy == LookaheadStrategy.GBFS) {
             backwardOpenList.reorder(greedyBackwardsComparator)
             openList.reorder(greedyLocalHComparator)
         }
@@ -284,7 +270,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         val avgCachedPathSize = this.attributes[CACHED_PATH_LENGTH]!!.average()
 
         results.attributes["avgCachedPathLength"] = avgCachedPathSize
-        results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER]!!
+        results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER] ?: 0
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
@@ -420,7 +406,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                         predecessorNode.backwardG = MAX_VALUE
                         predecessorNode.backwardClosed = false
                         predecessorNode.backwardH = domain.heuristic(forwardRoot?.state ?: throw MetronomeException("No forward target set"),
-                                predecessorNode.state) * weight
+                                predecessorNode.state)
                         predecessorNode.backwardParent = null
                     }
 
@@ -471,7 +457,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                         successorNode.cost = MAX_VALUE
                         successorNode.closed = false
                         successorNode.heuristic = domain.heuristic(successorNode.state,
-                                frontierTarget?.state ?: throw MetronomeException("No frontier target set")) * weight
+                                frontierTarget?.state ?: throw MetronomeException("No frontier target set"))
                         successorNode.forwardParent = null
                     }
 
@@ -732,6 +718,12 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
     @Suppress("UNUSED_PARAMETER")
     private fun printMessage(msg: String) = 0//println(msg)
+
+    enum class BiESConfiguration(val key: String) {
+        ENVELOPE_SEARCH_STRATEGY("envelopeSearchStrategy");
+
+        override fun toString(): String = key
+    }
 }
 
 

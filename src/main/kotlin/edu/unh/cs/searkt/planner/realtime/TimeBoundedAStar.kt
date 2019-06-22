@@ -399,14 +399,9 @@ enum class TBAOptimization {
     NONE, SHORTCUT, THRESHOLD
 }
 
-enum class TBStrategy {
-    A_STAR, GBFS
-}
-
 enum class TBAStarConfiguration(val key: String) {
     TBA_OPTIMIZATION("tbaOptimization"),
-    BACKUP_RATIO("backupRatio"),
-    TB_STRATEGY("timeBoundedSearchStrategy");
+    BACKUP_RATIO("backupRatio");
 
     override fun toString(): String = key
 }

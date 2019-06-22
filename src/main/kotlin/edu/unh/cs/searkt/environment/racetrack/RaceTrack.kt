@@ -6,6 +6,7 @@ import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.SuccessorBundle
 import edu.unh.cs.searkt.environment.location.Location
 import edu.unh.cs.searkt.environment.racetrack.RaceTrackAction.NO_OP
+import edu.unh.cs.searkt.environment.racetrack.RaceTrackAction.STARTUP
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import kotlinx.io.PrintWriter
 import java.lang.Math.*
@@ -73,7 +74,7 @@ class RaceTrack(val width: Int,
             val (location, goalDistance) = queue.poll()
 
             predecessors(RaceTrackState(location.x, location.y, 0, 0, 0))
-                    .filter { it.action != NO_OP }
+                    .filter { it.action !in listOf(NO_OP, STARTUP) }
                     .map { Location(it.state.x, it.state.y) }
                     .filter { it !in discovered }
                     .forEach {
@@ -113,14 +114,14 @@ class RaceTrack(val width: Int,
         if (state.startupCounter > 0) {
             successors.add(SuccessorBundle(
                     RaceTrackState(state.x, state.y, state.dX, state.dY, state.startupCounter - 1),
-                    RaceTrackAction.STARTUP,
+                    STARTUP,
                     actionCost = actionDuration.toDouble()
             ))
             return successors
         }
 
         for (action in RaceTrackAction.values()) {
-            if (action == RaceTrackAction.STARTUP) continue
+            if (action == STARTUP) continue
 
             val newDX = state.dX + action.aX
             val newDY = state.dY + action.aY
@@ -157,7 +158,7 @@ class RaceTrack(val width: Int,
     /**
      * @return The state just prior to a collision, if applicable
      */
-    fun detectCollision(x: Int, y: Int, dX: Int, dY: Int): RaceTrackState? {
+    private fun detectCollision(x: Int, y: Int, dX: Int, dY: Int): RaceTrackState? {
         val distance = round(sqrt(pow(dX.toDouble(), 2.0) + pow(dY.toDouble(), 2.0)))
 
         var xRunning = x.toDouble()
@@ -170,17 +171,20 @@ class RaceTrack(val width: Int,
         val stepY = dY * dt
 
         // Check that all cells in traversed distance are clear
+        var lastX = xRunning
+        var lastY = yRunning
         for (i in 1..distance.toInt()) {
-            val lastX = xRunning
-            val lastY = yRunning
-
             xRunning += stepX
             yRunning += stepY
 
             if (!isLegalLocation(Math.round(xRunning).toInt(), Math.round(yRunning).toInt())) {
                 collisionState = RaceTrackState(Math.round(lastX).toInt(), Math.round(lastY).toInt(),
                         0, 0, actionDuration.toInt())
+                break
             }
+
+            lastX = xRunning
+            lastY = yRunning
         }
         return collisionState
     }
