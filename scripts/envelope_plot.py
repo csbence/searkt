@@ -31,7 +31,9 @@ def construct_data_frame(data):
 
 
 def flatten(experiment):
-    experiment_configuration = experiment.pop('configuration')
+    experiment_configuration = {}
+    if 'configuration' in experiment:
+        experiment_configuration = experiment.pop('configuration')
 
     return {**experiment, **experiment_configuration}
 
