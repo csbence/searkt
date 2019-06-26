@@ -46,7 +46,10 @@ class RaceTrack(val width: Int,
     val maxSpeed = max(maxXSpeed, maxYSpeed)
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
+    val collisionStartupActions = actionDuration.toInt()
+
     private val velocities = mutableListOf<Double>()
+    private var crashes = 0
 
     private fun calculateDijkstraHeuristic(): Map<Location, Double> {
         data class Node(val location: Location, val goalDistance: Double)
@@ -144,11 +147,13 @@ class RaceTrack(val width: Int,
                             RaceTrackState(state.x + newDX, state.y + newDY, newDX, newDY, 0),
                             action,
                             actionCost = actionDuration.toDouble()))
-                isSafe -> successors.add(SuccessorBundle(
-                        collisionSite,
-                        action,
-                        actionCost = actionDuration.toDouble()
-                ))
+                isSafe -> {
+                    successors.add(SuccessorBundle(
+                            collisionSite,
+                            action,
+                            actionCost = actionDuration.toDouble()
+                    ))
+                }
             }
         }
 
@@ -179,7 +184,7 @@ class RaceTrack(val width: Int,
 
             if (!isLegalLocation(Math.round(xRunning).toInt(), Math.round(yRunning).toInt())) {
                 collisionState = RaceTrackState(Math.round(lastX).toInt(), Math.round(lastY).toInt(),
-                        0, 0, actionDuration.toInt())
+                        0, 0, collisionStartupActions)
                 break
             }
 
@@ -324,10 +329,13 @@ class RaceTrack(val width: Int,
             velocities.add(hypot(xVelocity, yVelocity))
         }
 
+        if (targetState?.startupCounter == collisionStartupActions) crashes++
+
         return targetState
     }
 
     override fun appendDomainSpecificResults(results: ExperimentResult) {
         results.averageVelocity = velocities.average()
+        results.numberOfCrashes = crashes
     }
 }

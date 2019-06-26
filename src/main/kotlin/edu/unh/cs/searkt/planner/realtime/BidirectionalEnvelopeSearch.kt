@@ -46,6 +46,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private val EXTRACT_TEMP_PATH_COUNTER = "tempPath"
     private val TEMP_PATH_LENGTH = "tempPathLength"
     private val CACHED_PATH_LENGTH = "cachedPathLength"
+    private val ENVELOPE_RESETS = "envelopeResets"
 
     // Configuration
     private val weight = configuration.weight ?: 1.0
@@ -54,7 +55,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
-    private var frontierLimitRatio = 0.8
+    private var initFrontierLimitRatio = 0.8
+    private var frontierLimitRatio = initFrontierLimitRatio
 
     // TODO: Configuration for traceback accounting
 
@@ -271,6 +273,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         results.attributes["avgCachedPathLength"] = avgCachedPathSize
         results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER] ?: 0
+        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS] ?: 0
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
@@ -318,6 +321,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         // Remove current state / step from cached path
         val nextEdge = cachedPath.removeFirst()
+        assert(nextEdge.predecessor.state == currentAgentState){"Predecessor is current agent state"}
         pathStates.remove(sourceState)
         nodes[currentAgentState]!!.cachedForwardParent = null
 
@@ -355,27 +359,31 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 continue // we do not need to explore beyond a goal state
             }
 
-            domain.successors(currentNode.state).forEach { successor ->
-                val successorNode = getNode(currentNode, successor)
-                if (successorNode.envelopeVersion != envelopeVersionCounter) {
-                    successorNode.envelopeVersion = envelopeVersionCounter
-                    successorNode.frontierClosed = false
-                    successorNode.pseudoG = domain.heuristic(currentTarget.state, successorNode.state).toLong()
-                }
-
-                // detect if we've seen this node before - no double expansions
-                if (!successorNode.frontierClosed && !frontierOpenList.isOpen(successorNode)) {
-                    frontierOpenList.add(successorNode)
-                }
-            }
-
-            currentNode.frontierClosed = true
+            expandNode(currentNode)
             terminationChecker.notifyExpansion()
-            expandedNodeCount++
         }
 
-        return frontierOpenList.peek() ?: foundGoals.first() ?:
-        throw GoalNotReachableException("Open list is empty.")
+        return frontierOpenList.peek() ?:
+            if (foundGoals.isEmpty()) throw GoalNotReachableException("Open list is empty.") else foundGoals.first()
+    }
+
+    private fun expandNode(node: BiEnvelopeSearchNode<StateType>) {
+        domain.successors(node.state).forEach { successor ->
+            val successorNode = getNode(node, successor)
+            if (successorNode.envelopeVersion != envelopeVersionCounter) {
+                successorNode.envelopeVersion = envelopeVersionCounter
+                successorNode.frontierClosed = false
+                successorNode.pseudoG = domain.heuristic(node.state, successorNode.state).toLong()
+            }
+
+            // detect if we've seen this node before - no double expansions
+            if (!successorNode.frontierClosed && !frontierOpenList.isOpen(successorNode)) {
+                frontierOpenList.add(successorNode)
+            }
+        }
+
+        expandedNodeCount++
+        node.frontierClosed = true
     }
 
     /**
@@ -399,6 +407,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
                 for (edge in backwardNode.globalPredecessors) {
                     val predecessorNode = edge.predecessor
+
+                    // ensuring the backward search stays within the envelope
+                    if (predecessorNode.envelopeVersion != envelopeVersionCounter) continue
 
                     // reset node
                     if (predecessorNode.backwardSearchIteration != backwardNode.backwardSearchIteration) {
@@ -443,14 +454,22 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 if (terminationChecker.reachedTermination()) break // don't cheat!
 
                 // Forward Expansion
-                // TODO: It's possible to reach the edge of the frontier without having met the backward search
-                // This means that the corridor the agent has taken doesn't reach the backward search yet, but a path
-                // could be expanded later. If these errors are thrown, refactor this
+
+                /* If the forward open list is empty, this means that the agent has taken a corridor
+                 * that the backward search will not. It is possible to expand a path back to the envelope the
+                 * backward search would expand, but in directed domains this scenario more likely means the envelope
+                 * should be reset and try again
+                 */
                 val forwardNode = openList.pop() ?:
-                throw MetronomeException("Forward Search Open list is empty")
+                throw BiSearchOpenEmptyException("Forward Search Open list is empty")
 
                 for (edge in forwardNode.globalSuccessors) {
                     val successorNode = edge.successor
+
+                    // This may seem weird, but we're maintaining the invariant that
+                    // we are searching only within the expanded envelope. This is so
+                    // we don't stray out of the envelope after it's been reset
+                    if (edge.successor.envelopeVersion != envelopeVersionCounter) continue
 
                     if (successorNode.forwardSearchIteration != forwardNode.forwardSearchIteration) {
                         successorNode.forwardSearchIteration = forwardNode.forwardSearchIteration
@@ -490,6 +509,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         } catch (ex: BiSearchOpenEmptyException) {
             // clear envelope entirely including cached paths and bi-search.
             // select next action based on 1-step lookahead and seed envelope with that state
+            printMessage(ex.message ?: "")
             resetEnvelope()
         }
 
@@ -499,6 +519,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun reSeedSearch(forwardSeed: BiEnvelopeSearchNode<StateType>,
                              frontierSeed: BiEnvelopeSearchNode<StateType>) {
         if (backwardOpenList.isEmpty()) {
+            backwardIterationCounter++ // invalidate prior backward search
+
             if (foundGoals.size > 0) {
                 foundGoals.forEach { node ->
                     node.backwardSearchIteration = backwardIterationCounter
@@ -523,6 +545,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         if (openList.isEmpty()) {
+            forwardIterationCounter++ //invalidate prior search
+
             forwardSeed.cost = 0
             forwardSeed.heuristic = domain.heuristic(forwardSeed.state, frontierTarget!!.state)
             forwardSeed.forwardSearchIteration = forwardIterationCounter
@@ -575,8 +599,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         currentNode = intersectionNode
-        while (currentNode != frontierTarget) {
-            val edge = currentNode.backwardParent ?: throw MetronomeException("Cannot trace path to frontier target")
+        while (currentNode != frontierTarget && !domain.isGoal(currentNode.state)) {
+            val edge = currentNode.backwardParent ?:
+                throw MetronomeException("Cannot trace path to frontier target")
 
             newPath.addLast(edge)
             currentNode = edge.successor
@@ -605,9 +630,15 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun extractTemporaryPath() {
         this.incrementCounter(EXTRACT_TEMP_PATH_COUNTER)
 
-        val targetNode = openList.peek() ?: throw MetronomeException("Cannot construct temporary path from empty open list")
+        val targetNode = if (openList.isEmpty()) {
+            resetEnvelope() // caches 1-step lookahead as path
+            return
+        } else {
+            openList.peek()!!
+        }
+
         if (targetNode.state == currentAgentState) {
-            // we do 1-step lookahead
+            throw MetronomeException("Current state is target?")
         }
 
         pathStates = mutableSetOf(targetNode.state)
@@ -635,38 +666,40 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun clearBackwardSearch() {
         backwardOpenList.clear()
         frontierTarget = null
-
-        backwardIterationCounter++ // invalidate prior backward search
     }
 
     private fun clearForwardSearch() {
         openList.clear()
         forwardRoot = null
-
-        forwardIterationCounter++ // invalidate prior forward search
     }
 
     // Reset envelope by clearing searches and frontier. Choose the next move via a 1-step lookahead and seed
     // the frontier with the chosen successor
     private fun resetEnvelope() {
+        this.incrementCounter(ENVELOPE_RESETS)
+
         clearSearch()
-        frontierOpenList.clear()
 
         val agentNode = nodes[currentAgentState]!!
-        var target: BiSearchEdge<BiEnvelopeSearchNode<StateType>>? = null
-        for (edge in agentNode.globalSuccessors) {
-            if (target == null || edge.actionCost < target.actionCost) {
-                target = edge
-            }
-        }
+        val target = agentNode.globalSuccessors.minBy{ it.successor.heuristic }
 
         pathStates = mutableSetOf(target!!.predecessor.state, target.successor.state)
         cachedPath = LinkedList()
         cachedPath.add(target)
+
+        // reset frontier
+        frontierOpenList.clear()
+        envelopeVersionCounter++
+
+        target.successor.frontierClosed = false
+        target.successor.envelopeVersion = envelopeVersionCounter
+        target.successor.pseudoG = 0
         frontierOpenList.add(target.successor)
 
-        frontierLimitRatio = 0.5 // reset in case a goal had been found and this was changed
-        envelopeVersionCounter++
+        frontierLimitRatio = initFrontierLimitRatio // reset in case a goal had been found and this was changed
+        foundGoals.clear() // sad face
+
+
     }
 
     /**

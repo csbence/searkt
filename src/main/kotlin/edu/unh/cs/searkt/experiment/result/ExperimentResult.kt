@@ -88,6 +88,8 @@ class ExperimentResult {
     // Racetrack domain
     @Optional
     var averageVelocity: Double = 0.0
+    @Optional
+    var numberOfCrashes: Int = 0
 
     // Safety stats tracking
     @Serializable
