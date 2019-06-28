@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.planner.realtime
 import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.searkt.planner.*
@@ -10,6 +11,7 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.resize
+import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 
@@ -26,13 +28,18 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         RealTimePlanner<StateType>(),
         RealTimePlannerContext<StateType, BackwardEnvelopeSearch.BackwardEnvelopeSearchNode<StateType>> {
 
+    // keys
+    private val ENVELOPE_RESETS = "envelopeResets"
+    private val FORWARD_SEARCH_COUNTER = "forwardSearches"
+
     // Configuration
     private val weight = configuration.weight ?: 1.0
     private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
-    private var frontierLimitRatio = 0.8
+    private val initFrontierLimitRatio = 0.8
+    private var frontierLimitRatio = initFrontierLimitRatio
     // r2 + r3 = 1.0
     private val backwardLimitRatio = 0.6
 //    private val localLimitRatio = 0.4 // implied by above
@@ -42,6 +49,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
             override val state: StateType,
             override var heuristic: Double,
             override var iteration: Long,
+            var envelopeVersion: Long,
             var pseudoG: Long
     ) : RealTimeSearchNode<StateType, BackwardEnvelopeSearchNode<StateType>> {
         override var index = -1 // required to implement RealTimeSearchNode
@@ -121,17 +129,6 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         }
     }
 
-    private val weightedHComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsH = lhs.heuristic * weight
-        val rhsH = rhs.heuristic * weight
-
-        when {
-            lhsH < rhsH -> -1
-            lhsH > rhsH -> 1
-            else -> 0
-        }
-    }
-
     private val backwardsComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
         val lhsF = lhs.backwardG + (lhs.backwardH * weight)
         val rhsF = rhs.backwardG + (rhs.backwardH * weight)
@@ -147,13 +144,10 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
     }
 
     private val greedyBackwardsComparator = Comparator<BackwardEnvelopeSearchNode<StateType>> { lhs, rhs ->
-        val lhsH = lhs.backwardH * weight
-        val rhsH = rhs.backwardH * weight
-
         // Still break ties on G
         when {
-            lhsH < rhsH -> -1
-            lhsH > rhsH -> 1
+            lhs.backwardH < rhs.backwardH -> -1
+            lhs.backwardH > rhs.backwardH -> 1
             lhs.backwardG > rhs.backwardG -> -1
             lhs.backwardG < rhs.backwardG -> 1
             else -> 0
@@ -186,6 +180,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
     // Current and discovered states
     private var rootState: StateType? = null
     private lateinit var currentAgentState: StateType
+    private lateinit var currentAgentNode: BackwardEnvelopeSearchNode<StateType>
     private val foundGoals = mutableSetOf<BackwardEnvelopeSearchNode<StateType>>()
     private var firstDiscoveredGoal: BackwardEnvelopeSearchNode<StateType>? = null
     private var frontierTarget: BackwardEnvelopeSearchNode<StateType>? = null
@@ -195,6 +190,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
     override var iterationCounter = 0L // used by local search
     var backwardIterationCounter = 0L // used by backward search
     var globalIterationCounter = 0L
+    var envelopeVersionCounter = 0L
     // resource leftover
     var timeRemaining = 0L
 
@@ -210,30 +206,36 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
      */
     override fun init(initialState: StateType) {
         val primer = BackwardEnvelopeSearchNode(initialState,
-                0.0, 0L, 0L)
+                0.0, 0L, 0L, 0L)
         nodes[initialState] = primer
         nodes.remove(initialState)
 
         // resort open lists for greedy strategy
         if (lookaheadStrategy == LookaheadStrategy.GBFS) {
             backwardOpenList.reorder(greedyBackwardsComparator)
-            frontierOpenList.reorder(weightedHComparator)
+            frontierOpenList.reorder(heuristicComparator)
         }
+    }
+
+    @ImplicitReflectionSerializer
+    override fun appendPlannerSpecificResults(results: ExperimentResult) {
+        results.attributes["forwardSearches"] = this.counters[this.FORWARD_SEARCH_COUNTER] ?: 0
+        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS] ?: 0
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         if (rootState == null) {
             rootState = sourceState
 
-            val node = BackwardEnvelopeSearchNode(sourceState, domain.heuristic(sourceState), -1, 0)
+            val node = BackwardEnvelopeSearchNode(sourceState, domain.heuristic(sourceState), -1, 0L, 0)
             nodes[sourceState] = node
 
             frontierOpenList.add(node)
             generatedNodeCount++ // the first node
         }
 
-        val agentNode = nodes[sourceState]!!
         currentAgentState = sourceState
+        currentAgentNode = nodes[currentAgentState ]!!
 
         if (domain.isGoal(sourceState)) {
             return emptyList()
@@ -263,7 +265,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         // local search kicks in if we don't have a path yet - generates one with limited knowledge
         timeRemaining += if (cachedPath.size == 0) {
             val localTerminationChecker = getTerminationChecker(configuration, localTimeSlice)
-            localSearch(agentNode, localTerminationChecker)
+            localSearch(currentAgentNode, localTerminationChecker)
 
             localTerminationChecker.remaining()
         } else {
@@ -291,10 +293,15 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                 return firstDiscoveredGoal ?: throw MetronomeException("Goals found, but first discovered not set")
             }
 
-            val currentNode = frontierOpenList.pop()!!
+            val currentNode = if (frontierOpenList.isOpen(currentAgentNode)) {
+                frontierOpenList.remove(currentAgentNode)
+                currentAgentNode
+            } else {
+                frontierOpenList.pop()!!
+            }
+
             if (domain.isGoal(currentNode.state)) {
-                if (firstDiscoveredGoal == null) {
-                    firstDiscoveredGoal = currentNode
+                if (foundGoals.isEmpty()) {
                     frontierLimitRatio = 0.1 // reduce the amount of time spent expanding the frontier starting next iteration
                 }
 
@@ -306,6 +313,11 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
 
             domain.successors(currentNode.state).forEach { successor ->
                 val successorNode = getNode(currentNode, successor)
+                if (successorNode.envelopeVersion != currentNode.envelopeVersion) {
+                    successorNode.envelopeVersion = currentNode.envelopeVersion
+                    successorNode.frontierClosed = false
+                    successorNode.pseudoG = domain.heuristic(currentAgentState, successorNode.state).toLong()
+                }
 
                 // detect if we've seen this node before - no double expansions
                 if (!successorNode.frontierClosed && !frontierOpenList.isOpen(successorNode)) {
@@ -318,8 +330,9 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
             expandedNodeCount++
         }
 
-        return frontierOpenList.peek() ?: firstDiscoveredGoal ?:
-            throw GoalNotReachableException("Open list is empty.")
+        return frontierOpenList.peek() ?:
+            if (foundGoals.isEmpty()) throw GoalNotReachableException("Open list is empty.") else foundGoals.first()
+
     }
 
     /**
@@ -331,6 +344,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
     private fun backwardSearch(seed: BackwardEnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker) {
         // re-seed backward search if we're not in the middle of a search
         if (backwardOpenList.isEmpty()) {
+            backwardIterationCounter++ // invalidate past iteration
             if (foundGoals.size > 0) {
                 foundGoals.forEach { node ->
                     node.backwardSearchIteration = backwardIterationCounter
@@ -339,6 +353,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                     node.backwardParent = null
                     backwardOpenList.add(node)
                 }
+                frontierTarget = foundGoals.first()
             } else {
                 seed.backwardSearchIteration = backwardIterationCounter
                 seed.backwardG = 0
@@ -352,8 +367,11 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
 
         // search into envelope via already-generated predecessors
         backSearch@while (!terminationChecker.reachedTermination()) {
-            val currentNode = backwardOpenList.pop() ?:
-                throw GoalNotReachableException("Backward Search Open list is empty without finding the Agent")
+            if (backwardOpenList.isEmpty()) {
+                resetEnvelope()
+                break // cut this iteration short
+            }
+            val currentNode = backwardOpenList.pop()!!
 
             for (edge in currentNode.globalPredecessors) {
                 val predecessorNode = edge.predecessor
@@ -409,11 +427,14 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
 
 //        println("""Backtrack path size: ${pathList.size}""")
 
-        backwardIterationCounter++ // invalidate past iteration
-        backwardOpenList.clear()
-        frontierTarget = null
+        clearBackwardSearch()
         pathStates = stateSet
         cachedPath = pathList
+    }
+
+    private fun clearBackwardSearch() {
+        backwardOpenList.clear()
+        frontierTarget = null
     }
 
     /**
@@ -423,6 +444,8 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
      * Technique used is LSS-LRTA*, but this could theoretically be any LSS algorithm
      */
     private fun localSearch(root: BackwardEnvelopeSearchNode<StateType>, terminationChecker: TerminationChecker) {
+        this.incrementCounter(FORWARD_SEARCH_COUNTER)
+
         iterationCounter++
         openList.clear()
         openList.reorder(fValueComparator)
@@ -455,7 +478,8 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                 frontierOpenList.remove(currentNode)
             }
             expandFromNode(this, currentNode) {
-                if (!it.frontierClosed && !frontierOpenList.isOpen(it)) {
+                if (it.envelopeVersion != envelopeVersionCounter ||
+                        (!it.frontierClosed && !frontierOpenList.isOpen(it))) {
                     frontierOpenList.add(it)
                 }
             }
@@ -496,6 +520,36 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         }
     }
 
+    private fun resetEnvelope() {
+        this.incrementCounter(ENVELOPE_RESETS)
+
+        clearBackwardSearch()
+
+        val target = if (cachedPath.size > 0) {
+            cachedPath.last
+        } else {
+            val nextEdge = nodes[currentAgentState]!!.successors.minBy{ it.successor.heuristic }
+
+            pathStates = mutableSetOf(nextEdge!!.predecessor.state, nextEdge.successor.state)
+            cachedPath = LinkedList()
+            cachedPath.add(nextEdge)
+
+            nextEdge
+        }
+
+        // reset frontier
+        frontierOpenList.clear()
+        envelopeVersionCounter++
+
+        target.successor.frontierClosed = false
+        target.successor.envelopeVersion = envelopeVersionCounter
+        target.successor.pseudoG = 0
+        frontierOpenList.add(target.successor)
+
+        frontierLimitRatio = initFrontierLimitRatio // reset in case a goal had been found and this was changed
+        foundGoals.clear() // sad face
+    }
+
     /**
      * Get a node for the state if exists, else create a new node.
      * Populate global successor and predecessor sets as necessary
@@ -517,6 +571,7 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
                     iteration = -1, // using local search iteration counter
+                    envelopeVersion = envelopeVersionCounter,
                     pseudoG = domain.heuristic(currentAgentState, successorState).toLong()
             )
 

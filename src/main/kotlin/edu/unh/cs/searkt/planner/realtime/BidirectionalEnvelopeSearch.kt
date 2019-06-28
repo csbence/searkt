@@ -227,6 +227,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     // Current and discovered states
     private var rootState: StateType? = null
     private lateinit var currentAgentState: StateType
+    private lateinit var currentAgentNode: BiEnvelopeSearchNode<StateType>
     private var targetGoal: BiEnvelopeSearchNode<StateType>? = null
     private val foundGoals = mutableSetOf<BiEnvelopeSearchNode<StateType>>()
     private var frontierTarget: BiEnvelopeSearchNode<StateType>? = null
@@ -288,6 +289,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         currentAgentState = sourceState
+        currentAgentNode = nodes[sourceState]!!
         expansionLimit = terminationChecker.remaining()
 
         if (domain.isGoal(sourceState)) {
@@ -373,7 +375,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             if (successorNode.envelopeVersion != envelopeVersionCounter) {
                 successorNode.envelopeVersion = envelopeVersionCounter
                 successorNode.frontierClosed = false
-                successorNode.pseudoG = domain.heuristic(node.state, successorNode.state).toLong()
+                successorNode.pseudoG = domain.heuristic(currentAgentState, successorNode.state).toLong()
             }
 
             // detect if we've seen this node before - no double expansions
@@ -680,12 +682,17 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         clearSearch()
 
-        val agentNode = nodes[currentAgentState]!!
-        val target = agentNode.globalSuccessors.minBy{ it.successor.heuristic }
+        val target = if (cachedPath.size > 0) {
+            cachedPath.last
+        } else {
+            val nextEdge = currentAgentNode.globalSuccessors.minBy{ it.successor.heuristic }
 
-        pathStates = mutableSetOf(target!!.predecessor.state, target.successor.state)
-        cachedPath = LinkedList()
-        cachedPath.add(target)
+            pathStates = mutableSetOf(nextEdge!!.predecessor.state, nextEdge.successor.state)
+            cachedPath = LinkedList()
+            cachedPath.add(nextEdge)
+
+            nextEdge
+        }
 
         // reset frontier
         frontierOpenList.clear()
@@ -698,8 +705,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         frontierLimitRatio = initFrontierLimitRatio // reset in case a goal had been found and this was changed
         foundGoals.clear() // sad face
-
-
     }
 
     /**
