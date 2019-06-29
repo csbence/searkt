@@ -14,6 +14,8 @@ import edu.unh.cs.searkt.util.resize
 import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Real time search algorithm which maintains an ever-expanding search envelope
@@ -52,10 +54,12 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private val weight = configuration.weight ?: 1.0
     private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val envelopeStrategy = configuration.envelopeSearchStrategy ?: lookaheadStrategy // align w/ general lookahead
+    private val frontierAdjustmentRatio = configuration.frontierAdjustmentRatio ?: 1.0
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
     private var initFrontierLimitRatio = 0.8
+    private var goalsFoundFrontierLimitRatio = 0.1
     private var frontierLimitRatio = initFrontierLimitRatio
 
     // TODO: Configuration for traceback accounting
@@ -347,13 +351,17 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             }
 
             // ensure we always expand the current target if it is not expanded yet
-            val currentNode = if (frontierOpenList.isOpen(currentTarget)) {
-                frontierOpenList.remove(currentTarget)
-                currentTarget
-            } else frontierOpenList.pop()!!
+
+            // we will expand it in the forward search if necessary
+//            val currentNode = if (frontierOpenList.isOpen(currentTarget)) {
+//                frontierOpenList.remove(currentTarget)
+//                currentTarget
+//            } else frontierOpenList.pop()!!
+            val currentNode = frontierOpenList.pop()!!
             if (domain.isGoal(currentNode.state)) {
                 if (foundGoals.size == 0) {
-                    frontierLimitRatio = 0.1 // reduce the amount of time spent expanding the frontier starting next iteration
+                    // reduce the amount of time spent expanding the frontier starting next iteration
+                    frontierLimitRatio = goalsFoundFrontierLimitRatio
                 }
 
                 foundGoals.add(currentNode)
@@ -370,6 +378,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     }
 
     private fun expandNode(node: BiEnvelopeSearchNode<StateType>) {
+        if (frontierOpenList.isOpen(node)) frontierOpenList.remove(node)
+
         domain.successors(node.state).forEach { successor ->
             val successorNode = getNode(node, successor)
             if (successorNode.envelopeVersion != envelopeVersionCounter) {
@@ -410,7 +420,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 for (edge in backwardNode.globalPredecessors) {
                     val predecessorNode = edge.predecessor
 
-                    // ensuring the backward search stays within the envelope
+                    // ensuring the backward search stays within the current envelope
                     if (predecessorNode.envelopeVersion != envelopeVersionCounter) continue
 
                     // reset node
@@ -457,21 +467,17 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
                 // Forward Expansion
 
-                /* If the forward open list is empty, this means that the agent has taken a corridor
-                 * that the backward search will not. It is possible to expand a path back to the envelope the
-                 * backward search would expand, but in directed domains this scenario more likely means the envelope
-                 * should be reset and try again
+                /* If the forward open list is empty, this means we've reached a dead end because
+                 * we are expanding nodes
                  */
                 val forwardNode = openList.pop() ?:
-                throw BiSearchOpenEmptyException("Forward Search Open list is empty")
+                    throw GoalNotReachableException("Dead end in forward search")
+
+                // increments expandedNodeCount
+                expandNode(forwardNode)
 
                 for (edge in forwardNode.globalSuccessors) {
                     val successorNode = edge.successor
-
-                    // This may seem weird, but we're maintaining the invariant that
-                    // we are searching only within the expanded envelope. This is so
-                    // we don't stray out of the envelope after it's been reset
-                    if (edge.successor.envelopeVersion != envelopeVersionCounter) continue
 
                     if (successorNode.forwardSearchIteration != forwardNode.forwardSearchIteration) {
                         successorNode.forwardSearchIteration = forwardNode.forwardSearchIteration
@@ -506,7 +512,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 forwardNode.closed = true
 
                 terminationChecker.notifyExpansion()
-                expandedNodeCount++
             }
         } catch (ex: BiSearchOpenEmptyException) {
             // clear envelope entirely including cached paths and bi-search.
@@ -658,11 +663,15 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         this.appendAttribute(TEMP_PATH_LENGTH, cachedPath.size)
 
         clearForwardSearch() // moving invalidates our current search
+        // modify frontier limit ratio according to configured parameter. Keep within 0 and 1
+        frontierLimitRatio = max(0.0, min(1.0, frontierLimitRatio * frontierAdjustmentRatio))
     }
 
     private fun clearSearch() {
         clearBackwardSearch()
         clearForwardSearch()
+
+        frontierLimitRatio = if (foundGoals.isNotEmpty()) goalsFoundFrontierLimitRatio else initFrontierLimitRatio
     }
 
     private fun clearBackwardSearch() {
@@ -758,7 +767,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun printMessage(msg: String) = 0//println(msg)
 
     enum class BiESConfiguration(val key: String) {
-        ENVELOPE_SEARCH_STRATEGY("envelopeSearchStrategy");
+        ENVELOPE_SEARCH_STRATEGY("envelopeSearchStrategy"),
+        FRONTIER_ADJUSTMENT_RATIO("frontierAdjustmentRatio");
 
         override fun toString(): String = key
     }

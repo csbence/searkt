@@ -110,6 +110,8 @@ data class ExperimentConfiguration(
         //Envelope-based searching
         @Optional
         val backupRatio: Double? = null,
+        @Optional
+        val frontierAdjustmentRatio: Double? = null,
         // strategy for searching within the envelope
         @Optional
         val envelopeSearchStrategy: LookaheadStrategy? = null,

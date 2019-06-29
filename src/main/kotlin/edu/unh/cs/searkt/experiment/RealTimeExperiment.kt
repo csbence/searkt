@@ -58,6 +58,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         var timeBound = actionDuration
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
         val stateList = mutableListOf(currentState)
+        val iterationCpuTimeList: MutableList<Long> = mutableListOf()
 
 //        visualizer = initializeVisualizer()
 //        if (visualizer != null) visualizerIsActive = true
@@ -154,6 +155,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
             validateIteration(actionList, iterationNanoTime)
 
             totalPlanningNanoTime += iterationNanoTime
+            iterationCpuTimeList.add(iterationNanoTime)
 
             fun createSnapshotResult(): ExperimentResult {
                 val experimentResult = ExperimentResult(experimentConfiguration = configuration)
@@ -161,12 +163,12 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                     expandedNodes = planner.expandedNodeCount
                     generatedNodes = planner.generatedNodeCount
                     planningTime = totalPlanningNanoTime
-                    iterationCount = iterationCount
-                    goalAchievementTime = goalAchievementTime
+                    this.iterationCount = iterationCount
                     idlePlanningTime = actionDuration
                     pathLength = actions.size.toLong()
                     actionExecutionTime = pathLength * actionDuration
                     this.actions = actions.map(Action::toString)
+                    this.iterationCpuTimeList = iterationCpuTimeList
                 }
                 return experimentResult
             }
@@ -207,7 +209,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 idlePlanningTime = actionDuration,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
-                experimentRunTime = convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS)
+                experimentRunTime = convertNanoUpDouble(totalPlanningNanoTime, TimeUnit.SECONDS),
+                iterationCpuTimeList = iterationCpuTimeList
         )
 
         domain.appendDomainSpecificResults(experimentResult)

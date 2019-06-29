@@ -75,7 +75,8 @@ class OfflineExperiment<StateType : State<StateType>>(val configuration: Experim
                 idlePlanningTime = 0,
                 pathLength = pathLength,
                 actions = actions.map(Action::toString),
-                experimentRunTime = convertNanoUpDouble(experimentExecutionTime, TimeUnit.SECONDS)
+                experimentRunTime = convertNanoUpDouble(experimentExecutionTime, TimeUnit.SECONDS),
+                iterationCpuTimeList = listOf()
         )
 
         experimentResult.reexpansions = planner.reexpansions

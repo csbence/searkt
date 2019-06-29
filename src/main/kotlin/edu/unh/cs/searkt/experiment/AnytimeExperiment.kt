@@ -116,7 +116,8 @@ class AnytimeExperiment<StateType : State<StateType>>(val planner: AnytimePlanne
                 idlePlanningTime = idlePlanningTime,
                 pathLength = pathLength,
                 actions = actions.map(String::toString),
-                experimentRunTime = convertNanoUpDouble(totalPlanningTime, TimeUnit.SECONDS)
+                experimentRunTime = convertNanoUpDouble(totalPlanningTime, TimeUnit.SECONDS),
+                iterationCpuTimeList = listOf()
         )
 
         domain.appendDomainSpecificResults(experimentResult)

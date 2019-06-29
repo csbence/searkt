@@ -37,7 +37,8 @@ class ExperimentResult {
                 actions: List<String>,
                 timestamp: Long = System.currentTimeMillis(),
                 systemProperties: HashMap<String, String> = HashMap(),
-                experimentRunTime: Double) {
+                experimentRunTime: Double,
+                iterationCpuTimeList: List<Long>) {
 
         this.configuration = configuration
         this.expandedNodes = expandedNodes
@@ -53,6 +54,7 @@ class ExperimentResult {
         this.success = true
         this.errorMessage = null
         this.experimentRunTime = experimentRunTime
+        this.iterationCpuTimeList = iterationCpuTimeList
 
         if (systemProperties.isNotEmpty()) {
             this.systemProperties = systemProperties
@@ -74,6 +76,7 @@ class ExperimentResult {
     var success: Boolean = false
     var systemProperties: MutableMap<String, String>
     var experimentRunTime: Double = 0.0
+    var iterationCpuTimeList: List<Long> = listOf()
 
     @ImplicitReflectionSerializer
     @Serializable(with = SimpleSerializer::class)
