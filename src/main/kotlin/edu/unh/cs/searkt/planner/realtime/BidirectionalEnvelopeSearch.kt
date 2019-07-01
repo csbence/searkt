@@ -329,7 +329,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         val nextEdge = cachedPath.removeFirst()
         assert(nextEdge.predecessor.state == currentAgentState){"Predecessor is current agent state"}
         pathStates.remove(sourceState)
-        nodes[currentAgentState]!!.cachedForwardParent = null
+        currentAgentNode.cachedForwardParent = null
 
         iterationCounter++
         return listOf(ActionBundle(nextEdge.action, nextEdge.actionCost))

@@ -5,14 +5,17 @@ import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
 import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization.NONE
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization.SHORTCUT
+import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.resize
+import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -29,7 +32,12 @@ import kotlin.system.measureTimeMillis
  * @history 7/4/2018 Kevin C. Gall Tuned to work under a 10ms real time bound. Note: stripped out Kotlin constructs
  * and convenience functions on purpose. Do not add them back if you want to hit real time bounds!
  */
-class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : RealTimePlanner<StateType>(), RealTimePlannerContext<StateType, PureRealTimeSearchNode<StateType>> {
+class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
+        RealTimePlanner<StateType>(),
+        RealTimePlannerContext<StateType, TimeBoundedAStar.TBANode<StateType>> {
+
+    // Attribute Keys
+    private val RESTARTS = "restarts"
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
@@ -45,15 +53,59 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     override var iterationCounter = 0L
 
-    private val nodes: HashMap<StateType, PureRealTimeSearchNode<StateType>> = HashMap<StateType, PureRealTimeSearchNode<StateType>>(100_000_000, 1.0f).resize()
+    class TBANode<StateType : State<StateType>>(
+            override val state: StateType,
+            override var heuristic: Double,
+            override var cost: Long,
+            override var actionCost: Long,
+            override var action: Action,
+            override var iteration: Long,
+            parent: TBANode<StateType>? = null
+    ) : RealTimeSearchNode<StateType, TBANode<StateType>> {
+        var secondaryIndex: Int = -1
 
-    // LSS stores heuristic values. Use those, but initialize them according to the domain heuristic
-    // The cost values are initialized to infinity
-    override var openList = AdvancedPriorityQueue<PureRealTimeSearchNode<StateType>>(10000000,
-            when (strategy){
-                LookaheadStrategy.GBFS -> heuristicComparator
-                else -> fValueComparator
-            })
+        override var index: Int = -1
+        override var closed = false
+
+        /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
+        override var predecessors: MutableList<SearchEdge<TBANode<StateType>>> = arrayListOf()
+
+        /** Parent pointer that points to the min cost predecessor. */
+        override var parent: TBANode<StateType> = parent ?: this
+
+        /** Optional-use descendant pointer which can store the node's next best successor */
+        var next: TBANode<StateType>? = null
+
+        override var lastLearnedHeuristic = heuristic
+        override var minCostPathLength: Long = 0L
+
+        override fun hashCode(): Int = state.hashCode()
+
+        override fun equals(other: Any?): Boolean = when (other) {
+            null -> false
+            is SearchNode<*, *> -> state == other.state
+            is State<*> -> state == other
+            else -> false
+        }
+
+        override fun toString() =
+                "RTSNode: [State: $state h: $heuristic, g: $cost, iteration: $iteration, actionCost: $actionCost, parent: ${parent.state}, open: $open]"
+    }
+
+    private val nodes: HashMap<StateType, TBANode<StateType>> = HashMap<StateType, TBANode<StateType>>(100_000_000, 1.0f).resize()
+
+    inner class SecondaryOpenList(comparator: Comparator<in TBANode<StateType>>)
+            : AbstractAdvancedPriorityQueue<TBANode<StateType>>(arrayOfNulls(1000000), comparator) {
+        override fun getIndex(item: TBANode<StateType>): Int = item.secondaryIndex
+        override fun setIndex(item: TBANode<StateType>, index: Int) {
+            item.secondaryIndex = index
+        }
+    }
+
+    var primaryOpenIsA = false
+    override var openList = getNewOpenList()
+    var updateOpenList: AbstractAdvancedPriorityQueue<TBANode<StateType>>? = null
+
 
     private var rootState: StateType? = null
     private var lastAgentState: StateType? = null
@@ -63,11 +115,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var expansionLimit = 0L
 
     data class PathEdge<StateType : State<StateType>>(
-            val node: PureRealTimeSearchNode<StateType>, val next: PathEdge<StateType>?, val action: Action = node.action, val cost: Long = node.actionCost
+            val node: TBANode<StateType>, val next: PathEdge<StateType>?, val action: Action = node.action, val cost: Long = node.actionCost
     )
     data class PathTrace<StateType : State<StateType>>(
-            val goal: PureRealTimeSearchNode<StateType>,
-            val edges : MutableMap<PureRealTimeSearchNode<StateType>, PathEdge<StateType>> = mutableMapOf()) {
+            val goal: TBANode<StateType>,
+            val edges : MutableMap<TBANode<StateType>, PathEdge<StateType>> = mutableMapOf()) {
         val pathEnd = PathEdge(goal, null)
         var pathHead = pathEnd
         init {edges[pathEnd.node] = pathEnd}
@@ -79,12 +131,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     var aStarTimer = 0L
 
     // SearchEnvelope for visualizer
-    private val expandedNodes = mutableListOf<PureRealTimeSearchNode<StateType>>()
+    private val expandedNodes = mutableListOf<TBANode<StateType>>()
 
     //"Priming" the hash table with the initial state so that the first iteration does not spend time initializing
     //the HashMap. We remove the initial state so that we don't cheat on first iteration planning time
     override fun init(initialState : StateType) {
-        val node = PureRealTimeSearchNode(
+        val node = TBANode(
                 state = initialState,
                 heuristic = domain.heuristic(initialState) * weight,
                 actionCost = 0,
@@ -95,6 +147,28 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         nodes[initialState] = node
         nodes.remove(initialState)
+    }
+
+    @ImplicitReflectionSerializer
+    override fun appendPlannerSpecificResults(results: ExperimentResult) {
+        results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
+    }
+
+    private fun getNewOpenList() : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
+        val newOpen = if (primaryOpenIsA) {
+            SecondaryOpenList(when (strategy) {
+                LookaheadStrategy.GBFS -> heuristicComparator
+                else -> fValueComparator
+            })
+        } else {
+            AdvancedPriorityQueue<TBANode<StateType>>(10000000, when (strategy){
+                LookaheadStrategy.GBFS -> heuristicComparator
+                else -> fValueComparator
+            })
+        }
+
+        primaryOpenIsA = !primaryOpenIsA
+        return newOpen
     }
 
     /**
@@ -201,7 +275,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * Runs AStar until termination and returns the path to the head of openList
      * Will just repeatedly expand according to A*.
      */
-    private fun aStar(terminationChecker: TerminationChecker): PureRealTimeSearchNode<StateType> {
+    private fun aStar(terminationChecker: TerminationChecker): TBANode<StateType> {
         // for expansion termination type bookkeeping on first iteration.
         // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
@@ -249,7 +323,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         val aStarTermChecker = getTerminationChecker(configuration, terminationChecker.remaining() - tracebackBuffer)
 
-        var bestNode : PureRealTimeSearchNode<StateType>? = null
+        var bestNode : TBANode<StateType>? = null
         printTime("A* Execution Time") {
             bestNode = if (domain.isGoal(topOfOpen.state)) {
                 foundGoal = true
@@ -308,7 +382,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * toward end of the path. Otherwise backtrace to root
      * Average case constant time. (Worst case linear in path size, but only because of hash-set properties.
      */
-    private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : PureRealTimeSearchNode<StateType>)
+    private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : TBANode<StateType>)
             : List<RealTimePlanner.ActionBundle>? {
         // Find common ancestor
         var sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
@@ -334,9 +408,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
-    private fun getRootNode(state: StateType): PureRealTimeSearchNode<StateType> {
+    private fun updateHeuristics(): Unit = TODO()
+
+    private fun getRootNode(state: StateType): TBANode<StateType> {
         generatedNodeCount++
-        val node = PureRealTimeSearchNode(
+        val node = TBANode(
                 state = state,
                 heuristic = domain.heuristic(state) * weight,
                 actionCost = 0,
@@ -356,14 +432,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      *
      * @return node corresponding to the given state.
      */
-    override fun getNode(parent: PureRealTimeSearchNode<StateType>, successor: SuccessorBundle<StateType>): PureRealTimeSearchNode<StateType> {
+    override fun getNode(parent: TBANode<StateType>, successor: SuccessorBundle<StateType>): TBANode<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
         return if (tempSuccessorNode == null) {
             generatedNodeCount++
 
-            val undiscoveredNode = PureRealTimeSearchNode(
+            val undiscoveredNode = TBANode(
                     state = successorState,
                     heuristic = domain.heuristic(successorState) * weight,
                     actionCost = successor.actionCost.toLong(),
@@ -381,11 +457,36 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
-    private fun backtrack(currentNode: PureRealTimeSearchNode<StateType>,
-                          nextNode: PureRealTimeSearchNode<StateType> = currentNode.parent): List<ActionBundle> {
+    private fun backtrack(currentNode: TBANode<StateType>,
+                          nextNode: TBANode<StateType> = currentNode.parent): List<ActionBundle> {
         val transition = domain.transition(currentNode.state, nextNode.state)
-                ?: throw GoalNotReachableException("Cannot backtrack in this domain")
-        return listOf(ActionBundle(transition.first, transition.second.toLong()))
+
+        if (transition == null) {
+            return restart(currentNode)
+
+
+        } else {
+            return listOf(ActionBundle(transition.first, transition.second.toLong()))
+        }
+    }
+
+    private fun restart(currentNode: TBANode<StateType>) : List<ActionBundle> {
+        incrementCounter(RESTARTS)
+
+        // do 1-step lookahead
+        val bestSuccessor = domain.successors(currentNode.state).minBy {
+            val successor = getNode(currentNode, it)
+            successor.heuristic
+        } ?: throw GoalNotReachableException("Reached dead end")
+
+        // move open list to update reference, create new primary open list
+        // open lists probably have to alternate b/c  we only have so many simultaneous indices
+        // only 1 open list can be searching, one updating at a time (b/c of indices)
+        // TODO: write function that will update heuristic values if updated open is populated
+
+        throw UnsupportedOperationException("Not finished Yet")
+
+        return listOf(ActionBundle(bestSuccessor.action, bestSuccessor.actionCost.toLong()))
     }
 
     @Suppress("UNUSED_PARAMETER")

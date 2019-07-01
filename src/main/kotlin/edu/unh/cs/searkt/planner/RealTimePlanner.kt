@@ -9,6 +9,7 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.terminationCheckers.FakeTerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
+import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import kotlin.system.measureNanoTime
@@ -193,7 +194,7 @@ class PureRealTimeSearchNode<StateType : State<StateType>>(
 interface RealTimePlannerContext<StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> {
     val domain: Domain<StateType>
     var expandedNodeCount: Int
-    val openList: AdvancedPriorityQueue<NodeType>
+    val openList: AbstractAdvancedPriorityQueue<NodeType>
     var iterationCounter: Long
     fun getNode(parent: NodeType, successor: SuccessorBundle<StateType>): NodeType
 }
@@ -479,11 +480,10 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
  */
 fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> dynamicDijkstra(
         context: RealTimePlannerContext<StateType, NodeType>,
+        openList: AbstractAdvancedPriorityQueue<NodeType>,
         freshSearch: Boolean = true,
         openListComparator: Comparator<RealTimeSearchNode<StateType, NodeType>> = Comparator { lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs) },
-        reachedTermination: (AdvancedPriorityQueue<NodeType>) -> Boolean = { openList -> openList.isEmpty() }) {
-    val openList = context.openList
-
+        reachedTermination: (AbstractAdvancedPriorityQueue<NodeType>) -> Boolean = { queue -> queue.isEmpty() }) {
     // Invalidate the current heuristic value by incrementing the counter
     // Otherwise, we continue the previous iteration
     if (freshSearch) context.iterationCounter++

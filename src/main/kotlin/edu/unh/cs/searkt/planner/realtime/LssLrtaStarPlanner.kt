@@ -103,7 +103,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
             dijkstraTimer += measureTimeMillis {
                 //Note that dynamic dijkstra does not notify expansions: expansion-based termination checkers will never "reach termination"
                 val dijkstraNanoTimer = measureNanoTime {
-                    dynamicDijkstra(this, reachedTermination = { open ->
+                    dynamicDijkstra(this, openList, reachedTermination = { open ->
                         open.isEmpty() || learningTerminationChecker.reachedTermination()
                     })
                 }

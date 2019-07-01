@@ -46,7 +46,7 @@ class RaceTrack(val width: Int,
     val maxSpeed = max(maxXSpeed, maxYSpeed)
     val heuristicMap: Map<Location, Double> = calculateDijkstraHeuristic()
 
-    val collisionStartupActions = actionDuration.toInt()
+    val collisionStartupActions = -1 // non-zero indication that while we won't use startup actions, a crash has occurred
 
     private val velocities = mutableListOf<Double>()
     private var crashes = 0
