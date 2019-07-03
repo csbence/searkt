@@ -31,6 +31,8 @@ import kotlin.system.measureTimeMillis
  *
  * @history 7/4/2018 Kevin C. Gall Tuned to work under a 10ms real time bound. Note: stripped out Kotlin constructs
  * and convenience functions on purpose. Do not add them back if you want to hit real time bounds!
+ * @history 7/2/2019 Kevin C. Gall Refactoring as Restarting TBA* for directed domains. Refactor not engineered
+ * for real time bounds
  */
 class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
@@ -63,8 +65,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             parent: TBANode<StateType>? = null
     ) : RealTimeSearchNode<StateType, TBANode<StateType>> {
         var secondaryIndex: Int = -1
+        var secondaryOpenListVersion = 0L
+        var secondaryClosed: Boolean = false
 
         override var index: Int = -1
+        var primaryOpenListVersion = 0L
         override var closed = false
 
         /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
@@ -94,17 +99,84 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     private val nodes: HashMap<StateType, TBANode<StateType>> = HashMap<StateType, TBANode<StateType>>(100_000_000, 1.0f).resize()
 
+    private val weightedFComparator = Comparator<TBANode<StateType>> { lhs, rhs ->
+        val lhsF = (lhs.heuristic * weight) + lhs.cost
+        val rhsF = (rhs.heuristic * weight) + rhs.cost
+
+        // break ties on low H
+        when {
+            lhsF < rhsF -> -1
+            lhsF > rhsF -> 1
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
+    }
+    private val heuristicComparator = Comparator<TBANode<StateType>> { lhs, rhs ->
+        when {
+            lhs.heuristic < rhs.heuristic -> -1
+            lhs.heuristic > rhs.heuristic -> 1
+            else -> 0
+        }
+    }
+
+    inner class PrimaryOpenList(comparator: Comparator<in TBANode<StateType>>)
+        : AbstractAdvancedPriorityQueue<TBANode<StateType>>(arrayOfNulls(1000000), comparator) {
+        var version = 0L
+
+        override fun add(item: TBANode<StateType>) {
+            super.add(item)
+            item.primaryOpenListVersion = version
+        }
+
+        override fun getIndex(item: TBANode<StateType>): Int = item.index
+        override fun setIndex(item: TBANode<StateType>, index: Int) {
+            item.primaryOpenListVersion = version
+            item.index = index
+        }
+
+        override fun setClosed(item: TBANode<StateType>, newValue: Boolean) {
+            item.closed = newValue
+        }
+
+        override fun isClosed(item: TBANode<StateType>): Boolean = item.closed && item.primaryOpenListVersion == version
+
+        override fun isOpen(item: TBANode<StateType>): Boolean {
+            return super.isOpen(item) && item.primaryOpenListVersion == version
+        }
+    }
+
     inner class SecondaryOpenList(comparator: Comparator<in TBANode<StateType>>)
             : AbstractAdvancedPriorityQueue<TBANode<StateType>>(arrayOfNulls(1000000), comparator) {
+        var version = 0L
+
+        override fun add(item: TBANode<StateType>) {
+            super.add(item)
+            item.secondaryOpenListVersion = version
+        }
+
         override fun getIndex(item: TBANode<StateType>): Int = item.secondaryIndex
         override fun setIndex(item: TBANode<StateType>, index: Int) {
             item.secondaryIndex = index
         }
+
+        override fun setClosed(item: TBANode<StateType>, newValue: Boolean) {
+            item.secondaryClosed = newValue
+        }
+
+        override fun isClosed(item: TBANode<StateType>): Boolean = item.secondaryClosed && item.secondaryOpenListVersion == version
+        override fun isOpen(item: TBANode<StateType>): Boolean {
+            return super.isOpen(item) && item.secondaryOpenListVersion == version
+        }
     }
 
-    var primaryOpenIsA = false
-    override var openList = getNewOpenList()
-    var updateOpenList: AbstractAdvancedPriorityQueue<TBANode<StateType>>? = null
+    private var openIsPrimary = true
+    private val primaryOpen = PrimaryOpenList(weightedFComparator)
+    private val secondaryOpen = SecondaryOpenList(weightedFComparator)
+
+    override var openList = getNextOpenList(false)
+    private var updateOpenList: AbstractAdvancedPriorityQueue<TBANode<StateType>>? = null
+    private var updateIsFresh = false
 
 
     private var rootState: StateType? = null
@@ -130,9 +202,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     var aStarTimer = 0L
 
-    // SearchEnvelope for visualizer
-    private val expandedNodes = mutableListOf<TBANode<StateType>>()
-
     //"Priming" the hash table with the initial state so that the first iteration does not spend time initializing
     //the HashMap. We remove the initial state so that we don't cheat on first iteration planning time
     override fun init(initialState : StateType) {
@@ -154,21 +223,22 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
     }
 
-    private fun getNewOpenList() : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
-        val newOpen = if (primaryOpenIsA) {
-            SecondaryOpenList(when (strategy) {
-                LookaheadStrategy.GBFS -> heuristicComparator
-                else -> fValueComparator
-            })
-        } else {
-            AdvancedPriorityQueue<TBANode<StateType>>(10000000, when (strategy){
-                LookaheadStrategy.GBFS -> heuristicComparator
-                else -> fValueComparator
-            })
-        }
+    private fun getNextOpenList(switchOpenList: Boolean) : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
+        val comparator = (if (strategy == LookaheadStrategy.GBFS) heuristicComparator else weightedFComparator)
 
-        primaryOpenIsA = !primaryOpenIsA
-        return newOpen
+        if (switchOpenList) openIsPrimary = !openIsPrimary
+
+        return if (openIsPrimary) {
+            primaryOpen.clear()
+            primaryOpen.reorder(comparator)
+            primaryOpen.version++
+            primaryOpen
+        } else {
+            secondaryOpen.clear()
+            secondaryOpen.reorder(comparator)
+            secondaryOpen.version++
+            secondaryOpen
+        }
     }
 
     /**
@@ -183,7 +253,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * @param terminationChecker is the constraint
      * @return a current action
      */
-    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<RealTimePlanner.ActionBundle> {
+    override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
         // Initiate for the first search
         printTime("""Initial: ${terminationChecker.remaining()}"""){}
         if (rootState == null) {
@@ -195,6 +265,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         val currentAgentNode = nodes[sourceState]
                 ?: throw MetronomeException("Agent is at an unknown state. It is unlikely that the planner sent the agent to an undiscovered node.")
+        // NOTE: this accounting IS NOT real time - only Expansion-based time bounds
+        val updateTerminationChecker = getTerminationChecker(configuration, terminationChecker.remaining())
 
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
@@ -264,9 +336,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             plan!!
         }
         lastAgentState = sourceState
-//        visualizer?.updateSearchEnvelope(expandedNodes)
-//        visualizer?.updateAgentLocation(currentAgentNode)
-//        visualizer?.delay()
+
+        if (updateOpenList != null) updateHeuristics(updateTerminationChecker)
 
         return safePlan
     }
@@ -280,14 +351,13 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
 
-        val expansions = aStarPopCounter
         while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
                         ?: throw GoalNotReachableException("Open list is empty."))) {
             aStarPopCounter++
 
             val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
-            expandFromNode(this, currentNode){}
+            expandFromNode(this, currentNode, checkOutdated = {!openList.isOpen(it) && !openList.isClosed(it)})
 
             terminationChecker.notifyExpansion()
             currentExpansionDuration++
@@ -383,7 +453,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      * Average case constant time. (Worst case linear in path size, but only because of hash-set properties.
      */
     private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : TBANode<StateType>)
-            : List<RealTimePlanner.ActionBundle>? {
+            : List<ActionBundle>? {
         // Find common ancestor
         var sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
 
@@ -400,7 +470,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                     backtrack(currentAgentNode)
                 } else {
                     bestPath.pathHead = edge.next
-                    listOf(RealTimePlanner.ActionBundle(bestPath.pathHead.action, bestPath.pathHead.cost))
+                    listOf(ActionBundle(bestPath.pathHead.action, bestPath.pathHead.cost))
                 }
             }
             currentAgentNode.state == rootState -> null
@@ -408,7 +478,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
-    private fun updateHeuristics(): Unit = TODO()
+    private fun updateHeuristics(terminationChecker: TerminationChecker): Unit {
+        dynamicDijkstra(this,
+                updateOpenList ?: throw MetronomeException("Cannot update from no open list"),
+                updateIsFresh,
+                reachedTermination = {
+                    val finished = it.isEmpty() || terminationChecker.reachedTermination()
+                    terminationChecker.notifyExpansion()
+
+                    finished
+                })
+
+        updateIsFresh = false
+    }
 
     private fun getRootNode(state: StateType): TBANode<StateType> {
         generatedNodeCount++
@@ -441,7 +523,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
             val undiscoveredNode = TBANode(
                     state = successorState,
-                    heuristic = domain.heuristic(successorState) * weight,
+                    heuristic = domain.heuristic(successorState),
                     actionCost = successor.actionCost.toLong(),
                     action = successor.action,
                     parent = parent,
@@ -480,11 +562,13 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         } ?: throw GoalNotReachableException("Reached dead end")
 
         // move open list to update reference, create new primary open list
-        // open lists probably have to alternate b/c  we only have so many simultaneous indices
-        // only 1 open list can be searching, one updating at a time (b/c of indices)
-        // TODO: write function that will update heuristic values if updated open is populated
-
-        throw UnsupportedOperationException("Not finished Yet")
+        var switchOpenList = false
+        if (updateOpenList == null) {
+            switchOpenList = true
+            updateIsFresh = true
+            updateOpenList = openList
+        }
+        openList = getNextOpenList(switchOpenList)
 
         return listOf(ActionBundle(bestSuccessor.action, bestSuccessor.actionCost.toLong()))
     }

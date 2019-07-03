@@ -13,6 +13,10 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
     override fun setIndex(item: T, index: Int) {
         item.index = index
     }
+    override fun setClosed(item: T, newValue: Boolean) {
+        item.closed = newValue
+    }
+    override fun isClosed(item: T): Boolean = item.closed
 
     companion object {
         inline operator fun <reified T : Indexable> invoke(capacity: Int, comparator: Comparator<in T>): AdvancedPriorityQueue<T> =
@@ -22,6 +26,7 @@ class AdvancedPriorityQueue<T : Indexable>(private var queue: Array<T?>, private
 
 interface Indexable {
     var index: Int
+    var closed: Boolean
     val open
         get() = index >= 0
 }
@@ -32,8 +37,10 @@ abstract class AbstractAdvancedPriorityQueue<T>(
 ) : PriorityQueue<T> {
     abstract fun getIndex(item: T): Int
     abstract fun setIndex(item: T, index: Int)
+    abstract fun setClosed(item: T, newValue: Boolean)
+    abstract fun isClosed(item: T): Boolean
 
-    fun isOpen(item: T) = getIndex(item) > -1
+    open fun isOpen(item: T) = getIndex(item) > -1
 
     private val MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8
 

@@ -210,6 +210,12 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         override fun setIndex(item: BiEnvelopeSearchNode<StateType>, index: Int) {
             item.frontierOpenIndex = index
         }
+
+        override fun setClosed(item: BiEnvelopeSearchNode<StateType>, newValue: Boolean) {
+            item.frontierClosed = newValue
+        }
+
+        override fun isClosed(item: BiEnvelopeSearchNode<StateType>): Boolean = item.frontierClosed
     }
 
     inner class BackwardOpenList : AbstractAdvancedPriorityQueue<BiEnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backwardsComparator) {
@@ -217,13 +223,17 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         override fun setIndex(item: BiEnvelopeSearchNode<StateType>, index: Int) {
             item.backwardOpenIndex = index
         }
+        override fun setClosed(item: BiEnvelopeSearchNode<StateType>, newValue: Boolean) {
+            item.backwardClosed = newValue
+        }
+        override fun isClosed(item: BiEnvelopeSearchNode<StateType>): Boolean = item.backwardClosed
     }
 
 
     // Open lists
     private var frontierOpenList = FrontierOpenList()
     private var backwardOpenList = BackwardOpenList()
-    override var openList = AdvancedPriorityQueue<BiEnvelopeSearchNode<StateType>>(1000000, weightedFComparator)
+    override var openList = AdvancedPriorityQueue(1000000, weightedFComparator)
 
     // Main Node-container data structures
     private val nodes: HashMap<StateType, BiEnvelopeSearchNode<StateType>> = HashMap<StateType, BiEnvelopeSearchNode<StateType>>(100_000_000, 1.toFloat()).resize()

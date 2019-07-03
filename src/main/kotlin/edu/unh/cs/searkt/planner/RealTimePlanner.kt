@@ -75,7 +75,7 @@ interface SearchNode<StateType : State<StateType>, NodeType : SearchNode<StateTy
     var action: Action
     var parent: NodeType
     val predecessors: MutableList<SearchEdge<NodeType>>
-    var closed: Boolean
+    override var closed: Boolean
 
     val f: Double
         get() = cost + heuristic
@@ -278,10 +278,11 @@ fun printNanoTime(msg: String, fn: ()->Unit) {
 inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> expandFromNode(
         context: RealTimePlannerContext<StateType, NodeType>,
         sourceNode: NodeType,
-        nodeFound: ((NodeType) -> Unit) = {}) {
+        nodeFound: ((NodeType) -> Unit) = {},
+        checkOutdated: ((NodeType) -> Boolean) = {it.iteration != context.iterationCounter}) {
 
     context.expandedNodeCount += 1
-    sourceNode.closed = true
+    context.openList.setClosed(sourceNode, true)
 
     var successorCount = 0
     for (successor in context.domain.successors(sourceNode.state)) {
@@ -296,7 +297,7 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
         successorCount++
 
         // If the node is outdated it should be updated.
-        if (successorNode.iteration != context.iterationCounter) {
+        if (checkOutdated(successorNode)) {
             nodeFound(successorNode)
             successorNode.apply {
                 iteration = context.iterationCounter
@@ -326,9 +327,8 @@ inline fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateTyp
                 actionCost = successor.actionCost.toLong()
             }
 
-            if (!successorNode.open) {
+            if (!context.openList.isOpen(successorNode)) {
                 context.openList.add(successorNode)
-
             } else {
                 context.openList.update(successorNode)
             }
@@ -476,20 +476,25 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
 }
 
 /**
- * Dynamic dijkstra operation which supports custom termination checker and ordering comparator
+ * Dynamic dijkstra operation which supports custom termination checker, ordering comparator, and
+ * other functions for determining whether a node should be updated
  */
 fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, NodeType>> dynamicDijkstra(
         context: RealTimePlannerContext<StateType, NodeType>,
         openList: AbstractAdvancedPriorityQueue<NodeType>,
         freshSearch: Boolean = true,
         openListComparator: Comparator<RealTimeSearchNode<StateType, NodeType>> = Comparator { lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs) },
-        reachedTermination: (AbstractAdvancedPriorityQueue<NodeType>) -> Boolean = { queue -> queue.isEmpty() }) {
+        reachedTermination: (AbstractAdvancedPriorityQueue<NodeType>) -> Boolean = { queue -> queue.isEmpty() },
+        checkOutdated: (NodeType) -> Boolean = { it.iteration == context.iterationCounter && !openList.isOpen(it) }) {
+
     // Invalidate the current heuristic value by incrementing the counter
     // Otherwise, we continue the previous iteration
-    if (freshSearch) context.iterationCounter++
+    if (freshSearch) {
+        context.iterationCounter++
+        // change openList ordering by user-provided comparator
+        openList.reorder(openListComparator)
+    }
 
-    // change openList ordering by user-provided comparator
-    openList.reorder(openListComparator)
 
     while (!reachedTermination(openList)) {
         val node = openList.pop() ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
@@ -502,12 +507,12 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
         for (predecessor in node.predecessors) {
             val predecessorNode = predecessor.node
 
-            // This node was already learned and closed in the current iteration
-            if (predecessorNode.iteration == context.iterationCounter && !predecessorNode.open) continue
+            // If NOT outdated, this node was already learned and closed in the current iteration
+            if (!checkOutdated(predecessorNode)) continue
 
             val predecessorHeuristicValue = predecessorNode.heuristic
 
-            if (!predecessorNode.open) {
+            if (!openList.isOpen(predecessorNode)) {
                 // This node is not open yet, because it was not visited in the current planning iteration
 
                 predecessorNode.heuristic = currentHeuristicValue + predecessor.actionCost
