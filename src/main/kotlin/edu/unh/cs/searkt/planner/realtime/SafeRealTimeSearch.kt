@@ -83,12 +83,12 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
                 lastSafeNode = currentNode
             }
 
-            expandFromNode(this, currentNode) {
+            expandFromNode(this, currentNode, {
                 if (it.safe || domain.isSafe(it.state)) {
                     safeNodes.add(it)
                     it.safe = true
                 }
-            }
+            })
 
             currentNode
         }

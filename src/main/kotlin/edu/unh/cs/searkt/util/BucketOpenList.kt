@@ -54,6 +54,7 @@ class BucketOpenList<T : BucketNode>(private val bound: Double, private var fMin
             get() = h
         override val dHat: Double
             get() = d
+        override var closed = false
         @Suppress("UNUSED_PARAMETER")
         override var parent: Bucket<T>?
             get() = throw NotImplementedError("Buckets don't have a parent")

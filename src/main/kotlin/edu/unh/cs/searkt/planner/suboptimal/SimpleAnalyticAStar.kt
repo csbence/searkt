@@ -23,7 +23,7 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
                                              var actionCost: Double, var action: Action,
                                              override var parent: SimpleAnalyticAStar.Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
-        var isClosed = false
+        override var closed = false
         private val indexMap = Array(1) { -1 }
         override val g: Double
             get() = cost
@@ -100,7 +100,7 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        if (sourceNode.isClosed) reexpansions++
+        if (sourceNode.closed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
             val successorState = successor.state
@@ -145,7 +145,7 @@ class SimpleAnalyticAStar<StateType : State<StateType>>(val domain: Domain<State
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
-            currentNode.isClosed = true
+            currentNode.closed = true
             expandedNodeCount++
         }
 

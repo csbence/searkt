@@ -73,6 +73,13 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
     inner class FocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private val focal = FocalList()
@@ -83,6 +90,13 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
     inner class CleanupList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), cleanupNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private val cleanup = CleanupList()
@@ -119,6 +133,7 @@ class ExplicitEstimationConservativeSearch<StateType : State<StateType>>(val dom
 
         override val open: Boolean
             get() = indexMap[1] >= 0
+        override var closed = false
 
         private var redBlackNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 

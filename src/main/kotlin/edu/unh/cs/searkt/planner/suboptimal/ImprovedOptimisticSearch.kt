@@ -38,7 +38,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
                                                    var actionCost: Double, var action: Action,
                                                    override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
-        var isClosed = false
+        override var closed = false
         private val indexMap = Array(2) { -1 }
         override val g: Double
             get() = cost
@@ -138,6 +138,13 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
     inner class OpenListOnF : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), fValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private var fOpenList = OpenListOnF()
@@ -145,6 +152,13 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
     inner class OpenListOnFHat : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), convexComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private var fHatOpenList = OpenListOnFHat()
@@ -171,7 +185,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        if (sourceNode.isClosed) reexpansions++
+        if (sourceNode.closed) reexpansions++
 
 
         val currentGValue = sourceNode.cost
@@ -198,11 +212,11 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
                     action = successor.action
                     actionCost = successor.actionCost
                 }
-                if (isDuplicate && successorNode.isClosed) {
+                if (isDuplicate && successorNode.closed) {
                     // if duplicate and is closed add back to open
                     fOpenList.add(successorNode)
                     // never add duplicates back to the XDP/XUP queue
-                } else if (isDuplicate && !successorNode.isClosed) {
+                } else if (isDuplicate && !successorNode.closed) {
                     // if duplicate and is open update within open
                     fOpenList.update(successorNode)
                     fHatOpenList.update(successorNode)
@@ -267,7 +281,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
 
             expandFromNode(topNode)
             iteration++
-            topNode.isClosed = true
+            topNode.closed = true
             expandedNodeCount++
         }
         if (terminationChecker.reachedTermination()) {

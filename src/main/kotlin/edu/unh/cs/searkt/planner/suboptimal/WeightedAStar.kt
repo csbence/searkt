@@ -11,7 +11,6 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import edu.unh.cs.searkt.util.SearchQueueElement
-import java.io.File
 import java.util.HashMap
 import kotlin.Comparator
 import kotlin.math.sqrt
@@ -30,7 +29,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
                                              var actionCost: Double, var action: Action,
                                              override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
-        var isClosed = false
+        override var closed = false
         private val indexMap = Array(1) { -1 }
         override val g: Double
             get() = cost
@@ -150,7 +149,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        if (sourceNode.isClosed) reexpansions++
+        if (sourceNode.closed) reexpansions++
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
 //            openList.forEach { println("${it.state} | f: ${it.f} | h: ${it.h} | g: ${it.g}") }
@@ -203,7 +202,7 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
             expandFromNode(currentNode)
-            currentNode.isClosed = true
+            currentNode.closed = true
             expandedNodeCount++
         }
 

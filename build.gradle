@@ -20,7 +20,7 @@ if (project.hasProperty("mainClass")) {
 
 buildscript {
 
-    ext.kotlin_version = '1.3.21'
+    ext.kotlin_version = '1.3.41'
     ext.serialization_version = '0.10.0'
 
     repositories {

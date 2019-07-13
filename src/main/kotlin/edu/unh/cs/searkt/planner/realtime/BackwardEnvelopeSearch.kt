@@ -161,6 +161,11 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         override fun setIndex(item: BackwardEnvelopeSearchNode<StateType>, index: Int) {
             item.frontierOpenIndex = index
         }
+
+        override fun isClosed(item: BackwardEnvelopeSearchNode<StateType>): Boolean = item.frontierClosed
+        override fun setClosed(item: BackwardEnvelopeSearchNode<StateType>, newValue: Boolean) {
+            item.frontierClosed = newValue
+        }
     }
 
     inner class BackwardOpenList : AbstractAdvancedPriorityQueue<BackwardEnvelopeSearchNode<StateType>>(arrayOfNulls(1000000), backwardsComparator) {
@@ -168,6 +173,9 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
         override fun setIndex(item: BackwardEnvelopeSearchNode<StateType>, index: Int) {
             item.backwardOpenIndex = index
         }
+
+        override fun isClosed(item: BackwardEnvelopeSearchNode<StateType>): Boolean = false
+        override fun setClosed(item: BackwardEnvelopeSearchNode<StateType>, newValue: Boolean) {} // no op
     }
 
     private var frontierOpenList = FrontierOpenList()
@@ -477,12 +485,12 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
             if (frontierOpenList.isOpen(currentNode)) {
                 frontierOpenList.remove(currentNode)
             }
-            expandFromNode(this, currentNode) {
+            expandFromNode(this, currentNode,  {
                 if (it.envelopeVersion != envelopeVersionCounter ||
                         (!it.frontierClosed && !frontierOpenList.isOpen(it))) {
                     frontierOpenList.add(it)
                 }
-            }
+            })
             terminationChecker.notifyExpansion()
         }
 

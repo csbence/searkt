@@ -89,6 +89,13 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     inner class QualifiedFocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), newOpenNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private val qualifiedFocal = QualifiedFocalList()
@@ -99,6 +106,13 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     inner class PromisingFocalList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), focalNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private val promisingFocal = PromisingFocalList()
@@ -113,6 +127,13 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
     inner class FHatList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), openNodeComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(2)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(2, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private val fHatHeap = FHatList()
@@ -147,6 +168,7 @@ class ExplicitEstimationTildeSearch<StateType : State<StateType>>(val domain: Do
 
         override val open: Boolean
             get() = indexMap[2] >= 0
+        override var closed = false
 
         private var internalNode: RBTreeNode<Node<StateType>, Node<StateType>>? = null
 

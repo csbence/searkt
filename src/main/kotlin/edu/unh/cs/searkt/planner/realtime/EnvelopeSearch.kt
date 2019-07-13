@@ -133,6 +133,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
             item.heuristicOpenIndex = index
         }
 
+        override fun setClosed(item: EnvelopeSearchNode<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun isClosed(item: EnvelopeSearchNode<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
         override fun pop(): EnvelopeSearchNode<StateType>? {
             val node = super.pop()
             if (node != null && node.pseudoFOpenIndex > -1) pseudoFOpenList.remove(node)
@@ -144,6 +152,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.pseudoFOpenIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.pseudoFOpenIndex = index
+        }
+
+        override fun setClosed(item: EnvelopeSearchNode<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun isClosed(item: EnvelopeSearchNode<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
         override fun pop(): EnvelopeSearchNode<StateType>? {
@@ -163,6 +179,14 @@ class EnvelopeSearch<StateType : State<StateType>>(override val domain: Domain<S
         override fun getIndex(item: EnvelopeSearchNode<StateType>): Int = item.backupIndex
         override fun setIndex(item: EnvelopeSearchNode<StateType>, index: Int) {
             item.backupIndex = index
+        }
+
+        override fun setClosed(item: EnvelopeSearchNode<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun isClosed(item: EnvelopeSearchNode<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
     }
 

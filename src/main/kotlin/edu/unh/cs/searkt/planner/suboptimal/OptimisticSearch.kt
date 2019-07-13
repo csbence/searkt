@@ -33,7 +33,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                                                    var actionCost: Double, var action: Action,
                                                    override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
-        var isClosed = false
+        override var closed = false
         var expansionIteration = -1
         private val indexMap = Array(2) { -1 }
         override val g: Double
@@ -106,6 +106,13 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     inner class OpenListOnF : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), fValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private var fOpenList = OpenListOnF()
@@ -113,6 +120,13 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     inner class OpenListOnFHat : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), fHatValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private var fHatOpenList = OpenListOnFHat()
@@ -139,7 +153,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
     }
 
     private fun expandFromNode(sourceNode: Node<StateType>) {
-        if (sourceNode.isClosed) reexpansions++
+        if (sourceNode.closed) reexpansions++
 
         val currentGValue = sourceNode.cost
         for (successor in domain.successors(sourceNode.state)) {
@@ -165,14 +179,14 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
                     action = successor.action
                     actionCost = successor.actionCost
                 }
-                if (isDuplicate && successorNode.isClosed) {
+                if (isDuplicate && successorNode.closed) {
                     // if duplicate and is closed add back to open
                     fOpenList.add(successorNode)
                     // only add duplicates back in with original optimistic search
                     if (algorithmName == Planners.OPTIMISTIC.toString()) {
                         fHatOpenList.add(successorNode)
                     }
-                } else if (isDuplicate && !successorNode.isClosed) {
+                } else if (isDuplicate && !successorNode.closed) {
                     // if duplicate and is open update within open
                     fOpenList.update(successorNode)
                     fHatOpenList.update(successorNode)
@@ -232,7 +246,7 @@ class OptimisticSearch<StateType : State<StateType>>(val domain: Domain<StateTyp
             }
             expandFromNode(topNode)
             iteration++
-            topNode.isClosed = true
+            topNode.closed = true
             expandedNodeCount++
         }
 

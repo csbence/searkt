@@ -33,6 +33,7 @@ class DynamicFHatPlanner<StateType : State<StateType>>(val domain: Domain<StateT
 
         /** Item index in the open list. */
         override var index: Int = -1
+        override var closed: Boolean = false
 
         var predecessors: MutableList<Edge<StateType>> = arrayListOf()
         var parent: Node<StateType>

@@ -374,7 +374,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      */
     private fun getCurrentPath(sourceState : StateType, terminationChecker: TerminationChecker) : PathTrace<StateType> {
 
-        val topOfOpen = openList.peek() ?: throw GoalNotReachableException()
+        val topOfOpen = openList.peek() ?: throw GoalNotReachableException("Open list is empty - no target to compare with")
         //Goal found and traced
         if (foundGoal && traceInProgress == null && targetPath?.pathEnd == topOfOpen) {
             return targetPath!!
@@ -455,7 +455,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private fun findNewPath(bestPath : PathTrace<StateType>, currentAgentNode : TBANode<StateType>)
             : List<ActionBundle>? {
         // Find common ancestor
-        var sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
+        val sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
 
         targetPath = bestPath
 
@@ -478,7 +478,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
     }
 
-    private fun updateHeuristics(terminationChecker: TerminationChecker): Unit {
+    private fun updateHeuristics(terminationChecker: TerminationChecker) {
         dynamicDijkstra(this,
                 updateOpenList ?: throw MetronomeException("Cannot update from no open list"),
                 updateIsFresh,
@@ -535,7 +535,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
             undiscoveredNode
         } else {
-            tempSuccessorNode!!
+            tempSuccessorNode
         }
     }
 
@@ -545,7 +545,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         if (transition == null) {
             return restart(currentNode)
-
 
         } else {
             return listOf(ActionBundle(transition.first, transition.second.toLong()))
@@ -569,6 +568,21 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             updateOpenList = openList
         }
         openList = getNextOpenList(switchOpenList)
+
+        // Reset global vars to reflect new search
+        val newSeed = getNode(currentNode, bestSuccessor)
+        newSeed.apply {
+            parent = this
+            cost = 0
+            actionCost = 0
+            action = NoOperationAction
+        }
+        rootState = newSeed.state
+        foundGoal = false
+        targetPath = null
+        traceInProgress = null
+
+        openList.add(newSeed) // seed open list with the next state we will reach
 
         return listOf(ActionBundle(bestSuccessor.action, bestSuccessor.actionCost.toLong()))
     }

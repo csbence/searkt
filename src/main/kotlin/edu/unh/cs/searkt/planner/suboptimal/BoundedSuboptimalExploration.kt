@@ -29,7 +29,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
                                              var actionCost: Double, var action: Action,
                                              override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
-        var isClosed = false
+        override var closed = false
         var expanded = 0
 
         private val indexMap = Array(1) { -1 }
@@ -109,6 +109,13 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
     inner class GreedyOpen : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(100000), weightedValueComparator) {
         override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
         override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+        override fun isClosed(item: Node<StateType>): Boolean {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        override fun setClosed(item: Node<StateType>, newValue: Boolean) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     private var greedyOpen = GreedyOpen()
@@ -180,7 +187,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
                     actionCost = successor.actionCost
                 }
 
-                if (successorNode.isClosed) {
+                if (successorNode.closed) {
                     continue
                 }
 
@@ -285,7 +292,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         while (openList.isNotEmpty()) {
             val currentNode = openList.pop()!!
 
-            currentNode.isClosed = true
+            currentNode.closed = true
 
             expandNode(currentNode, openList, false)?.let { return it }
             expanded++
@@ -339,7 +346,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
             greedyExpansions++
             val currentNode = greedyOpen.pop()!!
 
-            if (currentNode.isClosed || currentNode.expanded == iteration) {
+            if (currentNode.closed || currentNode.expanded == iteration) {
                 continue
             }
 
