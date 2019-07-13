@@ -17,7 +17,7 @@ object GridMapIO {
 
         // Skip to the desired configuration
         (0 until seed).forEach { i ->
-            instanceScanner.hasNext()
+            instanceScanner.nextLine() // advance
             if (!instanceScanner.hasNext()) throw InvalidVacuumWorldException("Invalid map seed ($seed). Only ${i + 1} instances found.")
         }
 
