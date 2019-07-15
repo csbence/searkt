@@ -16,6 +16,7 @@ import java.util.HashMap
 import kotlin.Comparator
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
@@ -29,7 +30,7 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
     var aStarExpansions = 0
     var greedyExpansions = 0
 
-    inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
+    class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
                                              var actionCost: Double, var action: Action,
                                              override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
@@ -50,9 +51,6 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
         override val dHat: Double
             get() = heuristic
 
-        val xdp: Double
-            get() = (1 / (2 * optimisticWeight)) * ((((2 * optimisticWeight) - 1) *
-                    h) + sqrt(Math.pow(g - h, 2.0) + (4 * optimisticWeight * h * g)))
 
         override fun setIndex(key: Int, index: Int) {
             indexMap[key] = index
@@ -69,14 +67,12 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
 
         var suboptimalCost: Double = 0.0
 
-        @Suppress("UNCHECKED_CAST")
         override fun equals(other: Any?): Boolean {
-            return try {
-                val otherCast = other as Node<*>
-                otherCast.state == this.state
-            } catch (exp: ClassCastException) {
-                false
+            if (other != null && other is Node<*>) {
+                return state == other.state
             }
+
+            return false
         }
 
         override fun hashCode(): Int = state.hashCode()
@@ -85,6 +81,8 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
                 "Node: [State: $state h: $heuristic, g: $cost, actionCost: $actionCost, parent: ${parent?.state}, open: $open ]"
     }
 
+    private fun Node<*>.xdp() = (1 / (2 * optimisticWeight)) * ((2 * optimisticWeight - 1) *
+            this.h + sqrt((this.g - this.h).pow(2.0) + (4 * optimisticWeight * this.h * this.g)))
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
@@ -131,8 +129,8 @@ class BoundedSuboptimalExploration<StateType : State<StateType>>(val domain: Dom
 
     private val xdpComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.xdp < rhs.xdp -> -1
-            lhs.xdp > rhs.xdp -> 1
+            lhs.xdp() < rhs.xdp() -> -1
+            lhs.xdp() > rhs.xdp() -> 1
             lhs.g > rhs.g -> -1 // tie breaking on cost
             lhs.g < rhs.g -> 1
             else -> 0

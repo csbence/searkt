@@ -316,6 +316,7 @@ object ConfigurationExecutor {
                 if (configuration.weight != 1.0) throw MetronomeException("A* is a shorthand for wA* with weight=1.0 thus the weight can't be ${configuration.weight}.")
                 executeOfflineSearch(WeightedAStar(domain, configuration), configuration, domain, sourceState)
             }
+            SUBPOTENTIAL -> executeOfflineSearch(SubPotential(domain, configuration), configuration, domain, sourceState)
             LSS_LRTA_STAR -> executeRealTimeSearch(LssLrtaStarPlanner(domain, configuration), configuration, domain, sourceState)
             CES -> executeRealTimeSearch(ComprehensiveEnvelopeSearch(domain, configuration), configuration, domain, sourceState)
             ES -> executeRealTimeSearch(EnvelopeSearch(domain, configuration), configuration, domain, sourceState)
