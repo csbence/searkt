@@ -161,16 +161,6 @@ def prepare_for_within_opt_plot(data, domain_tokens=None, group_by=None):
 
 # Scratch "main" script
 if __name__ == '__main__':
-    df = construct_data_frame(read_data("../results/astar_orz100d.json"))
-    df = df.append(df).append(df)
-    df = df.head(100)
-    df["domainName"] = "SLIDING_TILE_PUZZLE_4"
-    df["domainPath"] = list(f'input/tiles.korf/4/real/{x}' for x in range(1, 101))
-
-    df = df.drop(columns=["attributes", "backupCount", "backupRatio", "commitmentStrategy", "actionExecutionTime",
-                     "domainSizeMultiplier", "errorDetails", "errorMessage", "errorModel", "expandedNodes",
-                     "expansionLimit", "experimentRunTime", "filterUnsafe", "generatedNodes", "goalAchievementTime",
-                     "idlePlanningTime", "lookaheadDepthLimit", "planningTime", "reexpansions", "stepLimit",
-                     "tbaOptimization", "terminationTimeEpsilon", "timeBoundedSearchStrategy", "variant"])
-
-    df.to_json("../results/astar_korf4real.json", orient="records")
+    df = construct_data_frame(read_data("../results/dataLIMITED2-21-01-01-07-19.json"))
+    df = df[~(df.domainName == 'RACETRACK')]
+    df.to_json('../results/test.json', orient='records')

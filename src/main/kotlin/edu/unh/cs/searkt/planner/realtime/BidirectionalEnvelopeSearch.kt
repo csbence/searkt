@@ -349,7 +349,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
      * Explore the state space by expanding the frontier
      */
     private fun explore(terminationChecker: TerminationChecker): BiEnvelopeSearchNode<StateType> {
-        val currentTarget = if (cachedPath.size > 0) cachedPath.last.successor else nodes[currentAgentState]!!
         while (!terminationChecker.reachedTermination()) {
             // expand from frontier open list
 
@@ -362,11 +361,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
             // ensure we always expand the current target if it is not expanded yet
 
-            // we will expand it in the forward search if necessary
-//            val currentNode = if (frontierOpenList.isOpen(currentTarget)) {
-//                frontierOpenList.remove(currentTarget)
-//                currentTarget
-//            } else frontierOpenList.pop()!!
             val currentNode = frontierOpenList.pop()!!
             if (domain.isGoal(currentNode.state)) {
                 if (foundGoals.size == 0) {
@@ -390,6 +384,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun expandNode(node: BiEnvelopeSearchNode<StateType>) {
         if (frontierOpenList.isOpen(node)) frontierOpenList.remove(node)
 
+        var newH = Double.POSITIVE_INFINITY
         domain.successors(node.state).forEach { successor ->
             val successorNode = getNode(node, successor)
             if (successorNode.envelopeVersion != envelopeVersionCounter) {
@@ -402,7 +397,11 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             if (!successorNode.frontierClosed && !frontierOpenList.isOpen(successorNode)) {
                 frontierOpenList.add(successorNode)
             }
+
+            newH = minOf(newH, successor.actionCost + successorNode.heuristic)
         }
+        // Updating heuristic. This is what makes us complete in directed domains!
+        node.heuristic = newH
 
         expandedNodeCount++
         node.frontierClosed = true
