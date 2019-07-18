@@ -153,7 +153,7 @@ class LssLrtaStarPlanner<StateType : State<StateType>>(override val domain: Doma
 
             currentNode = openList.pop()
                     ?: throw GoalNotReachableException("Goal not reachable. Open list is empty.")
-            expandFromNode(this, currentNode, {})
+            expandFromNode(this, currentNode)
 
             //we only care about path length for time termination limits. Expansion limits get free tree following
             if (configuration.terminationType == TerminationType.TIME) {

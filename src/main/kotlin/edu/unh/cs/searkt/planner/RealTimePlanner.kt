@@ -485,7 +485,7 @@ fun <StateType : State<StateType>, NodeType : RealTimeSearchNode<StateType, Node
         freshSearch: Boolean = true,
         openListComparator: Comparator<RealTimeSearchNode<StateType, NodeType>> = Comparator { lhs, rhs -> learningHeuristicComparator.compare(lhs, rhs) },
         reachedTermination: (AbstractAdvancedPriorityQueue<NodeType>) -> Boolean = { queue -> queue.isEmpty() },
-        checkOutdated: (NodeType) -> Boolean = { it.iteration == context.iterationCounter && !openList.isOpen(it) }) {
+        checkOutdated: (NodeType) -> Boolean = { it.iteration != context.iterationCounter || openList.isOpen(it) }) {
 
     // Invalidate the current heuristic value by incrementing the counter
     // Otherwise, we continue the previous iteration
