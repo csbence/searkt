@@ -2,6 +2,7 @@
 
 import json
 import gzip
+import copy
 import pandas as pd
 from pandas import DataFrame
 import statsmodels.stats.api as sms
@@ -39,32 +40,52 @@ def flatten(experiment):
 
 
 def remove_unused_columns(data):
-    data.drop(['actions', 'commitmentType', "success", "timeLimit",
+    data.drop(['actions', 'commitmentType', "timeLimit",
                "terminationType", 'timestamp', 'octileMovement', 'lookaheadType',
                'firstIterationDuration',
                "targetSelection", "safetyExplorationRatio", "safetyProof", "safetyWindowSize", "safetyBackup",
-               'domainSeed', 'averageVelocity', "proofSuccessful", "rawDomain", "anytimeMaxCount",
+               'averageVelocity', "proofSuccessful", "rawDomain", "anytimeMaxCount",
                "systemProperties", "towardTopNode", "numberOfProofs"],
               axis=1,
               inplace=True,
               errors='ignore')
 
 
-def analyze_within_optimal(exp, opt):
+'''
+Analyze:
+    - within optimal
+    - cpu time per iteration
+''' 
+def analyze_metrics(exp, opt):
     exp_df = construct_data_frame(exp)
     opt_df = construct_data_frame(opt)
 
     opt_df['optimalPathLength'] = opt_df['pathLength']
-    opt_df = opt_df[['domainPath', 'optimalPathLength']]
+    opt_df = opt_df[['domainPath', 'domainSeed', 'optimalPathLength']]
 
-    exp_df = pd.merge(exp_df, opt_df, how='inner', on=['domainPath'])
+    exp_df = pd.merge(exp_df, opt_df, how='inner', on=['domainPath','domainSeed'])
+
     exp_df['withinOpt'] = exp_df['goalAchievementTime'] / (exp_df["actionDuration"] * exp_df["optimalPathLength"])
+    print(exp_df['withinOpt'])
+
+    # exp_df['cpuPerIteration'] =  (exp_df['pathLength'] + 1) / exp_df['planningTime']
 
     return exp_df
 
 
-def get_within_opt_results(data, group_by):
-    results = DataFrame(columns="actionDuration withinOpt algorithmName lbound rbound algCode".split())
+'''
+    Internal private function - common code for generating
+    results data frames and allowing results to be grouped by
+    configuration options
+'''
+def generate_results(data, group_by, custom_columns, calculate_metric):
+    # remove errors
+    data = data[data.success != False]
+
+
+    columns = ['algCode', 'algorithmName']
+    columns.extend(custom_columns)
+    results = DataFrame(columns=columns)
 
     # prep config dict by making first pass through group_by
     config = {}
@@ -78,44 +99,81 @@ def get_within_opt_results(data, group_by):
 
     for algorithm_name, custom_grouping_map in group_by.items():
         alg_data = data[data['algorithmName'] == algorithm_name]
-        groupings = ['actionDuration']
+        groupings = [*custom_grouping_map]
 
-        for field in custom_grouping_map:
-            groupings.append(field)
+        print(algorithm_name)
+        print(groupings)
 
-        for fields, duration_group in alg_data.groupby(groupings):
+        for fields, experiment_group in alg_data.groupby(groupings):
+            print(experiment_group)
+
             transformed_alg_name = algorithm_name
             if transformed_alg_name in alg_map:
                 transformed_alg_name = alg_map[transformed_alg_name]
 
+            if len(groupings) == 1:
+                fields = [fields]
+
+            # iterate through our grouping field values and
+            # record the value. We will add to dataframe later
             unused_config_keys = set(config.keys())
-            action_duration = fields
-            if len(groupings) > 1:
-                action_duration = fields[0]
+            for field_name, field_value in zip(groupings, fields):
+                if field_name in custom_grouping_map:
+                    config[field_name].append(field_value)
+                    unused_config_keys.remove(field_name)
 
-                for field_name, field_value in zip(groupings, fields):
-                    if field_name in custom_grouping_map:
-                        config[field_name].append(field_value)
-                        unused_config_keys.remove(field_name)
-
+                    if custom_grouping_map[field_name] != None:
                         transformed_alg_name += ' ' + custom_grouping_map[field_name] + ': ' + str(field_value)
 
+            # Append None for any config not present in this
+            # algorithm
             for key in unused_config_keys:
                 config[key].append(None) # blank value
 
-            # Get mean of within optimal calculation, add row to results dataframe
-            mean_within_opt = duration_group['withinOpt'].mean()
-            within_opt_list = list(duration_group['withinOpt'])
-            bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
-            results = add_row(results, [action_duration, mean_within_opt, transformed_alg_name,
-                                        abs(mean_within_opt - bound[0]), abs(mean_within_opt - bound[1]),
-                                        algorithm_name])
+            # calculate the metric being reported. Add results to standard fields
+            row_data = [algorithm_name, transformed_alg_name]
+            row_data.extend(calculate_metric(experiment_group))
+            results = add_row(results, row_data)
 
     # extend df for custom config we want to filter on later
     for column, value_list in config.items():
         results[column] = value_list
 
     return results
+
+
+def within_opt_calculator(experiment_group):
+    mean_within_opt = experiment_group['withinOpt'].mean()
+    within_opt_list = list(experiment_group['withinOpt'])
+    bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
+
+    return [mean_within_opt, abs(mean_within_opt - bound[0]), abs(mean_within_opt - bound[1])]
+
+
+def get_within_opt_results(data, group_by):
+    group_by = copy.deepcopy(group_by)
+    # add actionDuration to user-specified groupings
+    for _, groupings in group_by.items():
+        groupings['actionDuration'] = None
+
+    return generate_results(data, group_by, "withinOpt lbound rbound".split(), within_opt_calculator)
+
+
+def cpu_iteration_calculator(experiment_group):
+    mean_cpu = experiment_group['cpuPerIteration'].mean()
+    cpu_list = list(experiment_group['cpuPerIteration'])
+    bound = sms.DescrStatsW(cpu_list).zconfint_mean()
+
+    return [mean_cpu, abs(mean_cpu - bound[0]), abs(mean_cpu - bound[1])]
+
+
+def get_cpu_results(data, group_by):
+    group_by = copy.deepcopy(group_by)
+    # add actionDuration to user-specified groupings
+    for _, groupings in group_by.items():
+        groupings['actionDuration'] = None
+
+    return generate_results(data, group_by, "cpuPerIteration lbound rbound".split(), cpu_iteration_calculator)
 
 
 def add_row(df, values):
@@ -127,11 +185,12 @@ def analyze_results(optimal_plans, experiments):
     for path_name in experiments:
         exp_data += read_data(path_name)
 
+
     optimal_data = []
     for optimal_path_name in optimal_plans:
         optimal_data += read_data(optimal_path_name)
 
-    df = analyze_within_optimal(exp_data, optimal_data)
+    df = analyze_metrics(exp_data, optimal_data)
 
     return df
 
@@ -154,6 +213,7 @@ def prepare_for_within_opt_plot(data, domain_tokens=None, group_by=None):
         results = {}
         for domain in domain_tokens:
             domain_data = data[data['domainPath'].str.contains(domain)]
+            print(domain)
             results[domain] = get_within_opt_results(domain_data, group_by)
 
         return results
