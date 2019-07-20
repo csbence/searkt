@@ -7,7 +7,7 @@ import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.planner.CommitmentStrategy
 import edu.unh.cs.searkt.planner.Planners
 
-fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, value: V): Collection<Map<K, V>> {
+fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, value: V): Collection<MutableMap<K, V>> {
     return map { original ->
         val newMap = HashMap(original)
         newMap[key] = value
@@ -15,7 +15,7 @@ fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, value: V): Collection<
     }
 }
 
-fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, values: Iterable<V>): Collection<Map<K, V>> {
+fun <K, V> Collection<Map<K, V>>.cartesianProduct(key: K, values: Iterable<V>): Collection<MutableMap<K, V>> {
     return map { original ->
         values.map { value ->
             val newMap = HashMap(original)
@@ -37,10 +37,10 @@ fun generateConfigurations(
         lookaheadType: LookaheadType? = null,
         stepLimit: Long? = null,
         domainExtras: List<Triple<Domains, String, Iterable<Any>>>? = null,
-        plannerExtras: Iterable<Triple<Planners, Any, Iterable<Any>>>? = null): Collection<Map<String, Any>> {
+        plannerExtras: Iterable<Triple<Planners, Any, Iterable<Any>>>? = null): Collection<MutableMap<String, Any>> {
 
-    var configurations: Collection<Map<String, Any>> = domains.map {
-        mapOf(DOMAIN_NAME.toString() to it.first.toString(), DOMAIN_PATH.toString() to it.second)
+    var configurations: Collection<MutableMap<String, Any>> = domains.map {
+        mutableMapOf<String, Any>(DOMAIN_NAME.toString() to it.first.toString(), DOMAIN_PATH.toString() to it.second)
     }
 
     configurations = configurations.cartesianProduct(ALGORITHM_NAME.toString(), planners.map(Any::toString)).toMutableList()

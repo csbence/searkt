@@ -6,12 +6,14 @@ import os
 from subprocess import run, PIPE
 
 import simplejson as json
+import numpy as np
 from distlre.distlre import DistLRE, Task, RemoteHost
 from slack_notification import start_experiment_notification, end_experiment_notification
 from tqdm import tqdm
 
 projectRoot = '/home/aifs1/kch29/repos/searkt'
-configFile = 'kevin_configs.json'
+configFile = 'refresh_configs.json'
+tag = "FRESH_BENCHMARK"
 
 print('Building project')
 os.chdir(projectRoot)
@@ -32,18 +34,18 @@ file_lock_path = '/home/aifs2/group/exp/distlre.lock'
 
 def execute_tasks():
     
-    if not os.path.isfile(file_lock_path):
+#    if not os.path.isfile(file_lock_path):
     #    lock_file = open(file_lock_path, 'w')
     #    lock_file.write(getpass.getuser() + '@' + str(datetime.datetime.now()))
     #    lock_file.close()
         executor.execute_tasks()
         executor.wait()
     #    os.remove(file_lock_path)
-    else:
-        lock_file = open(file_lock_path, 'r')
-        contents = lock_file.read().strip().split('@')
-        user, time = (contents[0], contents[1])
-        raise Exception(f"{user} started experiments @ {time}, check #experiments on Slack for updates")
+#    else:
+#        lock_file = open(file_lock_path, 'r')
+#        contents = lock_file.read().strip().split('@')
+#        user, time = (contents[0], contents[1])
+#        raise Exception(f"{user} started experiments @ {time}, check #experiments on Slack for updates")
     
 
 
@@ -68,9 +70,8 @@ remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
 f = open(f"{projectRoot}/configs/{configFile}")
 worlds = json.load(f)
-# worlds = worlds[:20] # for testing
+# worlds = worlds[:15000] # for testing
 print(f'Loaded {len(worlds)} configurations')
-tag = "TEST"
 # experiments = create_experiments(worlds)
 progress_bar = tqdm(total=len(worlds))
 configs = ['[' + json.dumps(config) + ']' + '\n' for config in worlds]
@@ -111,7 +112,15 @@ def save_results(results, tag, path_prefix=None):
     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
     f = open(file_handle, 'w+')
     for exp_result in results:
-        o_results.append(json.loads(exp_result))
+        res_dict = json.loads(exp_result)[0]  # loads as array
+        res_dict.pop('actions', None)  # don't store on disk - too much space!
+        cpu_list = res_dict.pop('iterationCpuTimeList')  # same. This we may have to add back though
+        res_dict['maxIterationCpu'] = np.max(cpu_list)
+        res_dict['avgIterationCpu'] = np.mean(cpu_list)
+        res_dict['minIterationCpu'] = np.min(cpu_list)
+
+        o_results.append(res_dict)
+
     f.write(json.dumps(o_results))
     f.close()
     return file_handle
