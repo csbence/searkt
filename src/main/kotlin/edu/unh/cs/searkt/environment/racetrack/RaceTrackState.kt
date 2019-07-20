@@ -11,21 +11,23 @@ import java.lang.Integer.rotateLeft
  *
  * The actual size and shape of the world is state-independent, so not implemented here
  */
-data class RaceTrackState(val x: Int, val y: Int, val dX: Int, val dY: Int, val startupCounter: Int) : State<RaceTrackState> {
+data class RaceTrackState(val x: Int, val y: Int, val dX: Int, val dY: Int, val isCollision: Boolean = false) : State<RaceTrackState> {
 
+    // isCollision not included in equals
     override fun equals(other: Any?): Boolean {
         return when {
             other !is RaceTrackState -> false
-            other.x == x && other.y == y && other.dX == dX && other.dY == dY && other.startupCounter == startupCounter -> true
+            other.x == x && other.y == y && other.dX == dX && other.dY == dY -> true
             else -> false
         }
     }
 
+    // isCollision not included in hash code
     override fun hashCode(): Int {
-        return x xor rotateLeft(y, 8) xor rotateLeft(dX, 16) xor rotateLeft(dY, 24) xor startupCounter
+        return x xor rotateLeft(y, 8) xor rotateLeft(dX, 16) xor rotateLeft(dY, 24)
     }
 
-    override fun copy() = RaceTrackState(x, y, dX, dY, startupCounter)
+    override fun copy() = RaceTrackState(x, y, dX, dY)
 
     override fun projectX() = x
     override fun projectY() = y

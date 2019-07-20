@@ -115,9 +115,10 @@ def save_results(results, tag, path_prefix=None):
         res_dict = json.loads(exp_result)[0]  # loads as array
         res_dict.pop('actions', None)  # don't store on disk - too much space!
         cpu_list = res_dict.pop('iterationCpuTimeList')  # same. This we may have to add back though
-        res_dict['maxIterationCpu'] = np.max(cpu_list)
-        res_dict['avgIterationCpu'] = np.mean(cpu_list)
-        res_dict['minIterationCpu'] = np.min(cpu_list)
+        if len(cpu_list) > 0:
+            res_dict['maxIterationCpu'] = int(np.max(cpu_list))
+            res_dict['avgIterationCpu'] = int(np.mean(cpu_list))
+            res_dict['minIterationCpu'] = int(np.min(cpu_list))
 
         o_results.append(res_dict)
 

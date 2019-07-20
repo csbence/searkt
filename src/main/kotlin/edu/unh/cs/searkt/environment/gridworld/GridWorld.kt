@@ -112,21 +112,6 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         return listOf(GridWorldState(targetLocation))
     }
 
-    override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
-        val predecessors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
-
-        for (action in GridWorldAction.values()) {
-            val newLocation = state.agentLocation - action.getRelativeLocation()
-
-            if (isLegalLocation(newLocation)) {
-                predecessors.add(SuccessorBundle(
-                        GridWorldState(newLocation),
-                        action,
-                        actionCost = actionDuration.toDouble()))
-            }
-        }
-
-        return predecessors
-    }
+    override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> = successors(state)
 }
 

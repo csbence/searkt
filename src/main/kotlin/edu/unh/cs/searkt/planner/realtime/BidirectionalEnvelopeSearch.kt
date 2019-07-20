@@ -55,6 +55,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private val lookaheadStrategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val envelopeStrategy = configuration.envelopeSearchStrategy ?: lookaheadStrategy // align w/ general lookahead
     private val frontierAdjustmentRatio = configuration.frontierAdjustmentRatio ?: 1.0
+    private val generatePredecessors = false // hard-coded while testing
 
     // Hard code expansion ratios while testing
     // r1 < 1.0
@@ -426,6 +427,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 val backwardNode = backwardOpenList.pop() ?:
                 throw BiSearchOpenEmptyException("Backward Search Open list is empty without finding the Agent")
 
+                // Does not increment expanded node count
+                if (generatePredecessors) expandPredecessors(backwardNode)
+
                 for (edge in backwardNode.globalPredecessors) {
                     val predecessorNode = edge.predecessor
 
@@ -530,6 +534,16 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         if (searchIntersection != null) extractPath(searchIntersection) // sets cached Path and path state set
+    }
+
+    /**
+     * Simple convenience function that expands predecessors. Call to getNode adds them to the appropriate
+     * data structures
+     */
+    private fun expandPredecessors(node: BiEnvelopeSearchNode<StateType>) {
+        for (predecessorBundle in domain.predecessors(node.state)) {
+            getNode(node, predecessorBundle, true)
+        }
     }
 
     private fun reSeedSearch(forwardSeed: BiEnvelopeSearchNode<StateType>,
@@ -735,7 +749,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
      *
      * @return node corresponding to the given state.
      */
-    override fun getNode(parent: BiEnvelopeSearchNode<StateType>, successor: SuccessorBundle<StateType>): BiEnvelopeSearchNode<StateType> {
+    override fun getNode(parent: BiEnvelopeSearchNode<StateType>, successor: SuccessorBundle<StateType>): BiEnvelopeSearchNode<StateType> = getNode(parent, successor, false)
+    private fun getNode(parent: BiEnvelopeSearchNode<StateType>, successor: SuccessorBundle<StateType>, isPredecessor: Boolean): BiEnvelopeSearchNode<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
@@ -749,7 +764,8 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                     state = successorState,
                     heuristic = domain.heuristic(successorState),
                     iteration = iterationCounter,
-                    envelopeVersion = envelopeVersionCounter,
+                    //do not allow predecessor expansion to prevent normal envelope expansion
+                    envelopeVersion = if(isPredecessor) -1 else envelopeVersionCounter,
                     pseudoG = domain.heuristic(pseudoFRoot, successorState).toLong()
             )
 
@@ -760,7 +776,19 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             tempSuccessorNode
         }
 
-        val edge = BiSearchEdge(predecessor = parent, successor = successorNode, action = successor.action, actionCost = successor.actionCost.toLong())
+        val edge = if (isPredecessor) {
+            when {
+                successor.action == NoOperationAction -> BiSearchEdge(predecessor = successorNode, successor = parent,
+                        action = successor.action,
+                        actionCost = successor.actionCost.toLong())
+                successor.action is Operator<*> -> BiSearchEdge(predecessor = successorNode, successor = parent,
+                        action = (successor.action as Operator<StateType>).reverse(successorState),
+                        actionCost = successor.actionCost.toLong())
+                else -> throw MetronomeException("Actions must be reversible to generate predecessors")
+            }
+        } else {
+            BiSearchEdge(predecessor = parent, successor = successorNode, action = successor.action, actionCost = successor.actionCost.toLong())
+        }
 
         // add to parent's successor set
         parent.globalSuccessors.add(edge)

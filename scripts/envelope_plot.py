@@ -66,9 +66,6 @@ def analyze_metrics(exp, opt):
     exp_df = pd.merge(exp_df, opt_df, how='inner', on=['domainPath','domainSeed'])
 
     exp_df['withinOpt'] = exp_df['goalAchievementTime'] / (exp_df["actionDuration"] * exp_df["optimalPathLength"])
-    print(exp_df['withinOpt'])
-
-    # exp_df['cpuPerIteration'] =  (exp_df['pathLength'] + 1) / exp_df['planningTime']
 
     return exp_df
 
@@ -101,11 +98,7 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
         alg_data = data[data['algorithmName'] == algorithm_name]
         groupings = [*custom_grouping_map]
 
-        print(algorithm_name)
-        print(groupings)
-
         for fields, experiment_group in alg_data.groupby(groupings):
-            print(experiment_group)
 
             transformed_alg_name = algorithm_name
             if transformed_alg_name in alg_map:
@@ -142,7 +135,7 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
     return results
 
 
-def within_opt_calculator(experiment_group):
+def expansion_calculator(experiment_group):
     mean_within_opt = experiment_group['withinOpt'].mean()
     within_opt_list = list(experiment_group['withinOpt'])
     bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
@@ -150,21 +143,27 @@ def within_opt_calculator(experiment_group):
     return [mean_within_opt, abs(mean_within_opt - bound[0]), abs(mean_within_opt - bound[1])]
 
 
-def get_within_opt_results(data, group_by):
+def get_expansion_results(data, group_by):
     group_by = copy.deepcopy(group_by)
     # add actionDuration to user-specified groupings
     for _, groupings in group_by.items():
         groupings['actionDuration'] = None
 
-    return generate_results(data, group_by, "withinOpt lbound rbound".split(), within_opt_calculator)
+    columns = "withinOpt yLbound yRbound".split()
+    return generate_results(data, group_by, columns, expansion_calculator)
 
 
-def cpu_iteration_calculator(experiment_group):
-    mean_cpu = experiment_group['cpuPerIteration'].mean()
-    cpu_list = list(experiment_group['cpuPerIteration'])
-    bound = sms.DescrStatsW(cpu_list).zconfint_mean()
+def cpu_calculator(experiment_group):
+    mean_within_opt = experiment_group['withinOpt'].mean()
+    within_opt_list = list(experiment_group['withinOpt'])
+    opt_bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
 
-    return [mean_cpu, abs(mean_cpu - bound[0]), abs(mean_cpu - bound[1])]
+    mean_cpu = experiment_group['avgIterationCpu'].mean() / 1000000
+    cpu_list = list(experiment_group['avgIterationCpu'] / 1000000)
+    cpu_bound = sms.DescrStatsW(cpu_list).zconfint_mean()
+
+    return [mean_within_opt, abs(mean_within_opt - opt_bound[0]), abs(mean_within_opt - opt_bound[1]),
+            mean_cpu, abs(mean_cpu - cpu_bound[0]), abs(mean_cpu - cpu_bound[1])]
 
 
 def get_cpu_results(data, group_by):
@@ -173,7 +172,8 @@ def get_cpu_results(data, group_by):
     for _, groupings in group_by.items():
         groupings['actionDuration'] = None
 
-    return generate_results(data, group_by, "cpuPerIteration lbound rbound".split(), cpu_iteration_calculator)
+    columns = "withinOpt yLbound yRbound avgIterationCpu xLbound xRbound".split()
+    return generate_results(data, group_by, columns, cpu_calculator)
 
 
 def add_row(df, values):
@@ -203,24 +203,30 @@ def analyze_results(optimal_plans, experiments):
 #           Note that if an algorithm name is not a key in group_by, it will not be returned in the results
 # returns if domain_tokens not passed, the results. If domain_tokens passed, a dict where each key is a token and each
 #           value is the result for that domain
-def prepare_for_within_opt_plot(data, domain_tokens=None, group_by=None):
+def prepare_within_opt_plots(data, domain_tokens, group_by=None):
     if group_by is None:
         group_by = {}
 
-    if domain_tokens is None:
-        return get_within_opt_results(data, group_by)
-    else:
-        results = {}
-        for domain in domain_tokens:
-            domain_data = data[data['domainPath'].str.contains(domain)]
-            print(domain)
-            results[domain] = get_within_opt_results(domain_data, group_by)
+    expansion_results = {
+        'xaxis': {
+            'title': 'Action Duration',
+            'data': 'actionDuration'
+        }
+    }
+    cpu_results = {
+        'xaxis': {
+            'title': 'CPU time per Iteration (ms)',
+            'data': 'avgIterationCpu'
+        }
+    }
+    for domain in domain_tokens:
+        domain_data = data[data['domainPath'].str.contains(domain)]
+        expansion_results[domain] = get_expansion_results(domain_data, group_by)
+        cpu_results[domain] = get_cpu_results(domain_data, group_by)
 
-        return results
+    return expansion_results, cpu_results
 
 
 # Scratch "main" script
 if __name__ == '__main__':
-    df = construct_data_frame(read_data("../results/dataLIMITED2-21-01-01-07-19.json"))
-    df = df[~(df.domainName == 'RACETRACK')]
-    df.to_json('../results/test.json', orient='records')
+    print('No main operations')
