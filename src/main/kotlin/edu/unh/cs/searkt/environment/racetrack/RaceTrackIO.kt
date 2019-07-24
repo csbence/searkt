@@ -63,7 +63,7 @@ object RaceTrackIO {
                 actionDuration
         )
 
-        val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0, 0)
+        val startState = RaceTrackState(startLocation.x, startLocation.y, 0, 0)
 
         return RaceTrackInstance(raceTrack, startState)
     }

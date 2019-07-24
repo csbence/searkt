@@ -114,11 +114,16 @@ def save_results(results, tag, path_prefix=None):
     for exp_result in results:
         res_dict = json.loads(exp_result)[0]  # loads as array
         res_dict.pop('actions', None)  # don't store on disk - too much space!
-        cpu_list = res_dict.pop('iterationCpuTimeList')  # same. This we may have to add back though
+        # Don't store CPU list on disk, but do do some analysis
+        cpu_list = res_dict.pop('iterationCpuTimeList')
         if len(cpu_list) > 0:
             res_dict['maxIterationCpu'] = int(np.max(cpu_list))
             res_dict['avgIterationCpu'] = int(np.mean(cpu_list))
             res_dict['minIterationCpu'] = int(np.min(cpu_list))
+            percentile_list = np.percentile(cpu_list, [50, 90, 95])
+            res_dict['medianIterationCpu'] = percentile_list[0]
+            res_dict['percentile90Cpu'] = percentile_list[1]
+            res_dict['percentile95Cpu'] = percentile_list[2]
 
         o_results.append(res_dict)
 
