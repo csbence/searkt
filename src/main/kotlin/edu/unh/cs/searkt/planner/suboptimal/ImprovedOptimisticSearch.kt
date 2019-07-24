@@ -73,7 +73,7 @@ class ImprovedOptimisticSearch<StateType : State<StateType>>(val domain: Domain<
             get() = cost + heuristic
 
         val xdp: Double
-            get() = (1 / (2 * optimisticWeight)) * ((((2 * optimisticWeight) - 1) *
+            get() = (1 / (2 * optimisticWeight)) * (g + (((2 * optimisticWeight) - 1) *
                     h) + sqrt(Math.pow(g - h, 2.0) + (4 * optimisticWeight * h * g)))
 
         val xup: Double

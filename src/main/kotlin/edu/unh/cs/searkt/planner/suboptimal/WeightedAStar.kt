@@ -21,8 +21,6 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
 
     private val algorithmName = configuration.algorithmName
 
-    private val optimisticWeight: Double = weight // (2.0 * weight) - 1.0
-
     var terminationChecker: TerminationChecker? = null
 
     inner class Node<StateType : State<StateType>>(val state: StateType, var heuristic: Double, var cost: Double,
@@ -71,12 +69,12 @@ class WeightedAStar<StateType : State<StateType>>(val domain: Domain<StateType>,
         }
 
         val xdp: Double
-            get() = (1 / (2 * optimisticWeight)) * ((((2 * optimisticWeight) - 1) *
-                    h) + sqrt(Math.pow(g - h, 2.0) + (4 * optimisticWeight * h * g)))
+            get() = (1 / (2 * weight)) * (g + (((2 * weight) - 1) *
+                    h) + sqrt(Math.pow(g - h, 2.0) + (4 * weight * h * g)))
 
         val xup: Double
-            get() = (1 / (2 * optimisticWeight)) * (g + h + sqrt(Math.pow(g + h, 2.0) +
-                    ((4 * optimisticWeight) * (optimisticWeight - 1) * Math.pow(h, 2.0))))
+            get() = (1 / (2 * weight)) * (g + h + sqrt(Math.pow(g + h, 2.0) +
+                    ((4 * weight) * (weight - 1) * Math.pow(h, 2.0))))
 
         override fun hashCode(): Int = state.hashCode()
 

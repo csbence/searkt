@@ -177,6 +177,7 @@ object ConfigurationExecutor {
             AIRSPACE -> executeRaceTrackLimit(configuration, domainStream)
             TRAFFIC -> executeVehicle(configuration, domainStream)
             GRID_MAP -> executeGridMap(configuration, dataRootPath)
+//            DOCK_ROBOT -> executeDockRobot(configuration, dataRootPath)
             else -> throw MetronomeException("Unknown or deactivated globalDomain: $domain")
         }
     }

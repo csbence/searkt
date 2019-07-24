@@ -4,6 +4,7 @@ import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
 import java.io.File
@@ -15,7 +16,7 @@ import kotlin.test.assertTrue
 class InverseTilePuzzleTest {
 
     private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4_INVERSE",
-            algorithmName = "WEIGHTED_A_STAR", terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
+            algorithmName = Planners.WEIGHTED_A_STAR, terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
             errorModel = "global", expansionLimit = 1000000L, weight = 1.0)
 
 

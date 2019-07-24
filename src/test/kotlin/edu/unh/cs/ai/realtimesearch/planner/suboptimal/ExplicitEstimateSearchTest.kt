@@ -8,6 +8,7 @@ import edu.unh.cs.searkt.environment.slidingtilepuzzle.SlidingTilePuzzleIO
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -22,7 +23,7 @@ class ExplicitEstimationSearchTest {
 //            null, 100000L, 1000L, Long.MAX_VALUE, null, 1.0, null, null, null, null,
 //            null, null, null, null, null, null, errorModel = "path")
 
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "ExplicitEstimationSearchH",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = Planners.EES,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 1000L,
             errorModel = "path")
 

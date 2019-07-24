@@ -45,7 +45,7 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
 data class ExperimentConfiguration(
         val domainName: String,
         @Optional val rawDomain: String? = null,
-        val algorithmName: Planners,
+        var algorithmName: Planners,
         @Optional
         val terminationType: TerminationType = TerminationType.UNLIMITED,
         @Optional val domainPath: String? = null,

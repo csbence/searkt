@@ -1,16 +1,15 @@
 package edu.unh.cs.searkt.planner.suboptimal
 
-import edu.unh.cs.searkt.environment.gridworld.GridWorldIO
 import edu.unh.cs.searkt.environment.pancake.PancakeIO
-import edu.unh.cs.searkt.environment.pancake.PancakeProblem
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import org.junit.Test
 import java.io.File
 
 class BoundedSuboptimalExplorationTest {
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "WEIGHTED_A_STAR",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = Planners.WEIGHTED_A_STAR,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 2.5, variant = "O")
 

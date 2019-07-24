@@ -2,9 +2,11 @@ package edu.unh.cs.searkt.planner.suboptimal
 
 import edu.unh.cs.searkt.environment.Action
 import edu.unh.cs.searkt.environment.heavytiles.HeavyTilePuzzleIO
+import edu.unh.cs.searkt.environment.pancake.PancakeIO
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import org.junit.Test
 import java.io.File
 import java.io.FileWriter
@@ -17,7 +19,7 @@ class WeightedAStarTest {
 //    private val configuration = ExperimentConfiguration("SLIDING_TILE_PUZZLE_4", null, "WEIGHTED_A_STAR", TerminationType.EXPANSION, "input/tiles/korf/4/real/12", 1000000L, 1000L, 1000000L,
 //            null, 3.0, LookaheadType.STATIC, CommitmentStrategy.SINGLE, null, null, null, null, null, null, null, null)
 
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = "WEIGHTED_A_STAR",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_PUZZLE_4", algorithmName = Planners.WEIGHTED_A_STAR,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
             expansionLimit = 1000000000L, weight = 1.0)
 
@@ -141,6 +143,91 @@ class WeightedAStarTest {
 //    }
 
     @Test
+    fun testXDPSuboptimality() {
+        val startingWeight = 0.9
+        val stepSize = 0.1
+
+
+        var times = 0
+        var aStarExpansionSum = 0
+        var xdpExpansionSum = 0
+        var subPExpansionSum = 0
+
+        for (w in 1..100) {
+            val currentWeight = startingWeight + (stepSize * w)
+            println("running sub-optimality validation on weight: $currentWeight")
+            configuration.weight = currentWeight
+
+            for (i in 0..10) {
+                val stream = WeightedAStarTest::class.java.classLoader.getResourceAsStream("input/pancake/$i.pqq")
+                val pancakeProblem = PancakeIO.parseFromStream(stream, 1L)
+                val initialState = pancakeProblem.initialState
+
+//                try {
+                var currentState = initialState
+                // run A* then use solution with validation
+                configuration.weight = 1.0
+                configuration.algorithmName = Planners.WEIGHTED_A_STAR
+                val aStarAgent = WeightedAStar(pancakeProblem.domain, configuration)
+                val aStarPlan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(10000000))
+                // A* plan check
+                aStarPlan.forEach { action ->
+                    currentState = pancakeProblem.domain.successors(currentState).first { it.action == action }.state
+                }
+                assertTrue { pancakeProblem.domain.heuristic(currentState) == 0.0 }
+                println("\tA* expanded ${aStarAgent.expandedNodeCount}")
+
+                currentState = initialState
+                // then run WA*_XDP and check suboptimality
+                configuration.weight = currentWeight
+                configuration.algorithmName = Planners.WEIGHTED_A_STAR_XDP
+                val xdpAgent = WeightedAStar(pancakeProblem.domain, configuration)
+                val xdpPlan = xdpAgent.plan(initialState, StaticExpansionTerminationChecker(10000000))
+                // XDP plan check
+                xdpPlan.forEach { action ->
+                    currentState = pancakeProblem.domain.successors(currentState).first { it.action == action }.state
+                }
+                assertTrue { pancakeProblem.domain.heuristic(currentState) == 0.0 }
+                println("\tXDP expanded ${xdpAgent.expandedNodeCount}")
+
+                currentState = initialState
+                // then run SubPotential
+                configuration.weight = currentWeight
+                configuration.algorithmName = Planners.SUBPOTENTIAL
+                val subPAgent = SubPotential(pancakeProblem.domain, configuration)
+                val subPPlan = subPAgent.plan(initialState, StaticExpansionTerminationChecker(10000000))
+                // SubP plan check
+                subPPlan.forEach { action ->
+                    currentState = pancakeProblem.domain.successors(currentState).first { it.action == action }.state
+                }
+                assertTrue { pancakeProblem.domain.heuristic(currentState) == 0.0 }
+                println("\tSubP expanded ${subPAgent.expandedNodeCount}")
+
+
+                assertTrue(subPPlan.size <= currentWeight * aStarPlan.size, message = "SubP not within suboptimality bound on instance $i with weight $currentWeight and A* solution ${aStarPlan.size}: " +
+                        "${subPPlan.size} <= ${currentWeight * aStarPlan.size} is False")
+                println("\t\t${subPPlan.size} <= ${currentWeight * aStarPlan.size}")
+
+                assertTrue(xdpPlan.size <= currentWeight * aStarPlan.size, message = "XDP not within suboptimality bound on instance $i with weight $currentWeight and A* solution ${aStarPlan.size}: " +
+                        "${xdpPlan.size} <= ${currentWeight * aStarPlan.size} is False")
+                println("\t\t${xdpPlan.size} <= ${currentWeight * aStarPlan.size}")
+
+
+                aStarExpansionSum += aStarAgent.expandedNodeCount
+                xdpExpansionSum += xdpAgent.expandedNodeCount
+                subPExpansionSum += subPAgent.expandedNodeCount
+                times++
+//                } catch (e: Exception) {
+//                    System.err.println(e.message + " on instance $i with weight $currentWeight")
+//                }
+            }
+        }
+        println("A* average expansions: ${aStarExpansionSum / times}")
+        println("XDP average expansions: ${xdpExpansionSum / times}")
+        println("SubP average expansions: ${subPExpansionSum / times}")
+    }
+
+    @Test
     fun testAStar7() {
         val optimalSolutionLengths = intArrayOf(57, 55, 59, 56, 56, 52, 52, 50, 46, 59, 57, 45,
                 46, 59, 62, 42, 66, 55, 46, 52, 54, 59, 49, 54, 52, 58, 53, 52, 54, 47, 50, 59, 60, 52, 55, 52, 58, 53, 49, 54, 54,
@@ -160,7 +247,7 @@ class WeightedAStarTest {
                 val plan: List<Action>
                 try {
                     plan = aStarAgent.plan(initialState, StaticExpansionTerminationChecker(10000000))
-                    val pathLength  = plan.size.toLong()
+                    val pathLength = plan.size.toLong()
                     var currentState = initialState
                     // valid plan check
                     plan.forEach { action ->

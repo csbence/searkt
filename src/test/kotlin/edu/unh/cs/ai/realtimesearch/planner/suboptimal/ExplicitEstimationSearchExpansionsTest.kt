@@ -4,20 +4,21 @@ import edu.unh.cs.searkt.environment.vacuumworld.VacuumWorldIO
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import org.junit.Test
 import java.io.File
 
 class ExplicitEstimationSearchVacuumTest {
-    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "WEIGHTED_A_STAR",
+    private val configuration = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = Planners.WEIGHTED_A_STAR,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 1.0, variant = "O")
-    private val configuration2 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "SXDP",
+    private val configuration2 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = Planners.SXDP,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 1.01, variant = "O")
-    private val configuration3 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "SXUP",
+    private val configuration3 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = Planners.SXUP,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 1.01, variant = "O")
-    private val configuration4 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = "OPTIMISTIC_DD",
+    private val configuration4 = ExperimentConfiguration(domainName = "SLIDING_TILE_4", algorithmName = Planners.OPTIMISTIC_DD,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L, expansionLimit = 100000000L,
             errorModel = "path", weight = 1.01, variant = "O")
 

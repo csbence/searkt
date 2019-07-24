@@ -37,5 +37,6 @@ enum class Planners {
     ALT_ENVELOPE,
     GREEDY,
     SPEEDY,
-    SUBPOTENTIAL
+    SUBPOTENTIAL,
+    SUBPRIMEPOTENTIAL
 }

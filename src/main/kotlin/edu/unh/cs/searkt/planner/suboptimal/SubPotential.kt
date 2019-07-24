@@ -8,26 +8,26 @@ import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.classical.OfflinePlanner
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
-import edu.unh.cs.searkt.util.AdvancedPriorityQueue
+import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
 import edu.unh.cs.searkt.util.Indexable
 import edu.unh.cs.searkt.util.SearchQueueElement
 import java.util.HashMap
 import kotlin.Comparator
-import kotlin.math.sqrt
 
 class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, val configuration: ExperimentConfiguration) : OfflinePlanner<StateType>() {
 
-    enum class SearchPhase { ASTAR, POTENTIAL }
+    enum class SearchPhase { ASTAR, POTENTIAL, BEES }
 
-    private val phase: SearchPhase
-        get() = if (expandedNodeCount >= aStarLimit) SearchPhase.POTENTIAL else SearchPhase.ASTAR
+    private var phase: SearchPhase = SearchPhase.ASTAR
 
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for suboptimal potential is not defined.")
 
     private var fMin: Double = 0.0
-
-    private val aStarLimit = 1000
+    private var heuristicErrorSum: Double = 0.0
+    private var samplesTaken: Double = 11.0
+    private val heuristicError: Double
+        get() = heuristicErrorSum / samplesTaken
 
     private val algorithmName = configuration.algorithmName
 
@@ -38,7 +38,7 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
                                              override var parent: Node<StateType>? = null) :
             Indexable, SearchQueueElement<Node<StateType>> {
         var isClosed = false
-        private val indexMap = Array(1) { -1 }
+        private val indexMap = Array(2) { -1 }
         override val g: Double
             get() = cost
         override val depth: Double
@@ -48,9 +48,12 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
         override val d: Double
             get() = cost
         override val hHat: Double
-            get() = heuristic
+            get() = heuristic + heuristicError
         override val dHat: Double
             get() = heuristic
+
+        val fHat: Double
+            get() = g + hHat
 
         val fPrime: Double
             get() = g + (weight * h)
@@ -97,6 +100,16 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
     }
 
+    private val fHatComparator = Comparator<Node<StateType>> { lhs, rhs ->
+        when {
+            lhs.fHat < rhs.fHat -> -1
+            lhs.fHat > rhs.fHat -> 1
+            lhs.cost > rhs.cost -> -1
+            lhs.cost < rhs.cost -> 1
+            else -> 0
+        }
+    }
+
     private val potentialComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
             lhs.potential > rhs.potential -> -1
@@ -116,7 +129,19 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
     private val nodes: HashMap<StateType, Node<StateType>> = HashMap(1000000, 1.toFloat())
 
-    private var openList = AdvancedPriorityQueue(1000000, comparator)
+    inner class OpenList : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), comparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(0)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(0, index)
+    }
+
+    private val openList = OpenList()
+
+    inner class FTrackHeap : AbstractAdvancedPriorityQueue<Node<StateType>>(arrayOfNulls(1000000), fHatComparator) {
+        override fun getIndex(item: Node<StateType>): Int = item.getIndex(1)
+        override fun setIndex(item: Node<StateType>, index: Int) = item.setIndex(1, index)
+    }
+
+    private val fTrackHeap = FTrackHeap()
 
     private fun getNode(sourceNode: Node<StateType>, successorBundle: SuccessorBundle<StateType>): Node<StateType> {
         val successorState = successorBundle.state
@@ -142,7 +167,13 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
     private fun expandFromNode(sourceNode: Node<StateType>) {
         if (sourceNode.isClosed) reexpansions++
         val currentGValue = sourceNode.cost
-        for (successor in domain.successors(sourceNode.state)) {
+        val successors = domain.successors(sourceNode.state)
+        val bestSuccessor = successors.minBy { domain.heuristic(it.state) }
+        if (bestSuccessor != null) {
+            heuristicErrorSum += sourceNode.h - domain.heuristic(bestSuccessor.state)
+            samplesTaken++
+        }
+        for (successor in successors) {
 //            openList.forEach { println("${it.state} | f: ${it.f} | h: ${it.h} | g: ${it.g}") }
 //            println("---")
             val successorState = successor.state
@@ -168,11 +199,14 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
                 if (isDuplicate && !successorNode.open) {
                     if (algorithmName == Planners.WEIGHTED_A_STAR) {
                         openList.add(successorNode)
+                        fTrackHeap.add(successorNode)
                     }
                 } else if (isDuplicate && successorNode.open) {
                     openList.update(successorNode)
+                    fTrackHeap.update(successorNode)
                 } else {
                     openList.add(successorNode)
+                    fTrackHeap.add(successorNode)
                 }
             }
         }
@@ -181,18 +215,22 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
     override fun plan(state: StateType, terminationChecker: TerminationChecker): List<Action> {
         this.terminationChecker = terminationChecker
         val node = Node(state, domain.heuristic(state), 0.0, 0.0, NoOperationAction)
-        fMin = node.f
         var currentNode: Node<StateType>
         nodes[state] = node
         openList.add(node)
+        fTrackHeap.add(node)
         generatedNodeCount++
 
         while (openList.isNotEmpty() && !terminationChecker.reachedTermination()) {
-
             // check if limit reached reheapify on potential
             // then use potential search until we find a goal
-            if (expandedNodeCount == aStarLimit) {
-                openList.reorder(potentialComparator)
+            // then swap the other heap to track f instead of fHat
+            if (expandedNodeCount > 11 && phase == SearchPhase.ASTAR) {
+                if (fTrackHeap.peek()!!.fHat <= (weight * openList.peek()!!.f)) {
+                    phase = SearchPhase.POTENTIAL
+                    openList.reorder(potentialComparator)
+                    fTrackHeap.reorder(fValueComparator)
+                }
             }
 
             val topNode = openList.peek() ?: throw GoalNotReachableException("Open list is empty")
@@ -200,11 +238,17 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
                 return extractPlan(topNode, state)
             }
             currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty")
+            fTrackHeap.remove(currentNode)
             expandFromNode(currentNode)
             currentNode.isClosed = true
             expandedNodeCount++
 
-            fMin = openList.peek()!!.f
+            fMin = when (phase) {
+                SearchPhase.ASTAR -> openList.peek()!!.f
+                SearchPhase.POTENTIAL -> fTrackHeap.peek()!!.f
+                SearchPhase.BEES -> fTrackHeap.peek()!!.f
+            }
+
         }
 
         if (terminationChecker.reachedTermination()) {

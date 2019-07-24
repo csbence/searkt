@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.environment.vacuumworld.VacuumWorldTest
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.experiment.terminationCheckers.StaticExpansionTerminationChecker
+import edu.unh.cs.searkt.planner.Planners
 import edu.unh.cs.searkt.planner.suboptimal.DynamicPotentialSearch
 import edu.unh.cs.searkt.planner.suboptimal.WeightedAStar
 import org.junit.Test
@@ -12,7 +13,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class HeavyVacuumWorldTest {
-    private val configuration = ExperimentConfiguration(domainName = "VACUUM_WORLD_HEAVY", algorithmName = "WEIGHTED_A_STAR",
+    private val configuration = ExperimentConfiguration(domainName = "VACUUM_WORLD_HEAVY", algorithmName = Planners.WEIGHTED_A_STAR,
             terminationType = TerminationType.EXPANSION, actionDuration = 1L, timeLimit = 1000L,
             expansionLimit = 1000000L, weight = 1.3, errorModel = "path")
 
