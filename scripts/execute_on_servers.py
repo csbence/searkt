@@ -10,6 +10,7 @@ import numpy as np
 from distlre.distlre import DistLRE, Task, RemoteHost
 from slack_notification import start_experiment_notification, end_experiment_notification
 from tqdm import tqdm
+import gzip
 
 projectRoot = '/home/aifs1/kch29/repos/searkt'
 configFile = 'refresh_configs.json'
@@ -20,7 +21,7 @@ os.chdir(projectRoot)
 proc = run(['./gradlew', 'jar', '-x', 'test'])
 assert proc.returncode == 0
 
-HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
+HOSTS = ['ai' + str(i) + '.cs.unh.edu' for i in [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]]
 port_number = 22
 
 # use if your ssh auth key isn't set up
@@ -70,7 +71,7 @@ remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
 f = open(f"{projectRoot}/configs/{configFile}")
 worlds = json.load(f)
-# worlds = worlds[:15000] # for testing
+worlds = worlds[:10] # for testing
 print(f'Loaded {len(worlds)} configurations')
 # experiments = create_experiments(worlds)
 progress_bar = tqdm(total=len(worlds))
@@ -109,21 +110,11 @@ def save_results(results, tag, path_prefix=None):
     file_handle = ""
     if path_prefix is not None:
         file_handle += path_prefix
-    file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json".format(tag, datetime.datetime.now())
-    f = open(file_handle, 'w+')
+    file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json.gz".format(tag, datetime.datetime.now())
+    f = gzip.open(file_handle, 'wt')
     for exp_result in results:
         res_dict = json.loads(exp_result)[0]  # loads as array
         res_dict.pop('actions', None)  # don't store on disk - too much space!
-        # Don't store CPU list on disk, but do do some analysis
-        cpu_list = res_dict.pop('iterationCpuTimeList')
-        if len(cpu_list) > 0:
-            res_dict['maxIterationCpu'] = int(np.max(cpu_list))
-            res_dict['avgIterationCpu'] = int(np.mean(cpu_list))
-            res_dict['minIterationCpu'] = int(np.min(cpu_list))
-            percentile_list = np.percentile(cpu_list, [50, 90, 95])
-            res_dict['medianIterationCpu'] = percentile_list[0]
-            res_dict['percentile90Cpu'] = percentile_list[1]
-            res_dict['percentile95Cpu'] = percentile_list[2]
 
         o_results.append(res_dict)
 
