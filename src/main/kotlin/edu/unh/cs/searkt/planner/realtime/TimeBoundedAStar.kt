@@ -39,6 +39,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     // Attribute Keys
     private val RESTARTS = "restarts"
+    private val GOAL_FOUND_ITERATION = "goalFound"
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
@@ -52,7 +53,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     /** ratio of tracebacks to expansions */
     private val backupRatio = configuration.backupRatio ?: 1.0
 
+    // This variable is over-used and not actually reflective of the iteration count :(
+    // roll another custom one
     override var iterationCounter = 0L
+    private var realIterationCounter = 0L
 
     class TBANode<StateType : State<StateType>>(
             override val state: StateType,
@@ -244,6 +248,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private var rootState: StateType? = null
     private var lastAgentState: StateType? = null
     private var foundGoal : Boolean = false
+    private var goalFoundIteration: Long = -1L
 
     private var aStarPopCounter = 0
     private var expansionLimit = 0L
@@ -289,6 +294,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
+        results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration
     }
 
     private fun getNextOpenList(switchOpenList: Boolean) : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
@@ -406,6 +412,11 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         if (updateOpenList != null) updateHeuristics(updateTerminationChecker)
 
+        if (goalIsTraced() && goalFoundIteration == -1L) {
+            goalFoundIteration = realIterationCounter
+        }
+
+        realIterationCounter++
         return safePlan
     }
 
