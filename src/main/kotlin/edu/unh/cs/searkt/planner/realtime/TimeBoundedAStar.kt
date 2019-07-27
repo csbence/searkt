@@ -238,6 +238,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private val shortcutOpen = ShortcutOpenList(when (strategy) {
         LookaheadStrategy.GBFS -> heuristicShortcutComparator
         LookaheadStrategy.A_STAR -> weightedFShortcutComparator
+        LookaheadStrategy.PSEUDO_F -> throw MetronomeException("Unsupported lookahead type in TBA*")
     })
 
     override var openList = getNextOpenList(false)

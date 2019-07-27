@@ -3,6 +3,7 @@ package edu.unh.cs.searkt.experiment.configuration
 import edu.unh.cs.searkt.experiment.configuration.realtime.LookaheadType
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.planner.*
+import edu.unh.cs.searkt.planner.realtime.BidirectionalEnvelopeSearch
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
@@ -112,9 +113,13 @@ data class ExperimentConfiguration(
         val backupRatio: Double? = null,
         @Optional
         val frontierAdjustmentRatio: Double? = null,
+        @Optional
+        val generatePredecessors: Boolean? = null,
         // strategy for searching within the envelope
         @Optional
         val envelopeSearchStrategy: LookaheadStrategy? = null,
+        @Optional
+        val bidirectionalSearchStrategy: BidirectionalEnvelopeSearch.BidirectionalSearchStrategy? = null,
 
         // TBA*
         @Optional

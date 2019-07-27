@@ -16,6 +16,7 @@ import edu.unh.cs.searkt.planner.RealTimePlanner
 import edu.unh.cs.searkt.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.searkt.util.convertNanoUpDouble
 import java.util.concurrent.TimeUnit
+import kotlin.system.measureNanoTime
 
 /**
  * An RTS experiment repeatedly queries the planner
@@ -119,7 +120,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
         // End test
 
         while (!domain.isGoal(currentState)) {
-            val iterationNanoTime = measureThreadCpuNanoTime {
+            val iterationNanoTime = measureNanoTime {
                 terminationChecker.resetTo(timeBound)
 
                 iterationCount++

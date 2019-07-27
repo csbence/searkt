@@ -125,6 +125,7 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
 
             # calculate the metric being reported. Add results to standard fields
             row_data = [algorithm_name, transformed_alg_name]
+            print(transformed_alg_name)
             row_data.extend(calculate_metric(experiment_group))
             results = add_row(results, row_data)
 
@@ -158,11 +159,23 @@ def cpu_calculator(experiment_group):
     within_opt_list = list(experiment_group['withinOpt'])
     opt_bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
 
-    mean_cpu = experiment_group['avgIterationCpu'].mean() / 1000000
-    cpu_list = list(experiment_group['avgIterationCpu'] / 1000000)
+    mean_cpu = experiment_group['percentile95Cpu'].mean() / 1000000
+    cpu_list = list(experiment_group['percentile95Cpu'] / 1000000)
     cpu_bound = sms.DescrStatsW(cpu_list).zconfint_mean()
 
-    return [mean_within_opt, abs(mean_within_opt - opt_bound[0]), abs(mean_within_opt - opt_bound[1]),
+    print(f'''
+        Duration {experiment_group['actionDuration'].unique()}
+        Percentile {mean_cpu}
+        Within Opt {mean_within_opt}
+        ''')
+
+    print(bad_form)
+    if bad_form == '8room':
+        for idx, row in experiment_group.iterrows():
+            print(f'Generated: {row["generatedNodes"]}')
+            print(f'Path: {row["pathLength"]}')
+
+    return [experiment_group['actionDuration'], mean_within_opt, abs(mean_within_opt - opt_bound[0]), abs(mean_within_opt - opt_bound[1]),
             mean_cpu, abs(mean_cpu - cpu_bound[0]), abs(mean_cpu - cpu_bound[1])]
 
 
@@ -172,7 +185,7 @@ def get_cpu_results(data, group_by):
     for _, groupings in group_by.items():
         groupings['actionDuration'] = None
 
-    columns = "withinOpt yLbound yRbound avgIterationCpu xLbound xRbound".split()
+    columns = "actionDuration withinOpt yLbound yRbound percentile95Cpu xLbound xRbound".split()
     return generate_results(data, group_by, columns, cpu_calculator)
 
 
@@ -203,7 +216,9 @@ def analyze_results(optimal_plans, experiments):
 #           Note that if an algorithm name is not a key in group_by, it will not be returned in the results
 # returns if domain_tokens not passed, the results. If domain_tokens passed, a dict where each key is a token and each
 #           value is the result for that domain
+bad_form = None
 def prepare_within_opt_plots(data, domain_tokens, group_by=None):
+    global bad_form
     if group_by is None:
         group_by = {}
 
@@ -216,15 +231,18 @@ def prepare_within_opt_plots(data, domain_tokens, group_by=None):
     cpu_results = {
         'xaxis': {
             'title': 'CPU time per Iteration (ms)',
-            'data': 'avgIterationCpu'
+            'data': 'percentile95Cpu'
         }
     }
     for domain in domain_tokens:
         domain_data = data[data['domainPath'].str.contains(domain)]
         expansion_results[domain] = get_expansion_results(domain_data, group_by)
+        print(domain)
+        bad_form = domain
         cpu_results[domain] = get_cpu_results(domain_data, group_by)
 
     return expansion_results, cpu_results
+
 
 
 # Scratch "main" script
