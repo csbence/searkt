@@ -24,7 +24,7 @@ fun generateConfigurations(): String {
     domains += (0..33).map { Domains.PANCAKE to "input/pancake/$it.pqq" }
 //    domains += (0..33).map { Domains.HEAVY_PANCAKE to "input/pancake/$it.pqq" }
 
-    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+//    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (1..33).map { Domains.SLIDING_TILE_PUZZLE_4_INVERSE to "input/tiles/korf/4/real/$it" }
 //    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4_HEAVY to "input/tiles/korf/4/real/$it" }
 

@@ -18,12 +18,14 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
     enum class SearchPhase { ASTAR, POTENTIAL, BEES }
 
+    private var costBound: Double = 0.0
+
     private var phase: SearchPhase = SearchPhase.ASTAR
 
     private val weight: Double = configuration.weight
             ?: throw MetronomeConfigurationException("Weight for suboptimal potential is not defined.")
 
-    private var fMin: Double = 0.0
+//    private var fMin: Double = 0.0
     private var heuristicErrorSum: Double = 0.0
     private var samplesTaken: Double = 11.0
     private val heuristicError: Double
@@ -67,7 +69,7 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
         }
 
         val potential: Double
-            get() = ((weight * fMin) - g ) / h
+            get() = h / (costBound - g)
 
         override var index: Int = -1
 
@@ -92,8 +94,8 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
     private val fValueComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.fPrime < rhs.fPrime -> -1
-            lhs.fPrime > rhs.fPrime -> 1
+            lhs.f < rhs.f -> -1
+            lhs.f > rhs.f -> 1
             lhs.cost > rhs.cost -> -1 // Tie breaking on cost (g)
             lhs.cost < rhs.cost -> 1
             else -> 0
@@ -112,8 +114,8 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
 
     private val potentialComparator = Comparator<Node<StateType>> { lhs, rhs ->
         when {
-            lhs.potential > rhs.potential -> -1
-            lhs.potential < rhs.potential -> 1
+            lhs.potential < rhs.potential -> -1
+            lhs.potential > rhs.potential -> 1
 
             lhs.f < rhs.f -> -1
             lhs.f > rhs.f -> 1
@@ -227,9 +229,9 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
             // then swap the other heap to track f instead of fHat
             if (expandedNodeCount > 11 && phase == SearchPhase.ASTAR) {
                 if (fTrackHeap.peek()!!.fHat <= (weight * openList.peek()!!.f)) {
+                    costBound = fTrackHeap.peek()!!.fHat
                     phase = SearchPhase.POTENTIAL
                     openList.reorder(potentialComparator)
-                    fTrackHeap.reorder(fValueComparator)
                 }
             }
 
@@ -243,11 +245,11 @@ class SubPotential<StateType : State<StateType>>(val domain: Domain<StateType>, 
             currentNode.isClosed = true
             expandedNodeCount++
 
-            fMin = when (phase) {
-                SearchPhase.ASTAR -> openList.peek()!!.f
-                SearchPhase.POTENTIAL -> fTrackHeap.peek()!!.f
-                SearchPhase.BEES -> fTrackHeap.peek()!!.f
-            }
+//            fMin = when (phase) {
+//                SearchPhase.ASTAR -> openList.peek()!!.f
+//                SearchPhase.POTENTIAL -> fTrackHeap.peek()!!.f
+//                SearchPhase.BEES -> fTrackHeap.peek()!!.f
+//            }
 
         }
 
