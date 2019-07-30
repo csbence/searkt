@@ -36,8 +36,8 @@ fun main(args: Array<String>) {
     val runtime = Runtime.getRuntime()
 
     // Leave at least 2 threads for the GC
-//    val threadLimit = runtime.availableProcessors() - 2
-    val threadLimit = 1
+    val threadLimit = runtime.availableProcessors() - 2
+//    val threadLimit = 1
 
     // Assume that an experiment uses 2 gigs
     val memoryLimit = (runtime.maxMemory() shr 31).toInt()
