@@ -57,6 +57,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 ?: throw MetronomeConfigurationException("Lookahead strategy is not specified.")
 
         var timeBound = actionDuration
+        val timeLimit = configuration.timeLimit ?: 0L
+
         var actionList: List<RealTimePlanner.ActionBundle> = listOf()
         val stateList = mutableListOf(currentState)
         val iterationCpuTimeList: MutableList<Long> = mutableListOf()
@@ -186,6 +188,14 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 val experimentResult = createSnapshotResult()
                 experimentResult.apply {
                     errorMessage = "The planner exceeded the step limit: $stepLimit"
+                }
+                return experimentResult
+            }
+
+            if (timeLimit > 0L && totalPlanningNanoTime > timeLimit) {
+                val experimentResult = createSnapshotResult()
+                experimentResult.apply {
+                    errorMessage = "The planner exceeded the total time limit: $timeLimit"
                 }
                 return experimentResult
             }

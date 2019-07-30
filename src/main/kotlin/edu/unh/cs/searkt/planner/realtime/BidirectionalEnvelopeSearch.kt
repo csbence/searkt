@@ -85,7 +85,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         var globalPredecessors: MutableSet<BiSearchEdge<BiEnvelopeSearchNode<StateType>>> = mutableSetOf()
         // Envelope-specific props
         override var index = -1
-        override var cost: Long = -1
+        override var cost: Long = MAX_VALUE
         override var actionCost: Long = -1
         override var action: Action = NoOperationAction
         override var closed: Boolean = false
@@ -429,15 +429,15 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             val gFromCurrent = node.cost + successor.actionCost.toLong()
 
             // update cost if applicable
-            if (gFromCurrent > successorNode.cost) {
+            if (successorNode.cost > gFromCurrent) {
                 successorNode.cost = gFromCurrent
-            }
 
-            // update open list regardless of whether cost is updated
-            if (openList.isOpen(successorNode)) {
-                openList.update(successorNode)
-            } else if (!successorNode.closed) {
-                openList.add(successorNode)
+                // update open list regardless of whether cost is updated
+                if (openList.isOpen(successorNode)) {
+                    openList.update(successorNode)
+                } else if (!successorNode.closed) {
+                    openList.add(successorNode)
+                }
             }
 
             newH = minOf(newH, successor.actionCost + successorNode.heuristic)
@@ -832,7 +832,6 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                     envelopeVersion = if(isPredecessor) -1 else envelopeVersionCounter,
                     pseudoG = domain.heuristic(pseudoFRoot, successorState).toLong()
             )
-            undiscoveredNode.cost = parent.cost + successor.actionCost.toLong()
 
             nodes[successorState] = undiscoveredNode
 
