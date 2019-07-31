@@ -217,33 +217,6 @@ def analyze_results(optimal_plans, experiments):
 # returns if domain_tokens not passed, the results. If domain_tokens passed, a dict where each key is a token and each
 #           value is the result for that domain
 def prepare_within_opt_plots(data, domain_tokens, group_by=None):
-
-    # this is super inefficient! find a better way to do this somehow...
-    maxIterationCpu = []
-    avgIterationCpu = []
-    minIterationCpu = []
-    medianIterationCpu = []
-    percentile90Cpu = []
-    percentile95Cpu = []
-    for idx, row in data.iterrows():
-        cpu_list = row['iterationCpuTimeList']
-        if len(cpu_list) > 0:
-            maxIterationCpu.append(int(np.max(cpu_list)))
-            avgIterationCpu.append(int(np.mean(cpu_list)))
-            minIterationCpu.append(int(np.min(cpu_list)))
-            percentile_list = np.percentile(cpu_list, [50, 90, 95])
-            medianIterationCpu.append(percentile_list[0])
-            percentile90Cpu.append(percentile_list[1])
-            percentile95Cpu.append(percentile_list[2])
-
-    data['maxIterationCpu'] = maxIterationCpu
-    data['avgIterationCpu'] = avgIterationCpu
-    data['minIterationCpu'] = minIterationCpu
-    data['medianIterationCpu'] = medianIterationCpu
-    data['percentile90Cpu'] = percentile90Cpu
-    data['percentile95Cpu'] = percentile95Cpu
-
-
     if group_by is None:
         group_by = {}
 

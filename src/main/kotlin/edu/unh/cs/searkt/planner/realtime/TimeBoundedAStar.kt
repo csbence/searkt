@@ -39,7 +39,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     // Attribute Keys
     private val RESTARTS = "restarts"
-    private val GOAL_FOUND_ITERATION = "goalFound"
+    private val GOAL_FOUND_ITERATION = "goalPathExtracted"
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
