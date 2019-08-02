@@ -474,6 +474,11 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 // MM bidirectional search (Meet in the Middle)
                 searchIntersection = when (bidirectionalSearchStrategy) {
                     BidirectionalSearchStrategy.ROUND_ROBIN -> when {
+                        // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
+                        forwardNode.state == currentAgentState -> {
+                            backward = false
+                            expandForwardNode()
+                        }
                         backward -> expandBackwardNode()
                         else -> expandForwardNode()
                     }

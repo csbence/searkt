@@ -1,9 +1,49 @@
 package edu.unh.cs.searkt.environment.gridworld
 
+import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.location.Location
 import edu.unh.cs.searkt.environment.vacuumworld.InvalidVacuumWorldException
+import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
+import edu.unh.cs.searkt.generateConfigurations
+import kotlinx.io.PrintWriter
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.list
+import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.util.*
+
+/**
+ *  Takes configs from the configuration generator, assumes they are Grid Map, and converts them into
+ *  Vacuum World instances that are more standard in this repo
+ */
+fun main(args: Array<String>) {
+    println("Getting configs from Configuration Generator")
+    val parsedConfigurations: List<ExperimentConfiguration> =
+            Json.parse(
+                ExperimentConfiguration.serializer().list,
+                generateConfigurations())
+
+    for (config in parsedConfigurations) {
+        val (domainPath, instancePath) = config.domainPath!!.split(":")
+        val domainStream = Unit::class.java.classLoader.getResourceAsStream(domainPath)
+                ?: throw IOException("Grid map instance file not found: ${config.domainPath}")
+        val instanceStream = Unit::class.java.classLoader.getResourceAsStream(instancePath)
+                ?: throw IOException("Grid map instance file not found: ${config.domainPath}")
+
+        val gridInstance = GridMapIO.parseFromStream(domainStream, instanceStream, config.domainSeed, 1)
+
+        val splitPath = domainPath.split("/")
+        val dirName = splitPath[splitPath.size - 2]
+        val fileName = splitPath.last()
+
+        val dir = File("output/" + dirName + "/")
+        dir.mkdirs()
+        val f = File(dir, fileName + "." + config.domainSeed + ".vw")
+        f.createNewFile()
+        f.writeText(gridInstance.domain.print(gridInstance.initialState))
+    }
+}
 
 object GridMapIO {
     fun parseFromStream(map: InputStream, instances: InputStream, seed: Long?, actionDuration: Long): GridWorldInstance {

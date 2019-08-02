@@ -3,6 +3,8 @@
 import json
 import gzip
 import copy
+from functools import partial
+
 import pandas as pd
 from pandas import DataFrame
 import statsmodels.stats.api as sms
@@ -125,7 +127,6 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
 
             # calculate the metric being reported. Add results to standard fields
             row_data = [algorithm_name, transformed_alg_name]
-            print(transformed_alg_name)
             row_data.extend(calculate_metric(experiment_group))
             results = add_row(results, row_data)
 
@@ -154,39 +155,35 @@ def get_expansion_results(data, group_by):
     return generate_results(data, group_by, columns, expansion_calculator)
 
 
-def cpu_calculator(experiment_group):
+def cpu_calculator(experiment_group, cpu_field):
     mean_within_opt = experiment_group['withinOpt'].mean()
     within_opt_list = list(experiment_group['withinOpt'])
     opt_bound = sms.DescrStatsW(within_opt_list).zconfint_mean()
 
-    mean_cpu = experiment_group['percentile95Cpu'].mean() / 1000000
-    cpu_list = list(experiment_group['percentile95Cpu'] / 1000000)
+    mean_cpu = experiment_group[cpu_field].mean() / 1000000
+    cpu_list = list(experiment_group[cpu_field] / 1000000)
     cpu_bound = sms.DescrStatsW(cpu_list).zconfint_mean()
-
-    print(f'''
-        Duration {experiment_group['actionDuration'].unique()}
-        Percentile {mean_cpu}
-        Within Opt {mean_within_opt}
-        ''')
-
-    print(bad_form)
-    if bad_form == '8room':
-        for idx, row in experiment_group.iterrows():
-            print(f'Generated: {row["generatedNodes"]}')
-            print(f'Path: {row["pathLength"]}')
 
     return [experiment_group['actionDuration'], mean_within_opt, abs(mean_within_opt - opt_bound[0]), abs(mean_within_opt - opt_bound[1]),
             mean_cpu, abs(mean_cpu - cpu_bound[0]), abs(mean_cpu - cpu_bound[1])]
 
 
-def get_cpu_results(data, group_by):
+def get_cpu_results(data, cpu_field, group_by):
     group_by = copy.deepcopy(group_by)
     # add actionDuration to user-specified groupings
     for _, groupings in group_by.items():
         groupings['actionDuration'] = None
 
-    columns = "actionDuration withinOpt yLbound yRbound percentile95Cpu xLbound xRbound".split()
-    return generate_results(data, group_by, columns, cpu_calculator)
+    columns = [
+        'actionDuration',
+        'withinOpt',
+        'yLbound',
+        'yRbound',
+        cpu_field,
+        'xLbound',
+        'xRbound'
+    ]
+    return generate_results(data, group_by, columns, partial(cpu_calculator, cpu_field=cpu_field))
 
 
 def add_row(df, values):
@@ -214,9 +211,12 @@ def analyze_results(optimal_plans, experiments):
 # domain_tokens - optional array of domain tokens to split the results by
 # group_by - dict; each key is an algorithm name. Each value is another dict of key-value pairs: configuration to label.
 #           Note that if an algorithm name is not a key in group_by, it will not be returned in the results
+# percentile - Default 95; numeric value from 1 - 99. The percentile to use for the CPU time X-axis
+# metric - Default None; String - optional override metric by which to analyze data. Assumed to be a variation of CPU time in ns
 # returns if domain_tokens not passed, the results. If domain_tokens passed, a dict where each key is a token and each
 #           value is the result for that domain
-def prepare_within_opt_plots(data, domain_tokens, group_by=None):
+def prepare_within_opt_plots(data, domain_tokens, group_by=None,
+                            percentile=95, use_pre_goal=True, explicit_metric=None):
     if group_by is None:
         group_by = {}
 
@@ -226,16 +226,32 @@ def prepare_within_opt_plots(data, domain_tokens, group_by=None):
             'data': 'actionDuration'
         }
     }
+
+    xTitle = 'CPU time per Iteration (ms)'
+    data_field = ''
+    if explicit_metric is not None:
+        xTitle = explicit_metric
+        data_field = explicit_metric
+    else:
+        xTitle = f'{xTitle}: Percentile {percentile}'
+        data_field = None
+
+        # THIS IS WRONG! LSS-LRTA* will not have results...
+        if use_pre_goal:
+            data_field = f'preGoalPercentile{percentile}Cpu'
+
+        data_field = data_field if data_field in data.index else f'percentile{percentile}Cpu'
+
     cpu_results = {
         'xaxis': {
-            'title': 'CPU time per Iteration (ms)',
-            'data': 'percentile95Cpu'
+            'title': xTitle,
+            'data': data_field
         }
     }
     for domain in domain_tokens:
         domain_data = data[data['domainPath'].str.contains(domain)]
         expansion_results[domain] = get_expansion_results(domain_data, group_by)
-        cpu_results[domain] = get_cpu_results(domain_data, group_by)
+        cpu_results[domain] = get_cpu_results(domain_data, data_field, group_by)
 
     return expansion_results, cpu_results
 

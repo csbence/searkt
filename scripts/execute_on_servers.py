@@ -122,9 +122,9 @@ def save_results(results, tag, path_prefix=None):
             res_dict['maxIterationCpu'] = int(np.max(cpu_list))
             res_dict['avgIterationCpu'] = int(np.mean(cpu_list))
             res_dict['minIterationCpu'] = int(np.min(cpu_list))
-            percentile_list = np.percentile(cpu_list, [i for i in range(1, 99)])
-            for i in range(1, 99):
-                res_dict['percentile' + str(i) + 'Cpu'] = int(percentile_list[i])
+            percentile_list = np.percentile(cpu_list, [i for i in range(1, 100)])
+            for i in range(1, 100):
+                res_dict['percentile' + str(i) + 'Cpu'] = int(percentile_list[i-1])
 
         attributes = res_dict['attributes']
         goal_found = attributes.get('goalPathExtracted', 0)
@@ -133,9 +133,9 @@ def save_results(results, tag, path_prefix=None):
             res_dict['preGoalMaxIterationCpu'] = int(np.max(narrow_cpu_list))
             res_dict['preGoalAvgIterationCpu'] = int(np.mean(narrow_cpu_list))
             res_dict['preGoalMinIterationCpu'] = int(np.min(narrow_cpu_list))
-            percentile_list = np.percentile(narrow_cpu_list, [i for i in range(1, 99)])
-            for i in range(1, 99):
-                res_dict['preGoalPercentile' + str(i) + 'Cpu'] = int(percentile_list[i])
+            percentile_list = np.percentile(narrow_cpu_list, [i for i in range(1, 100)])
+            for i in range(1, 100):
+                res_dict['preGoalPercentile' + str(i) + 'Cpu'] = int(percentile_list[i-1])
 
         o_results.append(res_dict)
 
