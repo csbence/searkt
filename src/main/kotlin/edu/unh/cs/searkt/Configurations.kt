@@ -37,21 +37,21 @@ fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
 //            Domains.GRID_WORLD to "input/vacuum/cups.vw"
 //            Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw"
-            Domains.GRID_MAP to "input/gridmap/room-map/8room_009.map:input/gridmap/room-scen/8room_009.map.scen",
-            Domains.GRID_MAP to "input/gridmap/room-map/16room_005.map:input/gridmap/room-scen/16room_005.map.scen",
-            Domains.GRID_MAP to "input/gridmap/dao-map/orz100d.map:input/gridmap/dao-scen/orz100d.map.scen",
-            Domains.GRID_MAP to "input/gridmap/dao-map/ost000a.map:input/gridmap/dao-scen/ost000a.map.scen",
-            Domains.GRID_MAP to "input/gridmap/sc1-map/TheFrozenSea.map:input/gridmap/sc1-scen/TheFrozenSea.map.scen",
-            Domains.GRID_MAP to "input/gridmap/sc1-map/Cauldron.map:input/gridmap/sc1-scen/Cauldron.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/room-map/8room_009.map:input/gridmap/room-scen/8room_009.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/room-map/16room_005.map:input/gridmap/room-scen/16room_005.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/dao-map/orz100d.map:input/gridmap/dao-scen/orz100d.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/dao-map/ost000a.map:input/gridmap/dao-scen/ost000a.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/sc1-map/TheFrozenSea.map:input/gridmap/sc1-scen/TheFrozenSea.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/sc1-map/Cauldron.map:input/gridmap/sc1-scen/Cauldron.map.scen"
 //            Domains.ACROBOT to "input/acrobot/default_0.1-0.1.ab"
-            Domains.RACETRACK to "input/racetrack/hansen-bigger-d-wide3.track"
+//            Domains.RACETRACK to "input/racetrack/hansen-bigger-d-wide3.track"
     )
 
 //    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
-    domains += (1..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+//    domains += (1..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
-    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" }
+    domains += (0..0).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
+//    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" }
 
     // Maximum time per experiment
     val timeLimit = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
@@ -59,16 +59,16 @@ fun generateConfigurations(): String {
     val domainExtras = listOf(
             Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), (0L..9L)),
             Triple(Domains.RACETRACK, Configurations.IS_SAFE.toString(), listOf(true)),
-            Triple(Domains.GRID_MAP, Configurations.DOMAIN_SEED.toString(), (0L..9L))
+            Triple(Domains.GRID_MAP, Configurations.DOMAIN_SEED.toString(), (0L..49L))
     )
 
-    val weights = listOf(1.0, 3.0, 10.0, 32.0, 64.0)
-//    val weights = listOf(64.0)
+//    val weights = listOf(1.0, 3.0, 10.0, 64.0)
+    val weights = listOf(1.0)
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
             planners = listOf(
-                    Planners.BI_ES,
+//                    Planners.BI_ES
                     Planners.LSS_LRTA_STAR,
                     Planners.TIME_BOUNDED_A_STAR
             ),
@@ -85,13 +85,14 @@ fun generateConfigurations(): String {
             plannerExtras = listOf(
                     Triple(Planners.BI_ES, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.BI_ES, Configurations.WEIGHT, weights),
-                    Triple(Planners.BI_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS, LookaheadStrategy.PSEUDO_F)),
-                    Triple(Planners.BI_ES, BiESConfiguration.ENVELOPE_SEARCH_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
+//                    Triple(Planners.BI_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS, LookaheadStrategy.PSEUDO_F)),
+//                    Triple(Planners.BI_ES, BiESConfiguration.ENVELOPE_SEARCH_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
                     Triple(Planners.BI_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.GBFS)),
                     Triple(Planners.BI_ES, BiESConfiguration.ENVELOPE_SEARCH_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
-                    Triple(Planners.BI_ES, BiESConfiguration.GENERATE_PREDECESSORS, listOf(true, false)),
-                    Triple(Planners.BI_ES, BiESConfiguration.BIDIRECTIONAL_SEARCH_STRATEGY, listOf(ROUND_ROBIN, MM)),
-                    Triple(Planners.BI_ES, BiESConfiguration.FRONTIER_ADJUSTMENT_RATIO, listOf(1.0)),
+                    Triple(Planners.BI_ES, BiESConfiguration.BIDIRECTIONAL_SEARCH_STRATEGY, listOf(ROUND_ROBIN, FORWARD, BACKWARD)),
+            /* Bi-ES Configuration Dead Zone - below configs have proven ineffective or simply worse */
+//                    Triple(Planners.BI_ES, BiESConfiguration.GENERATE_PREDECESSORS, listOf(true, false)),
+//                    Triple(Planners.BI_ES, BiESConfiguration.FRONTIER_ADJUSTMENT_RATIO, listOf(1.0)),
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.MULTIPLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.WEIGHT, weights),
@@ -104,19 +105,31 @@ fun generateConfigurations(): String {
             domainExtras = domainExtras
     )
 
+    // FILTERS
     // filter out greedy configs with weight greater than 1
+    // filter out weight 1 Sliding Tile where dangerous (i.e. attempting A* on it)
     configurations = configurations.filter {
         when (it[Configurations.ALGORITHM_NAME.toString()]) {
-            Planners.BI_ES.toString() -> {
-                if (it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.GBFS &&
-                        it[BiESConfiguration.ENVELOPE_SEARCH_STRATEGY.toString()] == LookaheadStrategy.GBFS) {
+            Planners.BI_ES.toString() -> when {
+                it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.GBFS &&
+                        it[BiESConfiguration.ENVELOPE_SEARCH_STRATEGY.toString()] == LookaheadStrategy.GBFS -> {
                     it[Configurations.WEIGHT.toString()] == null || it[Configurations.WEIGHT.toString()] == 1.0
-                } else true
+                }
+                it[Configurations.DOMAIN_NAME.toString()] == "SLIDING_TILE_PUZZLE_4" &&
+                        it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.A_STAR -> {
+                    !(it[Configurations.WEIGHT.toString()] == null || it[Configurations.WEIGHT.toString()] == 1.0)
+                }
+                else -> true
             }
-            Planners.TIME_BOUNDED_A_STAR.toString(), Planners.BACK_ES.toString() -> {
-                if (it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.GBFS) {
+            Planners.TIME_BOUNDED_A_STAR.toString(), Planners.BACK_ES.toString() -> when {
+                it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.GBFS -> {
                     it[Configurations.WEIGHT.toString()] == null || it[Configurations.WEIGHT.toString()] == 1.0
-                } else true
+                }
+                it[Configurations.DOMAIN_NAME.toString()] == "SLIDING_TILE_PUZZLE_4" &&
+                        it[Configurations.LOOKAHEAD_STRATEGY.toString()] == LookaheadStrategy.A_STAR -> {
+                    !(it[Configurations.WEIGHT.toString()] == null || it[Configurations.WEIGHT.toString()] == 1.0)
+                }
+                else -> true
             }
             else -> true
         }
@@ -125,9 +138,18 @@ fun generateConfigurations(): String {
     // Re-Seed grid maps since they may all need different seeds
 
     // defines the start seeds for each grid map domain
+//    val gridMapSeedSequence = mapOf(
+//            "orz100d" to 2400L,
+//            "ost000a" to 2500L,
+//            "8room_009" to 2050L,
+//            "16room_005" to 1750L,
+//            "Cauldron" to 3800L,
+//            "TheFrozenSea" to 4000L
+//    )
+    // enough for at least 50 configs
     val gridMapSeedSequence = mapOf(
-            "orz100d" to 2400L,
-            "ost000a" to 2500L,
+            "orz100d" to 2370L,
+            "ost000a" to 2470L,
             "8room_009" to 2050L,
             "16room_005" to 1750L,
             "Cauldron" to 3800L,

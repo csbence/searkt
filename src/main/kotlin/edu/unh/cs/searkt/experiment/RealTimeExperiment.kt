@@ -39,6 +39,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                                                        val initialState: StateType,
                                                        val terminationChecker: TerminationChecker) : Experiment() {
 
+    private val BYTES_PER_MB = 1024.0 * 1024.0
+
+    private val maxMemoryMB = 7500
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
     private val stepLimit = configuration.stepLimit
@@ -176,27 +179,29 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 return experimentResult
             }
 
-            if (expansionLimit != null && expansionLimit <= planner.expandedNodeCount) {
-                val experimentResult = createSnapshotResult()
-                experimentResult.apply {
-                    errorMessage = "The planner exceeded the expansion limit: $expansionLimit"
-                }
-                return experimentResult
-            }
+            var errMsg: String? = null
 
+            if (expansionLimit != null && expansionLimit <= planner.expandedNodeCount) {
+                errMsg = "The planner exceeded the expansion limit: $expansionLimit"
+            }
             if (stepLimit <= actions.size) {
-                val experimentResult = createSnapshotResult()
-                experimentResult.apply {
-                    errorMessage = "The planner exceeded the step limit: $stepLimit"
-                }
-                return experimentResult
+                errMsg = "The planner exceeded the step limit: $stepLimit"
             }
 
             if (timeLimit > 0L && totalPlanningNanoTime > timeLimit) {
+                errMsg = "The planner exceeded the total time limit: $timeLimit"
+            }
+
+            // check memory usage. We hard code our experiments to not use more than 7500 MB
+            val usedBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+            val usedMB = usedBytes.toDouble() / BYTES_PER_MB
+            if (usedMB > maxMemoryMB) {
+                errMsg = "The planner exceeded the total memory limit. Used memory: $usedMB MB"
+            }
+
+            if (errMsg != null) {
                 val experimentResult = createSnapshotResult()
-                experimentResult.apply {
-                    errorMessage = "The planner exceeded the total time limit: $timeLimit"
-                }
+                experimentResult.errorMessage = errMsg
                 return experimentResult
             }
         }
