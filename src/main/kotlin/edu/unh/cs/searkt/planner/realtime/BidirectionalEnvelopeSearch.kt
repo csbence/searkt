@@ -77,10 +77,14 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         // required to implement interface
         override var parent: BiEnvelopeSearchNode<StateType> = this
 
-        /* Global predecessor and successor sets
+        /*
+         * Global predecessor and successor sets
          * Necessary to distinguish from predecessor list as required by search node interface
+         * Flag isExpanded is set only once. Saves computation - we just use cached successors since the world
+         * is static
          */
         var globalSuccessors: MutableSet<BiSearchEdge<BiEnvelopeSearchNode<StateType>>> = mutableSetOf()
+        var isExpanded = false
 
         var globalPredecessors: MutableSet<BiSearchEdge<BiEnvelopeSearchNode<StateType>>> = mutableSetOf()
         // Envelope-specific props
@@ -414,20 +418,26 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         // necessary b/c the forward local search expands nodes - we need to remove them from the frontier
         if (openList.isOpen(node)) openList.remove(node)
 
+        if (!node.isExpanded) {
+            domain.successors(node.state).forEach { successor ->
+                getNode(node, successor)
+            }
+            node.isExpanded = true
+        }
+
         var newH = Double.POSITIVE_INFINITY
-        domain.successors(node.state).forEach { successor ->
-            val successorNode = getNode(node, successor)
+        node.globalSuccessors.forEach { successorEdge ->
+            val successorNode = successorEdge.successor
             if (successorNode.envelopeVersion != envelopeVersionCounter) {
                 successorNode.apply{
                     envelopeVersion = envelopeVersionCounter
                     closed = false
                     pseudoG = domain.heuristic(currentAgentState, successorNode.state).toLong()
-                    cost = Long.MAX_VALUE
+                    cost = MAX_VALUE
                 }
             }
 
-            val gFromCurrent = node.cost + successor.actionCost.toLong()
-
+            val gFromCurrent = node.cost + successorEdge.actionCost
             // update cost if applicable
             if (successorNode.cost > gFromCurrent) {
                 successorNode.cost = gFromCurrent
@@ -440,8 +450,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
                 }
             }
 
-            newH = minOf(newH, successor.actionCost + successorNode.heuristic)
+            newH = minOf(newH, successorEdge.actionCost + successorNode.heuristic)
         }
+
         // Updating heuristic. This is what makes us complete in directed domains!
         node.heuristic = newH
 
@@ -471,27 +482,30 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
                 val backF = backwardNode.backwardG + (backwardNode.backwardH * weight)
                 val forwardF = forwardNode.forwardG + (forwardNode.forwardH * weight)
-                // MM bidirectional search (Meet in the Middle)
-                searchIntersection = when (bidirectionalSearchStrategy) {
-                    BidirectionalSearchStrategy.ROUND_ROBIN -> when {
-                        // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
-                        forwardNode.state == currentAgentState -> {
-                            backward = false
-                            expandForwardNode()
+
+                searchIntersection = when (currentAgentState) {
+                    // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
+                    forwardNode.state -> {
+                        backward = false // for ROUND ROBIN strategy
+                        expandForwardNode()
+                    }
+                    else -> when (bidirectionalSearchStrategy) {
+                        BidirectionalSearchStrategy.ROUND_ROBIN -> when {
+                            backward -> expandBackwardNode()
+                            else -> expandForwardNode()
                         }
-                        backward -> expandBackwardNode()
-                        else -> expandForwardNode()
+                        BidirectionalSearchStrategy.FORWARD -> expandForwardNode()
+                        BidirectionalSearchStrategy.BACKWARD -> expandBackwardNode()
+                        BidirectionalSearchStrategy.MM -> when {
+                            backF < forwardF -> expandBackwardNode()
+                            backF > forwardF -> expandForwardNode()
+                            backwardNode.backwardG > forwardNode.forwardG -> expandBackwardNode()
+                            backwardNode.backwardG < forwardNode.forwardG -> expandForwardNode()
+                            // arbitrarily break ties by searching forward
+                            else -> expandForwardNode()
+                        }
                     }
-                    BidirectionalSearchStrategy.MM -> when {
-                        // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
-                        forwardNode.state == currentAgentState -> expandForwardNode()
-                        backF < forwardF -> expandBackwardNode()
-                        backF > forwardF -> expandForwardNode()
-                        backwardNode.backwardG > forwardNode.forwardG -> expandBackwardNode()
-                        backwardNode.backwardG < forwardNode.forwardG -> expandForwardNode()
-                        // arbitrarily break ties by searching forward
-                        else -> expandForwardNode()
-                    }
+
                 }
                 backward = !backward
                 terminationChecker.notifyExpansion()
@@ -727,15 +741,10 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private fun extractTemporaryPath() {
         this.incrementCounter(EXTRACT_TEMP_PATH_COUNTER)
 
-        val targetNode = if (openList.isEmpty()) {
-            resetEnvelope() // caches 1-step lookahead as path
-            return
-        } else {
-            forwardOpenList.peek()!!
-        }
+        val targetNode = forwardOpenList.peek() ?: throw GoalNotReachableException("Forward Open is empty - extract path")
 
         if (targetNode.state == currentAgentState) {
-            throw MetronomeException("Current state is target?")
+            throw MetronomeException("Current state is target? (extractTemporaryPath)")
         }
 
         pathStates = mutableSetOf(targetNode.state)
@@ -882,7 +891,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     }
 
     enum class BidirectionalSearchStrategy {
-        ROUND_ROBIN, MM;
+        ROUND_ROBIN, MM, FORWARD, BACKWARD;
     }
 }
 
