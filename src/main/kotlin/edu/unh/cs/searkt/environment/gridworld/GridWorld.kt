@@ -84,6 +84,7 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
      */
     override fun print(state: GridWorldState): String {
         val description = StringBuilder()
+        description.append("$width\n$height\n")
         for (h in 1..height) {
             for (w in 1..width) {
                 val charCell = when (Location(w, h)) {

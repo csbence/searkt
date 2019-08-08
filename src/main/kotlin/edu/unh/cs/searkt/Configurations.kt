@@ -50,30 +50,38 @@ fun generateConfigurations(): String {
 //    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (1..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-    domains += (0..0).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
+//    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
 //    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" }
+
+    // New Racetrack Maps
+    domains += (3800..3800).map { Domains.RACETRACK to "input/racetrack/sc1-map/Cauldron.map.$it.vw" }
+//    domains += (4000..4049).map { Domains.RACETRACK to "input/racetrack/sc1-map/TheFrozenSea.map.$it.vw" }
+//    domains += (2370..2419).map { Domains.RACETRACK to "input/racetrack/dao-map/orz100d.map.$it.vw" }
+//    domains += (2470..2519).map { Domains.RACETRACK to "input/racetrack/dao-map/ost000a.map.$it.vw" }
+//    domains += (2050..2099).map { Domains.RACETRACK to "input/racetrack/room-map/8room_009.map.$it.vw" }
+//    domains += (1750..1799).map { Domains.RACETRACK to "input/racetrack/room-map/16room_005.map.$it.vw" }
 
     // Maximum time per experiment
     val timeLimit = TimeUnit.NANOSECONDS.convert(5, TimeUnit.MINUTES)
 
     val domainExtras = listOf(
-            Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), (0L..9L)),
+//            Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), (0L..49L)),
             Triple(Domains.RACETRACK, Configurations.IS_SAFE.toString(), listOf(true)),
             Triple(Domains.GRID_MAP, Configurations.DOMAIN_SEED.toString(), (0L..49L))
     )
 
-//    val weights = listOf(1.0, 3.0, 10.0, 64.0)
-    val weights = listOf(1.0)
+    val weights = listOf(1.0, 3.0, 10.0, 64.0)
+//    val weights = listOf(1.0)
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
             planners = listOf(
-//                    Planners.BI_ES
-                    Planners.LSS_LRTA_STAR,
+                    Planners.BI_ES,
+//                    Planners.LSS_LRTA_STAR,
                     Planners.TIME_BOUNDED_A_STAR
             ),
             actionDurations = listOf(10
-                    , 30, 100, 300, 1000, 3000
+//                    , 30, 100, 300, 1000, 3000
             ),
 //            planners = listOf(Planners.WEIGHTED_A_STAR),
 //            actionDurations = listOf(1),
@@ -89,7 +97,8 @@ fun generateConfigurations(): String {
 //                    Triple(Planners.BI_ES, BiESConfiguration.ENVELOPE_SEARCH_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
                     Triple(Planners.BI_ES, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.GBFS)),
                     Triple(Planners.BI_ES, BiESConfiguration.ENVELOPE_SEARCH_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
-                    Triple(Planners.BI_ES, BiESConfiguration.BIDIRECTIONAL_SEARCH_STRATEGY, listOf(ROUND_ROBIN, FORWARD, BACKWARD)),
+                    Triple(Planners.BI_ES, BiESConfiguration.BIDIRECTIONAL_SEARCH_STRATEGY, listOf(ROUND_ROBIN)),
+//                    Triple(Planners.BI_ES, BiESConfiguration.BIDIRECTIONAL_SEARCH_STRATEGY, listOf(BACKWARD, ROUND_ROBIN)),
             /* Bi-ES Configuration Dead Zone - below configs have proven ineffective or simply worse */
 //                    Triple(Planners.BI_ES, BiESConfiguration.GENERATE_PREDECESSORS, listOf(true, false)),
 //                    Triple(Planners.BI_ES, BiESConfiguration.FRONTIER_ADJUSTMENT_RATIO, listOf(1.0)),
@@ -98,8 +107,8 @@ fun generateConfigurations(): String {
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.WEIGHT, weights),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKUP_RATIO, listOf(Double.MAX_VALUE)),
-                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
-//                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
+//                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
+                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
                     Triple(Planners.WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = domainExtras
@@ -157,10 +166,12 @@ fun generateConfigurations(): String {
     )
 
     configurations.forEach {
-        val domain = it["domainPath"] as String
-        for ((token, seed) in gridMapSeedSequence) {
-            if (domain.contains(token)) {
-                it["domainSeed"] = seed + (it["domainSeed"] as Long)
+        if (it["domainName"] as String == "GRID_MAP") {
+            val domain = it["domainPath"] as String
+            for ((token, seed) in gridMapSeedSequence) {
+                if (domain.contains(token)) {
+                    it["domainSeed"] = seed + (it["domainSeed"] as Long)
+                }
             }
         }
     }
