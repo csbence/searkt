@@ -41,7 +41,7 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 
     private val BYTES_PER_MB = 1024.0 * 1024.0
 
-    private val maxMemoryMB = 7500
+    private val maxMemoryMB = 7000 // max 7000 MB ~6.8 GB
     private val actionDuration = configuration.actionDuration
     private val expansionLimit = configuration.expansionLimit
     private val stepLimit = configuration.stepLimit

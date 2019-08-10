@@ -13,8 +13,8 @@ from tqdm import tqdm
 import gzip
 
 projectRoot = '/home/aifs1/kch29/repos/searkt'
-configFile = 'refresh_configs.json'
-tag = "FRESH_BENCHMARK"
+configFile = 'test_configs.json'
+tag = "TEST"
 
 print('Building project')
 os.chdir(projectRoot)
@@ -71,7 +71,7 @@ remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
 f = open(f"{projectRoot}/configs/{configFile}")
 worlds = json.load(f)
-worlds = worlds[:10] # for testing
+# worlds = worlds[:10] # for testing
 print(f'Loaded {len(worlds)} configurations')
 # experiments = create_experiments(worlds)
 progress_bar = tqdm(total=len(worlds))
@@ -113,12 +113,17 @@ def save_results(results, tag, path_prefix=None):
     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json.gz".format(tag, datetime.datetime.now())
     f = gzip.open(file_handle, 'wt')
     for exp_result in results:
+        result_list = json.loads(exp_result)
+        if result_list is not list:
+            continue  # TODO: figure out a way to track which one failed later
+
         res_dict = json.loads(exp_result)[0]  # loads as array
         res_dict.pop('actions', None)  # don't store on disk - too much space!
 
         # Don't store CPU list on disk, but do do some analysis
         cpu_list = res_dict.pop('iterationCpuTimeList')
         if len(cpu_list) > 0:
+            res_dict['firstIterationCpu'] = int(cpu_list[0])
             res_dict['maxIterationCpu'] = int(np.max(cpu_list))
             res_dict['avgIterationCpu'] = int(np.mean(cpu_list))
             res_dict['minIterationCpu'] = int(np.min(cpu_list))
