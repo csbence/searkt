@@ -15,7 +15,9 @@ import edu.unh.cs.searkt.planner.CommitmentStrategy
 import edu.unh.cs.searkt.planner.RealTimePlanner
 import edu.unh.cs.searkt.planner.realtime.LssLrtaStarPlanner
 import edu.unh.cs.searkt.util.convertNanoUpDouble
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
+import kotlin.math.ceil
 import kotlin.system.measureNanoTime
 
 /**
@@ -124,6 +126,9 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
 //        }
         // End test
 
+        val timerStart = currentTimeMillis()
+        val maxTime = ceil(timeLimit / 1_000_000.0).toLong() + timerStart
+
         while (!domain.isGoal(currentState)) {
             val iterationNanoTime = measureNanoTime {
                 terminationChecker.resetTo(timeBound)
@@ -188,8 +193,8 @@ class RealTimeExperiment<StateType : State<StateType>>(val configuration: Experi
                 errMsg = "The planner exceeded the step limit: $stepLimit"
             }
 
-            if (timeLimit > 0L && totalPlanningNanoTime > timeLimit) {
-                errMsg = "The planner exceeded the total time limit: $timeLimit"
+            if (timeLimit > 0L && currentTimeMillis() > maxTime) {
+                errMsg = "The planner exceeded the wallclock time limit: $timeLimit"
             }
 
             // check memory usage. We hard code our experiments to not use more than 7500 MB
