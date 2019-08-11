@@ -63,9 +63,9 @@ for future in futures:
     output = result.output.split('\n')
     last_line = output[-2].split()
     idle = last_line[-3]
-    print(idle, end=' ')
+    print(idle, result.meta, end=' ')
     assert int(idle) >= 90
-    print(result.meta, "is idle!")
+    print("is idle!")
 
 remote_hosts = [RemoteHost(host, port=port_number) for host in HOSTS]
 executor = DistLRE(remote_hosts=remote_hosts)
@@ -113,11 +113,12 @@ def save_results(results, tag, path_prefix=None):
     file_handle += "output/data{}-{:%H-%M-%d-%m-%y}.json.gz".format(tag, datetime.datetime.now())
     f = gzip.open(file_handle, 'wt')
     for exp_result in results:
-        result_list = json.loads(exp_result)
-        if result_list is not list:
+        try:
+            res_dict = json.loads(exp_result)[0]  # loads as array
+        except:
+            print('Error parsing experiment results. Ignoring')
             continue  # TODO: figure out a way to track which one failed later
 
-        res_dict = json.loads(exp_result)[0]  # loads as array
         res_dict.pop('actions', None)  # don't store on disk - too much space!
 
         # Don't store CPU list on disk, but do do some analysis

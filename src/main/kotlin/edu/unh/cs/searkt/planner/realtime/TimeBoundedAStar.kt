@@ -40,6 +40,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     // Attribute Keys
     private val RESTARTS = "restarts"
     private val GOAL_FOUND_ITERATION = "goalPathExtracted"
+    private val BACKTRACKS = "backtracks"
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
@@ -295,6 +296,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
+        results.attributes[BACKTRACKS] = this.counters[BACKTRACKS] ?: 0
         results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration
     }
 
@@ -738,6 +740,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         return if (transition == null) {
             restart(currentNode)
         } else {
+            this.incrementCounter(BACKTRACKS)
             listOf(ActionBundle(transition.first, transition.second.toLong()))
         }
     }
