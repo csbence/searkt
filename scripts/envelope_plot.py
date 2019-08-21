@@ -35,10 +35,13 @@ def construct_data_frame(data):
 
 def flatten(experiment):
     experiment_configuration = {}
+    attributes = {}
     if 'configuration' in experiment:
         experiment_configuration = experiment.pop('configuration')
+    if 'attributes' in experiment:
+        attributes = experiment.pop('attributes')
 
-    return {**experiment, **experiment_configuration}
+    return {**experiment, **experiment_configuration, **attributes}
 
 
 def remove_unused_columns(data):
@@ -51,6 +54,39 @@ def remove_unused_columns(data):
               axis=1,
               inplace=True,
               errors='ignore')
+
+
+def camera_ready_name(base, params, fallback=''):
+    if base == 'TBA*':
+        if params['domainName'] == 'RACETRACK':
+            if params['lookaheadStrategy'] == 'GBFS':
+                return 'TBr(BFS)'
+            else:
+                return 'TBr(WA*)(' + str(params['weight']) + ')'
+        else:
+            if params['lookaheadStrategy'] == 'GBFS':
+                return 'TB(BFS)'
+            else:
+                return 'TB(WA*)(' + str(params['weight']) + ')'
+
+    if base == 'Bi-ES':
+        name_list = []
+        if params['bidirectionalSearchStrategy'] == 'ROUND_ROBIN':
+            name_list.append('Bi-ES')
+        elif params['bidirectionalSearchStrategy'] == 'BACKWARD':
+            name_list.append('Back-ES')
+
+        name_list.append('-')
+
+        if params['lookaheadStrategy'] == 'GBFS' and params['envelopeSearchStrategy'] == 'GBFS':
+            name_list.append('Greedy')
+        elif params['envelopeSearchStrategy'] == 'A_STAR':
+            name_list.append('W ' + str(params['weight']))
+
+        return ' '.join(name_list)
+
+
+    return fallback
 
 
 '''
@@ -98,19 +134,22 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
 
     for algorithm_name, custom_grouping_map in group_by.items():
         alg_data = data[data['algorithmName'] == algorithm_name]
-        groupings = [*custom_grouping_map]
+        groupings = ['domainName', *custom_grouping_map]
 
         for fields, experiment_group in alg_data.groupby(groupings):
 
-            transformed_alg_name = algorithm_name
-            if transformed_alg_name in alg_map:
-                transformed_alg_name = alg_map[transformed_alg_name]
+            base_alg_name = algorithm_name
+            if base_alg_name in alg_map:
+                base_alg_name = alg_map[base_alg_name]
+
+            transformed_alg_name = base_alg_name
 
             if len(groupings) == 1:
                 fields = [fields]
 
             # iterate through our grouping field values and
             # record the value. We will add to dataframe later
+            name_params = {'domainName':fields[0]}
             unused_config_keys = set(config.keys())
             for field_name, field_value in zip(groupings, fields):
                 if field_name in custom_grouping_map:
@@ -119,6 +158,10 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
 
                     if custom_grouping_map[field_name] != None:
                         transformed_alg_name += ' ' + custom_grouping_map[field_name] + ': ' + str(field_value)
+                        name_params[field_name] = field_value
+
+            # Hard-coded translations for configuration options
+            final_alg_name = camera_ready_name(base_alg_name, name_params, transformed_alg_name)
 
             # Append None for any config not present in this
             # algorithm
@@ -126,7 +169,7 @@ def generate_results(data, group_by, custom_columns, calculate_metric):
                 config[key].append(None) # blank value
 
             # calculate the metric being reported. Add results to standard fields
-            row_data = [algorithm_name, transformed_alg_name]
+            row_data = [algorithm_name, final_alg_name]
             row_data.extend(calculate_metric(experiment_group))
             results = add_row(results, row_data)
 
@@ -234,13 +277,12 @@ def prepare_within_opt_plots(data, domain_tokens, group_by=None,
         data_field = explicit_metric
     else:
         xTitle = f'{xTitle}: Percentile {percentile}'
-        data_field = None
+        data_field = f'percentile{percentile}Cpu'
 
-        # THIS IS WRONG! LSS-LRTA* will not have results...
         if use_pre_goal:
+            fallback = data_field
             data_field = f'preGoalPercentile{percentile}Cpu'
-
-        data_field = data_field if data_field in data.index else f'percentile{percentile}Cpu'
+            data[data_field].fillna(data[fallback], inplace=True)
 
     cpu_results = {
         'xaxis': {
