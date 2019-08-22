@@ -20,16 +20,23 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
     /**
      * Part of the Domain interface.
      */
-    override fun successors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> {
+    override fun successors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> = successors(state, false)
+
+    /**
+     * @param inverseActions For generating predecessors. We apply the action to the state, then inverse since that would
+     * provide the action it would take to reach this state from that one
+     */
+    private fun successors(state: GridWorldState, inverseActions: Boolean): List<SuccessorBundle<GridWorldState>> {
         val successors: MutableList<SuccessorBundle<GridWorldState>> = arrayListOf()
 
         for (action in GridWorldAction.values()) {
             val newLocation = state.agentLocation + action.getRelativeLocation()
+            val bundleAction = if (inverseActions) action.reverse(state) else action
 
             if (isLegalLocation(newLocation)) {
                 successors.add(SuccessorBundle(
                         GridWorldState(newLocation),
-                        action,
+                        bundleAction,
                         actionCost = actionDuration.toDouble()))
             }
         }
@@ -113,6 +120,6 @@ class GridWorld(val width: Int, val height: Int, val blockedCells: Set<Location>
         return listOf(GridWorldState(targetLocation))
     }
 
-    override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> = successors(state)
+    override fun predecessors(state: GridWorldState): List<SuccessorBundle<GridWorldState>> = successors(state, true)
 }
 

@@ -16,14 +16,16 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
         state
     }
 
-    override fun successors(state: SlidingTilePuzzle4State): List<SuccessorBundle<SlidingTilePuzzle4State>> {
+    override fun successors(state: SlidingTilePuzzle4State): List<SuccessorBundle<SlidingTilePuzzle4State>> = successors(state, false)
+    private fun successors(state: SlidingTilePuzzle4State, inverseActions: Boolean): List<SuccessorBundle<SlidingTilePuzzle4State>> {
         val successorBundles: MutableList<SuccessorBundle<SlidingTilePuzzle4State>> = arrayListOf()
 
         for (action in SlidingTilePuzzleAction.values()) {
             val successorState = successorState(state, action.relativeX, action.relativeY, action)
+            val bundleAction = if (inverseActions) action.reverse(state) else action
 
             if (successorState != null) {
-                successorBundles.add(SuccessorBundle(successorState, action, actionDuration.toDouble()))
+                successorBundles.add(SuccessorBundle(successorState, bundleAction, actionDuration.toDouble()))
             }
         }
 
@@ -129,7 +131,7 @@ class SlidingTilePuzzle(val size: Int, val actionDuration: Long) : Domain<Slidin
 
     override fun getGoals(): List<SlidingTilePuzzle4State> = listOf(goalState)
 
-    override fun predecessors(state: SlidingTilePuzzle4State) = successors(state)
+    override fun predecessors(state: SlidingTilePuzzle4State) = successors(state, true)
 
     override fun pack(state: SlidingTilePuzzle4State): Long {
         var word = 0L

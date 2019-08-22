@@ -855,15 +855,9 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         }
 
         val edge = if (isPredecessor) {
-            when {
-                successor.action == NoOperationAction -> BiSearchEdge(predecessor = successorNode, successor = parent,
-                        action = successor.action,
-                        actionCost = successor.actionCost.toLong())
-                successor.action is Operator<*> -> BiSearchEdge(predecessor = successorNode, successor = parent,
-                        action = (successor.action as Operator<StateType>).reverse(successorState),
-                        actionCost = successor.actionCost.toLong())
-                else -> throw MetronomeException("Actions must be reversible to generate predecessors")
-            }
+            BiSearchEdge(predecessor = successorNode, successor = parent,
+                    action = successor.action,
+                    actionCost = successor.actionCost.toLong())
         } else {
             BiSearchEdge(predecessor = parent, successor = successorNode, action = successor.action, actionCost = successor.actionCost.toLong())
         }

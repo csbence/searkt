@@ -16,6 +16,7 @@ import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.resize
 import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
+import kotlin.math.roundToLong
 import kotlin.system.measureTimeMillis
 
 /**
@@ -32,6 +33,8 @@ import kotlin.system.measureTimeMillis
  * and convenience functions on purpose. Do not add them back if you want to hit real time bounds!
  * @history 7/2/2019 Kevin C. Gall Refactoring as Restarting TBA* for directed domains. Refactor not engineered
  * for real time bounds
+ * @history 8/20/19 Kevin C. Gall Implementing different "Shortcut" optimization than described in the paper. This
+ * one is time bounded and based on I-ES
  */
 class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain<StateType>, val configuration: ExperimentConfiguration) :
         RealTimePlanner<StateType>(),
@@ -41,12 +44,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private val RESTARTS = "restarts"
     private val GOAL_FOUND_ITERATION = "goalPathExtracted"
     private val BACKTRACKS = "backtracks"
+    private val SHORTCUTS_FOUND = "shortcutsFound"
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
     private val strategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val weight = configuration.weight ?: 1.0
+    private val shortcutRatio = 0.01 // ratio of time to spend on shortcutting when applicable
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
@@ -83,6 +88,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         var shortcutCost: Long = 0L
         var shortcutHeuristic: Double = 0.0
         var shortcutParent: TBANode<StateType>? = null
+        var shortcutAction: Action? = null
+        var shortcutActionCost: Long = -1L
+        /** This one is so that we can backtrack along our shortcut branch if we have to switch paths yet again */
+        var shortcutBacktrackParent: TBANode<StateType>? = null
 
         /** Nodes that generated this SafeRealTimeSearchNode as a successor in the current exploration phase. */
         override var predecessors: MutableList<SearchEdge<TBANode<StateType>>> = arrayListOf()
@@ -260,7 +269,6 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     )
     data class PathTrace<StateType : State<StateType>>(
             val pathEnd: PathEdge<StateType>,
-            // val goal: TBANode<StateType>,
             var edges : MutableMap<TBANode<StateType>, PathEdge<StateType>> = mutableMapOf()) {
         val goal = pathEnd.node
         var pathHead = pathEnd
@@ -272,6 +280,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     private var traceInProgress : PathTrace<StateType>? = null
     private var targetPath : PathTrace<StateType>? = null
+    private var shortcutGoal: TBANode<StateType>? = null
+    private var goalShortcutFound = false
 
     var aStarTimer = 0L
 
@@ -298,6 +308,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
         results.attributes[BACKTRACKS] = this.counters[BACKTRACKS] ?: 0
         results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration
+        results.attributes[SHORTCUTS_FOUND] = this.counters[SHORTCUTS_FOUND] ?: 0
     }
 
     private fun getNextOpenList(switchOpenList: Boolean) : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
@@ -345,6 +356,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // NOTE: this accounting IS NOT real time - only Expansion-based time bounds
         val updateTerminationChecker = getTerminationChecker(configuration, terminationChecker.remaining())
 
+        val ratio = if (goalIsTraced()) 1.0 else shortcutRatio
+        val shortcutTime = (terminationChecker.remaining() * ratio).roundToLong()
+
+        val (explorationTerminationChecker, shortcutTerminationChecker) =
+                if ((tbaOptimization != SHORTCUT && tbaOptimization != BOTH) || shortcutOpen.isEmpty()) {
+                    Pair(terminationChecker, getTerminationChecker(configuration, 0L))
+                } else {
+                    Pair(
+                        getTerminationChecker(configuration, terminationChecker.remaining() - shortcutTime),
+                        getTerminationChecker(configuration, shortcutTime)
+                    )
+                }
+
         if (domain.isGoal(sourceState)) {
             // The start sourceState is the goal sourceState
             return emptyList()
@@ -352,7 +376,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         var plan: List<ActionBundle>? = null
         aStarTimer += measureTimeMillis {
-            var currentTargetPath = getCurrentPath(sourceState, terminationChecker)
+            var currentTargetPath = getCurrentPath(sourceState, explorationTerminationChecker)
             currentTargetPath = when(tbaOptimization) {
                 NONE, SHORTCUT -> currentTargetPath
                 THRESHOLD, BOTH -> {
@@ -361,7 +385,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                         //check if the new path has at least as high a g value as the current path.
                         //Exception is if the agent is currently backtracing: make the new current
                         //best the target path
-                        currentTargetPath.pathEnd.cost >= targetPath!!.pathEnd.cost -> currentTargetPath
+                        currentTargetPath.pathEnd.node.cost >= targetPath!!.pathEnd.node.cost -> currentTargetPath
                         targetPath!!.pathEnd == targetPath!!.pathHead
                                 && targetPath!!.pathHead.node == currentAgentNode -> currentTargetPath
                         else -> targetPath!!
@@ -392,7 +416,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                         listOf(ActionBundle(currentTargetPath.pathHead.action, currentTargetPath.pathHead.cost))
                     }
                 } else {
-                    findNewPath(currentTargetPath, currentAgentNode, terminationChecker)
+                    findNewPath(currentTargetPath, currentAgentNode, shortcutTerminationChecker)
                 }
             }
 
@@ -415,7 +439,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         if (updateOpenList != null) updateHeuristics(updateTerminationChecker)
 
-        if (goalIsTraced() && goalFoundIteration == -1L) {
+        if (goalFoundIteration == -1L && goalIsTraced() && shortcutOpen.isEmpty()) {
             goalFoundIteration = realIterationCounter
         }
 
@@ -521,6 +545,12 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         //Note, setting currentTargetPath here as either the previous target or the new backtrace
         return if (currentBacktrace.pathHead.node.state == rootState || currentBacktrace.pathHead.node.state == sourceState) {
             traceInProgress = null
+
+            // only kill the shortcut if the shortcut goal is not on the traced path
+            if (!currentBacktrace.edges.containsKey(shortcutGoal)) {
+                shortcutOpen.clear()
+                shortcutGoal = null
+            }
             currentBacktrace
         } else {
             assert(targetPath != null)
@@ -537,17 +567,26 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                             terminationChecker: TerminationChecker)
             : List<ActionBundle>? {
         // Find common ancestor
-        val sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
+        var sourceOnPath = bestPath.edges.containsKey(currentAgentNode)
 
-        targetPath = bestPath
+        // The "Shortcut" optimization
+        val shortcutPath = if (!sourceOnPath && (tbaOptimization == SHORTCUT || tbaOptimization == BOTH)) {
+            findShortcut(bestPath, currentAgentNode, terminationChecker)
+        } else null
+        targetPath = if (shortcutPath != null) {
+            sourceOnPath = true
+            shortcutPath
+        } else bestPath
 
         return when {
-            // The "Shortcut" optimization
-            goalIsTraced() && !sourceOnPath && (tbaOptimization == SHORTCUT || tbaOptimization == BOTH) -> {
-                findShortcut(currentAgentNode, terminationChecker)
-            }
             sourceOnPath -> {
-                val edge = bestPath.edges[currentAgentNode]!!
+                // kill shortcuts: we're on the path!
+                shortcutOpen.clear()
+                shortcutGoal = null
+
+                val currentPath = targetPath!!
+
+                val edge = currentPath.edges[currentAgentNode]!!
 
                 if(edge.next == null) {
                     //reset trace and start backtracking
@@ -555,8 +594,8 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                     targetPath = PathTrace(currentAgentNode.parent)
                     backtrack(currentAgentNode)
                 } else {
-                    bestPath.pathHead = edge.next!!
-                    listOf(ActionBundle(bestPath.pathHead.action, bestPath.pathHead.cost))
+                    currentPath.pathHead = edge.next!!
+                    listOf(ActionBundle(currentPath.pathHead.action, currentPath.pathHead.cost))
                 }
             }
             currentAgentNode.state == rootState -> null
@@ -579,25 +618,22 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     }
 
     /**
-     * Seeds shortcut open with all states on path to goal. Attempts to find a shortcut using the agent's current state
+     * Seeds shortcut open with all target state. Attempts to find a shortcut using the agent's current state
      * as the heuristic target
-     * NOTE: This function IS NOT real time. The length of the target path can be linear in domain size, so adding
-     * the whole path to the binary heap is N log N in the worst case.
      */
-    private fun findShortcut(currentAgentNode : TBANode<StateType>, terminationChecker: TerminationChecker)
-            : List<ActionBundle>? {
-        assert(goalIsTraced()){"findShortcut invoked without the goal being traced"}
-
-        if (shortcutOpen.isNotEmpty()) {
-            shortcutOpen.clear()
+    private fun findShortcut(bestPath : PathTrace<StateType>, currentAgentNode : TBANode<StateType>, terminationChecker: TerminationChecker)
+            : PathTrace<StateType>? {
+        if (shortcutOpen.isEmpty()) {
             shortcutOpen.version++
-        }
+            val seedNode = bestPath.pathEnd.node
+            seedNode.shortcutCost = 0
+            seedNode.shortcutAction = null
+            seedNode.shortcutActionCost = -1
+            seedNode.shortcutParent = null
+            seedNode.shortcutHeuristic = domain.heuristic(seedNode.state, currentAgentNode.state)
+            shortcutOpen.add(seedNode)
 
-        val goalPath = targetPath ?: throw MetronomeException("No target path for finding shortcuts to")
-        for (node in goalPath.edges.keys) {
-            node.shortcutCost = 0
-            node.shortcutHeuristic = domain.heuristic(node.state, currentAgentNode.state)
-            shortcutOpen.add(node)
+            shortcutGoal = seedNode
         }
 
         var shortcutFound = false
@@ -610,27 +646,26 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 break
             }
 
-            for (successorBundle in domain.predecessors(currentNode.state)) {
-                val successorNode = getNode(currentNode, successorBundle)
+            // TODO: predecessor functions are wrong! they are just successor functions...
+            // But what we actually want is all nodes that could reach the current state
+            // Racetrack is the only domain left
+            for (predecessorBundle in domain.predecessors(currentNode.state)) {
+                val successorNode = getNode(predecessorBundle)
 
                 // check if it's outdated
                 if (!shortcutOpen.isClosed(successorNode) && !shortcutOpen.isOpen(successorNode)) {
                     successorNode.shortcutCost = Long.MAX_VALUE
-                    successorNode.shortcutHeuristic = domain.heuristic(successorBundle.state, currentAgentNode.state)
+                    successorNode.shortcutHeuristic = domain.heuristic(predecessorBundle.state, currentAgentNode.state)
                 }
 
-                val successorG = currentNode.shortcutCost + successorBundle.actionCost
+                val successorG = currentNode.shortcutCost + predecessorBundle.actionCost
                 if (successorNode.shortcutCost > successorG) {
-                    // we need the inverse of the predecessor action
-                    val reverseAction = if (successorBundle.action is Operator<*>) {
-                        (successorBundle.action as Operator<StateType>).reverse(successorBundle.state)
-                    } else throw MetronomeException("Shortcuts require reversible actions")
-
+                    // Must use separate instance vars for shortcut search so that we don't re-wire the tree
                     successorNode.apply {
                         shortcutCost = successorG.toLong()
-                        parent = currentNode
-                        action = reverseAction
-                        actionCost = successorBundle.actionCost.toLong()
+                        shortcutParent = currentNode
+                        shortcutAction = predecessorBundle.action
+                        shortcutActionCost = predecessorBundle.actionCost.toLong()
                     }
 
                     if (!shortcutOpen.isOpen(successorNode)) {
@@ -643,47 +678,77 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             }
 
             terminationChecker.notifyExpansion()
+            shortcutOpen.setClosed(currentNode, true)
             expandedNodeCount++
         }
 
-        // Redo path extraction
+        // Redo path extraction - extract to target
         return if (shortcutFound) {
-            val shortcutTrace = PathTrace(goalPath.pathEnd)
-            shortcutTrace.pathHead = PathEdge(currentAgentNode, null)
-            shortcutTrace.edges[currentAgentNode] = shortcutTrace.pathHead
+            this.incrementCounter(SHORTCUTS_FOUND)
+            if (domain.isGoal(shortcutGoal!!.state)) {
+                goalShortcutFound = true
+                goalFoundIteration = realIterationCounter
+                shortcutOpen.clear()
+            }
 
+            val pathHead = PathEdge(currentAgentNode, null)
+            val edgeMap = mutableMapOf(currentAgentNode to pathHead)
 
-            var currentTraceNode = currentAgentNode.parent
-            var currentTraceEdge = shortcutTrace.pathHead
-            while (!goalPath.edges.containsKey(currentTraceNode)) {
-                val newEdge = PathEdge(currentTraceNode, null)
-                shortcutTrace.edges[currentTraceNode] = newEdge
+            // The PathEdge cost and action variables hold the values that it takes to transition
+            // to that node from its predecessor in the trace. Things are inverted in the shortcut
+            // search, so we need to track the predecessor too
+            var currentTracePredecessor = currentAgentNode
+            var currentTraceNode = currentAgentNode.shortcutParent ?:
+                throw MetronomeException("Invalid shortcut. Not terminated at agent node")
+            var currentTraceEdge = pathHead
+
+            var foundTarget = false
+            while (!bestPath.edges.containsKey(currentTracePredecessor)) {
+                val newEdge = PathEdge(
+                        currentTraceNode,
+                        null,
+                        currentTracePredecessor.shortcutAction ?: throw MetronomeException("No shortcut action available"),
+                        currentTracePredecessor.shortcutActionCost)
+                edgeMap[currentTraceNode] = newEdge
                 currentTraceEdge.next = newEdge
 
+                currentTraceNode.shortcutBacktrackParent = currentTracePredecessor
+
+                currentTracePredecessor = currentTraceNode
                 currentTraceEdge = newEdge
-                currentTraceNode = currentTraceNode.parent
+                if (currentTraceNode.shortcutParent == null) {
+                    foundTarget = true
+                    break
+                } else {
+                    currentTraceNode = currentTraceNode.shortcutParent ?: throw MetronomeException("Bug - can't be null...")
+                }
             }
 
-            var goalPathEdge = goalPath.edges[currentTraceNode]
-            currentTraceEdge.next = goalPathEdge
+            // We check that we found our target and that it's the end of the current best path.
+            // recall that we allow the shortcut to not switch targets when the prior target is
+            // still on the path to the best node
+            val shortcutTrace = if (foundTarget && bestPath.pathEnd.node == currentTraceNode) {
+                PathTrace(currentTraceEdge, edgeMap)
+            } else {
+                var targetPathEdge = bestPath.edges[currentTracePredecessor]
+                assert(currentTraceEdge.node == targetPathEdge?.node)
+                currentTraceEdge.next = targetPathEdge?.next ?: throw MetronomeException("Bug - shortcut found but not to goal?")
 
-            // still to move through the path to put them in the new edge map
-            // We don't technically need to do this as this trace should be the
-            // last trace of the entire algorithm. However I don't want to get burned by
-            // not maintaining what is otherwise an invariant - the validity of the edge map
-            while (goalPathEdge != null) {
-                shortcutTrace.edges[goalPathEdge.node] = goalPathEdge
-                goalPathEdge = goalPathEdge.next
+                targetPathEdge = currentTraceEdge.next
+
+                // still trace through the remaining path to put them in the new edge map to maintain the
+                // invariant that the edge hashmap has all nodes to edges
+                while (targetPathEdge != null) {
+                    edgeMap[targetPathEdge.node] = targetPathEdge
+                    targetPathEdge = targetPathEdge.next
+                }
+
+                PathTrace(bestPath.pathEnd, edgeMap)
             }
+            shortcutTrace.pathHead = pathHead
 
-            val resultPath = listOf(ActionBundle(shortcutTrace.pathHead.action, shortcutTrace.pathHead.cost))
-            shortcutTrace.pathHead = shortcutTrace.pathHead.next!!
-            targetPath = shortcutTrace
-
-            resultPath
-        } else {
-            backtrack(currentAgentNode)
-        }
+            shortcutTrace
+        } else null
     }
 
     private fun getRootNode(state: StateType): TBANode<StateType> {
@@ -708,7 +773,9 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
      *
      * @return node corresponding to the given state.
      */
-    override fun getNode(parent: TBANode<StateType>, successor: SuccessorBundle<StateType>): TBANode<StateType> {
+    override fun getNode(parent: TBANode<StateType>, successor: SuccessorBundle<StateType>): TBANode<StateType> = getNodeInner(parent, successor)
+    private fun getNode(successor: SuccessorBundle<StateType>): TBANode<StateType> = getNodeInner(null, successor)
+    private fun getNodeInner(parent: TBANode<StateType>?, successor: SuccessorBundle<StateType>): TBANode<StateType> {
         val successorState = successor.state
         val tempSuccessorNode = nodes[successorState]
 
@@ -735,7 +802,16 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     private fun backtrack(currentNode: TBANode<StateType>,
                           nextNode: TBANode<StateType> = currentNode.parent): List<ActionBundle> {
-        val transition = domain.transition(currentNode.state, nextNode.state)
+        // We prefer following parent pointers of the tree.
+        // But we handle the edge case that we have to backtrack while on a shortcut path
+        // whose nodes had not otherwise been touched by the search
+        val backtrackTarget = if (currentNode == nextNode) { // i.e. no parent - shortcut!
+            currentNode.shortcutBacktrackParent ?: throw MetronomeException("No parent?")
+        } else {
+            nextNode
+        }
+
+        val transition = domain.transition(currentNode.state, backtrackTarget.state)
 
         return if (transition == null) {
             restart(currentNode)
@@ -763,10 +839,10 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         }
         openList = getNextOpenList(switchOpenList)
 
-        // If we were in the midst of finding shortcuts, clear and increment version
+        // If we were in the midst of finding shortcuts, clear
         if (shortcutOpen.isNotEmpty()) {
             shortcutOpen.clear()
-            shortcutOpen.version++
+            shortcutGoal = null
         }
 
         // Reset global vars to reflect new search
