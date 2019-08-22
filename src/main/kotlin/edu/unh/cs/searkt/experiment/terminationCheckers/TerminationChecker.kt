@@ -50,10 +50,10 @@ interface TerminationChecker {
 /**
  * Factory method for termination checker from experiment configuration
  */
-fun getTerminationChecker(configuration: ExperimentConfiguration, durationOverride: Long = 0L): TerminationChecker {
+fun getTerminationChecker(configuration: ExperimentConfiguration, durationOverride: Long = -1L): TerminationChecker {
     val lookaheadType = configuration.lookaheadType
     val terminationType = configuration.terminationType
-    val duration = if (durationOverride > 0) durationOverride else configuration.actionDuration
+    val duration = if (durationOverride > -1L) durationOverride else configuration.actionDuration
     val epsilon = configuration.terminationTimeEpsilon
 
     val termChecker = when {

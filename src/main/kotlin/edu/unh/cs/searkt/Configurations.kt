@@ -37,21 +37,21 @@ fun generateConfigurations(): String {
     val domains = mutableListOf<Pair<Domains, String>>(
 //            Domains.GRID_WORLD to "input/vacuum/cups.vw"
 //            Domains.GRID_WORLD to "input/vacuum/minima100_100-0.vw"
-            Domains.GRID_MAP to "input/gridmap/room-map/8room_009.map:input/gridmap/room-scen/8room_009.map.scen",
-            Domains.GRID_MAP to "input/gridmap/room-map/16room_005.map:input/gridmap/room-scen/16room_005.map.scen",
-            Domains.GRID_MAP to "input/gridmap/dao-map/orz100d.map:input/gridmap/dao-scen/orz100d.map.scen",
-            Domains.GRID_MAP to "input/gridmap/dao-map/ost000a.map:input/gridmap/dao-scen/ost000a.map.scen",
-            Domains.GRID_MAP to "input/gridmap/sc1-map/TheFrozenSea.map:input/gridmap/sc1-scen/TheFrozenSea.map.scen",
-            Domains.GRID_MAP to "input/gridmap/sc1-map/Cauldron.map:input/gridmap/sc1-scen/Cauldron.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/room-map/8room_009.map:input/gridmap/room-scen/8room_009.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/room-map/16room_005.map:input/gridmap/room-scen/16room_005.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/dao-map/orz100d.map:input/gridmap/dao-scen/orz100d.map.scen"
+//            Domains.GRID_MAP to "input/gridmap/dao-map/ost000a.map:input/gridmap/dao-scen/ost000a.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/sc1-map/TheFrozenSea.map:input/gridmap/sc1-scen/TheFrozenSea.map.scen",
+//            Domains.GRID_MAP to "input/gridmap/sc1-map/Cauldron.map:input/gridmap/sc1-scen/Cauldron.map.scen",
 //            Domains.ACROBOT to "input/acrobot/default_0.1-0.1.ab"
-            Domains.RACETRACK to "input/racetrack/hansen-bigger-d-wide3.track"
+//            Domains.RACETRACK to "input/racetrack/hansen-bigger-d-wide3.track"
     )
 
 //    domains += (1..100).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
-    domains += (1..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
+//    domains += (1..10).map { Domains.SLIDING_TILE_PUZZLE_4 to "input/tiles/korf/4/real/$it" }
 //    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/orz100d/orz100d.map_scen_$it" }
-    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
-    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" }
+    domains += (0..0).map { Domains.GRID_WORLD to "input/vacuum/minima1500/minima1500_1500-$it.vw" }
+//    domains += (0..9).map { Domains.GRID_WORLD to "input/vacuum/uniform1500/uniform1500_1500-$it.vw" }
 
     // New Racetrack Maps
 //    domains += (3800..3809).map { Domains.RACETRACK to "input/racetrack/sc1-map/Cauldron.map.$it.vw" }
@@ -67,21 +67,21 @@ fun generateConfigurations(): String {
     val domainExtras = listOf(
             Triple(Domains.RACETRACK, Configurations.DOMAIN_SEED.toString(), (0L..9L)),
             Triple(Domains.RACETRACK, Configurations.IS_SAFE.toString(), listOf(true)),
-            Triple(Domains.GRID_MAP, Configurations.DOMAIN_SEED.toString(), (0L..9L))
+            Triple(Domains.GRID_MAP, Configurations.DOMAIN_SEED.toString(), (0L..0L))
     )
 
-    val weights = listOf(1.0, 3.0, 10.0, 64.0)
-//    val weights = listOf(1.0)
+//    val weights = listOf(1.0, 3.0, 10.0, 64.0)
+    val weights = listOf(1.0)
 
     var configurations = edu.unh.cs.searkt.experiment.configuration.generateConfigurations(
             domains = domains,
             planners = listOf(
-                    Planners.BI_ES
+//                    Planners.BI_ES
 //                    Planners.LSS_LRTA_STAR,
-//                    Planners.TIME_BOUNDED_A_STAR
+                    Planners.TIME_BOUNDED_A_STAR
             ),
             actionDurations = listOf(10
-                    , 20, 50, 100, 200, 500, 1000
+//                    , 20, 50, 100, 200, 500, 1000
             ),
 //            planners = listOf(Planners.WEIGHTED_A_STAR),
 //            actionDurations = listOf(1),
@@ -105,10 +105,11 @@ fun generateConfigurations(): String {
                     Triple(Planners.LSS_LRTA_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.MULTIPLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.COMMITMENT_STRATEGY, listOf(CommitmentStrategy.SINGLE)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.WEIGHT, weights),
-                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD)),
+//                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.THRESHOLD, TBAOptimization.NONE, TBAOptimization.BOTH, TBAOptimization.SHORTCUT)),
+                    Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.TBA_OPTIMIZATION, listOf(TBAOptimization.SHORTCUT, TBAOptimization.BOTH)),
                     Triple(Planners.TIME_BOUNDED_A_STAR, TBAStarConfiguration.BACKUP_RATIO, listOf(Double.MAX_VALUE)),
-                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
-//                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
+//                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR, LookaheadStrategy.GBFS)),
+                    Triple(Planners.TIME_BOUNDED_A_STAR, Configurations.LOOKAHEAD_STRATEGY, listOf(LookaheadStrategy.A_STAR)),
                     Triple(Planners.WEIGHTED_A_STAR, Configurations.WEIGHT, listOf(1.0))
             ),
             domainExtras = domainExtras
