@@ -50,7 +50,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
     private val strategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val weight = configuration.weight ?: 1.0
-    private val shortcutRatio = 0.1 // ratio of time to spend on shortcutting when applicable
+    private val shortcutRatio = 0.05 // ratio of time to spend on shortcutting when applicable
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
