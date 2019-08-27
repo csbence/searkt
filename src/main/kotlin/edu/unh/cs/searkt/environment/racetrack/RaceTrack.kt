@@ -277,6 +277,7 @@ class RaceTrack(val width: Int,
         return list
     }
 
+    //TODO: This is wrong. Predecessors are not the same as successors. But the heuristic calculation requires it, so fix later...
     override fun predecessors(state: RaceTrackState) = successors(state)
 
     /**

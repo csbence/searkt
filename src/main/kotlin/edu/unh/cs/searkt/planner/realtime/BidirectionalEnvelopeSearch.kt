@@ -316,10 +316,10 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         val avgCachedPathSize = this.attributes[CACHED_PATH_LENGTH]!!.average()
 
-        results.attributes["avgCachedPathLength"] = avgCachedPathSize
+        results.attributes["avgCachedPathLength"] = avgCachedPathSize.toInt()
         results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER] ?: 0
         results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS] ?: 0
-        results.attributes[HOME_STRETCH_ITERATION] = goalPathExtractedIteration
+        results.attributes[HOME_STRETCH_ITERATION] = goalPathExtractedIteration.toInt()
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {

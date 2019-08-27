@@ -4,9 +4,12 @@ import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.SimpleSerializer
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.util.convertNanoUpDouble
+import kotlinx.serialization.ContextualSerialization
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
@@ -80,7 +83,7 @@ class ExperimentResult {
 
     @ImplicitReflectionSerializer
     @Serializable(with = SimpleSerializer::class)
-    var attributes = mutableMapOf<String, Any>()
+    var attributes = mutableMapOf<String, Int>()
 
     @Optional
     var reexpansions: Int = 0

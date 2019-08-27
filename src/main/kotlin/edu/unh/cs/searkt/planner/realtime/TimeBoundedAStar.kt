@@ -12,7 +12,6 @@ import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization.*
 import edu.unh.cs.searkt.util.AbstractAdvancedPriorityQueue
-import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.resize
 import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
@@ -51,7 +50,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
     private val strategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val weight = configuration.weight ?: 1.0
-    private val shortcutRatio = 0.01 // ratio of time to spend on shortcutting when applicable
+    private val shortcutRatio = 0.1 // ratio of time to spend on shortcutting when applicable
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
@@ -307,7 +306,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
         results.attributes[BACKTRACKS] = this.counters[BACKTRACKS] ?: 0
-        results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration
+        results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration.toInt()
         results.attributes[SHORTCUTS_FOUND] = this.counters[SHORTCUTS_FOUND] ?: 0
     }
 
@@ -646,32 +645,31 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
                 break
             }
 
-            // TODO: predecessor functions are wrong! they are just successor functions...
-            // But what we actually want is all nodes that could reach the current state
-            // Racetrack is the only domain left
-            for (predecessorBundle in domain.predecessors(currentNode.state)) {
-                val successorNode = getNode(predecessorBundle)
+            // Only expand generated predecessors
+            for (predecessorEdge in currentNode.predecessors) {
+            //for (predecessorBundle in domain.predecessors(currentNode.state)) {
+                val predecessorNode = predecessorEdge.node
 
                 // check if it's outdated
-                if (!shortcutOpen.isClosed(successorNode) && !shortcutOpen.isOpen(successorNode)) {
-                    successorNode.shortcutCost = Long.MAX_VALUE
-                    successorNode.shortcutHeuristic = domain.heuristic(predecessorBundle.state, currentAgentNode.state)
+                if (!shortcutOpen.isClosed(predecessorNode) && !shortcutOpen.isOpen(predecessorNode)) {
+                    predecessorNode.shortcutCost = Long.MAX_VALUE
+                    predecessorNode.shortcutHeuristic = domain.heuristic(predecessorNode.state, currentAgentNode.state)
                 }
 
-                val successorG = currentNode.shortcutCost + predecessorBundle.actionCost
-                if (successorNode.shortcutCost > successorG) {
+                val successorG = currentNode.shortcutCost + predecessorNode.actionCost
+                if (predecessorNode.shortcutCost > successorG) {
                     // Must use separate instance vars for shortcut search so that we don't re-wire the tree
-                    successorNode.apply {
+                    predecessorNode.apply {
                         shortcutCost = successorG.toLong()
                         shortcutParent = currentNode
-                        shortcutAction = predecessorBundle.action
-                        shortcutActionCost = predecessorBundle.actionCost.toLong()
+                        shortcutAction = predecessorNode.action
+                        shortcutActionCost = predecessorNode.actionCost.toLong()
                     }
 
-                    if (!shortcutOpen.isOpen(successorNode)) {
-                        shortcutOpen.add(successorNode)
+                    if (!shortcutOpen.isOpen(predecessorNode)) {
+                        shortcutOpen.add(predecessorNode)
                     } else {
-                        shortcutOpen.update(successorNode)
+                        shortcutOpen.update(predecessorNode)
                     }
 
                 }
