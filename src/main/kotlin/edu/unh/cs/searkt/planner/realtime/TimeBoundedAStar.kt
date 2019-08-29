@@ -438,7 +438,7 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
         if (updateOpenList != null) updateHeuristics(updateTerminationChecker)
 
-        if (goalFoundIteration == -1L && goalIsTraced() && shortcutOpen.isEmpty()) {
+        if (goalFoundIteration == -1L && goalIsTraced()) {
             goalFoundIteration = realIterationCounter
         }
 

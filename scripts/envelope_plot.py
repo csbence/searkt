@@ -58,16 +58,20 @@ def remove_unused_columns(data):
 
 def camera_ready_name(base, params, fallback=''):
     if base == 'TBA*':
+        name_base = ''
+
         if params['domainName'] == 'RACETRACK':
             if params['lookaheadStrategy'] == 'GBFS':
-                return 'TBr(BFS)'
+                name_base = 'TBr(BFS)'
             else:
-                return 'TBr(WA*)(' + str(params['weight']) + ')'
+                name_base = 'TBr(WA*)(' + str(params['weight']) + ')'
         else:
             if params['lookaheadStrategy'] == 'GBFS':
-                return 'TB(BFS)'
+                name_base = 'TB(BFS)'
             else:
-                return 'TB(WA*)(' + str(params['weight']) + ')'
+                name_base = 'TB(WA*)(' + str(params['weight']) + ')'
+
+        return name_base + ' ' + params['tbaOptimization']
 
     if base == 'Bi-ES':
         name_list = []
