@@ -228,8 +228,8 @@ class BackwardEnvelopeSearch<StateType : State<StateType>>(override val domain: 
 
     @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
-        results.attributes["forwardSearches"] = this.counters[this.FORWARD_SEARCH_COUNTER] ?: 0
-        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS] ?: 0
+        results.attributes["forwardSearches"] = this.counters[this.FORWARD_SEARCH_COUNTER]?.toLong() ?: 0L
+        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS]?.toLong() ?: 0L
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {

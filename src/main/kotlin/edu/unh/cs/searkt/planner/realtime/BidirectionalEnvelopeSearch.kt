@@ -16,6 +16,7 @@ import java.util.*
 import kotlin.Long.Companion.MAX_VALUE
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.system.measureNanoTime
 
 /**
  * Real time search algorithm which maintains an ever-expanding search envelope
@@ -50,6 +51,12 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     private val CACHED_PATH_LENGTH = "cachedPathLength"
     private val ENVELOPE_RESETS = "envelopeResets"
     private val HOME_STRETCH_ITERATION = "goalPathExtracted"
+    private val TRACEBACK_COUNTER = "tracebacks"
+    private var tracebacks = 0L
+    private val TRACEBACK_TIMER = "tracebackTime"
+    private var tracebackTime = 0L
+    private val EXPANDED_NODE_TIME = "expandedNodeTime"
+    private var expandedNodeTime = 0L
 
     // Configuration
     private val weight = configuration.weight ?: 1.0
@@ -316,10 +323,14 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
         val avgCachedPathSize = this.attributes[CACHED_PATH_LENGTH]!!.average()
 
-        results.attributes["avgCachedPathLength"] = avgCachedPathSize.toInt()
-        results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER] ?: 0
-        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS] ?: 0
-        results.attributes[HOME_STRETCH_ITERATION] = goalPathExtractedIteration.toInt()
+        results.attributes["avgCachedPathLength"] = avgCachedPathSize.toLong()
+        results.attributes["numForwardResets"] = this.counters[this.EXTRACT_TEMP_PATH_COUNTER]?.toLong() ?: 0L
+        results.attributes["envelopeResets"] = this.counters[this.ENVELOPE_RESETS]?.toLong() ?: 0L
+        results.attributes[HOME_STRETCH_ITERATION] = goalPathExtractedIteration
+
+        results.attributes[EXPANDED_NODE_TIME] = expandedNodeTime
+        results.attributes[TRACEBACK_COUNTER] = tracebacks
+        results.attributes[TRACEBACK_TIMER] = tracebackTime
     }
 
     override fun selectAction(sourceState: StateType, terminationChecker: TerminationChecker): List<ActionBundle> {
@@ -381,33 +392,35 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
      * Explore the state space by expanding the frontier
      */
     private fun explore(terminationChecker: TerminationChecker): BiEnvelopeSearchNode<StateType> {
-        while (!terminationChecker.reachedTermination()) {
-            // expand from frontier open list
+        expandedNodeTime += measureNanoTime {
+            while (!terminationChecker.reachedTermination()) {
+                // expand from frontier open list
 
-            // first handle empty open list
-            if (openList.isEmpty()) {
-                if (foundGoals.isEmpty())
-                    throw GoalNotReachableException("Frontier is empty without finding any goals")
+                // first handle empty open list
+                if (openList.isEmpty()) {
+                    if (foundGoals.isEmpty())
+                        throw GoalNotReachableException("Frontier is empty without finding any goals")
 
-                return targetGoal ?: throw MetronomeException("Goals found, but target not set")
-            }
-
-            // ensure we always expand the current target if it is not expanded yet
-
-            val currentNode = openList.pop()!!
-            if (domain.isGoal(currentNode.state)) {
-                if (foundGoals.size == 0) {
-                    // reduce the amount of time spent expanding the frontier starting next iteration
-                    frontierLimitRatio = goalsFoundFrontierLimitRatio
+                    return targetGoal ?: throw MetronomeException("Goals found, but target not set")
                 }
 
-                foundGoals.add(currentNode)
-                targetGoal = currentNode
-                continue // we do not need to explore beyond a goal state
-            }
+                // ensure we always expand the current target if it is not expanded yet
 
-            expandNode(currentNode)
-            terminationChecker.notifyExpansion()
+                val currentNode = openList.pop()!!
+                if (domain.isGoal(currentNode.state)) {
+                    if (foundGoals.size == 0) {
+                        // reduce the amount of time spent expanding the frontier starting next iteration
+                        frontierLimitRatio = goalsFoundFrontierLimitRatio
+                    }
+
+                    foundGoals.add(currentNode)
+                    targetGoal = currentNode
+                    continue // we do not need to explore beyond a goal state
+                }
+
+                expandNode(currentNode)
+                terminationChecker.notifyExpansion()
+            }
         }
 
         return openList.peek() ?:
@@ -474,42 +487,45 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
 
         try {
             var backward = true
-            while (searchIntersection == null && !terminationChecker.reachedTermination()){
-                val backwardNode = backwardOpenList.peek() ?:
+            expandedNodeTime += measureNanoTime {
+                while (searchIntersection == null && !terminationChecker.reachedTermination()){
+                    val backwardNode = backwardOpenList.peek() ?:
                     throw BiSearchOpenEmptyException("Backward Search Open list is empty without finding the Agent")
-                val forwardNode = forwardOpenList.peek() ?:
+                    val forwardNode = forwardOpenList.peek() ?:
                     throw GoalNotReachableException("Dead end in forward search")
 
-                val backF = backwardNode.backwardG + (backwardNode.backwardH * weight)
-                val forwardF = forwardNode.forwardG + (forwardNode.forwardH * weight)
+                    val backF = backwardNode.backwardG + (backwardNode.backwardH * weight)
+                    val forwardF = forwardNode.forwardG + (forwardNode.forwardH * weight)
 
-                searchIntersection = when (currentAgentState) {
-                    // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
-                    forwardNode.state -> {
-                        backward = false // for ROUND ROBIN strategy
-                        expandForwardNode()
-                    }
-                    else -> when (bidirectionalSearchStrategy) {
-                        BidirectionalSearchStrategy.ROUND_ROBIN -> when {
-                            backward -> expandBackwardNode()
-                            else -> expandForwardNode()
+                    searchIntersection = when (currentAgentState) {
+                        // this first condition ensures we always have at least 1-step lookahead for temporary path extraction
+                        forwardNode.state -> {
+                            backward = false // for ROUND ROBIN strategy
+                            expandForwardNode()
                         }
-                        BidirectionalSearchStrategy.FORWARD -> expandForwardNode()
-                        BidirectionalSearchStrategy.BACKWARD -> expandBackwardNode()
-                        BidirectionalSearchStrategy.MM -> when {
-                            backF < forwardF -> expandBackwardNode()
-                            backF > forwardF -> expandForwardNode()
-                            backwardNode.backwardG > forwardNode.forwardG -> expandBackwardNode()
-                            backwardNode.backwardG < forwardNode.forwardG -> expandForwardNode()
-                            // arbitrarily break ties by searching forward
-                            else -> expandForwardNode()
+                        else -> when (bidirectionalSearchStrategy) {
+                            BidirectionalSearchStrategy.ROUND_ROBIN -> when {
+                                backward -> expandBackwardNode()
+                                else -> expandForwardNode()
+                            }
+                            BidirectionalSearchStrategy.FORWARD -> expandForwardNode()
+                            BidirectionalSearchStrategy.BACKWARD -> expandBackwardNode()
+                            BidirectionalSearchStrategy.MM -> when {
+                                backF < forwardF -> expandBackwardNode()
+                                backF > forwardF -> expandForwardNode()
+                                backwardNode.backwardG > forwardNode.forwardG -> expandBackwardNode()
+                                backwardNode.backwardG < forwardNode.forwardG -> expandForwardNode()
+                                // arbitrarily break ties by searching forward
+                                else -> expandForwardNode()
+                            }
                         }
-                    }
 
+                    }
+                    backward = !backward
+                    terminationChecker.notifyExpansion()
                 }
-                backward = !backward
-                terminationChecker.notifyExpansion()
             }
+
         } catch (ex: BiSearchOpenEmptyException) {
             // clear envelope entirely including cached paths and bi-search.
             // select next action based on 1-step lookahead and seed envelope with that state
@@ -517,7 +533,7 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
             resetEnvelope()
         }
 
-        if (searchIntersection != null) extractPath(searchIntersection) // sets cached Path and path state set
+        if (searchIntersection != null) extractPath(searchIntersection!!) // sets cached Path and path state set
     }
 
     private fun expandBackwardNode(): BiEnvelopeSearchNode<StateType>? {
@@ -680,43 +696,47 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         var currentNode = intersectionNode
         var useCachedPointer = pathStates.contains(currentNode.state)
         var canAppend = false
-        while (currentNode.state != currentAgentState) {
-            if (currentNode == forwardRoot) {
-                canAppend = true
-                break
+        tracebackTime += measureNanoTime {
+            while (currentNode.state != currentAgentState) {
+                if (currentNode == forwardRoot) {
+                    canAppend = true
+                    break
+                }
+
+                val nextEdge = if(useCachedPointer) {
+                    currentNode.cachedForwardParent
+                } else {
+                    currentNode.cachedForwardParent = currentNode.forwardParent
+                    currentNode.forwardParent
+                }
+
+                newPath.addFirst(nextEdge)
+                currentNode = nextEdge?.predecessor ?:
+                        throw MetronomeException("Cannot trace path to forward root")
+
+
+                if (!newPathStates.add(currentNode.state)) {
+                    throw MetronomeException("Cycle detected in extractPath toward root")
+                }
+                if (!useCachedPointer && pathStates.contains(currentNode.state)) useCachedPointer = true
+                tracebacks++
             }
 
-            val nextEdge = if(useCachedPointer) {
-                currentNode.cachedForwardParent
-            } else {
-                currentNode.cachedForwardParent = currentNode.forwardParent
-                currentNode.forwardParent
-            }
-
-            newPath.addFirst(nextEdge)
-            currentNode = nextEdge?.predecessor ?:
-                    throw MetronomeException("Cannot trace path to forward root")
-
-
-            if (!newPathStates.add(currentNode.state)) {
-                throw MetronomeException("Cycle detected in extractPath toward root")
-            }
-            if (!useCachedPointer && pathStates.contains(currentNode.state)) useCachedPointer = true
-        }
-
-        currentNode = intersectionNode
-        while (currentNode != frontierTarget && !domain.isGoal(currentNode.state)) {
-            val edge = currentNode.backwardParent ?:
+            currentNode = intersectionNode
+            while (currentNode != frontierTarget && !domain.isGoal(currentNode.state)) {
+                val edge = currentNode.backwardParent ?:
                 throw MetronomeException("Cannot trace path to frontier target")
 
-            newPath.addLast(edge)
-            currentNode = edge.successor
+                newPath.addLast(edge)
+                currentNode = edge.successor
 
-            // set forward parent in case we hit this node in the cached path on a subsequent search and need to trace back
-            currentNode.cachedForwardParent = edge
+                // set forward parent in case we hit this node in the cached path on a subsequent search and need to trace back
+                currentNode.cachedForwardParent = edge
 
-            if (!newPathStates.add(currentNode.state)) {
-                throw MetronomeException("Cycle detected in extractPath toward frontier")
+                if (!newPathStates.add(currentNode.state)) {
+                    throw MetronomeException("Cycle detected in extractPath toward frontier")
+                }
+                tracebacks++
             }
         }
 
@@ -751,14 +771,18 @@ class BidirectionalEnvelopeSearch<StateType : State<StateType>>(override val dom
         cachedPath = LinkedList()
 
         var currentNode = targetNode
-        while (currentNode.state != currentAgentState) {
-            cachedPath.addFirst(currentNode.forwardParent)
-            currentNode.cachedForwardParent = currentNode.forwardParent
-            currentNode = currentNode.forwardParent?.predecessor ?:
-                    throw MetronomeException("Cannot trace temporary path to forward root")
+        tracebackTime += measureNanoTime {
+            while (currentNode.state != currentAgentState) {
+                cachedPath.addFirst(currentNode.forwardParent)
+                currentNode.cachedForwardParent = currentNode.forwardParent
+                currentNode = currentNode.forwardParent?.predecessor ?:
+                        throw MetronomeException("Cannot trace temporary path to forward root")
 
-            if (!pathStates.add(currentNode.state)) throw MetronomeException("Cycle detected in extractTemporaryPath")
+                if (!pathStates.add(currentNode.state)) throw MetronomeException("Cycle detected in extractTemporaryPath")
+                tracebacks++
+            }
         }
+
 
         this.appendAttribute(TEMP_PATH_LENGTH, cachedPath.size)
 

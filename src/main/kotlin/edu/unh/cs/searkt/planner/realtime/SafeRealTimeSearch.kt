@@ -52,8 +52,8 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
-        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"] ?: 0
-        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"] ?: 0
+        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"]?.toLong() ?: 0L
+        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"]?.toLong() ?: 0L
     }
 
     // Performance measurement

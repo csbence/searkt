@@ -5,6 +5,7 @@ import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.*
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
+import edu.unh.cs.searkt.experiment.measure
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import edu.unh.cs.searkt.experiment.terminationCheckers.TerminationChecker
 import edu.unh.cs.searkt.experiment.terminationCheckers.getTerminationChecker
@@ -16,6 +17,7 @@ import edu.unh.cs.searkt.util.resize
 import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 import kotlin.math.roundToLong
+import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 /**
@@ -44,13 +46,19 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
     private val GOAL_FOUND_ITERATION = "goalPathExtracted"
     private val BACKTRACKS = "backtracks"
     private val SHORTCUTS_FOUND = "shortcutsFound"
+    private val TRACEBACK_COUNTER = "tracebacks"
+    private var tracebacks = 0L
+    private val TRACEBACK_TIMER = "tracebackTime"
+    private var tracebackTime = 0L
+    private val EXPANDED_NODE_TIME = "expandedNodeTime"
+    private var expandedNodeTime = 0L
 
     // Configuration
     private val tbaOptimization = configuration.tbaOptimization
             ?: throw MetronomeConfigurationException("TBA* optimization is not specified")
     private val strategy = configuration.lookaheadStrategy ?: LookaheadStrategy.A_STAR
     private val weight = configuration.weight ?: 1.0
-    private val shortcutRatio = 0.05 // ratio of time to spend on shortcutting when applicable
+    private val shortcutRatio = 0.1 // ratio of time to spend on shortcutting when applicable
 
     //HARD CODED for testing. Should be configurable
     /** cost of backtrace relative to expansion as expansion cost / backtrace cost. Lower number means backtrace is more costly */
@@ -304,10 +312,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
 
     @ImplicitReflectionSerializer
     override fun appendPlannerSpecificResults(results: ExperimentResult) {
-        results.attributes[RESTARTS] = this.counters[RESTARTS] ?: 0
-        results.attributes[BACKTRACKS] = this.counters[BACKTRACKS] ?: 0
-        results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration.toInt()
-        results.attributes[SHORTCUTS_FOUND] = this.counters[SHORTCUTS_FOUND] ?: 0
+        results.attributes[RESTARTS] = this.counters[RESTARTS]?.toLong() ?: 0L
+        results.attributes[BACKTRACKS] = this.counters[BACKTRACKS]?.toLong() ?: 0L
+        results.attributes[GOAL_FOUND_ITERATION] = goalFoundIteration
+        results.attributes[SHORTCUTS_FOUND] = this.counters[SHORTCUTS_FOUND]?.toLong() ?: 0L
+
+        results.attributes[EXPANDED_NODE_TIME] = expandedNodeTime
+        results.attributes[TRACEBACK_COUNTER] = tracebacks
+        results.attributes[TRACEBACK_TIMER] = tracebackTime
     }
 
     private fun getNextOpenList(switchOpenList: Boolean) : AbstractAdvancedPriorityQueue<TBANode<StateType>> {
@@ -455,16 +467,18 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         // TODO: Implement this using the TerminationChecker.remaining() function instead
         var currentExpansionDuration = 0L
 
-        while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
-                        ?: throw GoalNotReachableException("Open list is empty."))) {
-            aStarPopCounter++
+        expandedNodeTime += measureNanoTime {
+            while (!terminationChecker.reachedTermination() && !domain.isGoal(openList.peek()?.state
+                            ?: throw GoalNotReachableException("Open list is empty."))) {
+                aStarPopCounter++
 
-            val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
+                val currentNode = openList.pop() ?: throw GoalNotReachableException("Open list is empty.")
 
-            expandFromNode(this, currentNode, checkOutdated = {!openList.isOpen(it) && !openList.isClosed(it)})
+                expandFromNode(this, currentNode, checkOutdated = {!openList.isOpen(it) && !openList.isClosed(it)})
 
-            terminationChecker.notifyExpansion()
-            currentExpansionDuration++
+                terminationChecker.notifyExpansion()
+                currentExpansionDuration++
+            }
         }
 
         if (expansionLimit == 0L) expansionLimit = currentExpansionDuration
@@ -532,12 +546,14 @@ class TimeBoundedAStar<StateType : State<StateType>>(override val domain: Domain
         val currentBacktrace = traceInProgress!!
         var currentNode = targetNode
 
-        printTime("Trace execution time") {
+        tracebackTime += measureNanoTime {
             while (!traceBound() && currentNode.state != rootState && currentNode.state != sourceState) {
                 currentBacktrace.pathHead =
                         PathEdge(currentNode.parent, currentBacktrace.pathHead)
                 currentBacktrace.edges[currentNode.parent] = currentBacktrace.pathHead
                 currentNode = currentNode.parent
+
+                tracebacks++
             }
         }
 

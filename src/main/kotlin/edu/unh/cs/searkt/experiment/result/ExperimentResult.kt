@@ -83,7 +83,7 @@ class ExperimentResult {
 
     @ImplicitReflectionSerializer
     @Serializable(with = SimpleSerializer::class)
-    var attributes = mutableMapOf<String, Int>()
+    var attributes = mutableMapOf<String, Long>()
 
     @Optional
     var reexpansions: Int = 0
