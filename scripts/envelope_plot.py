@@ -13,7 +13,7 @@ __author__ = 'Kevin C. Gall'
 
 alg_map = {"A_STAR": "A*", "LSS_LRTA_STAR": "LSS-LRTA*", "SAFE_RTS": "SRTS", "S_ZERO": "S0", "SIMPLE_SAFE": "SS",
            "SINGLE_SAFE": "BEST_SAFE", "SAFE_RTS_TOP": "SRTS_TOP", "TIME_BOUNDED_A_STAR": "TBA*", "CES": "CES",
-           "BACK_ES": "Back-ES", "BI_ES": "Bi-ES"}
+           "BACK_ES": "Back-ES", "BI_ES": "I-ES"}
 
 
 def read_data(file_name):
@@ -71,14 +71,15 @@ def camera_ready_name(base, params, fallback=''):
             else:
                 name_base = 'TB(WA*)(' + str(params['weight']) + ')'
 
-        return name_base + ' ' + params['tbaOptimization']
+        # return name_base + ' ' + params['tbaOptimization']
+        return name_base
 
-    if base == 'Bi-ES':
-        name_list = []
-        if params['bidirectionalSearchStrategy'] == 'ROUND_ROBIN':
-            name_list.append('Bi-ES')
-        elif params['bidirectionalSearchStrategy'] == 'BACKWARD':
-            name_list.append('Back-ES')
+    if base == 'I-ES':
+        name_list = ['I-ES']
+        # if params['bidirectionalSearchStrategy'] == 'ROUND_ROBIN':
+        #     name_list.append('Bi-ES')
+        # elif params['bidirectionalSearchStrategy'] == 'BACKWARD':
+        #     name_list.append('Back-ES')
 
         name_list.append('-')
 
@@ -105,6 +106,7 @@ def analyze_metrics(exp, opt):
     opt_df['optimalPathLength'] = opt_df['pathLength']
     opt_df = opt_df[['domainPath', 'domainSeed', 'optimalPathLength']]
 
+    exp_df.domainSeed = exp_df.domainSeed.astype('float64')
     exp_df = pd.merge(exp_df, opt_df, how='inner', on=['domainPath','domainSeed'])
 
     exp_df['withinOpt'] = exp_df['goalAchievementTime'] / (exp_df["actionDuration"] * exp_df["optimalPathLength"])
@@ -303,6 +305,20 @@ def prepare_within_opt_plots(data, domain_tokens, group_by=None,
 
 
 
+def get_alg_name(exp):
+    exp['algorithmName'] = exp['configuration']['algorithmName']
+    return exp
+
+
 # Scratch "main" script
 if __name__ == '__main__':
-    print('No main operations')
+    # print('No main operations')
+    data = read_data('../results/dataDRAFT-20-12-15-08-19.json.gz')
+
+    data = [get_alg_name(exp) for exp in data]
+
+    df = DataFrame(data)
+    df = df[~(df['algorithmName'] == 'TIME_BOUNDED_A_STAR')]
+    df = df.drop(columns='algorithmName')
+
+    df.to_json('../results/draft_no_tba.json', orient='records')
