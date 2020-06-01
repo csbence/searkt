@@ -26,6 +26,7 @@ enum class Planners {
     SXUP,
     IOS,
     EES,
+    EESB,
     EES_DD,
     EESF,
     EEST,
