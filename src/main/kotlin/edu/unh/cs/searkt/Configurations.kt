@@ -79,7 +79,7 @@ fun generateConfigurations(): String {
     )
 
     // Add these to all configurations
-        configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 1.6, 2.4, 5.0, 10.0))
+        configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.4, 1.6, 2.4, 5.0, 10.0))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(2.0))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
 
