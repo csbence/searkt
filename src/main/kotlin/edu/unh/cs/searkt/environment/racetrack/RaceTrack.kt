@@ -7,7 +7,7 @@ import edu.unh.cs.searkt.environment.SuccessorBundle
 import edu.unh.cs.searkt.environment.location.Location
 import edu.unh.cs.searkt.environment.racetrack.RaceTrackAction.NO_OP
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
-import kotlinx.io.PrintWriter
+import java.io.PrintWriter
 import java.lang.Math.*
 import java.util.*
 
@@ -84,7 +84,7 @@ class RaceTrack(val width: Int,
 
     fun printHeuristicMap() {
         PrintWriter("racetrack_heuristic", "UTF-8").use { writer ->
-            val maxHeuristic = heuristicMap.entries.maxBy { it.value }!!.value
+            val maxHeuristic = heuristicMap.entries.maxBy { it.value }.value
             writer.println(maxHeuristic)
             for (y in 0..height) {
                 for (x in 0..width) {

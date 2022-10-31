@@ -2,29 +2,31 @@ group 'unh-ai'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'application'
-apply plugin: 'kotlin'
-apply plugin: 'kotlinx-serialization'
-apply plugin: "org.jetbrains.kotlin.jvm"
 
-applicationDefaultJvmArgs = [
-        "-server", "-ea", //"–XX:+UseG1GC",
-        "-Xms10g",
-        "-Xmx10g"
-]
+application {
+    applicationDefaultJvmArgs = [
+            "-server", "-ea", //"–XX:+UseG1GC",
+            "-Xms10g",
+            "-Xmx10g"
+    ]
 
-if (project.hasProperty("mainClass")) {
-    mainClassName = mainClass
-} else {
-    mainClassName = "edu.unh.cs.searkt.SearKt"
+    if (project.hasProperty("mainClass")) {
+        mainClassName = mainClass
+    } else {
+        mainClassName = "edu.unh.cs.searkt.SearKt"
+    }
 }
 
 buildscript {
 
-    ext.kotlin_version = '1.3.21'
-    ext.serialization_version = '0.10.0'
+    ext.kotlin_version = '1.7.20'
 
     repositories {
         jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
@@ -33,19 +35,24 @@ buildscript {
     }
 }
 
+apply plugin: 'kotlin'
+apply plugin: 'kotlinx-serialization'
+apply plugin: "org.jetbrains.kotlin.jvm"
+
+
 repositories {
     mavenCentral()
     maven { url "https://kotlin.bintray.com/kotlinx" }
 }
 
 dependencies {
-    compile group: 'com.carrotsearch', name: 'hppc', version: '0.5.0'
+    implementation group: 'com.carrotsearch', name: 'hppc', version: '0.5.0'
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile "org.jetbrains.kotlin:kotlin-reflect"
-    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
 
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
 
 
@@ -66,12 +73,3 @@ run {
     standardInput = System.in
 }
 
-jar {
-    manifest {
-        attributes "Main-Class": "$mainClassName"
-    }
-
-    from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-}

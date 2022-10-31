@@ -1,11 +1,8 @@
 package edu.unh.cs.searkt.experiment.result
 
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
-import edu.unh.cs.searkt.experiment.configuration.SimpleSerializer
 import edu.unh.cs.searkt.experiment.configuration.realtime.TerminationType
 import edu.unh.cs.searkt.util.convertNanoUpDouble
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.util.*
@@ -80,21 +77,20 @@ class ExperimentResult {
     var timestamp: Long = 0
     var success: Boolean = false
     @Transient
-    var systemProperties: MutableMap<String, String>
+    var systemProperties: MutableMap<String, String> = HashMap<String, String>()
     var experimentRunTime: Double = 0.0
 
-    @ImplicitReflectionSerializer
-    @Serializable(with = SimpleSerializer::class)
-    var attributes = mutableMapOf<String, Any>()
+//    @ImplicitReflectionSerializer
+//    @Serializable(with = SimpleSerializer::class)
+//    var attributes = mutableMapOf<String, Any>()
 
-    @Optional
+    @Transient
     var reexpansions: Int = 0
 
-    @Optional
+    @Transient
     var errorDetails: String = ""
 
     // Racetrack domain
-    @Optional
     @Transient
     var averageVelocity: Double = 0.0
 
@@ -103,7 +99,6 @@ class ExperimentResult {
     data class DepthRankPair(val depth: Int, val rankOnOpen: Int)
 
     //Comprehensive Envelope stats
-    @Optional
     @Transient
     var backupCount: Int = 0
 

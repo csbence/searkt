@@ -2,11 +2,14 @@ package edu.unh.cs.searkt
 
 import edu.unh.cs.searkt.environment.Domains
 import edu.unh.cs.searkt.experiment.configuration.Configurations
-import edu.unh.cs.searkt.experiment.configuration.SimpleSerializer
 import edu.unh.cs.searkt.experiment.configuration.cartesianProduct
 import edu.unh.cs.searkt.planner.Planners
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
+import kotlinx.serialization.json.JsonEncoder
 import java.util.concurrent.TimeUnit
 
 /**
@@ -83,19 +86,20 @@ fun generateConfigurations(): String {
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(2.0))
 //    configurations = configurations.cartesianProduct(Configurations.WEIGHT.toString(), listOf(1.01, 1.1, 1.4, 2.0))
 
-
     println(configurations.first())
     println("${configurations.size} configuration has been generated.")
 
     // Convert the configurations to raw string
-    return Json.indented.stringify(SimpleSerializer.list, configurations.toList())
+    // val stringListSerializer: KSerializer<List<String>> = ListSerializer(String.serializer())
+    //return stringListSerializer.serialize(, configurations.toList())
+    return ""
 }
 
 fun main() {
     val configurationString = generateConfigurations()
 
     // Save configurations
-    val outputPath = "configs/configurations.json"
-    kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(configurationString) }
-    println("Configurations has been saved to $outputPath")
+    // val outputPath = "configs/configurations.json"
+    // kotlinx.io.PrintWriter(outputPath, "UTF-8").use { it.write(configurationString) }
+    // println("Configurations has been saved to $outputPath")
 }

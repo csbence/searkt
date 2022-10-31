@@ -6,7 +6,7 @@ import edu.unh.cs.searkt.planner.*
 import edu.unh.cs.searkt.planner.realtime.BackupComparator
 import edu.unh.cs.searkt.planner.realtime.TBAOptimization
 import edu.unh.cs.searkt.planner.suboptimal.SuboptimalBoundImprovement
-import kotlinx.serialization.Optional
+import kotlinx.serialization.Transient
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 
@@ -43,85 +43,85 @@ open class GeneralExperimentConfiguration(values: MutableMap<String, Any?> = has
 
 @Serializable
 data class ExperimentConfiguration(
-        val domainName: String,
-        @Optional val rawDomain: String? = null,
-        var algorithmName: Planners,
-        @Optional
+    val domainName: String,
+    @Transient val rawDomain: String? = null,
+    var algorithmName: Planners,
+    @Transient
         val terminationType: TerminationType = TerminationType.UNLIMITED,
-        @Optional val domainPath: String? = null,
-        val actionDuration: Long,
-        @Optional
+    @Transient val domainPath: String? = null,
+    val actionDuration: Long,
+    @Transient
         val timeLimit: Long? = null,
-        @Optional
+    @Transient
         val expansionLimit: Long? = null,
 
         // Domain
-        @Optional
+    @Transient
         var domainSeed: Long? = null,
-        @Optional
+    @Transient
         val domainSizeMultiplier: Int = 1,
 
         // AStar
-        @Optional
+    @Transient
         var weight: Double? = null,
 
         // Real time experiment
-        @Optional
+    @Transient
         val lookaheadType: LookaheadType? = null,
-        @Optional
+    @Transient
         val commitmentStrategy: CommitmentStrategy? = null,
-        @Optional
+    @Transient
         val terminationTimeEpsilon: Long = TimeUnit.NANOSECONDS.convert(2000, TimeUnit.MICROSECONDS),
-        @Optional
+    @Transient
         val stepLimit: Long? = null,
 
         // RTA*
-        @Optional
+    @Transient
         val lookaheadDepthLimit: Long? = null,
 
         // Safe search general
-        @Optional
+    @Transient
         val targetSelection: SafeRealTimeSearchTargetSelection? = null,
 
         // SRTS
-        @Optional
+    @Transient
         val safetyExplorationRatio: Double? = null,
-        @Optional
+    @Transient
         val safetyProof: SafetyProof? = null,
-        @Optional
+    @Transient
         val filterUnsafe: Boolean = false,
 
-        @Optional
+    @Transient
         val variant: String? = null,
 
         // SZero
-        @Optional
+    @Transient
         val safetyBackup: SafetyBackup? = null,
 
         // Anytime Experiment
-        @Optional
+    @Transient
         val anytimeMaxCount: Long? = null,
 
         // Error Models
-        @Optional val errorModel: String? = null,
+    @Transient val errorModel: String? = null,
 
         //Envelope-based searching (i.e. not LSS)
-        @Optional
+    @Transient
         val backlogRatio: Double? = null,
 
         // TBA*
-        @Optional
+    @Transient
         val tbaOptimization: TBAOptimization? = null,
 
         // Envelope Search
-        @Optional
+    @Transient
         val backupComparator: BackupComparator? = null,
 
         // Bounded Suboptimal Exploration
-        @Optional
+    @Transient
         val embeddedAlgorithm: Planners? = null,
 
-        @Optional
+    @Transient
         val suboptimalBoundImprovement: SuboptimalBoundImprovement? = null
 
 )

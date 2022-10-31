@@ -40,7 +40,7 @@ object HeavyTilePuzzleIO {
                 slidingTilePuzzle.calculateHashCode(tiles))
 
         try {
-            val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.toInt().toByte() }.toList()
+            val tileList = inputScanner.asSequence().drop(1).take(dimension * dimension).map { it.trim().toInt().toByte() }.toList()
             var zeroLocation: Location? = null
             tileList.forEachIndexed { i, value ->
                 val y = i / dimension

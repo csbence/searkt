@@ -4,7 +4,6 @@ import edu.unh.cs.searkt.experiment.configuration.ConfigurationExecutor
 import edu.unh.cs.searkt.experiment.configuration.ExperimentConfiguration
 import edu.unh.cs.searkt.experiment.result.ExperimentResult
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
 import kotlin.math.min
 
 fun main(args: Array<String>) {
@@ -28,10 +27,11 @@ fun main(args: Array<String>) {
 
     if (rawConfiguration.isBlank()) throw MetronomeException("No configurations were provided.")
 
+    // TODO fix configurations
     // Convert the json configuration string to experiment configuration instances
-    val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration)
+    //val parsedConfigurations = Json.parse(ExperimentConfiguration.serializer().list, rawConfiguration)
 
-    System.err.println("Execute ${parsedConfigurations.size} configurations.")
+    // System.err.println("Execute ${parsedConfigurations.size} configurations.")
 
     val runtime = Runtime.getRuntime()
 
@@ -45,10 +45,10 @@ fun main(args: Array<String>) {
     // println("Automatic thread count: $desiredThreadCount")
 
     // Execute the experiments
-    val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = desiredThreadCount)
+    // val results = ConfigurationExecutor.executeConfigurations(parsedConfigurations, dataRootPath = null, parallelCores = desiredThreadCount)
 
     // Convert the results to json
-    val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
+    // val rawResults = Json.stringify(ExperimentResult.serializer().list, results)
     // println(rawResults)
 
     // Print results
@@ -58,6 +58,6 @@ fun main(args: Array<String>) {
 
     // System.err.println(results.summary())
     println('#') // Indicator for the parser
-    println(rawResults) // This should be the last printed line
+    // println(rawResults) // This should be the last printed line
 }
 

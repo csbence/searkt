@@ -146,7 +146,7 @@ class SZeroPlanner<StateType : State<StateType>>(val domain: Domain<StateType>, 
             }
 
             val targetSafeNode = when (targetSelection) {
-                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+                SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> throw MetronomeException("Safe-to-best target selection needs refactoring")
                 SafeRealTimeSearchTargetSelection.BEST_SAFE -> throw MetronomeException("Invalid configuration. S0 does not implement the BEST_SAFE strategy")
             }
 

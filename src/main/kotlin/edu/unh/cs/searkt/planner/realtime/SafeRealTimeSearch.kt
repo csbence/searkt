@@ -1,6 +1,7 @@
 package edu.unh.cs.searkt.planner.realtime
 
 import edu.unh.cs.searkt.MetronomeConfigurationException
+import edu.unh.cs.searkt.MetronomeException
 import edu.unh.cs.searkt.environment.Domain
 import edu.unh.cs.searkt.environment.NoOperationAction
 import edu.unh.cs.searkt.environment.State
@@ -18,7 +19,6 @@ import edu.unh.cs.searkt.planner.exception.GoalNotReachableException
 import edu.unh.cs.searkt.util.AdvancedPriorityQueue
 import edu.unh.cs.searkt.util.generateWhile
 import edu.unh.cs.searkt.util.resize
-import kotlinx.serialization.ImplicitReflectionSerializer
 import java.util.*
 
 /**
@@ -50,11 +50,11 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
     private var continueSearch = false
 
-    @ImplicitReflectionSerializer
-    override fun appendPlannerSpecificResults(results: ExperimentResult) {
-        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"] ?: 0
-        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"] ?: 0
-    }
+//    @ImplicitReflectionSerializer
+//    override fun appendPlannerSpecificResults(results: ExperimentResult) {
+//        results.attributes["unsafeSearchReexpansion"] = counters["unsafeSearchReexpansion"] ?: 0
+//        results.attributes["unsafeProofReexpansion"] = counters["unsafeProofReexpansion"] ?: 0
+//    }
 
     // Performance measurement
     private var aStarPopCounter = 0
@@ -145,7 +145,7 @@ class SafeRealTimeSearch<StateType : State<StateType>>(override val domain: Doma
 
         val currentSafeTarget = when (targetSelection) {
             // What the safe predecessors are on a dead-path (meaning not reachable by the parent pointers)
-            SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> selectSafeToBest(openList)
+            SafeRealTimeSearchTargetSelection.SAFE_TO_BEST -> throw MetronomeException("Safe-to-best target selection needs refactoring")
             SafeRealTimeSearchTargetSelection.BEST_SAFE -> lastSafeNode
         }
 

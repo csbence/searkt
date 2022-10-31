@@ -188,26 +188,26 @@ fun <StateType : State<StateType>, NodeType> predecessorSafetyPropagation(safeNo
     }
 }
 
-fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int, Int) -> (Unit) = { _: Int, _: Int -> }): Node?
-        where Node : SearchNode<StateType, Node>, Node : Safe {
-    val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
-    nodes.sortBy { it.cost + it.heuristic }
-
-    var rank = 0
-    nodes.forEach { frontierNode ->
-        rank++
-        var currentNode = frontierNode
-        while (currentNode.parent != currentNode) {
-            if (currentNode.safe) {
-                recordRank(rank, (frontierNode.cost - currentNode.cost).toInt())
-                return currentNode
-            }
-            currentNode = currentNode.parent
-        }
-    }
-
-    return null
-}
+//fun <StateType : State<StateType>, Node> selectSafeToBest(queue: AdvancedPriorityQueue<Node>, recordRank: (Int, Int) -> (Unit) = { _: Int, _: Int -> }): Node?
+//        where Node : SearchNode<StateType, Node>, Node : Safe {
+//    val nodes = MutableList(queue.size, { queue.backingArray[it]!! })
+//    nodes.sortBy { it.cost + it.heuristic }
+//
+//    var rank = 0
+//    nodes.forEach { frontierNode ->
+//        rank++
+//        var currentNode: Node = frontierNode
+//        while (currentNode.parent != currentNode) {
+//            if (currentNode.safe) {
+//                recordRank(rank, (frontierNode.cost - currentNode.cost).toInt())
+//                return currentNode
+//            }
+//            currentNode = currentNode.parent
+//        }
+//    }
+//
+//    return null
+//}
 
 /**
  * Selector to define how to pick the target node at the end of the planning iteration.
